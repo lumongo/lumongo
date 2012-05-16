@@ -11,6 +11,7 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
@@ -60,20 +61,24 @@ public class StorageTest {
 		
 		IndexWriter w = new IndexWriter(directory, config);
 		
-		addDoc(w, "Random Title that is long");
-		addDoc(w, "MongoDB is awesome");
-		addDoc(w, "This is a long title with nothing interesting");
-		addDoc(w, "Java is awesome");
-		addDoc(w, "Really big fish");
+		addDoc(w, "Random perl Title that is long", "id-1");
+		addDoc(w, "Random java Title that is long", "id-1");
+		addDoc(w, "MongoDB is awesome", "id-2");
+		addDoc(w, "This is a long title with nothing interesting", "id-3");
+		addDoc(w, "Java is awesome", "id-4");
+		addDoc(w, "Really big fish", "id-5");
 		
 		w.commit();
 		w.close();
 	}
 	
-	private static void addDoc(IndexWriter w, String value) throws IOException {
+	private static void addDoc(IndexWriter w, String title, String uid) throws IOException {
 		Document doc = new Document();
-		doc.add(new Field("title", value, Field.Store.YES, Field.Index.ANALYZED));
-		w.addDocument(doc);
+		doc.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
+		doc.add(new Field("uid", uid, Field.Store.YES, Field.Index.ANALYZED));
+		doc.add(new Field("uid", uid, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
+		Term uidTerm = new Term("uid", uid);
+		w.updateDocument(uidTerm, doc);
 	}
 	
 	@Test(groups = "query", dependsOnGroups = "load")
@@ -86,15 +91,17 @@ public class StorageTest {
 		int hits = 0;
 		
 		hits = runQuery(indexReader, qp, "java", 10);
-		Assert.assertEquals(hits, 1, "Expected 1 hit");
+		Assert.assertEquals(hits, 2, "Expected 2 hits");
+		hits = runQuery(indexReader, qp, "perl", 10);
+		Assert.assertEquals(hits, 0, "Expected 0 hits");
 		hits = runQuery(indexReader, qp, "treatment", 10);
 		Assert.assertEquals(hits, 0, "Expected 0 hits");
 		hits = runQuery(indexReader, qp, "long", 10);
 		Assert.assertEquals(hits, 2, "Expected 2 hits");
 		hits = runQuery(indexReader, qp, "MongoDB", 10);
-		Assert.assertEquals(hits, 1, "Expected 1 hits");
+		Assert.assertEquals(hits, 1, "Expected 1 hit");
 		hits = runQuery(indexReader, qp, "java AND awesome", 10);
-		Assert.assertEquals(hits, 1, "Expected 1 hits");
+		Assert.assertEquals(hits, 1, "Expected 1 hit");
 	}
 	
 	private static int runQuery(IndexReader indexReader, QueryParser qp, String queryStr, int count) throws ParseException, CorruptIndexException, IOException {

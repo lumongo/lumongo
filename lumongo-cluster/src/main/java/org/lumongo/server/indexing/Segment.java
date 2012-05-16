@@ -171,7 +171,9 @@ public class Segment {
 			}
 		}
 		d.removeFields(indexConfig.getUniqueIdField());
-		d.add(new Field(indexConfig.getUniqueIdField(), uniqueId, Store.YES, org.apache.lucene.document.Field.Index.ANALYZED));
+		d.add(new Field(indexConfig.getUniqueIdField(), uniqueId, Store.NO, org.apache.lucene.document.Field.Index.ANALYZED));
+		//make sure the update works
+		d.add(new Field(indexConfig.getUniqueIdField(), uniqueId, Store.YES, org.apache.lucene.document.Field.Index.NOT_ANALYZED_NO_NORMS));
 		
 		Term term = new Term(indexConfig.getUniqueIdField(), uniqueId);
 		indexWriter.updateDocument(term, d);

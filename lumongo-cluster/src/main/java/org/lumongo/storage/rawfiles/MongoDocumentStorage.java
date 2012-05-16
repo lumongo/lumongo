@@ -46,8 +46,8 @@ public class MongoDocumentStorage implements DocumentStorage {
 	private Mongo pool;
 	private String database;
 	
-	// TODO use safe? make this configurable?
-	private WriteConcern documentWriteConcern = WriteConcern.NORMAL;
+	// TODO: make this configurable?
+	private WriteConcern documentWriteConcern = WriteConcern.SAFE;
 	
 	public MongoDocumentStorage(Mongo pool, String database) {
 		this(pool, database, false);

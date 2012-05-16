@@ -141,7 +141,8 @@ public class QueryCombiner {
 						
 						ScoredResult sd = sr.previewNext();
 						if (sd != null) {
-							if (sd.getScore() > maxScore) {
+							boolean notNearEnd = ((sr.getIndex() + 2) < sr.getReturnedHits());
+							if (maxResult == null || ((sd.getScore() > maxScore) && notNearEnd)) {
 								maxScore = sd.getScore();
 								maxResult = sr;
 							}

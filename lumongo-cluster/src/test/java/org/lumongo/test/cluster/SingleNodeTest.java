@@ -153,7 +153,8 @@ public class SingleNodeTest {
 		indexSettingsBuilder.setDefaultAnalyzer(LMAnalyzer.KEYWORD);
 		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("title").setAnalyzer(LMAnalyzer.STANDARD));
 		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("issn").setAnalyzer(LMAnalyzer.LC_KEYWORD));
-		indexSettingsBuilder.setSegmentTolerance(0.1);
+		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("uid").setAnalyzer(LMAnalyzer.LC_KEYWORD));
+		indexSettingsBuilder.setSegmentTolerance(0.05);
 		
 		lumongoClient.createIndex("myTestIndex", 16, "uid", indexSettingsBuilder.build());
 		
@@ -163,8 +164,24 @@ public class SingleNodeTest {
 	public void bulkTest() throws Exception {
 		
 		final int DOCUMENTS_LOADED = 100;
-		final String uniqueIdPrefix = "someUniqueId";
+		final String uniqueIdPrefix = "someUniqueId-";
 		{
+			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
+				String uniqueId = uniqueIdPrefix + i;
+				LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
+				indexedDocBuilder.setIndexName("myTestIndex");
+				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("1333-1333").build());
+				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Search and Storage").build());
+				
+				ByteString byteString = ByteString.copyFromUtf8("<sampleXML>random xml</sampleXML>");
+				
+				boolean compressed = (i % 2 == 0);
+				
+				ResultDocument rd = ResultDocument.newBuilder().setType(ResultDocument.Type.TEXT).setDocument(byteString).setUniqueId(uniqueId)
+						.setCompressed(compressed).build();
+				lumongoClient.storeDocument(rd, indexedDocBuilder.build());
+			}
+			
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
 				String uniqueId = uniqueIdPrefix + i;
 				LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
@@ -328,7 +345,7 @@ public class SingleNodeTest {
 	@Test(groups = { "next" }, dependsOnGroups = { "init" })
 	public void deleteTest() throws Exception {
 		{
-			String uniqueIdToDelete = "someUniqueId" + 4;
+			String uniqueIdToDelete = "someUniqueId-" + 4;
 			
 			QueryResponse qr = null;
 			FetchResponse fr = null;
