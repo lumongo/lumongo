@@ -1,5 +1,5 @@
 
-defaultTasks 'eclipse', 'compileProto', 'createDeployment'
+defaultTasks 'eclipse', 'compileProto', 'createDeploy'
 
 subprojects {
 	apply plugin: 'java'
