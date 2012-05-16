@@ -139,7 +139,7 @@ message IndexSettings {
 	optional uint32 idleTimeWithoutCommit = 7 [default = 30000];
 	optional uint32 segmentCommitInterval = 8 [default = 3200];
 	optional bool blockCompression = 9 [default = false];
-	optional double segmentTolerance = 10 [default = 0.001];
+	optional double segmentTolerance = 10 [default = 0.05];
 }
 
 message FieldConfig {
