@@ -1,0 +1,310 @@
+option java_generic_services = true;
+option java_package = "org.lumongo.cluster.message";
+
+// services
+service ExternalService {
+ 	rpc Query (QueryRequest) returns (QueryResponse);
+	rpc Store (StoreRequest) returns (StoreResponse);
+	rpc Delete (DeleteRequest) returns (DeleteResponse);
+	rpc Fetch (FetchRequest) returns (FetchResponse);
+	rpc CreateIndex (IndexCreateRequest) returns (IndexCreateResponse);
+	rpc ChangeIndex (IndexSettingsRequest) returns (IndexSettingsResponse);
+	rpc DeleteIndex (IndexDeleteRequest) returns (IndexDeleteResponse);
+	rpc GetIndexes (GetIndexesRequest) returns (GetIndexesResponse);
+	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
+	rpc Clear (ClearRequest) returns (ClearResponse);
+	rpc Optimize (OptimizeRequest) returns (OptimizeResponse);
+	rpc GetFieldNames (GetFieldNamesRequest) returns (GetFieldNamesResponse);
+	rpc GetTerms (GetTermsRequest) returns (GetTermsResponse);
+	rpc GetMembers (GetMembersRequest) returns (GetMembersResponse);
+}
+
+service InternalService {
+	rpc QueryInternal (QueryRequest) returns (InternalQueryResponse);
+	rpc IndexInternal (InternalIndexRequest) returns (InternalIndexResponse);
+	rpc DeleteInternal (InternalDeleteRequest) returns (InternalDeleteResponse);
+	rpc GetNumberOfDocsInternal (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
+	rpc Clear (ClearRequest) returns (ClearResponse);
+	rpc Optimize (OptimizeRequest) returns (OptimizeResponse);
+	rpc GetFieldNames (GetFieldNamesRequest) returns (GetFieldNamesResponse);
+	rpc GetTerms (GetTermsRequest) returns (GetTermsResponse);
+}
+
+message GetMembersRequest {
+
+}
+
+message LMMember {
+	required string serverAddress = 1;
+	required uint32 externalPort = 2;
+	optional uint32 internalPort = 3;
+	optional uint32 hazelcastPort = 4;
+}
+
+message GetMembersResponse {
+	repeated LMMember member = 1;
+}
+
+
+message GetTermsRequest {
+	required string indexName = 1;
+	required string fieldName = 2;
+	required uint32 amount = 3;
+	optional string startingTerm = 4;
+}
+
+message GetTermsResponse {
+	repeated string value = 1;
+}
+
+message GetFieldNamesRequest {
+	required string indexName = 1;
+}
+
+message GetFieldNamesResponse {
+	repeated string fieldName = 1;
+}
+
+message ClearRequest {
+	required string indexName = 1;
+}
+
+message ClearResponse {
+
+}
+
+message OptimizeRequest {
+	required string indexName = 1;
+}
+
+message OptimizeResponse {
+
+}
+
+message GetIndexesRequest {
+
+}
+
+message GetIndexesResponse {
+	repeated string indexName = 1;
+}
+
+message GetNumberOfDocsRequest {
+	required string indexName = 1;
+}
+
+message GetNumberOfDocsResponse {
+	required uint64 numberOfDocs = 1;
+	repeated SegmentCountResponse segmentCountResponse = 2;
+}
+
+message SegmentCountResponse {
+	required uint32 segmentNumber = 1;
+	required uint32 numberOfDocs = 2;
+}
+
+
+message IndexCreateRequest {
+	required string indexName = 1;
+	required string uniqueIdField = 2;
+	required uint32 numberOfSegments = 3;
+	required IndexSettings indexSettings = 4;
+}
+
+message IndexCreateResponse {
+
+}
+
+message IndexSettingsRequest {
+	required string indexName = 1;
+	required IndexSettings indexSettings = 4;
+}
+
+
+enum LMAnalyzer {
+		KEYWORD =0;
+		LC_KEYWORD = 1;
+		WHITESPACE = 2;
+		LC_WHITESPACE =3;
+		STANDARD = 4;
+}
+
+message IndexSettings {
+	required string defaultSearchField = 1;
+	repeated FieldConfig fieldConfig = 2;
+	optional LMAnalyzer defaultAnalyzer = 3 [default = LC_KEYWORD];
+	optional bool applyUncommitedDeletes = 4 [default = true];
+	optional double requestFactor = 5 [default = 2.0];
+	optional uint32 minSegmentRequest = 6 [default = 2];
+	optional uint32 idleTimeWithoutCommit = 7 [default = 30000];
+	optional uint32 segmentCommitInterval = 8 [default = 3200];
+	optional bool blockCompression = 9 [default = false];
+	optional double segmentTolerance = 10 [default = 0.001];
+}
+
+message FieldConfig {
+	required string fieldName = 1;
+	optional LMAnalyzer analyzer = 2;
+}
+
+message IndexSettingsResponse {
+
+}
+
+message IndexDeleteRequest {
+	required string indexName = 1;
+}
+
+message IndexDeleteResponse {
+
+}
+
+message InternalIndexRequest {
+    required string uniqueId = 1;
+	repeated LMDoc indexedDocument = 2;
+}
+
+message InternalIndexResponse {
+}
+
+message StoreRequest {
+    required string uniqueId = 1;
+	repeated LMDoc indexedDocument = 2;
+	optional ResultDocument resultDocument = 3;
+	repeated AssociatedDocument associatedDocument = 4;
+	optional bool clearExistingAssociated = 5 [default = false];
+}
+
+message StoreResponse {
+}
+
+message LMDoc {
+	required string indexName = 1;
+	repeated LMField indexedField = 2;
+}
+
+message LMField {
+	required string fieldName = 1;
+	repeated string fieldValue = 2;
+}
+
+message ResultDocument {
+	required string uniqueId = 1;
+	optional bytes document = 2;
+	enum Type {
+		BSON = 0;
+		BINARY = 1;
+		TEXT = 2;
+	}
+	optional Type type = 3 [default = BINARY];
+	optional bool compressed = 4 [default = false];
+	repeated Metadata metadata = 5;
+}
+
+message AssociatedDocument {
+	required string filename = 1;
+	required string documentUniqueId = 2;
+	optional bytes document = 3;
+	optional bool compressed = 4 [default = false];
+	repeated Metadata metadata = 5;
+}
+
+message Metadata {
+	required string key = 1;
+	required string value = 2;
+}
+
+message ScoredResult {
+	required string uniqueId = 1;
+	required float score = 2;
+	required uint32 docId = 3;
+	required string indexName = 4;
+	required uint32 segment = 5;
+}
+
+
+message SegmentResponse {
+    required uint32 segmentNumber = 1;
+    required string indexName = 2;
+    required uint32 totalHits = 3;
+    repeated ScoredResult scoredResult = 4;
+    required bool moreAvailable = 5;
+}
+
+
+message LastIndexResult {
+	required string indexName = 1;
+	repeated ScoredResult lastForSegment = 2;
+}
+
+message LastResult {
+	repeated LastIndexResult lastIndexResult = 1;
+}
+
+message InternalQueryResponse {
+	repeated IndexSegmentResponse indexSegmentResponse = 1;
+}
+
+message IndexSegmentResponse {
+	required string indexName = 1;
+	repeated SegmentResponse segmentReponse = 2;
+}
+
+message QueryRequest {
+	repeated string indexes = 1;
+	required string query = 2;
+	required uint32 amount = 3;
+	optional LastResult lastResult = 4;
+	optional bool fetchFull = 5 [default = false];
+}
+
+
+
+message QueryResponse {
+	required uint64 totalHits = 1;
+	repeated ScoredResult results = 2;
+	required LastResult lastResult = 3;
+}
+
+message InternalDeleteRequest {
+	repeated string indexes = 1;
+    required string uniqueId = 2;
+}
+
+message InternalDeleteResponse {
+
+}
+
+message DeleteRequest {
+	repeated string indexes = 1;
+    required string uniqueId = 2;
+    optional string filename = 3;
+    optional bool deleteDocument = 4 [default = true];
+    optional bool deleteAllAssociated = 5 [default = true];
+}
+
+message DeleteResponse {
+
+}
+
+message FetchRequest {
+    required string uniqueId = 1;
+    optional string fileName = 2;
+    enum FetchType {
+		FULL = 1;
+		META = 2;
+		NONE = 3;
+	}
+    optional FetchType resultFetchType = 3 [default = FULL];
+    optional FetchType associatedFetchType = 4 [default = META];
+}
+
+message FetchResponse {
+	optional ResultDocument resultDocument = 1;
+	repeated AssociatedDocument associatedDocument = 2;
+}
+
+
+
+
+

@@ -1,0 +1,18 @@
+dependencies {	
+    //compile project(':lumongo-common') //pulled in by client
+    compile project(':lumongo-storage')	
+	compile project(':lumongo-client') //needed for admin
+	compile 'com.hazelcast:hazelcast:2.0.2'
+    compile 'commons-pool:commons-pool:1.6'
+    compile 'net.sf.jopt-simple:jopt-simple:4.3'									
+}
+							
+task createDeployment(dependsOn: jar, type: Copy) {
+    into "$projectDir/deploy"
+    from configurations.runtime
+    from configurations.archives.allArtifacts.files
+    from (project.file("scripts")) {
+        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens : [ 'version': version.toString() , 'project' : rootProject.name ])
+    }
+}
+						

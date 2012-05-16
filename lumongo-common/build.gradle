@@ -1,0 +1,47 @@
+
+defaultTasks 'compileProto', 'build'
+
+dependencies {
+	compile 'org.mongodb:mongo-java-driver:2.7.3'
+	compile 'com.google.protobuf:protobuf-java:2.4.1'
+	compile 'com.googlecode.protobuf-rpc-pro:protobuf-rpc-pro-duplex:1.2.0'
+	compile 'log4j:log4j:1.2.16'
+}
+
+
+sourceSets {
+	main { java { srcDir 'gen-src' } }
+}
+
+
+task compileProto << {
+	File outputDir = project.file("gen-src")
+	File protoDir = project.file("proto")
+	String protocCommand = "protoc"
+	if (protoDir.isDirectory() && protoDir.exists()) {
+		
+		String[] protos = protoDir.list()
+		
+		for (String proto : protos) {
+			if (proto.endsWith(".proto")) {
+				String protoFull = protoDir.getAbsolutePath() + File.separator + proto
+				println("Compiling proto in <" + protoFull + "> to <" + outputDir.getAbsolutePath() + ">")
+				exec {
+					setStandardOutput(System.out)
+					executable protocCommand
+					args '--proto_path=' + protoDir.getAbsolutePath(), '--java_out=' + outputDir.getAbsolutePath(), protoFull
+				}
+			}
+		}
+	}
+	else {
+		println("Error: " + protoDir.getAbsolutePath() + " does not exist or is not a directory")
+	}
+}
+
+uploadArchives {
+	repositories {
+		mavenDeployer { pom.artifactId = 'lumongo-common' }
+	}
+}
+

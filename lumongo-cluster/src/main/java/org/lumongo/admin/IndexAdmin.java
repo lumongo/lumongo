@@ -1,0 +1,156 @@
+package org.lumongo.admin;
+
+import java.util.Arrays;
+
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import joptsimple.OptionSpec;
+
+import org.lumongo.admin.help.LumongoHelpFormatter;
+import org.lumongo.admin.help.RequiredOptionException;
+import org.lumongo.client.LumongoClient;
+import org.lumongo.client.config.LumongoClientConfig;
+import org.lumongo.cluster.message.Lumongo.ClearResponse;
+import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
+import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
+import org.lumongo.cluster.message.Lumongo.GetMembersResponse;
+import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
+import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
+import org.lumongo.cluster.message.Lumongo.LMMember;
+import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
+import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
+import org.lumongo.util.LogUtil;
+
+public class IndexAdmin {
+	private static final String ADDRESS = "address";
+	private static final String PORT = "port";
+	private static final String INDEX = "index";
+	private static final String COMMAND = "command";
+	private static final String FIELD = "field";
+	
+	public static enum Command {
+		clear,
+		optimize,
+		getCount,
+		getFields,
+		getValues,
+		getIndexes,
+		getCurrentMembers
+	}
+	
+	public static void main(String[] args) throws Exception {
+		LogUtil.loadLogConfig();
+		
+		OptionParser parser = new OptionParser();
+		OptionSpec<String> addressArg = parser.accepts(ADDRESS).withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
+		OptionSpec<Integer> portArg = parser.accepts(PORT).withRequiredArg().ofType(Integer.class).defaultsTo(32191).describedAs("Lumongo external port");
+		OptionSpec<String> indexArg = parser.accepts(INDEX).withRequiredArg().describedAs("Index to perform action");
+		OptionSpec<Command> commandArg = parser.accepts(COMMAND).withRequiredArg().ofType(Command.class).required()
+				.describedAs("Command to run " + Arrays.toString(Command.values()));
+		
+		OptionSpec<String> fieldArg = parser.accepts(FIELD).withRequiredArg().describedAs("Field to perform action");
+		
+		LumongoClient client = null;
+		
+		try {
+			OptionSet options = parser.parse(args);
+			
+			Command command = options.valueOf(commandArg);
+			String index = options.valueOf(indexArg);
+			String address = options.valueOf(addressArg);
+			int port = options.valueOf(portArg);
+			String field = options.valueOf(fieldArg);
+			
+			LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
+			lumongoClientConfig.addMember(address, port);
+			client = new LumongoClient(lumongoClientConfig);
+			
+			if (Command.getCount.equals(command)) {
+				if (index == null) {
+					throw new RequiredOptionException(INDEX, command.toString());
+				}
+				
+				GetNumberOfDocsResponse response = client.getNumberOfDocs(index);
+				System.out.println("Segments:\n" + response.getSegmentCountResponseCount());
+				System.out.println("Count:\n" + response.getNumberOfDocs());
+				for (SegmentCountResponse scr : response.getSegmentCountResponseList()) {
+					System.out.println("Segment " + scr.getSegmentNumber() + " Count:\n" + scr.getNumberOfDocs());
+				}
+			}
+			else if (Command.getFields.equals(command)) {
+				if (index == null) {
+					throw new RequiredOptionException(INDEX, command.toString());
+				}
+				
+				GetFieldNamesResponse response = client.getFieldNames(index);
+				for (String fn : response.getFieldNameList()) {
+					System.out.println(fn);
+				}
+			}
+			else if (Command.optimize.equals(command)) {
+				if (index == null) {
+					throw new RequiredOptionException(INDEX, command.toString());
+				}
+				
+				System.out.println("Optimizing Index:\n" + index);
+				@SuppressWarnings("unused")
+				OptimizeResponse response = client.optimizeIndex(index);
+				System.out.println("Done");
+			}
+			else if (Command.clear.equals(command)) {
+				if (index == null) {
+					throw new RequiredOptionException(INDEX, command.toString());
+				}
+				System.out.println("Clearing Index:\n" + index);
+				@SuppressWarnings("unused")
+				ClearResponse response = client.clearIndex(index);
+				System.out.println("Done");
+			}
+			else if (Command.getValues.equals(command)) {
+				if (index == null) {
+					throw new RequiredOptionException(INDEX, command.toString());
+				}
+				if (field == null) {
+					throw new RequiredOptionException(FIELD, command.toString());
+				}
+				GetTermsResponse response = client.getTerms(index, field);
+				
+				for (String val : response.getValueList()) {
+					System.out.println(val);
+				}
+			}
+			else if (Command.getIndexes.equals(command)) {
+				
+				GetIndexesResponse response = client.getIndexes();
+				
+				for (String val : response.getIndexNameList()) {
+					System.out.println(val);
+				}
+			}
+			else if (Command.getCurrentMembers.equals(command)) {
+				
+				GetMembersResponse response = client.getCurrentMembers();
+				
+				System.out.println("serverAddress\thazelcastPort\tinternalPort\texternalPort");
+				for (LMMember val : response.getMemberList()) {
+					System.out.println(val.getServerAddress() + "\t" + val.getHazelcastPort() + "\t" + val.getInternalPort() + "\t" + val.getExternalPort());
+				}
+			}
+			else {
+				System.err.println(command + " not supported");
+			}
+			
+		}
+		catch (OptionException e) {
+			System.err.println("ERROR: " + e.getMessage());
+			parser.formatHelpWith(new LumongoHelpFormatter());
+			parser.printHelpOn(System.err);
+		}
+		finally {
+			if (client != null) {
+				client.close();
+			}
+		}
+	}
+}
