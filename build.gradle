@@ -1,37 +1,35 @@
 
+defaultTasks 'eclipse', 'compileProto', 'createDeployment'
+
 subprojects {
 	apply plugin: 'java'
 	apply plugin: 'eclipse'
 	apply plugin: 'maven'
-
-
+	
+	
 	sourceCompatibility = 1.7
 	targetCompatibility = 1.7
-
+	
 	version = '0.10'
 	group = 'org.lumongo'
-
-	configurations {
-		deployerJars
-	}
-
-	repositories {
-		mavenCentral()
-	}
-
+	
+	configurations { deployerJars }
+	
+	repositories { mavenCentral() }
+	
 	test {
 		useTestNG()
-	
+		
 		systemProperty 'mongoServer', 'localhost'
 		systemProperty 'mongoPort', '27017'
-	
+		
 		//tweaking memory settings for the forked vm that runs tests
 		jvmArgs '-Xmx512m'
-	
+		
 		beforeTest { descriptor ->
 			logger.lifecycle("\n\nRunning test: " + descriptor)
 		}
-	
+		
 		afterTest { descriptor ->
 			logger.lifecycle("\nFinished test: " + descriptor + "\n\n")
 		}
@@ -41,53 +39,47 @@ subprojects {
 		}
 		workingDir = 'build/'
 	}
-
+	
 	dependencies {
 		testCompile 'org.testng:testng:5.10:jdk15'
 		deployerJars 'org.apache.maven.wagon:wagon-ssh:1.0-beta-2'
 	}
-
+	
 	sourceSets {
-		main {
-			resources { srcDir 'src/main/java' }
-		}
-		test {
-			resources { srcDir 'src/test/java' }			
-		}
+		main { resources { srcDir 'src/main/java' } }
+		test { resources { srcDir 'src/test/java' }			 }
 	}
-
+	
 	task sourcesJar(type: Jar, dependsOn:classes) {
 		classifier = 'sources'
 		from sourceSets.main.allSource
 	}
-
-	artifacts {
-	        archives sourcesJar
-	}
-
+	
+	artifacts { archives sourcesJar }
+	
 	compileJava {
 		options.debug = true
 		options.debugOptions.debugLevel = "source,lines,vars"
 	}
-
+	
 	uploadArchives {
 		repositories {
 			mavenDeployer {
-			configuration = configurations.deployerJars
-			repository(url: "scp://lumongo.org/maven")
-			pom.groupId = 'org.lumongo'
-			pom.project {
-				licenses {
-					license {
-						name 'The Apache Software License, Version 2.0'
-						url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-						distribution 'repo'
+				configuration = configurations.deployerJars
+				repository(url: "scp://lumongo.org/maven")
+				pom.groupId = 'org.lumongo'
+				pom.project {
+					licenses {
+						license {
+							name 'The Apache Software License, Version 2.0'
+							url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+							distribution 'repo'
+						}
 					}
 				}
 			}
 		}
 	}
-}
-
-
+	
+	
 }

@@ -6,13 +6,26 @@ dependencies {
     compile 'commons-pool:commons-pool:1.6'
     compile 'net.sf.jopt-simple:jopt-simple:4.3'									
 }
-							
+
+jar {
+	doFirst {
+		String jarClassPath = ""
+		for (File file : sourceSets.main.compileClasspath) {
+			jarClassPath += " " + file.name
+		}
+		manifest {
+			attributes("Class-Path" : jarClassPath,
+					"Main-Class" : "org.lumongo.server.StartNode")
+		}
+	}
+}
+				
 task createDeployment(dependsOn: jar, type: Copy) {
     into "$projectDir/deploy"
     from configurations.runtime
     from configurations.archives.allArtifacts.files
     from (project.file("scripts")) {
-        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens : [ 'version': version.toString() , 'project' : rootProject.name ])
+        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens : [ 'version': version.toString() , 'project' : project.name ])
     }
 }
 						
