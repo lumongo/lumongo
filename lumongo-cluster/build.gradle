@@ -19,11 +19,23 @@ jar {
 		}
 	}
 }
-				
-task createDeployment(dependsOn: jar, type: Copy) {
-    into "$projectDir/deploy"
+
+
+task createArchive(dependsOn: jar, type: Tar) {
+    compression = Compression.GZIP
+    destinationDir = rootProject.file("archives")
     from configurations.runtime
-    from configurations.archives.allArtifacts.files
+    from configurations.archives.allArtifacts.findAll { !"sources".equals(it.classifier)}.file
+    from (project.file("scripts")) {
+        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens : [ 'version': version.toString() , 'project' : project.name ])
+    }
+
+}
+				
+task createDeploy(dependsOn: jar, type: Copy) {
+    into rootProject.file("deploy")
+    from configurations.runtime
+	from configurations.archives.allArtifacts.findAll { !"sources".equals(it.classifier)}.file
     from (project.file("scripts")) {
         filter(org.apache.tools.ant.filters.ReplaceTokens, tokens : [ 'version': version.toString() , 'project' : project.name ])
     }
