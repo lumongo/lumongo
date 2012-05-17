@@ -60,7 +60,7 @@ public abstract class SocketRequestFederator<I, O> {
 			catch (Exception e) {
 				Throwable cause = e.getCause();
 				if (cause instanceof Exception) {
-					throw e;
+					throw (Exception) cause;
 				}
 				
 				throw e;
