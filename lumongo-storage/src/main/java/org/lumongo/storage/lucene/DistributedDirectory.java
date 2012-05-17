@@ -43,6 +43,10 @@ public class DistributedDirectory extends Directory {
 		return new DistributedIndexInput(nosqlFile);
 	}
 	
+	public void flushReadyFiles() throws IOException {
+		nosqlDirectory.flushReadyFiles();
+	}
+	
 	@Override
 	public String[] listAll() throws IOException {
 		ensureOpen();

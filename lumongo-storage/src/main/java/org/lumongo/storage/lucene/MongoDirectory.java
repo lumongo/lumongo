@@ -316,4 +316,13 @@ public class MongoDirectory implements NosqlDirectory {
 		return "MongoDirectory [dbname=" + dbname + ", indexName=" + indexName + ", blockSize=" + blockSize + "]";
 	}
 	
+	@Override
+	public void flushReadyFiles() throws IOException {
+		for (String filename : nameToFileMap.keySet()) {
+			if (nameToFileMap.get(filename).isFlushReady()) {
+				nameToFileMap.get(filename).flush();
+			}
+		}
+	}
+	
 }
