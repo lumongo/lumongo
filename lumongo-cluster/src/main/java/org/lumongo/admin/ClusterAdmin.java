@@ -80,22 +80,32 @@ public class ClusterAdmin {
 			}
 			
 			if (Command.createCluster.equals(command)) {
+				System.out.println("Creating cluster in database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost() + ">");
 				if (clusterConfig == null) {
 					throw new RequiredOptionException(CLUSTER_CONFIG, command.toString());
 				}
 				ClusterHelper.saveClusterConfig(mongoConfig, clusterConfig);
+				System.out.println("Created cluster");
 			}
 			else if (Command.updateCluster.equals(command)) {
+				System.out.println("Updating cluster in database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost() + ">");
 				if (clusterConfig == null) {
 					throw new RequiredOptionException(CLUSTER_CONFIG, command.toString());
 				}
 				ClusterHelper.saveClusterConfig(mongoConfig, clusterConfig);
 			}
 			else if (Command.removeCluster.equals(command)) {
+				System.out.println("Removing cluster from database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost()
+						+ ">");
 				ClusterHelper.removeClusterConfig(mongoConfig);
 			}
 			else if (Command.showCluster.equals(command)) {
-				System.out.println(ClusterHelper.getClusterConfig(mongoConfig));
+				try {
+					System.out.println(ClusterHelper.getClusterConfig(mongoConfig));
+				}
+				catch (Exception e) {
+					System.out.println(e.getMessage());
+				}
 			}
 			else if (Command.registerNode.equals(command)) {
 				if (localNodeConfig == null) {
@@ -103,21 +113,22 @@ public class ClusterAdmin {
 				}
 				if (serverAddress == null) {
 					serverAddress = ServerNameHelper.getLocalServer();
-					System.out.println("Using <" + serverAddress + "> as the server address.  If this is not correct please specify on command line");
-					
 				}
+				
+				System.out.println("Registering node with server address <" + serverAddress + ">");
 				
 				ClusterHelper.registerNode(mongoConfig, localNodeConfig, serverAddress);
 			}
 			else if (Command.removeNode.equals(command)) {
 				if (serverAddress == null) {
 					serverAddress = ServerNameHelper.getLocalServer();
-					System.out.println("Using <" + serverAddress + "> as the server address.  If this is not correct please specify on command line");
 				}
 				
 				if (hazelcastPort == null) {
 					hazelcastPort = LumongoConstants.DEFAULT_HAZELCAST_PORT;
 				}
+				
+				System.out.println("Removing node with server address <" + serverAddress + "> and hazelcastPort <" + hazelcastPort + ">");
 				
 				ClusterHelper.removeNode(mongoConfig, serverAddress, hazelcastPort);
 			}
