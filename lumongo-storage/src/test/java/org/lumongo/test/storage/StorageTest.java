@@ -149,6 +149,11 @@ public class StorageTest {
 			StandardAnalyzer analyzer = new StandardAnalyzer(LuceneConstants.VERSION);
 			IndexWriterConfig config = new IndexWriterConfig(LuceneConstants.VERSION, analyzer);
 			IndexWriter w = new IndexWriter(directory, config);
+			
+			boolean applyDeletes = true;
+			@SuppressWarnings("unused")
+			IndexReader ir = IndexReader.open(w, applyDeletes);
+			
 			w.close();
 			
 		}
