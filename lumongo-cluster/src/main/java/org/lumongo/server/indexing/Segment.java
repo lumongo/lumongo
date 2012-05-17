@@ -32,7 +32,7 @@ import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 import org.lumongo.server.config.IndexConfig;
-import org.lumongo.storage.lucene.NosqlDirectory;
+import org.lumongo.storage.lucene.DistributedDirectory;
 
 public class Segment {
 	private final static Logger log = Logger.getLogger(Segment.class);
@@ -135,10 +135,10 @@ public class Segment {
 	
 	public void forceCommit() throws CorruptIndexException, IOException {
 		long currentTime = System.currentTimeMillis();
-		((NosqlDirectory) indexWriter.getDirectory()).flushReadyFiles();
+		((DistributedDirectory) indexWriter.getDirectory()).flushReadyFiles();
 		indexWriter.commit();
 		lastCommit = currentTime;
-		((NosqlDirectory) indexWriter.getDirectory()).flushReadyFiles();
+		((DistributedDirectory) indexWriter.getDirectory()).flushReadyFiles();
 	}
 	
 	public void doCommit() throws CorruptIndexException, IOException {
