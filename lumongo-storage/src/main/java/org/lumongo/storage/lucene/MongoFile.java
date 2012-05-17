@@ -55,9 +55,9 @@ public class MongoFile implements NosqlFile {
 	private Cache<Integer, MongoBlock> dirtyBlocks;
 	private LoadingCache<Integer, MongoBlock> cache;
 	private boolean compressed;
-	private boolean flushReady;
 	
 	protected MongoFile(MongoDirectory mongoDirectory, String fileName, int fileNumber, int blockSize, boolean compressed) {
+		
 		this.mongoDirectory = mongoDirectory;
 		this.fileName = fileName;
 		this.fileNumber = fileNumber;
@@ -68,7 +68,6 @@ public class MongoFile implements NosqlFile {
 		this.compressed = compressed;
 		
 		this.blockLocks = new ConcurrentHashMap<Integer, Lock>();
-		this.flushReady = false;
 		
 		RemovalListener<Integer, MongoBlock> removalListener = new RemovalListener<Integer, MongoBlock>() {
 			
@@ -291,8 +290,6 @@ public class MongoFile implements NosqlFile {
 		dirtyBlocks.invalidateAll(dirtyBlockKeys);
 		
 		mongoDirectory.updateFileMetadata(this);
-		
-		flushReady = false;
 	}
 	
 	private MongoBlock getBlock(Integer blockNumber, boolean createIfNotExist) throws IOException {
@@ -388,16 +385,5 @@ public class MongoFile implements NosqlFile {
 	@Override
 	public boolean isCompressed() {
 		return compressed;
-	}
-	
-	@Override
-	public synchronized void flagForFlush() throws IOException {
-		this.flushReady = true;
-		mongoDirectory.updateFileMetadata(this);
-	}
-	
-	@Override
-	public synchronized boolean isFlushReady() {
-		return flushReady;
 	}
 }
