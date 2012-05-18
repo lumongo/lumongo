@@ -146,7 +146,7 @@ public class Segment {
 		// if changes since started
 		
 		if (lastCh != null) {
-			if ((currentTime - lastCh) > indexConfig.getIdleTimeWithoutCommit()) {
+			if ((currentTime - lastCh) > (indexConfig.getIdleTimeWithoutCommit() * 1000)) {
 				if (lastCommit == null || lastCh > lastCommit) {
 					log.info("Flushing segment <" + segmentNumber + "> for index <" + indexName + ">");
 					forceCommit();

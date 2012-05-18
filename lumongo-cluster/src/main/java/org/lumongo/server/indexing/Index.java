@@ -144,7 +144,7 @@ public class Index {
 			
 		};
 		
-		commitTimer.scheduleAtFixedRate(commitTask, 0, 1000);
+		commitTimer.scheduleAtFixedRate(commitTask, 1000, 1000);
 		
 	}
 	
