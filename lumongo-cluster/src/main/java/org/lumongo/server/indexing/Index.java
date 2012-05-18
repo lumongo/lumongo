@@ -192,7 +192,7 @@ public class Index {
 			return new StandardAnalyzer(LuceneConstants.VERSION);
 		}
 		
-		throw new Exception("Unsupport analyzer <" + lmAnalyzer + "> using standard analyzer");
+		throw new Exception("Unsupport analyzer <" + lmAnalyzer + ">");
 		
 	}
 	
