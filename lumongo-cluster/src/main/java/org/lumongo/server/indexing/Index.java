@@ -151,6 +151,7 @@ public class Index {
 	public void updateIndexSettings(IndexSettings request) {
 		indexLock.writeLock().lock();
 		try {
+			log.info("Updating index settings for <" + indexName + ">: " + request);
 			indexConfig.configure(request);
 			storeIndexSettings();
 		}

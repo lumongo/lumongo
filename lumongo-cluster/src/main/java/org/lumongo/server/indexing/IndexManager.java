@@ -310,6 +310,8 @@ public class IndexManager {
 		try {
 			String indexName = request.getIndexName();
 			
+			log.info("Deleting index <" + indexName + ">");
+			
 			Index i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
@@ -364,13 +366,20 @@ public class IndexManager {
 	
 	public void shutdown() {
 		
-		// TODO revisit this
+		//TODO configure
+		int waitSeconds = 10;
+		
+		log.info("Waiting for lock");
 		boolean locked = false;
 		try {
-			locked = globalLock.writeLock().tryLock(5, TimeUnit.SECONDS);
+			locked = globalLock.writeLock().tryLock(waitSeconds, TimeUnit.SECONDS);
 		}
 		catch (InterruptedException e1) {
 			
+		}
+		
+		if (!locked) {
+			log.info("Failed to get lock within <" + waitSeconds + "> seconds");
 		}
 		
 		try {
@@ -603,9 +612,20 @@ public class IndexManager {
 				indexForMember.get(m).add(lmDoc);
 			}
 			
-			// TODO: only delete from indexes document is in?
-			// this could cause deadlocks because it distributes across servers
-			deleteFromIndex(uniqueId, indexMap.keySet());
+			// TODO: only delete from indexes document is in? configurable?
+			{
+				Set<String> deleteIndexNames = new HashSet<String>();
+				for (String indexName : indexMap.keySet()) {
+					if (!indexNames.contains(indexName)) {
+						deleteIndexNames.add(indexName);
+					}
+				}
+				
+				if (!deleteIndexNames.isEmpty()) {
+					deleteFromIndex(uniqueId, deleteIndexNames);
+				}
+				
+			}
 			
 			Member self = hazelcastManager.getSelf();
 			
