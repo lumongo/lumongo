@@ -3,7 +3,6 @@ package org.lumongo.util;
 import java.net.URL;
 
 import org.apache.log4j.PropertyConfigurator;
-import org.lumongo.server.LuceneNode;
 
 public class LogUtil {
 	
@@ -20,7 +19,7 @@ public class LogUtil {
 			
 			if (!loaded) {
 				String propPath = "/etc/loglevel.properties";
-				URL url = LuceneNode.class.getResource(propPath);
+				URL url = LogUtil.class.getResource(propPath);
 				if (url == null) {
 					throw new Exception("Cannot find log properties file: " + propPath);
 				}
