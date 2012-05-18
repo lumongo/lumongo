@@ -144,7 +144,7 @@ public class Index {
 			
 		};
 		
-		commitTimer.scheduleAtFixedRate(commitTask, indexConfig.getIdleTimeWithoutCommit() * 1000, 1000);
+		commitTimer.scheduleAtFixedRate(commitTask, 0, 1000);
 		
 	}
 	
@@ -302,6 +302,7 @@ public class Index {
 			log.info("Canceling timers for <" + indexName + ">");
 			commitTask.cancel();
 			commitTimer.cancel();
+			log.info("Commiting <" + indexName + ">");
 			doCommit(true);
 			
 			log.info("Shutting segment pool for <" + indexName + ">");

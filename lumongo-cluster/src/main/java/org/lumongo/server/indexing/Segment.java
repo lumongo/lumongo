@@ -144,8 +144,8 @@ public class Segment {
 		
 		Long lastCh = lastChange;
 		// if changes since started
+		
 		if (lastCh != null) {
-			
 			if ((currentTime - lastCh) > indexConfig.getIdleTimeWithoutCommit()) {
 				if (lastCommit == null || lastCh > lastCommit) {
 					log.info("Flushing segment <" + segmentNumber + "> for index <" + indexName + ">");
