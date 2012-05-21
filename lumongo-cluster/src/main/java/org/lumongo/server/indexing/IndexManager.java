@@ -828,7 +828,11 @@ public class IndexManager {
 	public GetNumberOfDocsResponse getNumberOfDocs(GetNumberOfDocsRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			Index i = indexMap.get(request.getIndexName());
+			String indexName = request.getIndexName();
+			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
 			int numberOfSegments = i.getNumberOfSegments();
 			
 			SocketRequestFederator<GetNumberOfDocsRequest, GetNumberOfDocsResponse> federator = new SocketRequestFederator<GetNumberOfDocsRequest, GetNumberOfDocsResponse>(
@@ -913,6 +917,9 @@ public class IndexManager {
 		try {
 			String indexName = request.getIndexName();
 			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
 			i.clear();
 			return ClearResponse.newBuilder().build();
 		}
@@ -955,6 +962,9 @@ public class IndexManager {
 		try {
 			String indexName = request.getIndexName();
 			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
 			i.optimize();
 			return OptimizeResponse.newBuilder().build();
 		}
@@ -1001,6 +1011,9 @@ public class IndexManager {
 		try {
 			String indexName = request.getIndexName();
 			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
 			return i.getFieldNames();
 		}
 		finally {
@@ -1053,6 +1066,9 @@ public class IndexManager {
 		try {
 			String indexName = request.getIndexName();
 			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
 			return i.getTerms(request);
 		}
 		finally {
