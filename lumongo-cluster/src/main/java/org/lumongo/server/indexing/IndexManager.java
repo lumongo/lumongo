@@ -787,10 +787,13 @@ public class IndexManager {
 		try {
 			
 			InternalQueryResponse.Builder internalQueryResponseBuilder = InternalQueryResponse.newBuilder();
-			for (String index : queryMap.keySet()) {
+			for (String indexName : queryMap.keySet()) {
 				
-				Index i = indexMap.get(index);
-				Query query = queryMap.get(index);
+				Index i = indexMap.get(indexName);
+				if (i == null) {
+					throw new IndexDoesNotExist(indexName);
+				}
+				Query query = queryMap.get(indexName);
 				IndexSegmentResponse isr = i.queryInternal(query, request);
 				internalQueryResponseBuilder.addIndexSegmentResponse(isr);
 			}
@@ -817,7 +820,11 @@ public class IndexManager {
 	public GetNumberOfDocsResponse getNumberOfDocsInternal(GetNumberOfDocsRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			Index i = indexMap.get(request.getIndexName());
+			String indexName = request.getIndexName();
+			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
 			return i.getNumberOfDocs();
 		}
 		finally {
