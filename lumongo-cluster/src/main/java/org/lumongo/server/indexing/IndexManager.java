@@ -590,55 +590,56 @@ public class IndexManager {
 		try {
 			
 			String uniqueId = storeRequest.getUniqueId();
-			
-			Set<String> indexNames = new HashSet<String>();
-			HashMap<Member, List<LMDoc>> indexForMember = new HashMap<Member, List<LMDoc>>();
-			for (LMDoc lmDoc : storeRequest.getIndexedDocumentList()) {
-				String indexName = lmDoc.getIndexName();
-				if (indexNames.contains(indexName)) {
-					throw new Exception("Can not store a document for twice for index <" + indexName + ">");
-				}
-				indexNames.add(indexName);
-				
-				Index i = indexMap.get(indexName);
-				if (i == null) {
-					throw new IndexDoesNotExist(indexName);
-				}
-				Member m = i.findMember(uniqueId);
-				
-				if (!indexForMember.containsKey(m)) {
-					indexForMember.put(m, new ArrayList<LMDoc>());
-				}
-				indexForMember.get(m).add(lmDoc);
-			}
-			
-			// TODO: only delete from indexes document is in? configurable?
-			{
-				Set<String> deleteIndexNames = new HashSet<String>();
-				for (String indexName : indexMap.keySet()) {
-					if (!indexNames.contains(indexName)) {
-						deleteIndexNames.add(indexName);
+			if (storeRequest.getIndexedDocumentCount() > 0) {
+				Set<String> indexNames = new HashSet<String>();
+				HashMap<Member, List<LMDoc>> indexForMember = new HashMap<Member, List<LMDoc>>();
+				for (LMDoc lmDoc : storeRequest.getIndexedDocumentList()) {
+					String indexName = lmDoc.getIndexName();
+					if (indexNames.contains(indexName)) {
+						throw new Exception("Can not store a document for twice for index <" + indexName + ">");
 					}
+					indexNames.add(indexName);
+					
+					Index i = indexMap.get(indexName);
+					if (i == null) {
+						throw new IndexDoesNotExist(indexName);
+					}
+					Member m = i.findMember(uniqueId);
+					
+					if (!indexForMember.containsKey(m)) {
+						indexForMember.put(m, new ArrayList<LMDoc>());
+					}
+					indexForMember.get(m).add(lmDoc);
 				}
 				
-				if (!deleteIndexNames.isEmpty()) {
-					deleteFromIndex(uniqueId, deleteIndexNames);
+				// TODO: only delete from indexes document is in? configurable?
+				{
+					Set<String> deleteIndexNames = new HashSet<String>();
+					for (String indexName : indexMap.keySet()) {
+						if (!indexNames.contains(indexName)) {
+							deleteIndexNames.add(indexName);
+						}
+					}
+					
+					if (!deleteIndexNames.isEmpty()) {
+						deleteFromIndex(uniqueId, deleteIndexNames);
+					}
+					
 				}
 				
-			}
-			
-			Member self = hazelcastManager.getSelf();
-			
-			for (Member m : indexForMember.keySet()) {
+				Member self = hazelcastManager.getSelf();
 				
-				if (!self.equals(m)) {
-					InternalIndexRequest.Builder iir = InternalIndexRequest.newBuilder();
-					iir.setUniqueId(uniqueId);
-					iir.addAllIndexedDocument(indexForMember.get(m));
-					internalClient.executeIndex(m, iir.build());
-				}
-				else {
-					internalIndex(uniqueId, indexForMember.get(m));
+				for (Member m : indexForMember.keySet()) {
+					
+					if (!self.equals(m)) {
+						InternalIndexRequest.Builder iir = InternalIndexRequest.newBuilder();
+						iir.setUniqueId(uniqueId);
+						iir.addAllIndexedDocument(indexForMember.get(m));
+						internalClient.executeIndex(m, iir.build());
+					}
+					else {
+						internalIndex(uniqueId, indexForMember.get(m));
+					}
 				}
 			}
 			
