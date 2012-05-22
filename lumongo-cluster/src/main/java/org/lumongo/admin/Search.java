@@ -47,9 +47,17 @@ public class Search {
 			LumongoClient client = new LumongoClient(lumongoClientConfig);
 			
 			try {
+				//force connect
+				client.openConnection();
+				
+				long startTime = System.currentTimeMillis();
+				
 				QueryResponse qr = client.query(query, amount, index);
 				List<ScoredResult> srList = qr.getResultsList();
 				
+				long endTime = System.currentTimeMillis();
+				
+				System.out.println("QueryTime: " + (endTime - startTime) + "ms");
 				System.out.println("TotalResults: " + qr.getTotalHits());
 				
 				System.out.print("UniqueId");

@@ -94,6 +94,34 @@ public class LumongoClient {
 		
 	}
 	
+	public void openConnection() throws Exception {
+		openConnection(retryCount);
+	}
+	
+	protected void openConnection(int retries) throws Exception {
+		
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			
+			getCurrentMembers();
+			
+		}
+		catch (Exception e) {
+			
+			System.err.println("ERROR: Open connection failed on server <" + members.get(myServerIndex).getServerAddress() + ">: " + e);
+			cycleServers();
+			
+			if (retries > 0) {
+				openConnection(retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+	
 	public void updateMembers(List<LMMember> members) {
 		if (members == null || members.isEmpty()) {
 			throw new IllegalArgumentException("At least one member must be given");
