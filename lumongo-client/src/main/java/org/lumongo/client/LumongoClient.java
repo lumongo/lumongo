@@ -105,6 +105,7 @@ public class LumongoClient {
 				service = getInternalBlockingConnection();
 			}
 			
+			//force something to happen
 			getCurrentMembers();
 			
 		}
