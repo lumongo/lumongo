@@ -115,7 +115,7 @@ public class SimpleHttpHandler implements HttpHandler {
 			
 			List<String> agents = ex.getRequestHeaders().get(USER_AGENT);
 			
-			//disable chunk encoding for wget
+			//disable chunked encoding for wget
 			if (agents != null && agents.size() == 1 && agents.get(0).contains(WGET_AGENT)) {
 				ex.sendResponseHeaders(200, bytes.length);
 			}
