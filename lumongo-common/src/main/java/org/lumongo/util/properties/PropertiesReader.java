@@ -96,4 +96,8 @@ public class PropertiesReader {
 		throw new PropertyException(this.name, key, "Failed to find key.");
 	}
 	
+	public boolean hasKey(String key) {
+		return (properties.getProperty(key) != null);
+	}
+	
 }

@@ -1,10 +1,14 @@
 package org.lumongo.storage.rawfiles;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.zip.DeflaterInputStream;
+import java.util.zip.InflaterInputStream;
 
 import org.bson.BSON;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
@@ -181,6 +185,30 @@ public class MongoDocumentStorage implements DocumentStorage {
 		coll.remove(search, documentWriteConcern);
 	}
 	
+	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, HashMap<String, String> metadataMap)
+			throws Exception {
+		GridFS gridFS = createGridFSConnection();
+		
+		if (compress) {
+			is = new DeflaterInputStream(is);
+		}
+		
+		GridFSFile gFile = gridFS.createFile(is);
+		gFile.put(MongoConstants.StandardFields._ID, getGridFsId(uniqueId, fileName));
+		gFile.put(FILENAME, fileName);
+		
+		DBObject metadata = new BasicDBObject();
+		if (metadataMap != null) {
+			for (String key : metadataMap.keySet()) {
+				metadata.put(key, metadataMap.get(key));
+			}
+		}
+		metadata.put(COMPRESSED, compress);
+		metadata.put(UNIQUE_ID_KEY, uniqueId);
+		gFile.setMetaData(metadata);
+		gFile.save();
+	}
+	
 	@Override
 	public void storeAssociatedDocument(AssociatedDocument doc) throws Exception {
 		GridFS gridFS = createGridFSConnection();
@@ -196,8 +224,8 @@ public class MongoDocumentStorage implements DocumentStorage {
 		DBObject metadata = new BasicDBObject();
 		for (Metadata meta : doc.getMetadataList()) {
 			metadata.put(meta.getKey(), meta.getValue());
-			metadata.put(COMPRESSED, doc.getCompressed());
 		}
+		metadata.put(COMPRESSED, doc.getCompressed());
 		metadata.put(UNIQUE_ID_KEY, doc.getDocumentUniqueId());
 		gFile.setMetaData(metadata);
 		gFile.save();
@@ -223,10 +251,32 @@ public class MongoDocumentStorage implements DocumentStorage {
 	}
 	
 	@Override
-	public AssociatedDocument getAssociatedDocument(String uniqueId, String filename, FetchType fetchType) throws Exception {
+	public InputStream getAssociatedDocumentStream(String uniqueId, String fileName) {
+		GridFS gridFS = createGridFSConnection();
+		GridFSDBFile file = gridFS.findOne(new BasicDBObject(MongoConstants.StandardFields._ID, getGridFsId(uniqueId, fileName)));
+		
+		if (file == null) {
+			return null;
+		}
+		
+		InputStream is = file.getInputStream();
+		
+		DBObject metadata = file.getMetaData();
+		if (metadata.containsField(COMPRESSED)) {
+			boolean compressed = (boolean) metadata.removeField(COMPRESSED);
+			if (compressed) {
+				is = new InflaterInputStream(is);
+			}
+		}
+		
+		return is;
+	}
+	
+	@Override
+	public AssociatedDocument getAssociatedDocument(String uniqueId, String fileName, FetchType fetchType) throws Exception {
 		GridFS gridFS = createGridFSConnection();
 		if (!FetchType.NONE.equals(fetchType)) {
-			GridFSDBFile file = gridFS.findOne(new BasicDBObject(MongoConstants.StandardFields._ID, getGridFsId(uniqueId, filename)));
+			GridFSDBFile file = gridFS.findOne(new BasicDBObject(MongoConstants.StandardFields._ID, getGridFsId(uniqueId, fileName)));
 			if (null != file) {
 				return loadGridFSToAssociatedDocument(file, fetchType);
 			}

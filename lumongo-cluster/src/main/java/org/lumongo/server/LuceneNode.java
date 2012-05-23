@@ -1,6 +1,6 @@
 package org.lumongo.server;
 
-import java.net.UnknownHostException;
+import java.io.IOException;
 
 import org.jboss.netty.channel.ChannelException;
 import org.lumongo.server.config.ClusterConfig;
@@ -11,6 +11,7 @@ import org.lumongo.server.connection.ExternalServiceHandler;
 import org.lumongo.server.connection.InternalServiceHandler;
 import org.lumongo.server.hazelcast.HazelcastManager;
 import org.lumongo.server.indexing.IndexManager;
+import org.lumongo.server.rest.RestServiceManager;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LogUtil;
@@ -33,6 +34,8 @@ public class LuceneNode {
 	private final IndexManager indexManager;
 	private final HazelcastManager hazelcastManager;
 	
+	private final RestServiceManager restServiceManager;
+	
 	public LuceneNode(MongoConfig mongoConfig, String localServer, int instance) throws Exception {
 		
 		LocalNodeConfig localNodeConfig = ClusterHelper.getNodeConfig(mongoConfig, localServer, instance);
@@ -47,15 +50,26 @@ public class LuceneNode {
 		this.externalServiceHandler = new ExternalServiceHandler(clusterConfig, localNodeConfig, indexManager);
 		this.internalServiceHandler = new InternalServiceHandler(clusterConfig, localNodeConfig, indexManager);
 		
+		if (localNodeConfig.hasRestPort()) {
+			this.restServiceManager = new RestServiceManager(localNodeConfig, indexManager);
+		}
+		else {
+			this.restServiceManager = null;
+		}
+		
 		Nodes nodes = ClusterHelper.getNodes(mongoConfig);
-		this.hazelcastManager = HazelcastManager.createHazelcastManager(localNodeConfig, indexManager, nodes.getHazelcastNodes(), mongoConfig.getDatabaseName());
+		this.hazelcastManager = HazelcastManager
+				.createHazelcastManager(localNodeConfig, indexManager, nodes.getHazelcastNodes(), mongoConfig.getDatabaseName());
 		
 	}
 	
-	public void start() throws ChannelException, UnknownHostException, MongoException {
+	public void start() throws ChannelException, MongoException, IOException {
 		
 		internalServiceHandler.start();
 		externalServiceHandler.start();
+		if (restServiceManager != null) {
+			restServiceManager.start();
+		}
 	}
 	
 	public void setupShutdownHook() {
@@ -71,6 +85,10 @@ public class LuceneNode {
 		
 		externalServiceHandler.shutdown();
 		internalServiceHandler.shutdown();
+		if (restServiceManager != null) {
+			restServiceManager.shutdown();
+		}
+		
 		indexManager.shutdown();
 		
 		hazelcastManager.shutdown();

@@ -1,5 +1,7 @@
 package org.lumongo.storage.rawfiles;
 
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
@@ -16,6 +18,11 @@ public interface DocumentStorage {
 	public List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType fetchType) throws Exception;
 	
 	public AssociatedDocument getAssociatedDocument(String uniqueId, String filename, FetchType fetchType) throws Exception;
+	
+	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, HashMap<String, String> metadataMap)
+			throws Exception;
+	
+	public InputStream getAssociatedDocumentStream(String uniqueId, String filename);
 	
 	public List<String> getAssociatedFilenames(String uniqueId) throws Exception;
 	

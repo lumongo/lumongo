@@ -1,6 +1,7 @@
 package org.lumongo.server.indexing;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -1078,6 +1079,27 @@ public class IndexManager {
 				throw new IndexDoesNotExist(indexName);
 			}
 			return i.getTerms(request);
+		}
+		finally {
+			globalLock.readLock().unlock();
+		}
+	}
+	
+	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, HashMap<String, String> metadataMap)
+			throws Exception {
+		globalLock.readLock().lock();
+		try {
+			documentStorage.storeAssociatedDocument(uniqueId, fileName, is, compress, metadataMap);
+		}
+		finally {
+			globalLock.readLock().unlock();
+		}
+	}
+	
+	public InputStream getAssociatedDocumentStream(String uniqueId, String fileName) {
+		globalLock.readLock().lock();
+		try {
+			return documentStorage.getAssociatedDocumentStream(uniqueId, fileName);
 		}
 		finally {
 			globalLock.readLock().unlock();
