@@ -17,13 +17,16 @@ public class HttpHelper {
 			}
 			
 			sb.append(key);
-			sb.append('=');
-			try {
-				sb.append(URLEncoder.encode(parameters.get(key), LumongoConstants.UTF8));
-			}
-			catch (UnsupportedEncodingException e) {
-				//should not be possible
-				throw new RuntimeException(e);
+			String value = parameters.get(key);
+			if (value != null) {
+				sb.append('=');
+				try {
+					sb.append(URLEncoder.encode(value, LumongoConstants.UTF8));
+				}
+				catch (UnsupportedEncodingException e) {
+					//should not be possible
+					throw new RuntimeException(e);
+				}
 			}
 		}
 		return sb.toString();

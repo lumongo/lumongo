@@ -1,5 +1,6 @@
 package org.lumongo.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -46,6 +47,26 @@ public class StreamHelper {
 			catch (Exception e) {
 				
 			}
+		}
+	}
+	
+	public static byte[] getBytesFromStream(final InputStream source) throws IOException {
+		try {
+			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+			
+			int nRead;
+			byte[] data = new byte[32 * 1024];
+			
+			while ((nRead = source.read(data, 0, data.length)) != -1) {
+				buffer.write(data, 0, nRead);
+			}
+			
+			buffer.flush();
+			
+			return buffer.toByteArray();
+		}
+		finally {
+			source.close();
 		}
 	}
 }

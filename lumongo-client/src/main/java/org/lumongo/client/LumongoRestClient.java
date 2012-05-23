@@ -39,10 +39,11 @@ public class LumongoRestClient {
 			parameters.put(LumongoConstants.FILE_NAME, fileName);
 			
 			String url = HttpHelper.createRequestUrl(server, restPort, LumongoConstants.ASSOCIATED_DOCUMENTS_URL, parameters);
-			conn = createPostConnection(url);
+			conn = createGetConnection(url);
 			
 			if (conn.getResponseCode() != LumongoConstants.SUCCESS) {
-				throw new IOException("Request failed with <" + conn.getResponseCode() + ">");
+				byte[] bytes = StreamHelper.getBytesFromStream(conn.getErrorStream());
+				throw new IOException("Request failed with <" + conn.getResponseCode() + ">: " + new String(bytes, LumongoConstants.UTF8));
 			}
 			
 			source = conn.getInputStream();
@@ -75,7 +76,8 @@ public class LumongoRestClient {
 			StreamHelper.copyStream(source, destination);
 			
 			if (conn.getResponseCode() != LumongoConstants.SUCCESS) {
-				throw new IOException("Request failed with <" + conn.getResponseCode() + ">");
+				byte[] bytes = StreamHelper.getBytesFromStream(conn.getErrorStream());
+				throw new IOException("Request failed with <" + conn.getResponseCode() + ">: " + new String(bytes, LumongoConstants.UTF8));
 			}
 		}
 		finally {
@@ -117,4 +119,13 @@ public class LumongoRestClient {
 		return conn;
 	}
 	
+	protected HttpURLConnection createGetConnection(String url) throws IOException, MalformedURLException, ProtocolException {
+		HttpURLConnection conn;
+		conn = (HttpURLConnection) (new URL(url)).openConnection();
+		conn.setDoInput(true);
+		conn.setDoOutput(true);
+		conn.setRequestMethod(LumongoConstants.GET);
+		conn.connect();
+		return conn;
+	}
 }

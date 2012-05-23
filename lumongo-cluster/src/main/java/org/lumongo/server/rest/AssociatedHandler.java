@@ -51,22 +51,24 @@ public class AssociatedHandler extends SimpleHttpHandler {
 	public void post(HttpExchange exchange) throws IOException {
 		Multimap<String, String> params = this.getUrlParameters(exchange);
 		
-		if (!params.containsKey(LumongoConstants.UNIQUE_ID) || !params.containsKey(LumongoConstants.FILE_NAME)) {
-			throw new IOException(LumongoConstants.UNIQUE_ID + " and " + LumongoConstants.FILE_NAME + " are required");
-		}
-		
-		String uniqueId = params.get(LumongoConstants.UNIQUE_ID).iterator().next();
-		String fileName = params.get(LumongoConstants.FILE_NAME).iterator().next();
-		
-		if (uniqueId != null && fileName != null) {
-			try {
-				indexManager.storeAssociatedDocument(uniqueId, fileName, exchange.getRequestBody(), false, null);
-				writeResponse(LumongoConstants.SUCCESS, exchange, "Stored associated document with uniqueId <" + uniqueId + "> and fileName <" + fileName + ">");
+		if (params.containsKey(LumongoConstants.UNIQUE_ID) && params.containsKey(LumongoConstants.FILE_NAME)) {
+			
+			String uniqueId = params.get(LumongoConstants.UNIQUE_ID).iterator().next();
+			String fileName = params.get(LumongoConstants.FILE_NAME).iterator().next();
+			
+			if (uniqueId != null && fileName != null) {
+				try {
+					indexManager.storeAssociatedDocument(uniqueId, fileName, exchange.getRequestBody(), false, null);
+					writeResponse(LumongoConstants.SUCCESS, exchange, "Stored associated document with uniqueId <" + uniqueId + "> and fileName <" + fileName
+							+ ">");
+				}
+				catch (Exception e) {
+					writeResponse(LumongoConstants.INTERNAL_ERROR, exchange, e.getMessage());
+				}
+				return;
 			}
-			catch (Exception e) {
-				writeResponse(LumongoConstants.INTERNAL_ERROR, exchange, e.getMessage());
-			}
 		}
+		writeResponse(LumongoConstants.BAD_REQUEST, exchange, LumongoConstants.UNIQUE_ID + " and " + LumongoConstants.FILE_NAME + " are required");
 		
 	}
 }
