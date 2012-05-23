@@ -5,6 +5,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
+import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.LumongoClient;
 import org.lumongo.client.config.LumongoClientConfig;
@@ -23,7 +24,8 @@ public class Fetch {
 		
 		OptionParser parser = new OptionParser();
 		OptionSpec<String> addressArg = parser.accepts("address").withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
-		OptionSpec<Integer> portArg = parser.accepts("port").withRequiredArg().ofType(Integer.class).defaultsTo(32191).describedAs("Lumongo external port");
+		OptionSpec<Integer> portArg = parser.accepts("port").withRequiredArg().ofType(Integer.class).defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT)
+				.describedAs("Lumongo external port");
 		OptionSpec<String> uniqueIdArg = parser.accepts("uid").withRequiredArg().required().describedAs("Unique to fetch");
 		
 		try {

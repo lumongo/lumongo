@@ -7,6 +7,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
+import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.LumongoClient;
 import org.lumongo.client.config.LumongoClientConfig;
@@ -15,12 +16,6 @@ import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.util.LogUtil;
 
 public class Search {
-	public static enum Command {
-		optimize,
-		getCount,
-		getFields,
-		getValues
-	}
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -28,7 +23,8 @@ public class Search {
 		
 		OptionParser parser = new OptionParser();
 		OptionSpec<String> addressArg = parser.accepts("address").withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
-		OptionSpec<Integer> portArg = parser.accepts("port").withRequiredArg().ofType(Integer.class).defaultsTo(32191).describedAs("Lumongo external port");
+		OptionSpec<Integer> portArg = parser.accepts("port").withRequiredArg().ofType(Integer.class).defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT)
+				.describedAs("Lumongo external port");
 		OptionSpec<String> indexArg = parser.accepts("index").withRequiredArg().required().describedAs("Index to search");
 		OptionSpec<String> queryArg = parser.accepts("query").withRequiredArg().required().describedAs("Lucene query");
 		OptionSpec<Integer> amountArg = parser.accepts("amount").withRequiredArg().required().ofType(Integer.class).describedAs("Amount of results to return");

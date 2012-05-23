@@ -1,10 +1,11 @@
 package org.lumongo.server.rest;
 
 import java.io.IOException;
-import java.util.List;
+import java.io.InputStream;
 import java.util.Scanner;
 
-import javax.xml.ws.http.HTTPException;
+import org.lumongo.LumongoConstants;
+import org.lumongo.util.StreamHelper;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -13,59 +14,55 @@ import com.sun.net.httpserver.HttpHandler;
 
 public class SimpleHttpHandler implements HttpHandler {
 	
-	public static final String WGET_AGENT = "Wget";
-	public static final String USER_AGENT = "User-agent";
-	public static final int BAD_REQUEST = 400;
-	public static final int NOT_FOUND = 404;
-	public static final int METHOD_NOT_ALLOWED = 405;
-	public static final int INTERNAL_ERROR = 500;
-	
-	public static final String GET = "GET";
-	public static final String POST = "POST";
-	public static final String HEAD = "HEAD";
-	public static final String PUT = "PUT";
-	public static final String DELETE = "DELETE";
-	
 	@Override
 	public void handle(HttpExchange exchange) throws IOException {
-		if (GET.equals(exchange.getRequestMethod())) {
-			get(exchange);
+		try {
+			if (LumongoConstants.GET.equals(exchange.getRequestMethod())) {
+				get(exchange);
+			}
+			else if (LumongoConstants.POST.equals(exchange.getRequestMethod())) {
+				post(exchange);
+			}
+			else if (LumongoConstants.HEAD.equals(exchange.getRequestMethod())) {
+				head(exchange);
+			}
+			else if (LumongoConstants.PUT.equals(exchange.getRequestMethod())) {
+				put(exchange);
+			}
+			else if (LumongoConstants.DELETE.equals(exchange.getRequestMethod())) {
+				delete(exchange);
+			}
+			else {
+				sendNotSupported(exchange);
+			}
 		}
-		else if (POST.equals(exchange.getRequestMethod())) {
-			post(exchange);
+		finally {
+			exchange.close();
 		}
-		else if (HEAD.equals(exchange.getRequestMethod())) {
-			head(exchange);
-		}
-		else if (PUT.equals(exchange.getRequestMethod())) {
-			put(exchange);
-		}
-		else if (DELETE.equals(exchange.getRequestMethod())) {
-			delete(exchange);
-		}
-		else {
-			throw new HTTPException(METHOD_NOT_ALLOWED);
-		}
+	}
+	
+	protected void sendNotSupported(HttpExchange exchange) throws IOException {
+		exchange.sendResponseHeaders(LumongoConstants.METHOD_NOT_ALLOWED, -1);
 	}
 	
 	public void get(HttpExchange exchange) throws IOException {
-		throw new HTTPException(METHOD_NOT_ALLOWED);
+		sendNotSupported(exchange);
 	}
 	
 	public void post(HttpExchange exchange) throws IOException {
-		throw new HTTPException(METHOD_NOT_ALLOWED);
+		sendNotSupported(exchange);
 	}
 	
 	public void head(HttpExchange exchange) throws IOException {
-		throw new HTTPException(METHOD_NOT_ALLOWED);
+		sendNotSupported(exchange);
 	}
 	
 	public void put(HttpExchange exchange) throws IOException {
-		throw new HTTPException(METHOD_NOT_ALLOWED);
+		sendNotSupported(exchange);
 	}
 	
 	public void delete(HttpExchange exchange) throws IOException {
-		throw new HTTPException(METHOD_NOT_ALLOWED);
+		sendNotSupported(exchange);
 	}
 	
 	protected String getRequestPath(HttpExchange ex) throws IOException {
@@ -82,7 +79,7 @@ public class SimpleHttpHandler implements HttpHandler {
 	}
 	
 	protected Multimap<String, String> getBodyParameters(HttpExchange ex) {
-		Scanner s = new Scanner(ex.getRequestBody(), "UTF-8");
+		Scanner s = new Scanner(ex.getRequestBody(), LumongoConstants.UTF8);
 		return parse(s);
 	}
 	
@@ -106,27 +103,31 @@ public class SimpleHttpHandler implements HttpHandler {
 		return ret;
 	}
 	
-	protected void writeResponse(HttpExchange ex, String text) throws IOException {
-		writeResponse(ex, text.getBytes("UTF-8"));
+	protected void writeResponse(int statusCode, HttpExchange exchange, String text) throws IOException {
+		writeResponse(statusCode, exchange, text.getBytes("UTF-8"));
 	}
 	
-	protected void writeResponse(HttpExchange ex, byte[] bytes) throws IOException {
+	protected void writeResponse(int statusCode, HttpExchange exchange, InputStream is) throws IOException {
 		try {
-			
-			List<String> agents = ex.getRequestHeaders().get(USER_AGENT);
-			
-			//disable chunked encoding for wget
-			if (agents != null && agents.size() == 1 && agents.get(0).contains(WGET_AGENT)) {
-				ex.sendResponseHeaders(200, bytes.length);
-			}
-			else {
-				ex.sendResponseHeaders(200, 0);
-			}
-			
-			ex.getResponseBody().write(bytes);
+			exchange.sendResponseHeaders(statusCode, 0);
+			StreamHelper.copyStream(is, exchange.getResponseBody());
 		}
 		finally {
-			ex.close();
+			exchange.close();
 		}
+	}
+	
+	protected void writeResponse(int statusCode, HttpExchange exchange, byte[] bytes) throws IOException {
+		
+		try {
+			exchange.sendResponseHeaders(statusCode, 0);
+			exchange.getResponseBody().write(bytes);
+			exchange.getResponseBody().flush();
+			
+		}
+		finally {
+			exchange.close();
+		}
+		
 	}
 }
