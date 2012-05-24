@@ -105,6 +105,7 @@ public class LumongoClient {
 				service = getInternalBlockingConnection();
 			}
 			
+			//TODO is this needed?, if so actually make a function
 			//force something to happen
 			getCurrentMembers();
 			
