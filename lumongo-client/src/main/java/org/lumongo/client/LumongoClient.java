@@ -498,6 +498,7 @@ public class LumongoClient {
 	}
 	
 	public LumongoRestClient getRestClient() throws Exception {
+		//TODO has to be a better way
 		GetMembersResponse gmr = getCurrentMembers();
 		List<LMMember> members = gmr.getMemberList();
 		int numMembers = members.size();
