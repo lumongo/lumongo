@@ -1,0 +1,10 @@
+0.11
+
+Add rest service to stream and store large associated documents
+Minor bug fixes
+Performance fix on missing mongo index for associated documents
+
+0.10
+Initial Release
+
+
