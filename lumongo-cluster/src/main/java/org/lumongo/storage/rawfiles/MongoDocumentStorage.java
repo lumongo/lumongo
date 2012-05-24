@@ -37,6 +37,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	
 	private static final Charset UTF_8_CHARSET = Charset.forName("UTF-8");
 	private static final String ASSOCIATED_FILES = "associatedFiles";
+	private static final String FILES = "files";
 	private static final String FILENAME = "filename";
 	private static final String VALUE = "value";
 	private static final String DOC = "doc";
@@ -63,6 +64,9 @@ public class MongoDocumentStorage implements DocumentStorage {
 		
 		if (sharded) {
 			DB storageDb = pool.getDB(database);
+			
+			DBCollection coll = storageDb.getCollection(ASSOCIATED_FILES + "." + FILES);
+			coll.ensureIndex(METADATA + "." + UNIQUE_ID_KEY);
 			
 			DB adminDb = pool.getDB(MongoConstants.StandardDBs.ADMIN);
 			DBObject enableCommand = new BasicDBObject();
@@ -185,6 +189,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		coll.remove(search, documentWriteConcern);
 	}
 	
+	@Override
 	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, HashMap<String, String> metadataMap)
 			throws Exception {
 		GridFS gridFS = createGridFSConnection();
