@@ -26,11 +26,15 @@ public class LumongoClientConfig {
 	}
 	
 	public void addMember(String serverAddress) {
-		addMember(serverAddress, LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT);
+		addMember(serverAddress, LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
 	}
 	
 	public void addMember(String serverAddress, int externalPort) {
-		LMMember member = LMMember.newBuilder().setServerAddress(serverAddress).setExternalPort(externalPort).build();
+		addMember(serverAddress, externalPort, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
+	}
+	
+	public void addMember(String serverAddress, int externalPort, int restPort) {
+		LMMember member = LMMember.newBuilder().setServerAddress(serverAddress).setExternalPort(externalPort).setRestPort(restPort).build();
 		members.add(member);
 	}
 	

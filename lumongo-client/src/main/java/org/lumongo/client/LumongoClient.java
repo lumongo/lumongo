@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -498,15 +497,7 @@ public class LumongoClient {
 	}
 	
 	public LumongoRestClient getRestClient() throws Exception {
-		//TODO has to be a better way
-		GetMembersResponse gmr = getCurrentMembers();
-		List<LMMember> members = gmr.getMemberList();
-		int numMembers = members.size();
-		if (numMembers == 0) {
-			throw new Exception("Failed to get rest client: no servers found");
-		}
-		Random r = new Random();
-		LMMember lm = members.get(r.nextInt(numMembers));
+		LMMember lm = members.get(myServerIndex);
 		LumongoRestClient lrc = new LumongoRestClient(lm.getServerAddress(), lm.getRestPort());
 		return lrc;
 	}

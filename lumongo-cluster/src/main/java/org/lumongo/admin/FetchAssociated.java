@@ -18,8 +18,8 @@ public class FetchAssociated {
 		
 		OptionParser parser = new OptionParser();
 		OptionSpec<String> addressArg = parser.accepts("address").withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
-		OptionSpec<Integer> restPortArg = parser.accepts("restPort").withRequiredArg().ofType(Integer.class).defaultsTo(LumongoConstants.REST_SERVICE_PORT)
-				.describedAs("Lumongo rest port");
+		OptionSpec<Integer> restPortArg = parser.accepts("restPort").withRequiredArg().ofType(Integer.class)
+				.defaultsTo(LumongoConstants.DEFAULT_REST_SERVICE_PORT).describedAs("Lumongo rest port");
 		OptionSpec<String> uniqueIdArg = parser.accepts("uniqueId").withRequiredArg().required().describedAs("Unique Id");
 		OptionSpec<String> fileNameArg = parser.accepts("fileName").withRequiredArg().required().describedAs("Associated File Name");
 		OptionSpec<File> outputFileArg = parser.accepts("outputFile").withRequiredArg().ofType(File.class).required()
