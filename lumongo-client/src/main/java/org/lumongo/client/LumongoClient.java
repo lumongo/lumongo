@@ -559,6 +559,12 @@ public class LumongoClient {
 		}
 	}
 	
+	/**
+	 * Not recommended by Lucene
+	 * @param indexName
+	 * @return
+	 * @throws Exception
+	 */
 	public OptimizeResponse optimizeIndex(String indexName) throws Exception {
 		return optimizeIndex(indexName, retryCount);
 	}

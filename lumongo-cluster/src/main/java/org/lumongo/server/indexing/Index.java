@@ -334,8 +334,11 @@ public class Index {
 				DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 				
 				IndexWriterConfig config = new IndexWriterConfig(LuceneConstants.VERSION, getAnalyzer());
+				//TODO configurable, or use flush interval				
+				//config.setRAMBufferSizeMB(32);
 				
 				IndexWriter indexWriter = new IndexWriter(dd, config);
+				
 				Segment s = new Segment(segmentNumber, indexWriter, indexConfig);
 				segmentMap.put(segmentNumber, s);
 				

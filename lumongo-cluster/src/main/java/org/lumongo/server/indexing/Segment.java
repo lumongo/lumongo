@@ -80,6 +80,7 @@ public class Segment {
 	
 	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after) throws Exception {
 		
+		//TODO enable not real time
 		IndexReader ir = IndexReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
 		
 		IndexSearcher is = new IndexSearcher(ir);
