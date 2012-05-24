@@ -1126,6 +1126,7 @@ public class IndexManager {
 				lmMemberBuilder.setExternalPort(localNodeConfig.getExternalServicePort());
 				lmMemberBuilder.setInternalPort(localNodeConfig.getInternalServicePort());
 				lmMemberBuilder.setHazelcastPort(localNodeConfig.getHazelcastPort());
+				lmMemberBuilder.setRestPort(localNodeConfig.getRestPort());
 				responseBuilder.addMember(lmMemberBuilder.build());
 				
 			}
