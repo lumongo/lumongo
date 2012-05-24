@@ -20,6 +20,10 @@ public class LumongoRestClient {
 	private String server;
 	private int restPort;
 	
+	public LumongoRestClient(String server) {
+		this(server, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
+	}
+	
 	public LumongoRestClient(String server, int restPort) {
 		this.server = server;
 		this.restPort = restPort;
