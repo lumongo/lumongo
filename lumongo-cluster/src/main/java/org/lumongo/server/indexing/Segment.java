@@ -80,8 +80,6 @@ public class Segment {
 	
 	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after, boolean realTime) throws Exception {
 		
-		//TODO enable not real time
-		
 		IndexReader ir = null;
 		
 		if (realTime) {
