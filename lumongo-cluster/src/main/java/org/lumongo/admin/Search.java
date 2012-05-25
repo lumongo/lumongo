@@ -25,7 +25,7 @@ public class Search {
 		OptionSpec<String> addressArg = parser.accepts("address").withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
 		OptionSpec<Integer> portArg = parser.accepts("port").withRequiredArg().ofType(Integer.class).defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT)
 				.describedAs("Lumongo external port");
-		OptionSpec<String> indexArg = parser.accepts("index").withRequiredArg().required().describedAs("Index to search");
+		OptionSpec<String> indexesArg = parser.accepts("index").withRequiredArg().required().describedAs("Index to search");
 		OptionSpec<String> queryArg = parser.accepts("query").withRequiredArg().required().describedAs("Lucene query");
 		OptionSpec<Integer> amountArg = parser.accepts("amount").withRequiredArg().required().ofType(Integer.class).describedAs("Amount of results to return");
 		OptionSpec<Boolean> realTimeArg = parser.accepts("realTime").withRequiredArg().ofType(Boolean.class).defaultsTo(true).describedAs("Real time search");
@@ -33,7 +33,7 @@ public class Search {
 		try {
 			OptionSet options = parser.parse(args);
 			
-			String index = options.valueOf(indexArg);
+			List<String> indexes = options.valuesOf(indexesArg);
 			String address = options.valueOf(addressArg);
 			int port = options.valueOf(portArg);
 			String query = options.valueOf(queryArg);
@@ -50,7 +50,7 @@ public class Search {
 				
 				long startTime = System.currentTimeMillis();
 				
-				QueryResponse qr = client.query(query, amount, index, realTime);
+				QueryResponse qr = client.query(query, amount, indexes.toArray(new String[0]), realTime);
 				List<ScoredResult> srList = qr.getResultsList();
 				
 				long endTime = System.currentTimeMillis();
@@ -62,7 +62,11 @@ public class Search {
 				System.out.print("\t");
 				System.out.print("Score");
 				System.out.print("\t");
+				System.out.print("Index");
+				System.out.print("\t");
 				System.out.print("Segment");
+				System.out.println();
+				System.out.print("SegmentId");
 				System.out.println();
 				
 				for (ScoredResult sr : srList) {
@@ -70,7 +74,11 @@ public class Search {
 					System.out.print("\t");
 					System.out.print(sr.getScore());
 					System.out.print("\t");
+					System.out.print(sr.getIndexName());
+					System.out.print("\t");
 					System.out.print(sr.getSegment());
+					System.out.print("\t");
+					System.out.print(sr.getDocId());
 					System.out.println();
 				}
 			}
