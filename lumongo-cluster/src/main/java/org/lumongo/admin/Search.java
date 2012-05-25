@@ -65,7 +65,7 @@ public class Search {
 				System.out.print("Index");
 				System.out.print("\t");
 				System.out.print("Segment");
-				System.out.println();
+				System.out.print("\t");
 				System.out.print("SegmentId");
 				System.out.println();
 				
