@@ -28,6 +28,7 @@ public class Search {
 		OptionSpec<String> indexArg = parser.accepts("index").withRequiredArg().required().describedAs("Index to search");
 		OptionSpec<String> queryArg = parser.accepts("query").withRequiredArg().required().describedAs("Lucene query");
 		OptionSpec<Integer> amountArg = parser.accepts("amount").withRequiredArg().required().ofType(Integer.class).describedAs("Amount of results to return");
+		OptionSpec<Boolean> realTimeArg = parser.accepts("realTime").withRequiredArg().ofType(Boolean.class).defaultsTo(true).describedAs("Real time search");
 		
 		try {
 			OptionSet options = parser.parse(args);
@@ -37,6 +38,7 @@ public class Search {
 			int port = options.valueOf(portArg);
 			String query = options.valueOf(queryArg);
 			int amount = options.valueOf(amountArg);
+			boolean realTime = options.valueOf(realTimeArg);
 			
 			LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
 			lumongoClientConfig.addMember(address, port);
@@ -48,7 +50,7 @@ public class Search {
 				
 				long startTime = System.currentTimeMillis();
 				
-				QueryResponse qr = client.query(query, amount, index);
+				QueryResponse qr = client.query(query, amount, index, realTime);
 				List<ScoredResult> srList = qr.getResultsList();
 				
 				long endTime = System.currentTimeMillis();

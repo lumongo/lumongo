@@ -13,7 +13,7 @@ public class ClusterConfig {
 	
 	public static final String SHARDED = "sharded";
 	public static final String INDEX_BLOCK_SIZE = "indexBlockSize";
-	public static final String MAX_DIRTY_INDEX_BLOCKS = "maxDirtyIndexBlocks";
+	public static final String MAX_INDEX_BLOCKS = "maxIndexBlocks";
 	public static final String MAX_INTERNAL_CLIENT_CONNECTIONS = "maxInternalClientConnections";
 	public static final String INTERNAL_WORKERS = "internalWorkers";
 	public static final String EXTERNAL_WORKERS = "externalWorkers";
@@ -35,7 +35,7 @@ public class ClusterConfig {
 	
 	// general
 	private int indexBlockSize;
-	private int maxDirtyIndexBlocks;
+	private int maxIndexBlocks;
 	
 	// sockets
 	private int maxInternalClientConnections;
@@ -55,7 +55,7 @@ public class ClusterConfig {
 		sharded = propertiesReader.getBoolean(SHARDED);
 		
 		indexBlockSize = propertiesReader.getInteger(INDEX_BLOCK_SIZE);
-		maxDirtyIndexBlocks = propertiesReader.getInteger(MAX_DIRTY_INDEX_BLOCKS);
+		maxIndexBlocks = propertiesReader.getInteger(MAX_INDEX_BLOCKS);
 		
 		maxInternalClientConnections = propertiesReader.getInteger(MAX_INTERNAL_CLIENT_CONNECTIONS);
 		internalWorkers = propertiesReader.getInteger(INTERNAL_WORKERS);
@@ -74,8 +74,8 @@ public class ClusterConfig {
 		return indexBlockSize;
 	}
 	
-	public int getMaxDirtyIndexBlocks() {
-		return maxDirtyIndexBlocks;
+	public int getMaxIndexBlocks() {
+		return maxIndexBlocks;
 	}
 	
 	public int getMaxInternalClientConnections() {
@@ -102,7 +102,7 @@ public class ClusterConfig {
 		DBObject dbObject = new BasicDBObject();
 		dbObject.put(SHARDED, sharded);
 		dbObject.put(INDEX_BLOCK_SIZE, indexBlockSize);
-		dbObject.put(MAX_DIRTY_INDEX_BLOCKS, maxDirtyIndexBlocks);
+		dbObject.put(MAX_INDEX_BLOCKS, maxIndexBlocks);
 		dbObject.put(MAX_INTERNAL_CLIENT_CONNECTIONS, maxInternalClientConnections);
 		dbObject.put(INTERNAL_WORKERS, internalWorkers);
 		dbObject.put(EXTERNAL_WORKERS, externalWorkers);
@@ -116,7 +116,7 @@ public class ClusterConfig {
 		ClusterConfig clusterConfig = new ClusterConfig();
 		clusterConfig.sharded = (boolean) settings.get(SHARDED);
 		clusterConfig.indexBlockSize = (int) settings.get(INDEX_BLOCK_SIZE);
-		clusterConfig.maxDirtyIndexBlocks = (int) settings.get(MAX_DIRTY_INDEX_BLOCKS);
+		clusterConfig.maxIndexBlocks = (int) settings.get(MAX_INDEX_BLOCKS);
 		clusterConfig.maxInternalClientConnections = (int) settings.get(MAX_INTERNAL_CLIENT_CONNECTIONS);
 		clusterConfig.internalWorkers = (int) settings.get(INTERNAL_WORKERS);
 		clusterConfig.externalWorkers = (int) settings.get(EXTERNAL_WORKERS);
@@ -127,7 +127,7 @@ public class ClusterConfig {
 	
 	@Override
 	public String toString() {
-		return "ClusterConfig [sharded=" + sharded + ", indexBlockSize=" + indexBlockSize + ", maxDirtyIndexBlocks=" + maxDirtyIndexBlocks
+		return "ClusterConfig [sharded=" + sharded + ", indexBlockSize=" + indexBlockSize + ", maxIndexBlocks=" + maxIndexBlocks
 				+ ", maxInternalClientConnections=" + maxInternalClientConnections + ", internalWorkers=" + internalWorkers + ", externalWorkers="
 				+ externalWorkers + ", internalShutdownTimeout=" + internalShutdownTimeout + ", externalShutdownTimeout=" + externalShutdownTimeout + "]";
 	}

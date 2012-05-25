@@ -94,7 +94,7 @@ public class SingleNodeTest {
 		
 		settings.put(ClusterConfig.SHARDED, "false");
 		settings.put(ClusterConfig.INDEX_BLOCK_SIZE, "131072");
-		settings.put(ClusterConfig.MAX_DIRTY_INDEX_BLOCKS, "12500");
+		settings.put(ClusterConfig.MAX_INDEX_BLOCKS, "10000");
 		settings.put(ClusterConfig.MAX_INTERNAL_CLIENT_CONNECTIONS, "16");
 		settings.put(ClusterConfig.INTERNAL_WORKERS, "16");
 		settings.put(ClusterConfig.EXTERNAL_WORKERS, "16");

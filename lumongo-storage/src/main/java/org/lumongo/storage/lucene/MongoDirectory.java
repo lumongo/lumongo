@@ -62,16 +62,16 @@ public class MongoDirectory implements NosqlDirectory {
 	private final boolean compressed;
 	
 	public static final int DEFAULT_BLOCK_SIZE = 1024 * 128;
-	public static final int DEFAULT_DIRTY_BLOCK_MAX = 12500;
+	public static final int DEFAULT_BLOCK_MAX = 12500;
 	
 	private ConcurrentHashMap<String, MongoFile> nameToFileMap;
 	
-	private static Cache<MongoBlock, MongoBlock> dirtyBlockCache;
+	private static Cache<MongoBlock, MongoBlock> blockCache;
 	
-	public static void setMaxDirtyIndexBlocks(int blocks) {
+	public static void setMaxIndexBlocks(int blocks) {
 		ConcurrentMap<MongoBlock, MongoBlock> oldMap = null;
-		if (dirtyBlockCache != null) {
-			oldMap = dirtyBlockCache.asMap();
+		if (blockCache != null) {
+			oldMap = blockCache.asMap();
 		}
 		RemovalListener<MongoBlock, MongoBlock> listener = new RemovalListener<MongoBlock, MongoBlock>() {
 			
@@ -86,23 +86,23 @@ public class MongoDirectory implements NosqlDirectory {
 				}
 			}
 		};
-		dirtyBlockCache = CacheBuilder.newBuilder().maximumSize(blocks).removalListener(listener).build();
+		blockCache = CacheBuilder.newBuilder().maximumSize(blocks).removalListener(listener).build();
 		if (oldMap != null) {
-			dirtyBlockCache.asMap().putAll(oldMap);
+			blockCache.asMap().putAll(oldMap);
 			oldMap.clear();
 		}
 	}
 	
 	static {
-		setMaxDirtyIndexBlocks(DEFAULT_DIRTY_BLOCK_MAX);
+		setMaxIndexBlocks(DEFAULT_BLOCK_MAX);
 	}
 	
-	public static void cacheDirtyBlock(MongoBlock mb) {
-		dirtyBlockCache.put(mb, mb);
+	public static void cacheBlock(MongoBlock mb) {
+		blockCache.put(mb, mb);
 	}
 	
-	public static void removeDirtyBlock(MongoBlock mb) {
-		dirtyBlockCache.invalidate(mb);
+	public static void removeBlock(MongoBlock mb) {
+		blockCache.invalidate(mb);
 	}
 	
 	public MongoDirectory(Mongo mongo, String dbname, String indexName) throws MongoException, IOException {

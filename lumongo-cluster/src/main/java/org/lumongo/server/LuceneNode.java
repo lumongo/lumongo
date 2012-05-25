@@ -42,8 +42,7 @@ public class LuceneNode {
 		
 		ClusterConfig clusterConfig = ClusterHelper.getClusterConfig(mongoConfig);
 		
-		int maxDirtyIndexBlocks = clusterConfig.getMaxDirtyIndexBlocks();
-		MongoDirectory.setMaxDirtyIndexBlocks(maxDirtyIndexBlocks);
+		MongoDirectory.setMaxIndexBlocks(clusterConfig.getMaxIndexBlocks());
 		
 		this.indexManager = new IndexManager(mongoConfig, clusterConfig);
 		

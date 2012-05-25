@@ -721,10 +721,10 @@ public class IndexManager {
 		globalLock.readLock().lock();
 		try {
 			
-			final Map<String, Query> queryMap = getQueryMap(request.getIndexesList(), request.getQuery());
+			final Map<String, Query> queryMap = getQueryMap(request.getIndexList(), request.getQuery());
 			
 			final Map<String, Index> indexSegmentMap = new HashMap<String, Index>();
-			for (String indexName : request.getIndexesList()) {
+			for (String indexName : request.getIndexList()) {
 				Index i = indexMap.get(indexName);
 				if (i == null) {
 					throw new IndexDoesNotExist(indexName);
@@ -776,7 +776,7 @@ public class IndexManager {
 	public InternalQueryResponse internalQuery(QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			Map<String, Query> queryMap = getQueryMap(request.getIndexesList(), request.getQuery());
+			Map<String, Query> queryMap = getQueryMap(request.getIndexList(), request.getQuery());
 			return internalQuery(queryMap, request);
 		}
 		finally {

@@ -29,8 +29,8 @@ import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -337,7 +337,7 @@ public class Index {
 				//TODO configurable, or use flush interval				
 				//config.setRAMBufferSizeMB(32);
 				
-				IndexWriter indexWriter = new IndexWriter(dd, config);
+				LumongoIndexWriter indexWriter = new LumongoIndexWriter(dd, config);
 				
 				Segment s = new Segment(segmentNumber, indexWriter, indexConfig);
 				segmentMap.put(segmentNumber, s);
@@ -677,7 +677,7 @@ public class Index {
 		}
 	}
 	
-	public IndexSegmentResponse queryInternal(final Query query, QueryRequest queryRequest) throws Exception {
+	public IndexSegmentResponse queryInternal(final Query query, final QueryRequest queryRequest) throws Exception {
 		indexLock.readLock().lock();
 		try {
 			int amount = queryRequest.getAmount();
@@ -714,7 +714,7 @@ public class Index {
 					
 					@Override
 					public SegmentResponse call() throws Exception {
-						return segment.querySegment(query, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()));
+						return segment.querySegment(query, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getRealTime());
 					}
 					
 				});

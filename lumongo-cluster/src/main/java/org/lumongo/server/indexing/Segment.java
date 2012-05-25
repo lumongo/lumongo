@@ -14,7 +14,7 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.search.IndexSearcher;
@@ -37,7 +37,7 @@ public class Segment {
 	private final static Logger log = Logger.getLogger(Segment.class);
 	
 	private final int segmentNumber;
-	private final IndexWriter indexWriter;
+	private final LumongoIndexWriter indexWriter;
 	private final IndexConfig indexConfig;
 	
 	private final String uniqueIdField;
@@ -49,7 +49,7 @@ public class Segment {
 	private Long lastChange;
 	private String indexName;
 	
-	public Segment(int segmentNumber, IndexWriter indexWriter, IndexConfig indexConfig) {
+	public Segment(int segmentNumber, LumongoIndexWriter indexWriter, IndexConfig indexConfig) {
 		this.segmentNumber = segmentNumber;
 		this.indexWriter = indexWriter;
 		this.indexConfig = indexConfig;
@@ -78,10 +78,19 @@ public class Segment {
 		return segmentNumber;
 	}
 	
-	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after) throws Exception {
+	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after, boolean realTime) throws Exception {
 		
 		//TODO enable not real time
-		IndexReader ir = IndexReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
+		
+		IndexReader ir = null;
+		
+		if (realTime) {
+			ir = IndexReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
+		}
+		else {
+			//ir = IndexReader.open(indexWriter.getDirectory());
+			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), false);
+		}
 		
 		IndexSearcher is = new IndexSearcher(ir);
 		

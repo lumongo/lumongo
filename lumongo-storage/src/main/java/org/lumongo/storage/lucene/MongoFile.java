@@ -83,7 +83,6 @@ public class MongoFile implements NosqlFile {
 						
 						if (mb.isDirty()) {
 							storeBlock(mb);
-							MongoDirectory.removeDirtyBlock(mb);
 						}
 						
 					}
@@ -109,7 +108,9 @@ public class MongoFile implements NosqlFile {
 					if (mb != null) {
 						return mb;
 					}
-					return getBlock(key, true);
+					mb = getBlock(key, true);
+					MongoDirectory.cacheBlock(mb);
+					return mb;
 				}
 				catch (Exception e) {
 					System.err.println("Exception in mongo block <" + key + "> for file <" + MongoFile.this + ">:" + e);
@@ -271,7 +272,7 @@ public class MongoFile implements NosqlFile {
 		Lock l = blockLocks.get(blockNumber);
 		l.lock();
 		try {
-			MongoDirectory.cacheDirtyBlock(mb);
+			MongoDirectory.cacheBlock(mb);
 			dirtyBlocks.put(mb.getBlockNumber(), mb);
 		}
 		finally {

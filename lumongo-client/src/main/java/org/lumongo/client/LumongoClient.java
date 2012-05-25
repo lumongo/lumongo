@@ -216,14 +216,38 @@ public class LumongoClient {
 	}
 	
 	public QueryResponse query(String query, int amount, String index) throws Exception {
-		return query(query, amount, index, null);
+		return query(query, amount, index, null, null);
+	}
+	
+	public QueryResponse query(String query, int amount, String[] indexes) throws Exception {
+		return query(query, amount, indexes, null, null);
+	}
+	
+	public QueryResponse query(String query, int amount, String index, boolean realTime) throws Exception {
+		return query(query, amount, index, null, realTime);
+	}
+	
+	public QueryResponse query(String query, int amount, String[] indexes, boolean realTime) throws Exception {
+		return query(query, amount, indexes, null, realTime);
 	}
 	
 	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse) throws Exception {
-		return query(query, amount, index, lastResponse, retryCount);
+		return query(query, amount, new String[] { index }, lastResponse, null, retryCount);
 	}
 	
-	protected QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, int retries) throws Exception {
+	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse) throws Exception {
+		return query(query, amount, indexes, lastResponse, null, retryCount);
+	}
+	
+	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, Boolean realTime) throws Exception {
+		return query(query, amount, new String[] { index }, lastResponse, realTime, retryCount);
+	}
+	
+	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, Boolean realTime) throws Exception {
+		return query(query, amount, indexes, lastResponse, realTime, retryCount);
+	}
+	
+	protected QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, Boolean realTime, int retries) throws Exception {
 		
 		RpcController controller = null;
 		try {
@@ -231,12 +255,19 @@ public class LumongoClient {
 				service = getInternalBlockingConnection();
 			}
 			controller = rpcClient.newRpcController();
-			QueryRequest.Builder requestBuilder = QueryRequest.newBuilder().setQuery(query).setAmount(amount);
+			QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
+			requestBuilder.setAmount(amount);
+			requestBuilder.setQuery(query);
+			if (realTime != null) {
+				requestBuilder.setRealTime(realTime);
+			}
 			if (lastResponse != null) {
 				requestBuilder.setLastResult(lastResponse.getLastResult());
 			}
 			
-			requestBuilder.addIndexes(index);
+			for (String index : indexes) {
+				requestBuilder.addIndex(index);
+			}
 			
 			QueryResponse queryResponse = service.query(controller, requestBuilder.build());
 			return queryResponse;
@@ -249,7 +280,7 @@ public class LumongoClient {
 			cycleServers();
 			
 			if (retries > 0) {
-				return query(query, amount, index, lastResponse, retries - 1);
+				return query(query, amount, indexes, lastResponse, realTime, retries - 1);
 			}
 			else {
 				throw new Exception(e.getMessage());
