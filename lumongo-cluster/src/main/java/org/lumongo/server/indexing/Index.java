@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,6 +18,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -37,6 +39,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.lumongo.LuceneConstants;
 import org.lumongo.analyzer.LowercaseKeywordAnalyzer;
 import org.lumongo.analyzer.LowercaseWhitespaceAnalyzer;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
@@ -52,6 +55,7 @@ import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
+import org.lumongo.cluster.message.Lumongo.Term;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.MongoConfig;
@@ -949,11 +953,18 @@ public class Index {
 			
 			GetTermsResponse.Builder responseBuilder = GetTermsResponse.newBuilder();
 			
-			TreeSet<String> terms = new TreeSet<String>();
+			//not threaded but atomic long is convenient
+			TreeMap<String, AtomicLong> terms = new TreeMap<String, AtomicLong>();
+			
 			for (Future<GetTermsResponse> response : responses) {
 				try {
 					GetTermsResponse gtr = response.get();
-					terms.addAll(gtr.getValueList());
+					for (Term term : gtr.getTermList()) {
+						if (!terms.containsKey(term.getValue())) {
+							terms.put(term.getValue(), new AtomicLong());
+						}
+						terms.get(term.getValue()).addAndGet(term.getDocFreq());
+					}
 				}
 				catch (ExecutionException e) {
 					Throwable cause = e.getCause();
@@ -968,9 +979,11 @@ public class Index {
 			
 			int amountToReturn = Math.min(request.getAmount(), terms.size());
 			for (int i = 0; i < amountToReturn; i++) {
-				String first = terms.first();
-				terms.remove(first);
-				responseBuilder.addValue(first);
+				String value = terms.firstKey();
+				AtomicLong docFreq = terms.remove(value);
+				if (docFreq.get() >= request.getMinDocFreq()) {
+					responseBuilder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
+				}
 			}
 			return responseBuilder.build();
 		}

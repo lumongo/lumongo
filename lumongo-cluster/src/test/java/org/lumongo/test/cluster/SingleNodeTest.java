@@ -111,7 +111,7 @@ public class SingleNodeTest {
 		settings.put(LocalNodeConfig.HAZELCAST_PORT, LumongoConstants.DEFAULT_HAZELCAST_PORT + "");
 		settings.put(LocalNodeConfig.INTERNAL_SERVICE_PORT, LumongoConstants.DEFAULT_INTERNAL_SERVICE_PORT + "");
 		settings.put(LocalNodeConfig.EXTERNAL_SERVICE_PORT, LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT + "");
-		
+		settings.put(LocalNodeConfig.REST_PORT, LumongoConstants.DEFAULT_REST_SERVICE_PORT + "");
 		LocalNodeConfig localNodeConfig = new LocalNodeConfig(new FakePropertiesReader("test", settings));
 		return localNodeConfig;
 	}
@@ -163,7 +163,7 @@ public class SingleNodeTest {
 	@Test(groups = { "first" }, dependsOnGroups = { "init" })
 	public void bulkTest() throws Exception {
 		
-		final int DOCUMENTS_LOADED = 100;
+		final int DOCUMENTS_LOADED = 5;
 		final String uniqueIdPrefix = "someUniqueId-";
 		{
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
@@ -215,6 +215,8 @@ public class SingleNodeTest {
 			
 			qr = lumongoClient.query("title:cluster", 10, "myTestIndex");
 			Assert.assertEquals(qr.getTotalHits(), 0, "Total hits is not 0");
+			
+			lumongoClient.getTerms("myTestIndex", "title");
 		}
 		
 		{

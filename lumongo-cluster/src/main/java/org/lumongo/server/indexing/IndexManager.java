@@ -11,17 +11,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.search.Query;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
@@ -62,6 +64,7 @@ import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.StoreResponse;
+import org.lumongo.cluster.message.Lumongo.Term;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.LocalNodeConfig;
@@ -1050,18 +1053,24 @@ public class IndexManager {
 			
 			List<GetTermsResponse> responses = federator.send(request);
 			
-			TreeSet<String> terms = new TreeSet<String>();
+			//not threaded but atomic long is convenient
+			TreeMap<String, AtomicLong> terms = new TreeMap<String, AtomicLong>();
 			for (GetTermsResponse gtr : responses) {
-				terms.addAll(gtr.getValueList());
+				for (Term term : gtr.getTermList()) {
+					if (!terms.containsKey(term.getValue())) {
+						terms.put(term.getValue(), new AtomicLong());
+					}
+					terms.get(term.getValue()).addAndGet(term.getDocFreq());
+				}
 			}
 			
 			GetTermsResponse.Builder responseBuilder = GetTermsResponse.newBuilder();
 			
 			int amountToReturn = Math.min(request.getAmount(), terms.size());
 			for (int i = 0; i < amountToReturn; i++) {
-				String first = terms.first();
-				terms.remove(first);
-				responseBuilder.addValue(first);
+				String value = terms.firstKey();
+				AtomicLong docFreq = terms.remove(value);
+				responseBuilder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
 			}
 			return responseBuilder.build();
 		}

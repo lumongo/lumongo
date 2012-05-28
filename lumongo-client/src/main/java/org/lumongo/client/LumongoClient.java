@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.lumongo.client.config.LumongoClientConfig;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
@@ -728,21 +729,30 @@ public class LumongoClient {
 	}
 	
 	public GetTermsResponse getTerms(String indexName, String fieldName) throws Exception {
+		return getTerms(indexName, fieldName, null, null);
+	}
+	
+	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, Integer minDocFreq) throws Exception {
 		GetTermsResponse.Builder fullResponse = GetTermsResponse.newBuilder();
 		
-		Set<String> terms = new LinkedHashSet<String>();
+		Set<Lumongo.Term> terms = new LinkedHashSet<Lumongo.Term>();
 		GetTermsResponse response = null;
-		String startTerm = null;
+		
+		Lumongo.Term iStartTerm = null;
+		if (startTerm != null) {
+			iStartTerm = Lumongo.Term.newBuilder().setValue(startTerm).build();
+		}
+		
 		do {
-			response = getTerms(indexName, fieldName, startTerm, 1024 * 64);
-			terms.addAll(response.getValueList());
-			if (response.getValueCount() > 1) {
-				startTerm = response.getValue(response.getValueCount() - 1);
+			response = getTerms(indexName, fieldName, iStartTerm != null ? iStartTerm.getValue() : null, 1024 * 64, minDocFreq);
+			terms.addAll(response.getTermList());
+			if (response.getTermCount() > 1) {
+				iStartTerm = response.getTerm(response.getTermCount() - 1);
 			}
 		}
-		while ((response != null) && (response.getValueCount() > 1));
+		while ((response != null) && (response.getTermCount() > 1));
 		
-		fullResponse.addAllValue(terms);
+		fullResponse.addAllTerm(terms);
 		
 		return fullResponse.build();
 	}
@@ -752,15 +762,22 @@ public class LumongoClient {
 	}
 	
 	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount) throws Exception {
-		return getTerms(indexName, fieldName, startTerm, amount, retryCount);
+		return getTerms(indexName, fieldName, startTerm, amount, null);
 	}
 	
-	protected GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, int retries) throws Exception {
+	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq) throws Exception {
+		return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, retryCount);
+	}
+	
+	protected GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq, int retries) throws Exception {
 		
 		GetTermsRequest.Builder requestBuilder = GetTermsRequest.newBuilder();
 		requestBuilder.setIndexName(indexName);
 		requestBuilder.setFieldName(fieldName);
 		requestBuilder.setAmount(amount);
+		if (minDocFreq != null) {
+			requestBuilder.setMinDocFreq(minDocFreq);
+		}
 		
 		if (startTerm != null) {
 			requestBuilder.setStartingTerm(startTerm);
@@ -784,7 +801,7 @@ public class LumongoClient {
 			cycleServers();
 			
 			if (retries > 0) {
-				return getTerms(indexName, fieldName, startTerm, retries - 1);
+				return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, retries - 1);
 			}
 			else {
 				throw new Exception(e.getMessage());

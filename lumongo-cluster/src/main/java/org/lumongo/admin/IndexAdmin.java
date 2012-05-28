@@ -16,7 +16,6 @@ import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
 import org.lumongo.cluster.message.Lumongo.GetMembersResponse;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
-import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
@@ -34,7 +33,6 @@ public class IndexAdmin {
 		optimize,
 		getCount,
 		getFields,
-		getValues,
 		getIndexes,
 		getCurrentMembers
 	}
@@ -106,19 +104,6 @@ public class IndexAdmin {
 				@SuppressWarnings("unused")
 				ClearResponse response = client.clearIndex(index);
 				System.out.println("Done");
-			}
-			else if (Command.getValues.equals(command)) {
-				if (index == null) {
-					throw new RequiredOptionException(INDEX, command.toString());
-				}
-				if (field == null) {
-					throw new RequiredOptionException(FIELD, command.toString());
-				}
-				GetTermsResponse response = client.getTerms(index, field);
-				
-				for (String val : response.getValueList()) {
-					System.out.println(val);
-				}
 			}
 			else if (Command.getIndexes.equals(command)) {
 				

@@ -2,7 +2,6 @@ package org.lumongo.util.properties;
 
 import java.util.HashMap;
 
-
 public class FakePropertiesReader extends PropertiesReader {
 	
 	private HashMap<String, String> propetiesMap;
@@ -22,4 +21,8 @@ public class FakePropertiesReader extends PropertiesReader {
 		throw new PropertyException(this.name, key, "Failed to find key.");
 	}
 	
+	@Override
+	public boolean hasKey(String key) {
+		return propetiesMap.containsKey(key);
+	}
 }

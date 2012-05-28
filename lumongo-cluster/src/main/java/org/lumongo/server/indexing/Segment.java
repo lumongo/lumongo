@@ -23,6 +23,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.util.ReaderUtil;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
@@ -238,14 +239,18 @@ public class Segment {
 		
 		Term start = new Term(fieldName, startTerm);
 		TermEnum terms = ir.terms(start);
-		while (fieldName.equals(terms.term().field()) && amount > builder.getValueCount()) {
-			Term t = terms.term();
-			String value = t.text();
+		if (terms.term() != null) {
 			
-			builder.addValue(value);
-			
-			if (!terms.next())
-				break;
+			while (fieldName.equals(terms.term().field()) && amount > builder.getTermCount()) {
+				Term t = terms.term();
+				String value = t.text();
+				int docFreq = terms.docFreq();
+				
+				builder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(docFreq));
+				
+				if (!terms.next())
+					break;
+			}
 		}
 		
 		return builder.build();
