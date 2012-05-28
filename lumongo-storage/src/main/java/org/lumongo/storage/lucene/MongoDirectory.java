@@ -68,6 +68,19 @@ public class MongoDirectory implements NosqlDirectory {
 	
 	private static Cache<MongoBlock, MongoBlock> blockCache;
 	
+	/**
+	 * Removes an index from a database
+	 * @param mongo
+	 * @param dbname
+	 * @param indexName
+	 */
+	public static void dropIndex(Mongo mongo, String dbname, String indexName) {
+		DB db = mongo.getDB(dbname);
+		db.getCollection(indexName + MongoDirectory.BLOCKS_SUFFIX).drop();
+		db.getCollection(indexName + MongoDirectory.COUNTER_SUFFIX).drop();
+		db.getCollection(indexName + MongoDirectory.FILES_SUFFIX).drop();
+	}
+	
 	public static void setMaxIndexBlocks(int blocks) {
 		ConcurrentMap<MongoBlock, MongoBlock> oldMap = null;
 		if (blockCache != null) {

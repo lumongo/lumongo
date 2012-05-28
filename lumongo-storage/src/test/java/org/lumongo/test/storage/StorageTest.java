@@ -33,11 +33,13 @@ import org.testng.annotations.Test;
 import com.mongodb.Mongo;
 
 public class StorageTest {
+	private static final String STORAGE_TEST_INDEX = "storageTest";
 	private static Directory directory;
 	
 	@BeforeSuite
 	public static void cleanDatabaseAndInit() throws Exception {
 		Mongo mongo = TestHelper.getMongo();
+		MongoDirectory.dropIndex(mongo, TestHelper.TEST_DATABASE_NAME, STORAGE_TEST_INDEX);
 		mongo.dropDatabase(TestHelper.TEST_DATABASE_NAME);
 	}
 	
@@ -45,7 +47,7 @@ public class StorageTest {
 	public static void openDirectory() throws Exception {
 		System.out.println("Creating lucene directory for storage test");
 		Mongo mongo = TestHelper.getMongo();
-		directory = new DistributedDirectory(new MongoDirectory(mongo, TestHelper.TEST_DATABASE_NAME, "storageTest", false, false));
+		directory = new DistributedDirectory(new MongoDirectory(mongo, TestHelper.TEST_DATABASE_NAME, STORAGE_TEST_INDEX, false, false));
 	}
 	
 	@AfterClass
