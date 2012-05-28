@@ -345,7 +345,6 @@ public class IndexManager {
 			
 			log.info("Deleting index <" + indexName + ">");
 			i.deleteIndex(mongo);
-			log.info("Current indexes <" + indexMap.keySet() + ">");
 			indexMap.remove(indexName);
 			
 			return IndexDeleteResponse.newBuilder().build();
