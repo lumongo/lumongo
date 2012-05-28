@@ -629,9 +629,8 @@ public class Index {
 		dbCollection.drop();
 		
 		for (int i = 0; i < numberOfSegments; i++) {
-			String segmentCollection = indexName + "_" + i;
-			dbCollection = db.getCollection(segmentCollection);
-			dbCollection.drop();
+			String indexSegment = indexName + "_" + i;
+			MongoDirectory.dropIndex(mongo, mongoConfig.getDatabaseName(), indexSegment);
 		}
 		
 	}

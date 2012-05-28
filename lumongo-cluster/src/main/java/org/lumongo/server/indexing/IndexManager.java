@@ -314,8 +314,6 @@ public class IndexManager {
 		try {
 			String indexName = request.getIndexName();
 			
-			log.info("Deleting index <" + indexName + ">");
-			
 			Index i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
@@ -326,6 +324,7 @@ public class IndexManager {
 			
 			Member self = hazelcastManager.getSelf();
 			
+			log.info("Unload index <" + indexName + "> for delete");
 			for (Member m : currentMembers) {
 				try {
 					UnloadIndexTask uit = new UnloadIndexTask(m.getInetSocketAddress().getPort(), indexName);
@@ -344,7 +343,10 @@ public class IndexManager {
 				
 			}
 			
+			log.info("Deleting index <" + indexName + ">");
 			i.deleteIndex(mongo);
+			log.info("Current indexes <" + indexMap.keySet() + ">");
+			indexMap.remove(indexName);
 			
 			return IndexDeleteResponse.newBuilder().build();
 		}
@@ -362,6 +364,7 @@ public class IndexManager {
 			}
 			
 			i.unload();
+			indexMap.remove(indexName);
 		}
 		finally {
 			globalLock.writeLock().unlock();
@@ -370,7 +373,7 @@ public class IndexManager {
 	
 	public void shutdown() {
 		
-		//TODO configure
+		//TODO configure or force a lock acquire
 		int waitSeconds = 10;
 		
 		log.info("Waiting for lock");

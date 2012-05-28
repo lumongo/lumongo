@@ -11,6 +11,7 @@ import org.lumongo.client.config.LumongoClientConfig;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
+import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
@@ -127,9 +128,8 @@ public class SingleNodeTest {
 		return mongoConfig;
 	}
 	
-	@AfterGroups(groups = { "last" })
+	@AfterGroups(groups = { "drop" })
 	public void stopServer() throws Exception {
-		
 		log.info("Stopping server for single node test");
 		stopClient();
 		luceneNode.shutdown();
@@ -455,5 +455,14 @@ public class SingleNodeTest {
 				System.out.println("Document: " + contents);
 			}
 		}
+	}
+	
+	@Test(groups = { "drop" }, dependsOnGroups = { "last" })
+	public void dropIndex() throws Exception {
+		GetIndexesResponse gir = lumongoClient.getIndexes();
+		Assert.assertEquals(gir.getIndexNameCount(), 1, "Expected one index");
+		lumongoClient.deleteIndex("myTestIndex");
+		gir = lumongoClient.getIndexes();
+		Assert.assertEquals(gir.getIndexNameCount(), 0, "Expected zero indexes");
 	}
 }

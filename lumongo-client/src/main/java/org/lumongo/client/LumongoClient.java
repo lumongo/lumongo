@@ -534,8 +534,8 @@ public class LumongoClient {
 		return lrc;
 	}
 	
-	public IndexDeleteResponse deleteIndex(IndexDeleteRequest request) throws Exception {
-		return deleteIndex(request, retryCount);
+	public IndexDeleteResponse deleteIndex(String indexName) throws Exception {
+		return deleteIndex(IndexDeleteRequest.newBuilder().setIndexName(indexName).build(), retryCount);
 	}
 	
 	protected IndexDeleteResponse deleteIndex(IndexDeleteRequest request, int retries) throws Exception {
