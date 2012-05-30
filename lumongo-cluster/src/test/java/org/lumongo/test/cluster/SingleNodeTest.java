@@ -154,6 +154,7 @@ public class SingleNodeTest {
 		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("title").setAnalyzer(LMAnalyzer.STANDARD));
 		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("issn").setAnalyzer(LMAnalyzer.LC_KEYWORD));
 		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("uid").setAnalyzer(LMAnalyzer.LC_KEYWORD));
+		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("an").setAnalyzer(LMAnalyzer.NUMERIC_INT));
 		indexSettingsBuilder.setSegmentTolerance(0.05);
 		
 		lumongoClient.createIndex("myTestIndex", 16, "uid", indexSettingsBuilder.build());
@@ -172,6 +173,7 @@ public class SingleNodeTest {
 				indexedDocBuilder.setIndexName("myTestIndex");
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("1333-1333").build());
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Search and Storage").build());
+				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("an").addIntValue(i).build());
 				
 				ByteString byteString = ByteString.copyFromUtf8("<sampleXML>random xml</sampleXML>");
 				

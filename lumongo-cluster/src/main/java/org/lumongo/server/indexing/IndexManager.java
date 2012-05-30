@@ -469,7 +469,7 @@ public class IndexManager {
 		}
 	}
 	
-	public void reloadIndexSettings(String indexName) throws IndexDoesNotExist, InvalidIndexConfig, MongoException, IOException {
+	public void reloadIndexSettings(String indexName) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			

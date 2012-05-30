@@ -1,6 +1,7 @@
 package org.lumongo.server.config;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
@@ -43,11 +44,23 @@ public class IndexConfig {
 	private LMAnalyzer defaultAnalyzer;
 	private List<FieldConfig> fieldConfigList;
 	
+	//final because clear is used instead of new HashSet
+	private final HashSet<String> numericIntFields;
+	private final HashSet<String> numericLongFields;
+	private final HashSet<String> numericFloatFields;
+	private final HashSet<String> numericDoubleFields;
+	private final HashSet<String> nonNumericFields;
+	
 	protected IndexConfig() {
-		
+		this.numericIntFields = new HashSet<String>();
+		this.numericLongFields = new HashSet<String>();
+		this.numericFloatFields = new HashSet<String>();
+		this.numericDoubleFields = new HashSet<String>();
+		this.nonNumericFields = new HashSet<String>();
 	}
 	
 	public IndexConfig(IndexCreateRequest request) {
+		this();
 		
 		indexName = request.getIndexName();
 		numberOfSegments = request.getNumberOfSegments();
@@ -67,6 +80,70 @@ public class IndexConfig {
 		this.segmentTolerance = indexSettings.getSegmentTolerance();
 		this.defaultAnalyzer = indexSettings.getDefaultAnalyzer();
 		this.fieldConfigList = indexSettings.getFieldConfigList();
+		
+		setupNonNumericFields();
+	}
+	
+	public IndexSettings getIndexSettings() {
+		IndexSettings.Builder isb = IndexSettings.newBuilder();
+		isb.setDefaultSearchField(defaultSearchField);
+		isb.setApplyUncommitedDeletes(applyUncommitedDeletes);
+		isb.setRequestFactor(requestFactor);
+		isb.setMinSegmentRequest(minSegmentRequest);
+		isb.setBlockCompression(blockCompression);
+		isb.setSegmentCommitInterval(segmentCommitInterval);
+		isb.setIdleTimeWithoutCommit(idleTimeWithoutCommit);
+		isb.setSegmentTolerance(segmentTolerance);
+		isb.setDefaultAnalyzer(defaultAnalyzer);
+		isb.addAllFieldConfig(fieldConfigList);
+		
+		return isb.build();
+	}
+	
+	private void setupNonNumericFields() {
+		numericIntFields.clear();
+		numericLongFields.clear();
+		numericFloatFields.clear();
+		numericDoubleFields.clear();
+		nonNumericFields.clear();
+		
+		for (FieldConfig fc : fieldConfigList) {
+			if (LMAnalyzer.NUMERIC_INT.equals(fc.getAnalyzer())) {
+				numericIntFields.add(fc.getFieldName());
+			}
+			else if (LMAnalyzer.NUMERIC_LONG.equals(fc.getAnalyzer())) {
+				numericLongFields.add(fc.getFieldName());
+			}
+			else if (LMAnalyzer.NUMERIC_FLOAT.equals(fc.getAnalyzer())) {
+				numericFloatFields.add(fc.getFieldName());
+			}
+			else if (LMAnalyzer.NUMERIC_DOUBLE.equals(fc.getAnalyzer())) {
+				numericDoubleFields.add(fc.getFieldName());
+			}
+			else {
+				nonNumericFields.add(fc.getFieldName());
+			}
+		}
+	}
+	
+	public boolean isNumericField(String fieldName) {
+		return !nonNumericFields.contains(fieldName);
+	}
+	
+	public boolean isNumericIntField(String fieldName) {
+		return numericIntFields.contains(fieldName);
+	}
+	
+	public boolean isNumericLongField(String fieldName) {
+		return numericLongFields.contains(fieldName);
+	}
+	
+	public boolean isNumericFloatField(String fieldName) {
+		return numericFloatFields.contains(fieldName);
+	}
+	
+	public boolean isNumericDoubleField(String fieldName) {
+		return numericDoubleFields.contains(fieldName);
 	}
 	
 	public List<FieldConfig> getFieldConfigList() {
@@ -213,6 +290,8 @@ public class IndexConfig {
 			LMAnalyzer analyzer = LMAnalyzer.valueOf((String) fieldConfig.get(ANALYZER));
 			indexConfig.fieldConfigList.add(FieldConfig.newBuilder().setFieldName(fieldName).setAnalyzer(analyzer).build());
 		}
+		
+		indexConfig.setupNonNumericFields();
 		
 		return indexConfig;
 	}

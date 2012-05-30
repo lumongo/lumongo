@@ -5,11 +5,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldSelector;
-import org.apache.lucene.document.FieldSelectorResult;
+import org.apache.lucene.document.NumericField;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
@@ -27,6 +28,7 @@ import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
+import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMField;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
@@ -49,11 +51,13 @@ public class Segment {
 	private Long lastCommit;
 	private Long lastChange;
 	private String indexName;
+	private Analyzer analyzer;
 	
-	public Segment(int segmentNumber, LumongoIndexWriter indexWriter, IndexConfig indexConfig) {
+	public Segment(int segmentNumber, LumongoIndexWriter indexWriter, IndexConfig indexConfig, Analyzer analyzer) {
 		this.segmentNumber = segmentNumber;
 		this.indexWriter = indexWriter;
 		this.indexConfig = indexConfig;
+		this.analyzer = analyzer;
 		
 		this.uniqueIdField = indexConfig.getUniqueIdField();
 		
@@ -63,16 +67,13 @@ public class Segment {
 		this.indexName = indexConfig.getIndexName();
 		
 		// this is probably unnecessary since only the unique id is being stored
-		this.uniqueIdOnlyFieldSelector = new FieldSelector() {
-			
-			private static final long serialVersionUID = 1L;
-			
-			@Override
-			public FieldSelectorResult accept(String fieldName) {
-				return (uniqueIdField.equals(fieldName) ? FieldSelectorResult.LOAD : FieldSelectorResult.NO_LOAD);
-			}
-		};
+		this.uniqueIdOnlyFieldSelector = new SingleFieldSelector(uniqueIdField);
 		
+	}
+	
+	public void updateIndexSettings(IndexSettings indexSettings, Analyzer analyzer) {
+		this.analyzer = analyzer;
+		this.indexConfig.configure(indexSettings);
 	}
 	
 	public int getSegmentNumber() {
@@ -174,18 +175,63 @@ public class Segment {
 		
 		for (LMField indexedField : lmDoc.getIndexedFieldList()) {
 			String fieldName = indexedField.getFieldName();
-			List<String> fieldValueList = indexedField.getFieldValueList();
-			for (String fieldValue : fieldValueList) {
-				d.add(new Field(fieldName, fieldValue, Store.NO, org.apache.lucene.document.Field.Index.ANALYZED));
+			
+			if (!indexConfig.isNumericField(fieldName)) {
+				List<String> fieldValueList = indexedField.getFieldValueList();
+				for (String fieldValue : fieldValueList) {
+					
+					d.add(new Field(fieldName, fieldValue, Store.NO, org.apache.lucene.document.Field.Index.ANALYZED));
+					
+				}
+			}
+			else {
+				if (indexConfig.isNumericIntField(fieldName)) {
+					List<Integer> valueList = indexedField.getIntValueList();
+					for (int value : valueList) {
+						NumericField nf = new NumericField(fieldName);
+						nf.setIntValue(value);
+						d.add(nf);
+					}
+				}
+				else if (indexConfig.isNumericLongField(fieldName)) {
+					List<Long> valueList = indexedField.getLongValueList();
+					for (long value : valueList) {
+						NumericField nf = new NumericField(fieldName);
+						nf.setLongValue(value);
+						d.add(nf);
+					}
+				}
+				else if (indexConfig.isNumericFloatField(fieldName)) {
+					List<Float> valueList = indexedField.getFloatValueList();
+					for (float value : valueList) {
+						NumericField nf = new NumericField(fieldName);
+						nf.setFloatValue(value);
+						d.add(nf);
+					}
+				}
+				else if (indexConfig.isNumericDoubleField(fieldName)) {
+					List<Double> valueList = indexedField.getDoubleValueList();
+					for (double value : valueList) {
+						NumericField nf = new NumericField(fieldName);
+						nf.setDoubleValue(value);
+						d.add(nf);
+					}
+				}
+				else {
+					//should be impossible
+					throw new RuntimeException("Unsupported numeric field type");
+				}
+				
 			}
 		}
 		d.removeFields(indexConfig.getUniqueIdField());
 		d.add(new Field(indexConfig.getUniqueIdField(), uniqueId, Store.NO, org.apache.lucene.document.Field.Index.ANALYZED));
-		//make sure the update works
+		
+		//make sure the update works because it is searching on a term
 		d.add(new Field(indexConfig.getUniqueIdField(), uniqueId, Store.YES, org.apache.lucene.document.Field.Index.NOT_ANALYZED_NO_NORMS));
 		
 		Term term = new Term(indexConfig.getUniqueIdField(), uniqueId);
-		indexWriter.updateDocument(term, d);
+		indexWriter.updateDocument(term, d, analyzer);
 		
 		possibleCommit();
 	}

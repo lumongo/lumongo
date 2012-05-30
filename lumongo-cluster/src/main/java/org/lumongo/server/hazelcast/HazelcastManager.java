@@ -13,7 +13,6 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.Nodes.HazelcastNode;
 import org.lumongo.server.exceptions.IndexDoesNotExist;
-import org.lumongo.server.exceptions.InvalidIndexConfig;
 import org.lumongo.server.indexing.IndexManager;
 
 import com.hazelcast.config.Config;
@@ -28,7 +27,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.GroupProperties;
-import com.mongodb.MongoException;
 
 public class HazelcastManager implements MembershipListener, LifecycleListener {
 	private final static Logger log = Logger.getLogger(HazelcastManager.class);
@@ -43,8 +41,8 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 	
 	private final static Map<Integer, HazelcastManager> portToHazelcastManagerMap = new HashMap<Integer, HazelcastManager>();
 	
-	public static HazelcastManager createHazelcastManager(LocalNodeConfig localNodeConfig, IndexManager indexManager, Set<HazelcastNode> nodes, String hazelcastName)
-			throws Exception {
+	public static HazelcastManager createHazelcastManager(LocalNodeConfig localNodeConfig, IndexManager indexManager, Set<HazelcastNode> nodes,
+			String hazelcastName) throws Exception {
 		HazelcastManager hazelcastManager = new HazelcastManager(localNodeConfig, indexManager);
 		portToHazelcastManagerMap.put(hazelcastManager.getHazelcastPort(), hazelcastManager);
 		indexManager.init(hazelcastManager);
@@ -182,7 +180,7 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		return hazelcastInstance.getLock(lockName);
 	}
 	
-	public void reloadIndexSettings(String indexName) throws IndexDoesNotExist, InvalidIndexConfig, MongoException, IOException {
+	public void reloadIndexSettings(String indexName) throws Exception {
 		indexManager.reloadIndexSettings(indexName);
 	}
 	

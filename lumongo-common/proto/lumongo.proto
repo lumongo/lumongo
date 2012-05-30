@@ -134,6 +134,11 @@ enum LMAnalyzer {
 		WHITESPACE = 2;
 		LC_WHITESPACE =3;
 		STANDARD = 4;
+		NUMERIC_INT = 5;
+		NUMERIC_LONG = 6;
+		NUMERIC_FLOAT = 8;
+		NUMERIC_DOUBLE = 8;
+
 }
 
 message IndexSettings {
@@ -193,6 +198,10 @@ message LMDoc {
 message LMField {
 	required string fieldName = 1;
 	repeated string fieldValue = 2;
+	repeated int32 intValue = 3;
+	repeated int64 longValue = 4;
+	repeated float floatValue = 5;
+	repeated double doubleValue = 6;
 }
 
 message ResultDocument {

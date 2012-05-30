@@ -33,7 +33,9 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LumongoIndexWriter;
+import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.lumongo.LuceneConstants;
@@ -82,7 +84,7 @@ public class Index {
 	private static final String SETTINGS_ID = "settings";
 	public static final String CONFIG_SUFFIX = "_config";
 	
-	private IndexConfig indexConfig;
+	private final IndexConfig indexConfig;
 	private final Mongo mongo;
 	private final MongoConfig mongoConfig;
 	private final ClusterConfig clusterConfig;
@@ -165,7 +167,31 @@ public class Index {
 	}
 	
 	private QueryParser createQueryParser() throws Exception {
-		return new QueryParser(LuceneConstants.VERSION, indexConfig.getDefaultSearchField(), getAnalyzer());
+		return new QueryParser(LuceneConstants.VERSION, indexConfig.getDefaultSearchField(), getAnalyzer()) {
+			@Override
+			protected Query getRangeQuery(final String field, final String part1, final String part2, final boolean inclusive) throws ParseException {
+				
+				if (indexConfig.isNumericIntField(field)) {
+					return NumericRangeQuery.newIntRange(field, Integer.parseInt(part1), Integer.parseInt(part2), inclusive, inclusive);
+				}
+				else if (indexConfig.isNumericLongField(field)) {
+					return NumericRangeQuery.newLongRange(field, Long.parseLong(part1), Long.parseLong(part2), inclusive, inclusive);
+				}
+				else if (indexConfig.isNumericLongField(field)) {
+					return NumericRangeQuery.newLongRange(field, Long.parseLong(part1), Long.parseLong(part2), inclusive, inclusive);
+				}
+				else if (indexConfig.isNumericFloatField(field)) {
+					return NumericRangeQuery.newFloatRange(field, Float.parseFloat(part1), Float.parseFloat(part2), inclusive, inclusive);
+				}
+				else if (indexConfig.isNumericDoubleField(field)) {
+					return NumericRangeQuery.newDoubleRange(field, Double.parseDouble(part1), Double.parseDouble(part2), inclusive, inclusive);
+				}
+				
+				// return default
+				return super.getRangeQuery(field, part1, part2, inclusive);
+				
+			}
+		};
 	}
 	
 	public Analyzer getAnalyzer() throws Exception {
@@ -195,6 +221,18 @@ public class Index {
 		}
 		else if (LMAnalyzer.STANDARD.equals(lmAnalyzer)) {
 			return new StandardAnalyzer(LuceneConstants.VERSION);
+		}
+		else if (LMAnalyzer.NUMERIC_INT.equals(lmAnalyzer)) {
+			return new KeywordAnalyzer();
+		}
+		else if (LMAnalyzer.NUMERIC_LONG.equals(lmAnalyzer)) {
+			return new KeywordAnalyzer();
+		}
+		else if (LMAnalyzer.NUMERIC_FLOAT.equals(lmAnalyzer)) {
+			return new KeywordAnalyzer();
+		}
+		else if (LMAnalyzer.NUMERIC_DOUBLE.equals(lmAnalyzer)) {
+			return new KeywordAnalyzer();
 		}
 		
 		throw new Exception("Unsupport analyzer <" + lmAnalyzer + ">");
@@ -337,13 +375,14 @@ public class Index {
 						clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
 				DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 				
-				IndexWriterConfig config = new IndexWriterConfig(LuceneConstants.VERSION, getAnalyzer());
+				IndexWriterConfig config = new IndexWriterConfig(LuceneConstants.VERSION, null);
+				
 				//TODO configurable, or use flush interval				
 				//config.setRAMBufferSizeMB(32);
 				
 				LumongoIndexWriter indexWriter = new LumongoIndexWriter(dd, config);
 				
-				Segment s = new Segment(segmentNumber, indexWriter, indexConfig);
+				Segment s = new Segment(segmentNumber, indexWriter, indexConfig, getAnalyzer());
 				segmentMap.put(segmentNumber, s);
 				
 				log.info("Loaded segment <" + segmentNumber + "> for index <" + indexName + ">");
@@ -692,7 +731,7 @@ public class Index {
 			
 			final HashMap<Integer, ScoreDoc> lastScoreDocMap = new HashMap<Integer, ScoreDoc>();
 			ScoreDoc after = null;
-			String indexName = indexConfig.getIndexName();
+			
 			LastResult lr = queryRequest.getLastResult();
 			if (lr != null) {
 				for (LastIndexResult lir : lr.getLastIndexResultList()) {
@@ -768,11 +807,27 @@ public class Index {
 		
 	}
 	
-	public void reloadIndexSettings() throws InvalidIndexConfig {
+	public void reloadIndexSettings() throws Exception {
 		indexLock.writeLock().lock();
 		try {
-			indexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
+			
+			IndexConfig newIndexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
+			
+			IndexSettings indexSettings = newIndexConfig.getIndexSettings();
+			indexConfig.configure(indexSettings);
+			
 			parsers.clear();
+			
+			//force analyzer to be fetched first so it doesn't fail only on one segment below
+			getAnalyzer();
+			for (Segment s : segmentMap.values()) {
+				try {
+					s.updateIndexSettings(indexSettings, getAnalyzer());
+				}
+				catch (Exception e) {
+				}
+			}
+			
 		}
 		finally {
 			indexLock.writeLock().unlock();
