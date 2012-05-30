@@ -232,6 +232,7 @@ public class IndexManager {
 	public IndexCreateResponse createIndex(IndexCreateRequest request) throws Exception {
 		globalLock.writeLock().lock();
 		try {
+			log.info("Creating index: <" + request.getIndexName() + ">: " + request);
 			
 			IndexConfig indexConfig = new IndexConfig(request);
 			
@@ -243,6 +244,8 @@ public class IndexManager {
 			indexMap.put(indexConfig.getIndexName(), i);
 			i.loadAllSegments();
 			i.forceBalance(hazelcastManager.getMembers());
+			
+			log.info("Created index: <" + request.getIndexName() + ">");
 			
 			return IndexCreateResponse.newBuilder().build();
 		}

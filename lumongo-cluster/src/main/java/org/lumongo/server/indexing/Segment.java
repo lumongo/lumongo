@@ -219,7 +219,7 @@ public class Segment {
 				}
 				else {
 					//should be impossible
-					throw new RuntimeException("Unsupported numeric field type");
+					throw new RuntimeException("Unsupported numeric field type for field <" + fieldName + ">");
 				}
 				
 			}

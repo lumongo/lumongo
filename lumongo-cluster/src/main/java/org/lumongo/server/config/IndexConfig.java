@@ -49,14 +49,14 @@ public class IndexConfig {
 	private final HashSet<String> numericLongFields;
 	private final HashSet<String> numericFloatFields;
 	private final HashSet<String> numericDoubleFields;
-	private final HashSet<String> nonNumericFields;
+	private final HashSet<String> numericFields;
 	
 	protected IndexConfig() {
 		this.numericIntFields = new HashSet<String>();
 		this.numericLongFields = new HashSet<String>();
 		this.numericFloatFields = new HashSet<String>();
 		this.numericDoubleFields = new HashSet<String>();
-		this.nonNumericFields = new HashSet<String>();
+		this.numericFields = new HashSet<String>();
 	}
 	
 	public IndexConfig(IndexCreateRequest request) {
@@ -105,7 +105,7 @@ public class IndexConfig {
 		numericLongFields.clear();
 		numericFloatFields.clear();
 		numericDoubleFields.clear();
-		nonNumericFields.clear();
+		numericFields.clear();
 		
 		for (FieldConfig fc : fieldConfigList) {
 			if (LMAnalyzer.NUMERIC_INT.equals(fc.getAnalyzer())) {
@@ -120,14 +120,16 @@ public class IndexConfig {
 			else if (LMAnalyzer.NUMERIC_DOUBLE.equals(fc.getAnalyzer())) {
 				numericDoubleFields.add(fc.getFieldName());
 			}
-			else {
-				nonNumericFields.add(fc.getFieldName());
-			}
 		}
+		
+		numericFields.addAll(numericIntFields);
+		numericFields.addAll(numericLongFields);
+		numericFields.addAll(numericFloatFields);
+		numericFields.addAll(numericDoubleFields);
 	}
 	
 	public boolean isNumericField(String fieldName) {
-		return !nonNumericFields.contains(fieldName);
+		return numericFields.contains(fieldName);
 	}
 	
 	public boolean isNumericIntField(String fieldName) {
