@@ -1075,7 +1075,9 @@ public class IndexManager {
 			for (int i = 0; i < amountToReturn; i++) {
 				String value = terms.firstKey();
 				AtomicLong docFreq = terms.remove(value);
-				responseBuilder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
+				if (docFreq.get() >= request.getMinDocFreq()) {
+					responseBuilder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
+				}
 			}
 			return responseBuilder.build();
 		}

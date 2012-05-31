@@ -1055,9 +1055,7 @@ public class Index {
 			for (int i = 0; i < amountToReturn; i++) {
 				String value = terms.firstKey();
 				AtomicLong docFreq = terms.remove(value);
-				if (docFreq.get() >= request.getMinDocFreq()) {
-					responseBuilder.addTerm(Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
-				}
+				responseBuilder.addTerm(Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
 			}
 			return responseBuilder.build();
 		}
