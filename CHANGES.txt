@@ -1,8 +1,16 @@
-0.11
+0.12
+Fixed Bug #6: Index configuration is not refreshed correctly in segments
+Added Feature #3: Add numeric field support
+Added Feature #11: Change MongoBlock Caching (requires update in cluster settings)
+Added Feature #10: Expose ability to search multiple indexes at once
+Fixed Bug #12: Fix Drop Index Code
+Fixed Bug #13: Get terms fails if a segment has no terms
+Added Feature #14: Get terms should return document frequency
 
-Add rest service to stream and store large associated documents
-Minor bug fixes
-Performance fix on missing mongo index for associated documents
+0.11
+Fixed Bug #9: Associated Documents Missing Index
+Added Feature #8: Add ability to load large associated documents
+Fixed Bug #7: Associated Documents Stored Without Indexed Documents Issue Deletes
 
 0.10
 Initial Release
