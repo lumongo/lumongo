@@ -175,7 +175,6 @@ public class SingleNodeTest {
 				indexedDocBuilder.setIndexName(MY_TEST_INDEX);
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("1333-1333").build());
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Search and Storage").build());
-				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("an").addIntValue(i).build());
 				
 				ByteString byteString = ByteString.copyFromUtf8("<sampleXML>random xml</sampleXML>");
 				
@@ -192,6 +191,7 @@ public class SingleNodeTest {
 				indexedDocBuilder.setIndexName(MY_TEST_INDEX);
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("1234-1234").build());
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Distributed Search and Storage System").build());
+				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("an").addIntValue(i).build());
 				
 				ByteString byteString = ByteString.copyFromUtf8("<sampleXML>" + i + "</sampleXML>");
 				
@@ -204,6 +204,15 @@ public class SingleNodeTest {
 		}
 		{
 			QueryResponse qr = null;
+			
+			qr = lumongoClient.query("an:3", 10, MY_TEST_INDEX);
+			Assert.assertEquals(qr.getTotalHits(), 1, "Total hits is not 1");
+			
+			qr = lumongoClient.query("an:[1 TO 3]", 10, MY_TEST_INDEX);
+			Assert.assertEquals(qr.getTotalHits(), 3, "Total hits is not 3");
+			
+			qr = lumongoClient.query("an:{1 TO 3}", 10, MY_TEST_INDEX);
+			Assert.assertEquals(qr.getTotalHits(), 1, "Total hits is not 1");
 			
 			qr = lumongoClient.query("title:distributed", 300, MY_TEST_INDEX);
 			Assert.assertEquals(qr.getTotalHits(), DOCUMENTS_LOADED, "Total hits is not " + DOCUMENTS_LOADED);
@@ -219,12 +228,6 @@ public class SingleNodeTest {
 			
 			qr = lumongoClient.query("title:cluster", 10, MY_TEST_INDEX);
 			Assert.assertEquals(qr.getTotalHits(), 0, "Total hits is not 0");
-			
-			qr = lumongoClient.query("an:1", 10, MY_TEST_INDEX);
-			Assert.assertEquals(qr.getTotalHits(), 1, "Total hits is not 1");
-			
-			qr = lumongoClient.query("an:[1 TO 3]", 10, MY_TEST_INDEX);
-			Assert.assertEquals(qr.getTotalHits(), 3, "Total hits is not 3");
 			
 			lumongoClient.getTerms(MY_TEST_INDEX, "title");
 		}

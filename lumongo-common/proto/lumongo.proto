@@ -136,7 +136,7 @@ enum LMAnalyzer {
 		STANDARD = 4;
 		NUMERIC_INT = 5;
 		NUMERIC_LONG = 6;
-		NUMERIC_FLOAT = 8;
+		NUMERIC_FLOAT = 7;
 		NUMERIC_DOUBLE = 8;
 
 }

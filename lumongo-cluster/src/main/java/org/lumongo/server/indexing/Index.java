@@ -38,8 +38,6 @@ import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.util.NumericUtils;
 import org.lumongo.LuceneConstants;
 import org.lumongo.analyzer.LowercaseKeywordAnalyzer;
 import org.lumongo.analyzer.LowercaseWhitespaceAnalyzer;
@@ -170,34 +168,44 @@ public class Index {
 	private QueryParser createQueryParser() throws Exception {
 		return new QueryParser(LuceneConstants.VERSION, indexConfig.getDefaultSearchField(), getAnalyzer()) {
 			@Override
-			protected Query getRangeQuery(final String field, final String part1, final String part2, final boolean inclusive) throws ParseException {
+			protected Query getRangeQuery(final String fieldName, final String start, final String end, final boolean inclusive) throws ParseException {
 				
-				if (indexConfig.isNumericIntField(field)) {
-					return NumericRangeQuery.newIntRange(field, Integer.parseInt(part1), Integer.parseInt(part2), inclusive, inclusive);
-				}
-				else if (indexConfig.isNumericLongField(field)) {
-					return NumericRangeQuery.newLongRange(field, Long.parseLong(part1), Long.parseLong(part2), inclusive, inclusive);
-				}
-				else if (indexConfig.isNumericLongField(field)) {
-					return NumericRangeQuery.newLongRange(field, Long.parseLong(part1), Long.parseLong(part2), inclusive, inclusive);
-				}
-				else if (indexConfig.isNumericFloatField(field)) {
-					return NumericRangeQuery.newFloatRange(field, Float.parseFloat(part1), Float.parseFloat(part2), inclusive, inclusive);
-				}
-				else if (indexConfig.isNumericDoubleField(field)) {
-					return NumericRangeQuery.newDoubleRange(field, Double.parseDouble(part1), Double.parseDouble(part2), inclusive, inclusive);
+				if (indexConfig.isNumericField(fieldName)) {
+					return getNumericRange(fieldName, start, end, inclusive);
 				}
 				
-				// return default
-				return super.getRangeQuery(field, part1, part2, inclusive);
+				return super.getRangeQuery(fieldName, start, end, inclusive);
 				
+			}
+			
+			private NumericRangeQuery<?> getNumericRange(final String fieldName, final String start, final String end, final boolean inclusive) {
+				if (indexConfig.isNumericIntField(fieldName)) {
+					return NumericRangeQuery.newIntRange(fieldName, Integer.parseInt(start), Integer.parseInt(end), inclusive, inclusive);
+				}
+				else if (indexConfig.isNumericLongField(fieldName)) {
+					return NumericRangeQuery.newLongRange(fieldName, Long.parseLong(start), Long.parseLong(end), inclusive, inclusive);
+				}
+				else if (indexConfig.isNumericLongField(fieldName)) {
+					return NumericRangeQuery.newLongRange(fieldName, Long.parseLong(start), Long.parseLong(end), inclusive, inclusive);
+				}
+				else if (indexConfig.isNumericFloatField(fieldName)) {
+					return NumericRangeQuery.newFloatRange(fieldName, Float.parseFloat(start), Float.parseFloat(end), inclusive, inclusive);
+				}
+				else if (indexConfig.isNumericDoubleField(fieldName)) {
+					return NumericRangeQuery.newDoubleRange(fieldName, Double.parseDouble(start), Double.parseDouble(end), inclusive, inclusive);
+				}
+				throw new RuntimeException("Not a valid numeric field <" + fieldName + ">");
 			}
 			
 			@Override
 			protected Query newTermQuery(org.apache.lucene.index.Term term) {
-				if (indexConfig.isNumericField(term.field())) {
-					return new TermQuery(new org.apache.lucene.index.Term("field", NumericUtils.intToPrefixCoded(Integer.parseInt(term.text()))));
+				String field = term.field();
+				String text = term.text();
+				
+				if (indexConfig.isNumericField(field)) {
+					return getNumericRange(field, text, text, true);
 				}
+				
 				return super.newTermQuery(term);
 			}
 		};
@@ -207,7 +215,9 @@ public class Index {
 	public Analyzer getAnalyzer() throws Exception {
 		HashMap<String, Analyzer> customAnalyzerMap = new HashMap<String, Analyzer>();
 		for (FieldConfig fieldConfig : indexConfig.getFieldConfigList()) {
-			customAnalyzerMap.put(fieldConfig.getFieldName(), getAnalyzer(fieldConfig.getAnalyzer()));
+			Analyzer a = getAnalyzer(fieldConfig.getAnalyzer());
+			customAnalyzerMap.put(fieldConfig.getFieldName(), a);
+			
 		}
 		
 		Analyzer defaultAnalyzer = getAnalyzer(indexConfig.getDefaultAnalyzer());

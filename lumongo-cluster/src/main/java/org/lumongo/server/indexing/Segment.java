@@ -123,6 +123,7 @@ public class Segment {
 			srBuilder.setSegment(segmentNumber);
 			srBuilder.setIndexName(indexName);
 			builder.addScoredResult(srBuilder.build());
+			
 		}
 		
 		builder.setMoreAvailable(moreAvailable);
@@ -179,42 +180,32 @@ public class Segment {
 			if (!indexConfig.isNumericField(fieldName)) {
 				List<String> fieldValueList = indexedField.getFieldValueList();
 				for (String fieldValue : fieldValueList) {
-					
 					d.add(new Field(fieldName, fieldValue, Store.NO, org.apache.lucene.document.Field.Index.ANALYZED));
-					
 				}
 			}
 			else {
 				if (indexConfig.isNumericIntField(fieldName)) {
 					List<Integer> valueList = indexedField.getIntValueList();
 					for (int value : valueList) {
-						NumericField nf = new NumericField(fieldName);
-						nf.setIntValue(value);
-						d.add(nf);
+						d.add(new NumericField(fieldName).setIntValue(value));
 					}
 				}
 				else if (indexConfig.isNumericLongField(fieldName)) {
 					List<Long> valueList = indexedField.getLongValueList();
 					for (long value : valueList) {
-						NumericField nf = new NumericField(fieldName);
-						nf.setLongValue(value);
-						d.add(nf);
+						d.add(new NumericField(fieldName).setLongValue(value));
 					}
 				}
 				else if (indexConfig.isNumericFloatField(fieldName)) {
 					List<Float> valueList = indexedField.getFloatValueList();
 					for (float value : valueList) {
-						NumericField nf = new NumericField(fieldName);
-						nf.setFloatValue(value);
-						d.add(nf);
+						d.add(new NumericField(fieldName).setFloatValue(value));
 					}
 				}
 				else if (indexConfig.isNumericDoubleField(fieldName)) {
 					List<Double> valueList = indexedField.getDoubleValueList();
 					for (double value : valueList) {
-						NumericField nf = new NumericField(fieldName);
-						nf.setDoubleValue(value);
-						d.add(nf);
+						d.add(new NumericField(fieldName).setDoubleValue(value));
 					}
 				}
 				else {
