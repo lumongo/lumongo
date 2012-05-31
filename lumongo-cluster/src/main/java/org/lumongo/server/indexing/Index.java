@@ -38,10 +38,11 @@ import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.util.NumericUtils;
 import org.lumongo.LuceneConstants;
 import org.lumongo.analyzer.LowercaseKeywordAnalyzer;
 import org.lumongo.analyzer.LowercaseWhitespaceAnalyzer;
-import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
@@ -191,7 +192,16 @@ public class Index {
 				return super.getRangeQuery(field, part1, part2, inclusive);
 				
 			}
+			
+			@Override
+			protected Query newTermQuery(org.apache.lucene.index.Term term) {
+				if (indexConfig.isNumericField(term.field())) {
+					return new TermQuery(new org.apache.lucene.index.Term("field", NumericUtils.intToPrefixCoded(Integer.parseInt(term.text()))));
+				}
+				return super.newTermQuery(term);
+			}
 		};
+		
 	}
 	
 	public Analyzer getAnalyzer() throws Exception {
@@ -1036,7 +1046,7 @@ public class Index {
 				String value = terms.firstKey();
 				AtomicLong docFreq = terms.remove(value);
 				if (docFreq.get() >= request.getMinDocFreq()) {
-					responseBuilder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
+					responseBuilder.addTerm(Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
 				}
 			}
 			return responseBuilder.build();

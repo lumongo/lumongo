@@ -45,6 +45,8 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 
 public class SingleNodeTest {
+	private static final String MY_TEST_INDEX = "myTestIndex";
+	
 	private static Logger log = Logger.getLogger(SingleNodeTest.class);
 	
 	private LumongoClient lumongoClient;
@@ -157,7 +159,7 @@ public class SingleNodeTest {
 		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("an").setAnalyzer(LMAnalyzer.NUMERIC_INT));
 		indexSettingsBuilder.setSegmentTolerance(0.05);
 		
-		lumongoClient.createIndex("myTestIndex", 16, "uid", indexSettingsBuilder.build());
+		lumongoClient.createIndex(MY_TEST_INDEX, 16, "uid", indexSettingsBuilder.build());
 		
 	}
 	
@@ -170,7 +172,7 @@ public class SingleNodeTest {
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
 				String uniqueId = uniqueIdPrefix + i;
 				LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
-				indexedDocBuilder.setIndexName("myTestIndex");
+				indexedDocBuilder.setIndexName(MY_TEST_INDEX);
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("1333-1333").build());
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Search and Storage").build());
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("an").addIntValue(i).build());
@@ -187,7 +189,7 @@ public class SingleNodeTest {
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
 				String uniqueId = uniqueIdPrefix + i;
 				LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
-				indexedDocBuilder.setIndexName("myTestIndex");
+				indexedDocBuilder.setIndexName(MY_TEST_INDEX);
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("1234-1234").build());
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Distributed Search and Storage System").build());
 				
@@ -203,22 +205,28 @@ public class SingleNodeTest {
 		{
 			QueryResponse qr = null;
 			
-			qr = lumongoClient.query("title:distributed", 300, "myTestIndex");
+			qr = lumongoClient.query("title:distributed", 300, MY_TEST_INDEX);
 			Assert.assertEquals(qr.getTotalHits(), DOCUMENTS_LOADED, "Total hits is not " + DOCUMENTS_LOADED);
 			
-			qr = lumongoClient.query("title:distributed", 100, "myTestIndex");
+			qr = lumongoClient.query("title:distributed", 100, MY_TEST_INDEX);
 			Assert.assertEquals(qr.getTotalHits(), DOCUMENTS_LOADED, "Total hits is not " + DOCUMENTS_LOADED);
 			
-			qr = lumongoClient.query("distributed", 20, "myTestIndex");
+			qr = lumongoClient.query("distributed", 20, MY_TEST_INDEX);
 			Assert.assertEquals(qr.getTotalHits(), DOCUMENTS_LOADED, "Total hits is not " + DOCUMENTS_LOADED);
 			
-			qr = lumongoClient.query("issn:1234-1234", 20, "myTestIndex");
+			qr = lumongoClient.query("issn:1234-1234", 20, MY_TEST_INDEX);
 			Assert.assertEquals(qr.getTotalHits(), DOCUMENTS_LOADED, "Total hits is not " + DOCUMENTS_LOADED);
 			
-			qr = lumongoClient.query("title:cluster", 10, "myTestIndex");
+			qr = lumongoClient.query("title:cluster", 10, MY_TEST_INDEX);
 			Assert.assertEquals(qr.getTotalHits(), 0, "Total hits is not 0");
 			
-			lumongoClient.getTerms("myTestIndex", "title");
+			qr = lumongoClient.query("an:1", 10, MY_TEST_INDEX);
+			Assert.assertEquals(qr.getTotalHits(), 1, "Total hits is not 1");
+			
+			qr = lumongoClient.query("an:[1 TO 3]", 10, MY_TEST_INDEX);
+			Assert.assertEquals(qr.getTotalHits(), 3, "Total hits is not 3");
+			
+			lumongoClient.getTerms(MY_TEST_INDEX, "title");
 		}
 		
 		{
@@ -239,7 +247,7 @@ public class SingleNodeTest {
 		String uniqueId = "bsonTestObjectId";
 		{
 			LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
-			indexedDocBuilder.setIndexName("myTestIndex");
+			indexedDocBuilder.setIndexName(MY_TEST_INDEX);
 			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("4321-4321").build());
 			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Magic Java Beans").build());
 			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("eissn").addFieldValue("3333-3333").build());
@@ -270,7 +278,7 @@ public class SingleNodeTest {
 		{
 			{
 				LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
-				indexedDocBuilder.setIndexName("myTestIndex");
+				indexedDocBuilder.setIndexName(MY_TEST_INDEX);
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("6666-6666").build());
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("More Magic Java Beans").build());
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("eissn").addFieldValue("2222-1111").build());
@@ -357,7 +365,7 @@ public class SingleNodeTest {
 			fr = lumongoClient.fetchDocument(uniqueIdToDelete);
 			Assert.assertTrue(fr.hasResultDocument(), "Document is missing raw document before delete");
 			
-			qr = lumongoClient.query("uid" + ":" + uniqueIdToDelete, 10, "myTestIndex");
+			qr = lumongoClient.query("uid" + ":" + uniqueIdToDelete, 10, MY_TEST_INDEX);
 			Assert.assertEquals(qr.getTotalHits(), 1, "Total hits is not 1 before delete");
 			
 			lumongoClient.delete(uniqueIdToDelete);
@@ -365,7 +373,7 @@ public class SingleNodeTest {
 			fr = lumongoClient.fetchDocument(uniqueIdToDelete);
 			Assert.assertTrue(!fr.hasResultDocument(), "Document has raw document after delete");
 			
-			qr = lumongoClient.query("uid" + ":" + uniqueIdToDelete, 10, "myTestIndex");
+			qr = lumongoClient.query("uid" + ":" + uniqueIdToDelete, 10, MY_TEST_INDEX);
 			Assert.assertEquals(qr.getTotalHits(), 0, "Total hits is not 0 after delete");
 		}
 		
@@ -407,7 +415,7 @@ public class SingleNodeTest {
 	public void apiUsage() throws Exception {
 		{
 			LMDoc.Builder indexedDoc = LMDoc.newBuilder();
-			indexedDoc.setIndexName("myTestIndex");
+			indexedDoc.setIndexName(MY_TEST_INDEX);
 			indexedDoc.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("4444-1111").build());
 			indexedDoc.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("A really special title to search").build());
 			
@@ -421,7 +429,7 @@ public class SingleNodeTest {
 		{
 			int numberOfResults = 10;
 			String normalLuceneQuery = "issn:1234-1234 AND title:special";
-			QueryResponse qr = lumongoClient.query(normalLuceneQuery, numberOfResults, "myTestIndex");
+			QueryResponse qr = lumongoClient.query(normalLuceneQuery, numberOfResults, MY_TEST_INDEX);
 			long totalHits = qr.getTotalHits();
 			
 			for (ScoredResult sr : qr.getResultsList()) {
@@ -437,9 +445,9 @@ public class SingleNodeTest {
 		{
 			int numberOfResults = 10;
 			String normalLuceneQuery = "title:special";
-			QueryResponse first = lumongoClient.query(normalLuceneQuery, numberOfResults, "myTestIndex");
+			QueryResponse first = lumongoClient.query(normalLuceneQuery, numberOfResults, MY_TEST_INDEX);
 			@SuppressWarnings("unused")
-			QueryResponse next = lumongoClient.query(normalLuceneQuery, numberOfResults, "myTestIndex", first);
+			QueryResponse next = lumongoClient.query(normalLuceneQuery, numberOfResults, MY_TEST_INDEX, first);
 			
 		}
 		
@@ -463,7 +471,7 @@ public class SingleNodeTest {
 	public void dropIndex() throws Exception {
 		GetIndexesResponse gir = lumongoClient.getIndexes();
 		Assert.assertEquals(gir.getIndexNameCount(), 1, "Expected one index");
-		lumongoClient.deleteIndex("myTestIndex");
+		lumongoClient.deleteIndex(MY_TEST_INDEX);
 		gir = lumongoClient.getIndexes();
 		Assert.assertEquals(gir.getIndexNameCount(), 0, "Expected zero indexes");
 	}
