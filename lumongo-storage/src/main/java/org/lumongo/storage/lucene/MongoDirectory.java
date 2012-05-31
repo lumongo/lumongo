@@ -99,7 +99,7 @@ public class MongoDirectory implements NosqlDirectory {
 				}
 			}
 		};
-		blockCache = CacheBuilder.newBuilder().maximumSize(blocks).removalListener(listener).build();
+		blockCache = CacheBuilder.newBuilder().concurrencyLevel(16).maximumSize(blocks).removalListener(listener).build();
 		if (oldMap != null) {
 			blockCache.asMap().putAll(oldMap);
 			oldMap.clear();
