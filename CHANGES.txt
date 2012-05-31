@@ -6,6 +6,7 @@ Added Feature #10: Expose ability to search multiple indexes at once
 Fixed Bug #12: Fix Drop Index Code
 Fixed Bug #13: Get terms fails if a segment has no terms
 Added Feature #14: Get terms should return document frequency
+Added Feature #15: Ability to run non-realtime query
 
 0.11
 Fixed Bug #9: Associated Documents Missing Index
