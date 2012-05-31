@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.NumericField;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -15,6 +16,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
@@ -79,6 +81,8 @@ public class StorageTest {
 		doc.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
 		doc.add(new Field("uid", uid, Field.Store.YES, Field.Index.ANALYZED));
 		doc.add(new Field("uid", uid, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
+		doc.add(new NumericField("testIntField").setIntValue(3));
+		System.out.println(doc.toString());
 		Term uidTerm = new Term("uid", uid);
 		w.updateDocument(uidTerm, doc);
 	}
@@ -88,7 +92,30 @@ public class StorageTest {
 		IndexReader indexReader = IndexReader.open(directory);
 		
 		StandardAnalyzer analyzer = new StandardAnalyzer(LuceneConstants.VERSION);
-		QueryParser qp = new QueryParser(LuceneConstants.VERSION, "title", analyzer);
+		QueryParser qp = new QueryParser(LuceneConstants.VERSION, "title", analyzer) {
+			@Override
+			protected Query getRangeQuery(final String fieldName, final String lower, final String upper, final boolean inclusive) throws ParseException {
+				
+				if ("testIntField".equals(fieldName)) {
+					return NumericRangeQuery.newIntRange(fieldName, Integer.parseInt(lower), Integer.parseInt(upper), inclusive, inclusive);
+				}
+				
+				// return default
+				return super.getRangeQuery(fieldName, lower, upper, inclusive);
+				
+			}
+			
+			@Override
+			protected org.apache.lucene.search.Query newTermQuery(org.apache.lucene.index.Term term) {
+				String field = term.field();
+				String text = term.text();
+				if ("testIntField".equals(field)) {
+					int value = Integer.parseInt(text);
+					return NumericRangeQuery.newIntRange(field, value, value, true, true);
+				}
+				return super.newTermQuery(term);
+			}
+		};
 		
 		int hits = 0;
 		
@@ -104,11 +131,23 @@ public class StorageTest {
 		Assert.assertEquals(hits, 1, "Expected 1 hit");
 		hits = runQuery(indexReader, qp, "java AND awesome", 10);
 		Assert.assertEquals(hits, 1, "Expected 1 hit");
+		hits = runQuery(indexReader, qp, "testIntField:[1 TO 10]", 10);
+		Assert.assertEquals(hits, 5, "Expected 5 hits");
+		hits = runQuery(indexReader, qp, "testIntField:1", 10);
+		Assert.assertEquals(hits, 0, "Expected 0 hits");
+		hits = runQuery(indexReader, qp, "testIntField:3", 10);
+		Assert.assertEquals(hits, 5, "Expected 5 hits");
+		
 	}
 	
 	private static int runQuery(IndexReader indexReader, QueryParser qp, String queryStr, int count) throws ParseException, CorruptIndexException, IOException {
 		Query q = qp.parse(queryStr);
 		
+		return runQuery(indexReader, count, q);
+		
+	}
+	
+	private static int runQuery(IndexReader indexReader, int count, Query q) throws IOException, CorruptIndexException {
 		long start = System.currentTimeMillis();
 		IndexSearcher searcher = new IndexSearcher(indexReader);
 		TopScoreDocCollector collector = TopScoreDocCollector.create(count, true);
@@ -128,13 +167,12 @@ public class StorageTest {
 		}
 		long fetchTime = System.currentTimeMillis() - start;
 		
-		System.out.println("Query <" + queryStr + "> found <" + totalHits + "> total hits in <" + searchTime + "ms>.  Fetched <" + hits.length
+		System.out.println("Query <" + q.toString() + "> found <" + totalHits + "> total hits in <" + searchTime + "ms>.  Fetched <" + hits.length
 				+ "> documents in >" + fetchTime + "ms>");
 		
 		System.out.println("  :" + ids);
 		
 		return totalHits;
-		
 	}
 	
 	@Test(groups = { "last" }, dependsOnGroups = { "query" })
