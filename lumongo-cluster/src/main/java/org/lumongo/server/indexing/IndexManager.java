@@ -1072,10 +1072,11 @@ public class IndexManager {
 			GetTermsResponse.Builder responseBuilder = GetTermsResponse.newBuilder();
 			
 			int amountToReturn = Math.min(request.getAmount(), terms.size());
-			for (int i = 0; i < amountToReturn; i++) {
+			for (int i = 0; i < amountToReturn && !terms.isEmpty();) {
 				String value = terms.firstKey();
 				AtomicLong docFreq = terms.remove(value);
 				if (docFreq.get() >= request.getMinDocFreq()) {
+					i++;
 					responseBuilder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
 				}
 			}
