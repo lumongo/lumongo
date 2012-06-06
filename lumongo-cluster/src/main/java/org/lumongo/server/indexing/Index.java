@@ -397,8 +397,8 @@ public class Index {
 				
 				IndexWriterConfig config = new IndexWriterConfig(LuceneConstants.VERSION, null);
 				//use flush interval to flush
-				config.setRAMBufferSizeMB(IndexWriterConfig.DISABLE_AUTO_FLUSH);
 				config.setMaxBufferedDocs(Integer.MAX_VALUE);
+				config.setRAMBufferSizeMB(IndexWriterConfig.DISABLE_AUTO_FLUSH);
 				
 				LumongoIndexWriter indexWriter = new LumongoIndexWriter(dd, config);
 				
