@@ -23,6 +23,7 @@ public class IndexConfig {
 	public static final String INDEX_NAME = "indexName";
 	public static final String UNIQUE_ID_FIELD = "uniqueIdField";
 	public static final String IDLE_TIME_WITHOUT_COMMIT = "idleTimeWithoutCommit";
+	public static final String SEGMENT_FLUSH_INTERVAL = "segmentFlushInterval";
 	public static final String SEGMENT_COMMIT_INTERVAL = "segmentCommitInterval";
 	public static final String SEGMENT_TOLERANCE = "segmentTolerance";
 	public static final String DEFAULT_ANALYZER = "defaultAnalyzer";
@@ -38,6 +39,7 @@ public class IndexConfig {
 	private String indexName;
 	private String uniqueIdField;
 	private int idleTimeWithoutCommit;
+	private int segmentFlushInterval;
 	private int segmentCommitInterval;
 	private boolean blockCompression;
 	private double segmentTolerance;
@@ -76,6 +78,7 @@ public class IndexConfig {
 		this.minSegmentRequest = indexSettings.getMinSegmentRequest();
 		this.blockCompression = indexSettings.getBlockCompression();
 		this.segmentCommitInterval = indexSettings.getSegmentCommitInterval();
+		this.segmentFlushInterval = indexSettings.getSegmentFlushInterval();
 		this.idleTimeWithoutCommit = indexSettings.getIdleTimeWithoutCommit();
 		this.segmentTolerance = indexSettings.getSegmentTolerance();
 		this.defaultAnalyzer = indexSettings.getDefaultAnalyzer();
@@ -96,7 +99,7 @@ public class IndexConfig {
 		isb.setSegmentTolerance(segmentTolerance);
 		isb.setDefaultAnalyzer(defaultAnalyzer);
 		isb.addAllFieldConfig(fieldConfigList);
-		
+		isb.setSegmentFlushInterval(segmentFlushInterval);
 		return isb.build();
 	}
 	
@@ -160,28 +163,12 @@ public class IndexConfig {
 		return defaultSearchField;
 	}
 	
-	public void setDefaultSearchField(String defaultSearchField) {
-		this.defaultSearchField = defaultSearchField;
-	}
-	
 	public boolean getApplyUncommitedDeletes() {
 		return applyUncommitedDeletes;
 	}
 	
-	public void setApplyUncommitedDeletes(boolean applyUncommitedDeletes) {
-		this.applyUncommitedDeletes = applyUncommitedDeletes;
-	}
-	
 	public double getRequestFactor() {
 		return requestFactor;
-	}
-	
-	public void setRequestFactor(double requestFactor) {
-		this.requestFactor = requestFactor;
-	}
-	
-	public void setMinSegmentRequest(int minSegmentRequest) {
-		this.minSegmentRequest = minSegmentRequest;
 	}
 	
 	public int getMinSegmentRequest() {
@@ -192,28 +179,12 @@ public class IndexConfig {
 		return numberOfSegments;
 	}
 	
-	public void setNumberOfSegments(int numberOfSegments) {
-		this.numberOfSegments = numberOfSegments;
-	}
-	
 	public String getIndexName() {
 		return indexName;
 	}
 	
-	public void setIndexName(String indexName) {
-		this.indexName = indexName;
-	}
-	
 	public String getUniqueIdField() {
 		return uniqueIdField;
-	}
-	
-	public void setUniqueIdField(String uniqueIdField) {
-		this.uniqueIdField = uniqueIdField;
-	}
-	
-	public void setIdleTimeWithoutCommitMs(int idleTimeWithoutCommit) {
-		this.idleTimeWithoutCommit = idleTimeWithoutCommit;
 	}
 	
 	public int getIdleTimeWithoutCommit() {
@@ -224,16 +195,12 @@ public class IndexConfig {
 		return segmentCommitInterval;
 	}
 	
-	public void setSegmentCommitInterval(int segmentCommitInterval) {
-		this.segmentCommitInterval = segmentCommitInterval;
+	public int getSegmentFlushInterval() {
+		return segmentFlushInterval;
 	}
 	
 	public boolean isBlockCompression() {
 		return blockCompression;
-	}
-	
-	public void setBlockCompression(boolean blockCompression) {
-		this.blockCompression = blockCompression;
 	}
 	
 	public double getSegmentTolerance() {
@@ -254,6 +221,7 @@ public class IndexConfig {
 		dbObject.put(BLOCK_COMPRESSION, blockCompression);
 		dbObject.put(SEGMENT_TOLERANCE, segmentTolerance);
 		dbObject.put(DEFAULT_ANALYZER, defaultAnalyzer.toString());
+		dbObject.put(SEGMENT_FLUSH_INTERVAL, segmentFlushInterval);
 		
 		List<DBObject> fieldConfigs = new ArrayList<DBObject>();
 		for (FieldConfig fc : fieldConfigList) {
@@ -286,6 +254,14 @@ public class IndexConfig {
 		indexConfig.defaultAnalyzer = LMAnalyzer.valueOf((String) settings.get(DEFAULT_ANALYZER));
 		indexConfig.fieldConfigList = new ArrayList<FieldConfig>();
 		
+		if (settings.containsField(SEGMENT_FLUSH_INTERVAL)) {
+			indexConfig.segmentFlushInterval = (int) settings.get(SEGMENT_FLUSH_INTERVAL);
+		}
+		else {
+			//make flush interval equal to segment commit interval divided by 2 if not defined (for old indexes)
+			indexConfig.segmentFlushInterval = (indexConfig.segmentCommitInterval / 2);
+		}
+		
 		List<DBObject> fieldConfigs = (List<DBObject>) settings.get(FIELD_CONFIGS);
 		for (DBObject fieldConfig : fieldConfigs) {
 			String fieldName = (String) fieldConfig.get(FIELD_NAME);
@@ -302,9 +278,11 @@ public class IndexConfig {
 	public String toString() {
 		return "IndexConfig [defaultSearchField=" + defaultSearchField + ", applyUncommitedDeletes=" + applyUncommitedDeletes + ", requestFactor="
 				+ requestFactor + ", minSegmentRequest=" + minSegmentRequest + ", numberOfSegments=" + numberOfSegments + ", indexName=" + indexName
-				+ ", uniqueIdField=" + uniqueIdField + ", idleTimeWithoutCommit=" + idleTimeWithoutCommit + ", segmentCommitInterval=" + segmentCommitInterval
-				+ ", blockCompression=" + blockCompression + ", segmentTolerance=" + segmentTolerance + ", defaultAnalyzer=" + defaultAnalyzer
-				+ ", fieldConfigList=" + fieldConfigList + "]";
+				+ ", uniqueIdField=" + uniqueIdField + ", idleTimeWithoutCommit=" + idleTimeWithoutCommit + ", segmentFlushInterval=" + segmentFlushInterval
+				+ ", segmentCommitInterval=" + segmentCommitInterval + ", blockCompression=" + blockCompression + ", segmentTolerance=" + segmentTolerance
+				+ ", defaultAnalyzer=" + defaultAnalyzer + ", fieldConfigList=" + fieldConfigList + ", numericIntFields=" + numericIntFields
+				+ ", numericLongFields=" + numericLongFields + ", numericFloatFields=" + numericFloatFields + ", numericDoubleFields=" + numericDoubleFields
+				+ ", numericFields=" + numericFields + "]";
 	}
 	
 }

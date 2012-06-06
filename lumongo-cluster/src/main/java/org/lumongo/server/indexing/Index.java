@@ -396,9 +396,9 @@ public class Index {
 				DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 				
 				IndexWriterConfig config = new IndexWriterConfig(LuceneConstants.VERSION, null);
-				
-				//TODO configurable, or use flush interval				
-				//config.setRAMBufferSizeMB(32);
+				//use flush interval to flush
+				config.setRAMBufferSizeMB(IndexWriterConfig.DISABLE_AUTO_FLUSH);
+				config.setMaxBufferedDocs(Integer.MAX_VALUE);
 				
 				LumongoIndexWriter indexWriter = new LumongoIndexWriter(dd, config);
 				

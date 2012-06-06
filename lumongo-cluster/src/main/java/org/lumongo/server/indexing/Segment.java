@@ -141,6 +141,9 @@ public class Segment {
 		if (count % indexConfig.getSegmentCommitInterval() == 0) {
 			forceCommit();
 		}
+		else if (count % indexConfig.getSegmentFlushInterval() == 0) {
+			indexWriter.flush();
+		}
 	}
 	
 	public void forceCommit() throws CorruptIndexException, IOException {
