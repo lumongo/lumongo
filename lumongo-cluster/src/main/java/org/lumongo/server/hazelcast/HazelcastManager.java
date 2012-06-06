@@ -75,7 +75,7 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		System.setProperty(GroupProperties.PROP_LOGGING_TYPE, "log4j");
 		// disable Hazelcast shutdown hook to allow LuMongo to handle
 		System.setProperty(GroupProperties.PROP_SHUTDOWNHOOK_ENABLED, "false");
-		System.setProperty(GroupProperties.PROP_MANCENTER_ENABLED, "false");
+		
 		System.setProperty(GroupProperties.PROP_REST_ENABLED, "false");
 		
 		int hazelcastPort = localNodeConfig.getHazelcastPort();
@@ -88,6 +88,8 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		cfg.setPortAutoIncrement(false);
 		cfg.setPort(hazelcastPort);
 		cfg.setInstanceName("" + hazelcastPort);
+		
+		cfg.getManagementCenterConfig().setEnabled(false);
 		
 		NetworkConfig network = cfg.getNetworkConfig();
 		Join join = network.getJoin();
