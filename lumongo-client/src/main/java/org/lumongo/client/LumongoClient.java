@@ -747,7 +747,13 @@ public class LumongoClient {
 			currentStartTerm = nextStartTerm;
 			response = getTerms(indexName, fieldName, currentStartTerm != null ? currentStartTerm.getValue() : null, 1024 * 64, minDocFreq);
 			terms.addAll(response.getTermList());
-			nextStartTerm = response.getLastTerm();
+			if (response.hasLastTerm()) {
+				nextStartTerm = response.getLastTerm();
+			}
+			else {
+				nextStartTerm = null;
+			}
+			
 		}
 		while (nextStartTerm != null && !nextStartTerm.equals(currentStartTerm));
 		

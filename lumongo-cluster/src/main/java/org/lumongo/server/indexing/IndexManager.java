@@ -1039,6 +1039,7 @@ public class IndexManager {
 	}
 	
 	public GetTermsResponse getTerms(GetTermsRequest request) throws Exception {
+		
 		globalLock.readLock().lock();
 		try {
 			
