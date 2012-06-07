@@ -57,6 +57,7 @@ message GetTermsRequest {
 
 message GetTermsResponse {
 	repeated Term term = 1;
+	optional Term lastTerm = 2;
 }
 
 message Term {

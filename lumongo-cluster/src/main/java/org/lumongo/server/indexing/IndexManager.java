@@ -1041,6 +1041,7 @@ public class IndexManager {
 	public GetTermsResponse getTerms(GetTermsRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
+			
 			SocketRequestFederator<GetTermsRequest, GetTermsResponse> federator = new SocketRequestFederator<GetTermsRequest, GetTermsResponse>(
 					hazelcastManager, pool) {
 				
@@ -1059,6 +1060,7 @@ public class IndexManager {
 			List<GetTermsResponse> responses = federator.send(request);
 			
 			//not threaded but atomic long is convenient
+			//TODO: maybe change to something else for speed
 			TreeMap<String, AtomicLong> terms = new TreeMap<String, AtomicLong>();
 			for (GetTermsResponse gtr : responses) {
 				for (Term term : gtr.getTermList()) {
@@ -1072,14 +1074,23 @@ public class IndexManager {
 			GetTermsResponse.Builder responseBuilder = GetTermsResponse.newBuilder();
 			
 			int amountToReturn = Math.min(request.getAmount(), terms.size());
+			
+			String value = null;
+			Long frequency = null;
+			
 			for (int i = 0; i < amountToReturn && !terms.isEmpty();) {
-				String value = terms.firstKey();
+				value = terms.firstKey();
 				AtomicLong docFreq = terms.remove(value);
-				if (docFreq.get() >= request.getMinDocFreq()) {
+				frequency = docFreq.get();
+				if (frequency >= request.getMinDocFreq()) {
 					i++;
-					responseBuilder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
+					responseBuilder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(frequency));
 				}
 			}
+			if (value != null && frequency != null) {
+				responseBuilder.setLastTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(frequency).build());
+			}
+			
 			return responseBuilder.build();
 		}
 		finally {

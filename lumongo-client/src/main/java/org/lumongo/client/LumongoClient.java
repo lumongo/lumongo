@@ -737,20 +737,19 @@ public class LumongoClient {
 		
 		Set<Lumongo.Term> terms = new LinkedHashSet<Lumongo.Term>();
 		GetTermsResponse response = null;
-		
-		Lumongo.Term iStartTerm = null;
+		Lumongo.Term currentStartTerm = null;
+		Lumongo.Term nextStartTerm = null;
 		if (startTerm != null) {
-			iStartTerm = Lumongo.Term.newBuilder().setValue(startTerm).build();
+			nextStartTerm = Lumongo.Term.newBuilder().setValue(startTerm).build();
 		}
 		
 		do {
-			response = getTerms(indexName, fieldName, iStartTerm != null ? iStartTerm.getValue() : null, 1024 * 64, minDocFreq);
+			currentStartTerm = nextStartTerm;
+			response = getTerms(indexName, fieldName, currentStartTerm != null ? currentStartTerm.getValue() : null, 1024 * 64, minDocFreq);
 			terms.addAll(response.getTermList());
-			if (response.getTermCount() > 1) {
-				iStartTerm = response.getTerm(response.getTermCount() - 1);
-			}
+			nextStartTerm = response.getLastTerm();
 		}
-		while ((response != null) && (response.getTermCount() > 1));
+		while (nextStartTerm != null && !nextStartTerm.equals(currentStartTerm));
 		
 		fullResponse.addAllTerm(terms);
 		
