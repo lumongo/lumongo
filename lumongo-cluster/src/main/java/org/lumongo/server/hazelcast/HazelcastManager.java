@@ -101,21 +101,22 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		}
 		
 		hazelcastInstance = Hazelcast.newHazelcastInstance(cfg);
+		hazelcastInstance.getCluster().addMembershipListener(this);
+		
 		log.info("Initialized hazelcast");
 		Set<Member> members = hazelcastInstance.getCluster().getMembers();
 		self = hazelcastInstance.getCluster().getLocalMember();
 		
-		// first node to start
-		if (members.size() == 1) {
-			log.info("Member is first node in cluster");
+		Member firstMember = members.iterator().next();
+		
+		if (firstMember.equals(self)) {
+			log.info("Member is owner of cluster");
 			indexManager.loadIndexes();
 		}
-		else {
-			log.info("Current cluster members: <" + members + ">");
-			indexManager.openConnections(members);
-		}
 		
-		hazelcastInstance.getCluster().addMembershipListener(this);
+		log.info("Current cluster members: <" + members + ">");
+		indexManager.openConnections(members);
+		
 		hazelcastInstance.getLifecycleService().addLifecycleListener(this);
 		
 		initLock.writeLock().unlock();
@@ -132,7 +133,7 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		Member memberAdded = membershipEvent.getMember();
 		log.info("Added member: <" + membershipEvent.getMember() + "> Current members: <" + members + ">");
 		
-		Member firstMember = membershipEvent.getCluster().getMembers().iterator().next();
+		Member firstMember = members.iterator().next();
 		boolean master = self.equals(firstMember);
 		
 		try {

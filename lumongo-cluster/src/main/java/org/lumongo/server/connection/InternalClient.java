@@ -65,17 +65,22 @@ public class InternalClient {
 		lock.writeLock().lock();
 		try {
 			
-			Nodes nodes = ClusterHelper.getNodes(mongoConfig);
-			
-			LocalNodeConfig localNodeConfig = nodes.find(m);
-			
-			int internalServicePort = localNodeConfig.getInternalServicePort();
-			
-			log.info("Adding connection pool for member <" + m + "> using port <" + internalServicePort + ">");
-			
-			int maxConnections = clusterConfig.getMaxInternalClientConnections();
-			
-			internalConnectionPoolMap.put(m, new InternalRpcConnectionPool(m.getInetSocketAddress().getHostName(), internalServicePort, maxConnections));
+			if (!internalConnectionPoolMap.containsKey(m)) {
+				Nodes nodes = ClusterHelper.getNodes(mongoConfig);
+				
+				LocalNodeConfig localNodeConfig = nodes.find(m);
+				
+				int internalServicePort = localNodeConfig.getInternalServicePort();
+				
+				log.info("Adding connection pool for member <" + m + "> using port <" + internalServicePort + ">");
+				
+				int maxConnections = clusterConfig.getMaxInternalClientConnections();
+				
+				internalConnectionPoolMap.put(m, new InternalRpcConnectionPool(m.getInetSocketAddress().getHostName(), internalServicePort, maxConnections));
+			}
+			else {
+				log.info("Already loaded connection for member <" + m + ">");
+			}
 		}
 		finally {
 			lock.writeLock().unlock();
