@@ -388,7 +388,7 @@ public class IndexManager {
 		}
 		
 		if (!locked) {
-			log.info("Failed to get lock within <" + waitSeconds + "> seconds");
+			log.info("Failed to get manager lock within <" + waitSeconds + "> seconds");
 		}
 		
 		try {
