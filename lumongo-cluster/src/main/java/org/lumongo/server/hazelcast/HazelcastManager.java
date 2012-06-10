@@ -101,11 +101,13 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		}
 		
 		hazelcastInstance = Hazelcast.newHazelcastInstance(cfg);
+		self = hazelcastInstance.getCluster().getLocalMember();
+		
 		hazelcastInstance.getCluster().addMembershipListener(this);
+		hazelcastInstance.getLifecycleService().addLifecycleListener(this);
 		
 		log.info("Initialized hazelcast");
 		Set<Member> members = hazelcastInstance.getCluster().getMembers();
-		self = hazelcastInstance.getCluster().getLocalMember();
 		
 		Member firstMember = members.iterator().next();
 		
@@ -116,8 +118,6 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		
 		log.info("Current cluster members: <" + members + ">");
 		indexManager.openConnections(members);
-		
-		hazelcastInstance.getLifecycleService().addLifecycleListener(this);
 		
 		initLock.writeLock().unlock();
 		
