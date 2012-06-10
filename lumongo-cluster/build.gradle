@@ -5,7 +5,7 @@ dependencies {
     compile 'com.hazelcast:hazelcast:2.1.2'
     compile 'commons-pool:commons-pool:1.6'
     compile 'net.sf.jopt-simple:jopt-simple:4.3'
-    compile 'org.apache.lucene:lucene-facet:3.6.0'
+    //compile 'org.apache.lucene:lucene-facet:3.6.0'
 }
 
 jar {
