@@ -22,13 +22,14 @@ public class Search {
 		LogUtil.loadLogConfig();
 		
 		OptionParser parser = new OptionParser();
-		OptionSpec<String> addressArg = parser.accepts("address").withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
-		OptionSpec<Integer> portArg = parser.accepts("port").withRequiredArg().ofType(Integer.class).defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT)
-				.describedAs("Lumongo external port");
-		OptionSpec<String> indexesArg = parser.accepts("index").withRequiredArg().required().describedAs("Index to search");
-		OptionSpec<String> queryArg = parser.accepts("query").withRequiredArg().required().describedAs("Lucene query");
-		OptionSpec<Integer> amountArg = parser.accepts("amount").withRequiredArg().required().ofType(Integer.class).describedAs("Amount of results to return");
-		OptionSpec<Boolean> realTimeArg = parser.accepts("realTime").withRequiredArg().ofType(Boolean.class).defaultsTo(true).describedAs("Real time search");
+		OptionSpec<String> addressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
+		OptionSpec<Integer> portArg = parser.accepts(AdminConstants.PORT).withRequiredArg().ofType(Integer.class)
+				.defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT).describedAs("Lumongo external port");
+		OptionSpec<String> indexesArg = parser.accepts(AdminConstants.INDEX).withRequiredArg().required().describedAs("Index to search");
+		OptionSpec<String> queryArg = parser.accepts(AdminConstants.QUERY).withRequiredArg().required().describedAs("Lucene query");
+		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT).withRequiredArg().required().ofType(Integer.class)
+				.describedAs("Amount of results to return");
+		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME).withRequiredArg().ofType(Boolean.class).describedAs("Real time search");
 		
 		try {
 			OptionSet options = parser.parse(args);
@@ -38,7 +39,7 @@ public class Search {
 			int port = options.valueOf(portArg);
 			String query = options.valueOf(queryArg);
 			int amount = options.valueOf(amountArg);
-			boolean realTime = options.valueOf(realTimeArg);
+			Boolean realTime = options.valueOf(realTimeArg);
 			
 			LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
 			lumongoClientConfig.addMember(address, port);

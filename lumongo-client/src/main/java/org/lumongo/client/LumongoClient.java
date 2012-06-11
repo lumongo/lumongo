@@ -224,11 +224,11 @@ public class LumongoClient {
 		return query(query, amount, indexes, null, null);
 	}
 	
-	public QueryResponse query(String query, int amount, String index, boolean realTime) throws Exception {
+	public QueryResponse query(String query, int amount, String index, Boolean realTime) throws Exception {
 		return query(query, amount, index, null, realTime);
 	}
 	
-	public QueryResponse query(String query, int amount, String[] indexes, boolean realTime) throws Exception {
+	public QueryResponse query(String query, int amount, String[] indexes, Boolean realTime) throws Exception {
 		return query(query, amount, indexes, null, realTime);
 	}
 	
@@ -667,12 +667,22 @@ public class LumongoClient {
 	}
 	
 	public GetNumberOfDocsResponse getNumberOfDocs(String indexName) throws Exception {
-		return getNumberOfDocs(indexName, retryCount);
+		return getNumberOfDocs(indexName, true);
 	}
 	
-	public GetNumberOfDocsResponse getNumberOfDocs(String indexName, int retries) throws Exception {
+	public GetNumberOfDocsResponse getNumberOfDocs(String indexName, Boolean realTime) throws Exception {
+		return getNumberOfDocs(indexName, realTime, retryCount);
+	}
+	
+	public GetNumberOfDocsResponse getNumberOfDocs(String indexName, Boolean realTime, int retries) throws Exception {
 		
-		GetNumberOfDocsRequest request = GetNumberOfDocsRequest.newBuilder().setIndexName(indexName).build();
+		GetNumberOfDocsRequest.Builder requestB = GetNumberOfDocsRequest.newBuilder();
+		requestB.setIndexName(indexName);
+		if (realTime != null) {
+			requestB.setRealTime(realTime);
+		}
+		GetNumberOfDocsRequest request = requestB.build();
+		
 		RpcController controller = null;
 		try {
 			if (service == null) {
@@ -689,7 +699,7 @@ public class LumongoClient {
 			cycleServers();
 			
 			if (retries > 0) {
-				return getNumberOfDocs(indexName, retries - 1);
+				return getNumberOfDocs(indexName, realTime, retries - 1);
 			}
 			else {
 				throw new Exception(e.getMessage());
@@ -729,10 +739,10 @@ public class LumongoClient {
 	}
 	
 	public GetTermsResponse getTerms(String indexName, String fieldName) throws Exception {
-		return getTerms(indexName, fieldName, null, null);
+		return getTerms(indexName, fieldName, null, null, null);
 	}
 	
-	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, Integer minDocFreq) throws Exception {
+	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, Integer minDocFreq, Boolean realTime) throws Exception {
 		GetTermsResponse.Builder fullResponse = GetTermsResponse.newBuilder();
 		
 		Set<Lumongo.Term> terms = new LinkedHashSet<Lumongo.Term>();
@@ -745,7 +755,7 @@ public class LumongoClient {
 		
 		do {
 			currentStartTerm = nextStartTerm;
-			response = getTerms(indexName, fieldName, currentStartTerm != null ? currentStartTerm.getValue() : null, 1024 * 64, minDocFreq);
+			response = getTerms(indexName, fieldName, currentStartTerm != null ? currentStartTerm.getValue() : null, 1024 * 64, minDocFreq, realTime);
 			terms.addAll(response.getTermList());
 			if (response.hasLastTerm()) {
 				nextStartTerm = response.getLastTerm();
@@ -771,15 +781,23 @@ public class LumongoClient {
 	}
 	
 	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq) throws Exception {
-		return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, retryCount);
+		return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, null);
 	}
 	
-	protected GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq, int retries) throws Exception {
+	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq, Boolean realTime) throws Exception {
+		return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, realTime, retryCount);
+	}
+	
+	protected GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq, Boolean realTime, int retries)
+			throws Exception {
 		
 		GetTermsRequest.Builder requestBuilder = GetTermsRequest.newBuilder();
 		requestBuilder.setIndexName(indexName);
 		requestBuilder.setFieldName(fieldName);
 		requestBuilder.setAmount(amount);
+		if (realTime != null) {
+			requestBuilder.setRealTime(realTime);
+		}
 		if (minDocFreq != null) {
 			requestBuilder.setMinDocFreq(minDocFreq);
 		}
@@ -806,7 +824,7 @@ public class LumongoClient {
 			cycleServers();
 			
 			if (retries > 0) {
-				return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, retries - 1);
+				return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, realTime, retries - 1);
 			}
 			else {
 				throw new Exception(e.getMessage());

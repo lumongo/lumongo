@@ -84,53 +84,56 @@ public class Segment {
 		
 		IndexReader ir = null;
 		
-		if (realTime) {
-			ir = IndexReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
-		}
-		else {
+		try {
+			
+			//ir = IndexReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
 			//ir = IndexReader.open(indexWriter.getDirectory());
-			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), false);
+			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
+			
+			IndexSearcher is = new IndexSearcher(ir);
+			
+			Weight w = is.createNormalizedWeight(q);
+			boolean docsScoredInOrder = !w.scoresDocsOutOfOrder();
+			
+			int checkForMore = amount + 1;
+			
+			TopScoreDocCollector collector = TopScoreDocCollector.create(checkForMore, after, docsScoredInOrder);
+			is.search(w, null, collector);
+			ScoreDoc[] results = collector.topDocs().scoreDocs;
+			
+			int totalHits = collector.getTotalHits();
+			
+			SegmentResponse.Builder builder = SegmentResponse.newBuilder();
+			builder.setTotalHits(totalHits);
+			
+			boolean moreAvailable = (results.length == checkForMore);
+			
+			int numResults = Math.min(results.length, amount);
+			
+			for (int i = 0; i < numResults; i++) {
+				int docId = results[i].doc;
+				Document d = is.doc(docId, uniqueIdOnlyFieldSelector);
+				ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
+				srBuilder.setScore(results[i].score);
+				srBuilder.setUniqueId(d.get(indexConfig.getUniqueIdField()));
+				srBuilder.setDocId(docId);
+				srBuilder.setSegment(segmentNumber);
+				srBuilder.setIndexName(indexName);
+				builder.addScoredResult(srBuilder.build());
+				
+			}
+			
+			builder.setMoreAvailable(moreAvailable);
+			builder.setIndexName(indexName);
+			builder.setSegmentNumber(segmentNumber);
+			return builder.build();
 		}
-		
-		IndexSearcher is = new IndexSearcher(ir);
-		
-		Weight w = is.createNormalizedWeight(q);
-		boolean docsScoredInOrder = !w.scoresDocsOutOfOrder();
-		
-		int checkForMore = amount + 1;
-		
-		TopScoreDocCollector collector = TopScoreDocCollector.create(checkForMore, after, docsScoredInOrder);
-		is.search(w, null, collector);
-		ScoreDoc[] results = collector.topDocs().scoreDocs;
-		
-		int totalHits = collector.getTotalHits();
-		
-		SegmentResponse.Builder builder = SegmentResponse.newBuilder();
-		
-		builder.setTotalHits(totalHits);
-		
-		boolean moreAvailable = (results.length == checkForMore);
-		
-		int numResults = Math.min(results.length, amount);
-		
-		for (int i = 0; i < numResults; i++) {
-			int docId = results[i].doc;
-			Document d = is.doc(docId, uniqueIdOnlyFieldSelector);
-			ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
-			srBuilder.setScore(results[i].score);
-			srBuilder.setUniqueId(d.get(indexConfig.getUniqueIdField()));
-			srBuilder.setDocId(docId);
-			srBuilder.setSegment(segmentNumber);
-			srBuilder.setIndexName(indexName);
-			builder.addScoredResult(srBuilder.build());
+		finally {
+			if (ir != null) {
+				ir.close();
+			}
 			
 		}
-		
-		builder.setMoreAvailable(moreAvailable);
-		builder.setIndexName(indexName);
-		builder.setSegmentNumber(segmentNumber);
-		
-		return builder.build();
 		
 	}
 	
@@ -266,39 +269,56 @@ public class Segment {
 	public GetTermsResponse getTerms(GetTermsRequest request) throws IOException {
 		GetTermsResponse.Builder builder = GetTermsResponse.newBuilder();
 		
-		IndexReader ir = IndexReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
-		
-		String fieldName = request.getFieldName();
-		String startTerm = "";
-		
-		if (request.hasStartingTerm()) {
-			startTerm = request.getStartingTerm();
-		}
-		
-		int amount = request.getAmount();
-		
-		Term start = new Term(fieldName, startTerm);
-		TermEnum terms = ir.terms(start);
-		if (terms.term() != null) {
+		IndexReader ir = null;
+		try {
+			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), request.getRealTime());
 			
-			while (fieldName.equals(terms.term().field()) && amount > builder.getTermCount()) {
-				Term t = terms.term();
-				String value = t.text();
-				int docFreq = terms.docFreq();
+			String fieldName = request.getFieldName();
+			String startTerm = "";
+			
+			if (request.hasStartingTerm()) {
+				startTerm = request.getStartingTerm();
+			}
+			
+			int amount = request.getAmount();
+			
+			Term start = new Term(fieldName, startTerm);
+			TermEnum terms = ir.terms(start);
+			if (terms.term() != null) {
 				
-				builder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(docFreq));
-				
-				if (!terms.next())
-					break;
+				while (fieldName.equals(terms.term().field()) && amount > builder.getTermCount()) {
+					Term t = terms.term();
+					String value = t.text();
+					int docFreq = terms.docFreq();
+					
+					builder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(docFreq));
+					
+					if (!terms.next())
+						break;
+				}
+			}
+			
+			return builder.build();
+		}
+		finally {
+			if (ir != null) {
+				ir.close();
 			}
 		}
-		
-		return builder.build();
 	}
 	
-	public SegmentCountResponse getNumberOfDocs() throws CorruptIndexException, IOException {
-		IndexReader ir = IndexReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
-		int count = ir.numDocs();
-		return SegmentCountResponse.newBuilder().setNumberOfDocs(count).setSegmentNumber(segmentNumber).build();
+	public SegmentCountResponse getNumberOfDocs(boolean realTime) throws CorruptIndexException, IOException {
+		IndexReader ir = null;
+		
+		try {
+			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
+			int count = ir.numDocs();
+			return SegmentCountResponse.newBuilder().setNumberOfDocs(count).setSegmentNumber(segmentNumber).build();
+		}
+		finally {
+			if (ir != null) {
+				ir.close();
+			}
+		}
 	}
 }

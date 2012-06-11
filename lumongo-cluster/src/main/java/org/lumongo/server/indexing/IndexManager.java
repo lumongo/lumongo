@@ -835,7 +835,7 @@ public class IndexManager {
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			return i.getNumberOfDocs();
+			return i.getNumberOfDocs(request.getRealTime());
 		}
 		finally {
 			globalLock.readLock().unlock();

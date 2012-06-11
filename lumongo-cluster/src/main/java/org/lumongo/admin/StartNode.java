@@ -21,9 +21,10 @@ public class StartNode {
 		LogUtil.loadLogConfig();
 		
 		OptionParser parser = new OptionParser();
-		OptionSpec<File> mongoConfigArg = parser.accepts("mongoConfig").withRequiredArg().ofType(File.class).describedAs("Mongo properties file").required();
-		OptionSpec<String> serverAddressArg = parser.accepts("server").withRequiredArg().describedAs("Specific Server Address Manually");
-		OptionSpec<Integer> hazelcastPortArg = parser.accepts("hazelcastPort").withRequiredArg().ofType(Integer.class)
+		OptionSpec<File> mongoConfigArg = parser.accepts(AdminConstants.MONGO_CONFIG).withRequiredArg().ofType(File.class).describedAs("Mongo properties file")
+				.required();
+		OptionSpec<String> serverAddressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().describedAs("Specific Server Address Manually");
+		OptionSpec<Integer> hazelcastPortArg = parser.accepts(AdminConstants.HAZELCAST_PORT).withRequiredArg().ofType(Integer.class)
 				.describedAs("Hazelcast port if multiple instances on one server (expert)");
 		
 		LumongoClient client = null;

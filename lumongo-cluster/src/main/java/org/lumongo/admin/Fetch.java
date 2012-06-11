@@ -23,10 +23,10 @@ public class Fetch {
 		LogUtil.loadLogConfig();
 		
 		OptionParser parser = new OptionParser();
-		OptionSpec<String> addressArg = parser.accepts("address").withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
-		OptionSpec<Integer> portArg = parser.accepts("port").withRequiredArg().ofType(Integer.class).defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT)
-				.describedAs("Lumongo external port");
-		OptionSpec<String> uniqueIdArg = parser.accepts("uid").withRequiredArg().required().describedAs("Unique to fetch");
+		OptionSpec<String> addressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
+		OptionSpec<Integer> portArg = parser.accepts(AdminConstants.PORT).withRequiredArg().ofType(Integer.class)
+				.defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT).describedAs("Lumongo external port");
+		OptionSpec<String> uniqueIdArg = parser.accepts(AdminConstants.UNIQUE_ID).withRequiredArg().required().describedAs("Unique Id to fetch");
 		
 		try {
 			OptionSet options = parser.parse(args);

@@ -23,7 +23,7 @@ public class ClusterAdmin {
 	private static final String MONGO_CONFIG = "mongoConfig";
 	private static final String NODE_CONFIG = "nodeConfig";
 	private static final String CLUSTER_CONFIG = "clusterConfig";
-	private static final String SERVER = "server";
+	private static final String ADDRESS = "address";
 	private static final String HAZELCAST_PORT = "hazelcastPort";
 	private static final String COMMAND = "command";
 	
@@ -44,7 +44,7 @@ public class ClusterAdmin {
 		OptionSpec<File> mongoConfigArg = parser.accepts(MONGO_CONFIG).withRequiredArg().ofType(File.class).describedAs("Mongo properties file");
 		OptionSpec<File> nodeConfigArg = parser.accepts(NODE_CONFIG).withRequiredArg().ofType(File.class).describedAs("Node properties file");
 		OptionSpec<File> clusterConfigArg = parser.accepts(CLUSTER_CONFIG).withRequiredArg().ofType(File.class).describedAs("Cluster properties file");
-		OptionSpec<String> serverAddressArg = parser.accepts(SERVER).withRequiredArg().describedAs("Specific server address manually for node commands");
+		OptionSpec<String> serverAddressArg = parser.accepts(ADDRESS).withRequiredArg().describedAs("Specific server address manually for node commands");
 		OptionSpec<Integer> hazelcastPortArg = parser.accepts(HAZELCAST_PORT).withRequiredArg().ofType(Integer.class)
 				.describedAs("Hazelcast port if multiple instances on one server for node commands");
 		OptionSpec<Command> commandArg = parser.accepts(COMMAND).withRequiredArg().ofType(Command.class).required()

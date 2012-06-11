@@ -53,6 +53,7 @@ message GetTermsRequest {
 	required uint32 amount = 3;
 	optional string startingTerm = 4;
 	optional uint32 minDocFreq = 5 [default = 1];
+	optional bool realTime = 6 [default = true];
 }
 
 message GetTermsResponse {
@@ -99,6 +100,7 @@ message GetIndexesResponse {
 
 message GetNumberOfDocsRequest {
 	required string indexName = 1;
+	optional bool realTime = 2 [default = true];
 }
 
 message GetNumberOfDocsResponse {

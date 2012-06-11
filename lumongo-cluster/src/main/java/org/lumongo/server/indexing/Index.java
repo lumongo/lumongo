@@ -867,7 +867,7 @@ public class Index {
 		}
 	}
 	
-	public GetNumberOfDocsResponse getNumberOfDocs() throws Exception {
+	public GetNumberOfDocsResponse getNumberOfDocs(final boolean realTime) throws Exception {
 		indexLock.readLock().lock();
 		try {
 			List<Future<SegmentCountResponse>> responses = new ArrayList<Future<SegmentCountResponse>>();
@@ -878,7 +878,7 @@ public class Index {
 					
 					@Override
 					public SegmentCountResponse call() throws Exception {
-						return segment.getNumberOfDocs();
+						return segment.getNumberOfDocs(realTime);
 					}
 					
 				});
