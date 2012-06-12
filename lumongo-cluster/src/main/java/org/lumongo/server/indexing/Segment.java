@@ -145,7 +145,7 @@ public class Segment {
 			forceCommit();
 		}
 		else if (count % indexConfig.getSegmentFlushInterval() == 0) {
-			indexWriter.flush();
+			indexWriter.flush(indexConfig.getApplyUncommitedDeletes());
 		}
 	}
 	
