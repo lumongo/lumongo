@@ -72,7 +72,7 @@ public class IndexAdmin {
 					System.out.println("Segment " + scr.getSegmentNumber() + " Count:\n" + scr.getNumberOfDocs());
 				}
 			}
-			if (Command.getCommitedCount.equals(command)) {
+			else if (Command.getCommitedCount.equals(command)) {
 				if (index == null) {
 					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
 				}
