@@ -27,8 +27,8 @@ public class IndexAdmin {
 	public static enum Command {
 		clear,
 		optimize,
+		getRealTimeCount,
 		getCount,
-		getCommitedCount,
 		getFields,
 		getIndexes,
 		getCurrentMembers,
@@ -60,7 +60,7 @@ public class IndexAdmin {
 			lumongoClientConfig.addMember(address, port);
 			client = new LumongoClient(lumongoClientConfig);
 			
-			if (Command.getCount.equals(command)) {
+			if (Command.getRealTimeCount.equals(command)) {
 				if (index == null) {
 					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
 				}
@@ -72,7 +72,7 @@ public class IndexAdmin {
 					System.out.println("Segment " + scr.getSegmentNumber() + " Count:\n" + scr.getNumberOfDocs());
 				}
 			}
-			else if (Command.getCommitedCount.equals(command)) {
+			else if (Command.getCount.equals(command)) {
 				if (index == null) {
 					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
 				}
