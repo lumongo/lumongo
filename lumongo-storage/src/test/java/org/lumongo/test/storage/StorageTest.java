@@ -1,5 +1,6 @@
 package org.lumongo.test.storage;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -138,6 +139,8 @@ public class StorageTest {
 		hits = runQuery(indexReader, qp, "testIntField:3", 10);
 		Assert.assertEquals(hits, 5, "Expected 5 hits");
 		
+		
+		indexReader.close();
 	}
 	
 	private static int runQuery(IndexReader indexReader, QueryParser qp, String queryStr, int count) throws ParseException, CorruptIndexException, IOException {
@@ -179,32 +182,47 @@ public class StorageTest {
 	public void apiUsage() throws Exception {
 		String hostName = TestHelper.getMongoServer();
 		String databaseName = TestHelper.TEST_DATABASE_NAME;
-		String indexName = "MySpecialIndex";
+
 		
 		{
 			
 			Mongo mongo = new Mongo(hostName);
-			Directory directory = new DistributedDirectory(new MongoDirectory(mongo, databaseName, indexName));
+			Directory directory = new DistributedDirectory(new MongoDirectory(mongo, databaseName, STORAGE_TEST_INDEX));
 			
 			StandardAnalyzer analyzer = new StandardAnalyzer(LuceneConstants.VERSION);
 			IndexWriterConfig config = new IndexWriterConfig(LuceneConstants.VERSION, analyzer);
 			IndexWriter w = new IndexWriter(directory, config);
 			
 			boolean applyDeletes = true;
-			@SuppressWarnings("unused")
+			
 			IndexReader ir = IndexReader.open(w, applyDeletes);
 			
+			ir.close();
+			
+			w.commit();
 			w.close();
+			
+			directory.close();
 			
 		}
 		
 		{
 			
 			Mongo mongo = new Mongo(hostName);
-			Directory d = new DistributedDirectory(new MongoDirectory(mongo, databaseName, indexName));
+			Directory d = new DistributedDirectory(new MongoDirectory(mongo, databaseName, STORAGE_TEST_INDEX));
 			IndexReader indexReader = IndexReader.open(d);
 			indexReader.close();
+			d.close();
 			
+		}
+		
+		{
+			Mongo mongo = new Mongo(hostName);
+			DistributedDirectory d = new DistributedDirectory(new MongoDirectory(mongo, databaseName, STORAGE_TEST_INDEX));
+			
+			d.copyToFSDirectory(new File("/tmp/fsdirectory"));
+			
+			d.close();
 		}
 	}
 }

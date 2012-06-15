@@ -13,9 +13,12 @@ package org.lumongo.storage.lucene;
  * specific language governing permissions and limitations under the License.
  */
 
+import java.io.File;
 import java.io.IOException;
 
+import org.apache.lucene.index.IndexFileNameFilter;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.SingleInstanceLockFactory;
@@ -92,6 +95,21 @@ public class DistributedDirectory extends Directory {
 		ensureOpen();
 		NosqlFile nosqlFile = nosqlDirectory.getFileHandle(fileName);
 		nosqlDirectory.deleteFile(nosqlFile);
+	}
+	
+	public void copyToFSDirectory(File path) throws IOException {
+		copyToDirectory(FSDirectory.open(path));
+	}
+	
+	public void copyToDirectory(Directory directory) throws IOException {
+		
+		IndexFileNameFilter filter = IndexFileNameFilter.getFilter();
+	    for (String file : this.listAll()) {
+	      if (filter.accept(null, file)) {
+	        this.copy(directory, file, file);
+	      }
+	    }
+	    
 	}
 	
 	@Override
