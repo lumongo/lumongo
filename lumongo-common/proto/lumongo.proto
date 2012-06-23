@@ -119,6 +119,7 @@ message IndexCreateRequest {
 	required string uniqueIdField = 2;
 	required uint32 numberOfSegments = 3;
 	required IndexSettings indexSettings = 4;
+	optional bool faceted = 5 [default = false];
 }
 
 message IndexCreateResponse {
@@ -197,6 +198,11 @@ message StoreResponse {
 message LMDoc {
 	required string indexName = 1;
 	repeated LMField indexedField = 2;
+	repeated LMFacet facet = 3;
+}
+
+message LMFacet {
+	repeated string components = 1;
 }
 
 message LMField {
@@ -277,6 +283,7 @@ message QueryRequest {
 	optional LastResult lastResult = 4;
 	optional bool fetchFull = 5 [default = false];
 	optional bool realTime = 6 [default = true];
+	repeated LMFacet facet = 7;
 }
 
 
