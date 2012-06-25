@@ -11,6 +11,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.NumericField;
+import org.apache.lucene.facet.taxonomy.TaxonomyWriter;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
@@ -40,7 +41,10 @@ public class Segment {
 	private final static Logger log = Logger.getLogger(Segment.class);
 	
 	private final int segmentNumber;
+	
 	private final LumongoIndexWriter indexWriter;
+	private TaxonomyWriter taxonomyWriter;
+	
 	private final IndexConfig indexConfig;
 	
 	private final String uniqueIdField;
@@ -53,9 +57,10 @@ public class Segment {
 	private String indexName;
 	private Analyzer analyzer;
 	
-	public Segment(int segmentNumber, LumongoIndexWriter indexWriter, IndexConfig indexConfig, Analyzer analyzer) {
+	public Segment(int segmentNumber, LumongoIndexWriter indexWriter, TaxonomyWriter taxonomyWriter, IndexConfig indexConfig, Analyzer analyzer) {
 		this.segmentNumber = segmentNumber;
 		this.indexWriter = indexWriter;
+		this.taxonomyWriter = taxonomyWriter;
 		this.indexConfig = indexConfig;
 		this.analyzer = analyzer;
 		
@@ -151,8 +156,13 @@ public class Segment {
 	
 	public void forceCommit() throws CorruptIndexException, IOException {
 		long currentTime = System.currentTimeMillis();
+		if (indexConfig.isFaceted()) {
+			taxonomyWriter.commit();
+		}
+		
 		indexWriter.commit();
 		lastCommit = currentTime;
+		
 	}
 	
 	public void doCommit() throws CorruptIndexException, IOException {
@@ -174,6 +184,10 @@ public class Segment {
 	
 	public void close() throws CorruptIndexException, IOException {
 		forceCommit();
+		if (indexConfig.isFaceted()) {
+			taxonomyWriter.close();
+		}
+		
 		indexWriter.close();
 	}
 	

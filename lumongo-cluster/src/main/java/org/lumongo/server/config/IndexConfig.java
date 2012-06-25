@@ -30,6 +30,7 @@ public class IndexConfig {
 	public static final String FIELD_CONFIGS = "fieldConfigs";
 	public static final String FIELD_NAME = "fieldName";
 	public static final String ANALYZER = "analyzer";
+	public static final String FACETED = "faceted";
 	
 	private String defaultSearchField;
 	private boolean applyUncommitedDeletes;
@@ -45,6 +46,7 @@ public class IndexConfig {
 	private double segmentTolerance;
 	private LMAnalyzer defaultAnalyzer;
 	private List<FieldConfig> fieldConfigList;
+	private boolean faceted;
 	
 	//final because clear is used instead of new HashSet
 	private final HashSet<String> numericIntFields;
@@ -67,7 +69,7 @@ public class IndexConfig {
 		indexName = request.getIndexName();
 		numberOfSegments = request.getNumberOfSegments();
 		uniqueIdField = request.getUniqueIdField();
-		
+		faceted = request.getFaceted();
 		configure(request.getIndexSettings());
 	}
 	
@@ -207,6 +209,10 @@ public class IndexConfig {
 		return segmentTolerance;
 	}
 	
+	public boolean isFaceted() {
+		return faceted;
+	}
+	
 	public DBObject toDBObject() {
 		DBObject dbObject = new BasicDBObject();
 		dbObject.put(DEFAULT_SEARCH_FIELD, defaultSearchField);
@@ -222,6 +228,7 @@ public class IndexConfig {
 		dbObject.put(SEGMENT_TOLERANCE, segmentTolerance);
 		dbObject.put(DEFAULT_ANALYZER, defaultAnalyzer.toString());
 		dbObject.put(SEGMENT_FLUSH_INTERVAL, segmentFlushInterval);
+		dbObject.put(FACETED, faceted);
 		
 		List<DBObject> fieldConfigs = new ArrayList<DBObject>();
 		for (FieldConfig fc : fieldConfigList) {
@@ -254,6 +261,11 @@ public class IndexConfig {
 		indexConfig.defaultAnalyzer = LMAnalyzer.valueOf((String) settings.get(DEFAULT_ANALYZER));
 		indexConfig.fieldConfigList = new ArrayList<FieldConfig>();
 		
+		indexConfig.faceted = false;
+		if (settings.containsField(FACETED)) {
+			indexConfig.faceted = (boolean) settings.get(FACETED);
+		}
+		
 		if (settings.containsField(SEGMENT_FLUSH_INTERVAL)) {
 			indexConfig.segmentFlushInterval = (int) settings.get(SEGMENT_FLUSH_INTERVAL);
 		}
@@ -280,9 +292,9 @@ public class IndexConfig {
 				+ requestFactor + ", minSegmentRequest=" + minSegmentRequest + ", numberOfSegments=" + numberOfSegments + ", indexName=" + indexName
 				+ ", uniqueIdField=" + uniqueIdField + ", idleTimeWithoutCommit=" + idleTimeWithoutCommit + ", segmentFlushInterval=" + segmentFlushInterval
 				+ ", segmentCommitInterval=" + segmentCommitInterval + ", blockCompression=" + blockCompression + ", segmentTolerance=" + segmentTolerance
-				+ ", defaultAnalyzer=" + defaultAnalyzer + ", fieldConfigList=" + fieldConfigList + ", numericIntFields=" + numericIntFields
-				+ ", numericLongFields=" + numericLongFields + ", numericFloatFields=" + numericFloatFields + ", numericDoubleFields=" + numericDoubleFields
-				+ ", numericFields=" + numericFields + "]";
+				+ ", defaultAnalyzer=" + defaultAnalyzer + ", fieldConfigList=" + fieldConfigList + ", faceted=" + faceted + ", numericIntFields="
+				+ numericIntFields + ", numericLongFields=" + numericLongFields + ", numericFloatFields=" + numericFloatFields + ", numericDoubleFields="
+				+ numericDoubleFields + ", numericFields=" + numericFields + "]";
 	}
 	
 }
