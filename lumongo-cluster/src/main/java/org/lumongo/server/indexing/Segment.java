@@ -1,6 +1,7 @@
 package org.lumongo.server.indexing;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -11,6 +12,8 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.NumericField;
+import org.apache.lucene.facet.index.CategoryDocumentBuilder;
+import org.apache.lucene.facet.taxonomy.CategoryPath;
 import org.apache.lucene.facet.taxonomy.TaxonomyWriter;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.FieldInfo;
@@ -31,6 +34,7 @@ import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
+import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.LMField;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
@@ -240,6 +244,21 @@ public class Segment {
 		
 		//make sure the update works because it is searching on a term
 		d.add(new Field(indexConfig.getUniqueIdField(), uniqueId, Store.YES, org.apache.lucene.document.Field.Index.NOT_ANALYZED_NO_NORMS));
+		
+		if (indexConfig.isFaceted()) {
+			List<CategoryPath> categories = new ArrayList<CategoryPath>();
+			for (LMFacet lmFacet : lmDoc.getFacetList()) {
+				categories.add(new CategoryPath(lmFacet.getComponentList().toArray(new String[0])));
+			}
+			CategoryDocumentBuilder categoryDocBuilder = new CategoryDocumentBuilder(taxonomyWriter);
+			categoryDocBuilder.setCategoryPaths(categories);
+			categoryDocBuilder.build(d);
+		}
+		else {
+			if (lmDoc.getFacetCount() != 0) {
+				throw new IOException("Cannot store facets into a non faceted index");
+			}
+		}
 		
 		Term term = new Term(indexConfig.getUniqueIdField(), uniqueId);
 		indexWriter.updateDocument(term, d, analyzer);
