@@ -14,7 +14,6 @@ import org.apache.lucene.facet.taxonomy.CategoryPath;
 import org.apache.lucene.facet.taxonomy.TaxonomyReader;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermDocs;
 import org.apache.lucene.store.AlreadyClosedException;
@@ -100,7 +99,7 @@ public class LumongoDirectoryTaxonomyReader implements TaxonomyReader {
 	// set refCount to 1 at start
 	private final AtomicInteger refCount = new AtomicInteger(1);
 	
-	private final LumongoIndexWriter lumongoIndexWriter;
+	private final LumongoDirectoryTaxonomyWriter lumongoDirectoryTaxonomyWriter;
 	
 	/**
 	 * Open for reading a taxonomy stored in a given {@link Directory}.
@@ -111,9 +110,9 @@ public class LumongoDirectoryTaxonomyReader implements TaxonomyReader {
 	 * @throws CorruptIndexException if the Taxonomy is corrupted.
 	 * @throws IOException if another error occurred.
 	 */
-	public LumongoDirectoryTaxonomyReader(LumongoIndexWriter lumongoIndexWriter) throws IOException {
-		this.lumongoIndexWriter = lumongoIndexWriter;
-		this.indexReader = lumongoIndexWriter.getReader(true, true);
+	public LumongoDirectoryTaxonomyReader(LumongoDirectoryTaxonomyWriter lumongoDirectoryTaxonomyWriter) throws IOException {
+		this.lumongoDirectoryTaxonomyWriter = lumongoDirectoryTaxonomyWriter;
+		this.indexReader = lumongoDirectoryTaxonomyWriter.openReader(true);
 		
 		// These are the default cache sizes; they can be configured after
 		// construction with the cache's setMaxSize() method
@@ -373,7 +372,7 @@ public class LumongoDirectoryTaxonomyReader implements TaxonomyReader {
 		
 		//use lumongo index reader specific get reader call to ensure
 		//state is in sink with index readers
-		IndexReader newReader = lumongoIndexWriter.getReader(true, realTime);
+		IndexReader newReader = lumongoDirectoryTaxonomyWriter.openReader(realTime);
 		
 		if (newReader.getVersion() == indexReader.getVersion()) {
 			newReader.decRef();

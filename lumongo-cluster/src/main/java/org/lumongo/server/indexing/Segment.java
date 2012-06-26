@@ -13,8 +13,13 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.NumericField;
 import org.apache.lucene.facet.index.CategoryDocumentBuilder;
+import org.apache.lucene.facet.search.FacetsCollector;
+import org.apache.lucene.facet.search.params.CountFacetRequest;
+import org.apache.lucene.facet.search.params.FacetSearchParams;
+import org.apache.lucene.facet.search.results.FacetResult;
 import org.apache.lucene.facet.taxonomy.CategoryPath;
-import org.apache.lucene.facet.taxonomy.TaxonomyWriter;
+import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyReader;
+import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
@@ -23,6 +28,7 @@ import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MultiCollector;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
@@ -47,7 +53,8 @@ public class Segment {
 	private final int segmentNumber;
 	
 	private final LumongoIndexWriter indexWriter;
-	private TaxonomyWriter taxonomyWriter;
+	private LumongoDirectoryTaxonomyWriter taxonomyWriter;
+	private LumongoDirectoryTaxonomyReader taxonomyReader;
 	
 	private final IndexConfig indexConfig;
 	
@@ -61,10 +68,16 @@ public class Segment {
 	private String indexName;
 	private Analyzer analyzer;
 	
-	public Segment(int segmentNumber, LumongoIndexWriter indexWriter, TaxonomyWriter taxonomyWriter, IndexConfig indexConfig, Analyzer analyzer) {
+	public Segment(int segmentNumber, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter, IndexConfig indexConfig, Analyzer analyzer)
+			throws IOException {
 		this.segmentNumber = segmentNumber;
 		this.indexWriter = indexWriter;
+		
 		this.taxonomyWriter = taxonomyWriter;
+		if (this.indexWriter != null) {
+			this.taxonomyReader = new LumongoDirectoryTaxonomyReader(taxonomyWriter);
+		}
+		
 		this.indexConfig = indexConfig;
 		this.analyzer = analyzer;
 		
@@ -107,7 +120,20 @@ public class Segment {
 			int checkForMore = amount + 1;
 			
 			TopScoreDocCollector collector = TopScoreDocCollector.create(checkForMore, after, docsScoredInOrder);
-			is.search(w, null, collector);
+			
+			if (indexConfig.isFaceted()) {
+				taxonomyReader.refresh(realTime);
+				FacetSearchParams facetSearchParams = new FacetSearchParams();
+				facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath(), 10));
+				FacetsCollector facetsCollector = new FacetsCollector(facetSearchParams, ir, taxonomyReader);
+				is.search(q, MultiCollector.wrap(collector, facetsCollector));
+				
+				List<FacetResult> res = facetsCollector.getFacetResults();
+			}
+			else {
+				is.search(w, null, collector);
+			}
+			
 			ScoreDoc[] results = collector.topDocs().scoreDocs;
 			
 			int totalHits = collector.getTotalHits();
@@ -154,6 +180,7 @@ public class Segment {
 			forceCommit();
 		}
 		else if (count % indexConfig.getSegmentFlushInterval() == 0) {
+			taxonomyWriter.flush();
 			indexWriter.flush(indexConfig.getApplyUncommitedDeletes());
 		}
 	}
@@ -354,4 +381,5 @@ public class Segment {
 			}
 		}
 	}
+	
 }
