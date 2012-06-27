@@ -718,13 +718,19 @@ public class IndexManager {
 					throw new IndexDoesNotExist(indexName);
 				}
 				Query query = i.getQuery(queryString);
-				if (i.isFaceted() && !drillDownList.isEmpty()) {
-					List<CategoryPath> categoryPathList = new ArrayList<CategoryPath>();
-					for (String drillDown : drillDownList) {
-						CategoryPath cp = new CategoryPath(drillDown, LumongoConstants.FACET_DELIMITER);
-						categoryPathList.add(cp);
+				if (drillDownList.isEmpty()) {
+					if (i.isFaceted()) {
+						List<CategoryPath> categoryPathList = new ArrayList<CategoryPath>();
+						for (String drillDown : drillDownList) {
+							CategoryPath cp = new CategoryPath(drillDown, LumongoConstants.FACET_DELIMITER);
+							categoryPathList.add(cp);
+						}
+						query = DrillDown.query(query, categoryPathList.toArray(new CategoryPath[0]));
 					}
-					query = DrillDown.query(query, categoryPathList.toArray(new CategoryPath[0]));
+					else {
+						//TODO make this fail silently if multiple indexes queried?
+						throw new IOException("Cannot drill down non-faceted index <" + indexName + ">");
+					}
 				}
 				
 				queryMap.put(indexName, query);

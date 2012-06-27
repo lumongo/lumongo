@@ -1,5 +1,8 @@
 package org.lumongo.server.searching;
 
+import java.util.List;
+
+import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 
@@ -11,6 +14,7 @@ public class SegmentQueryResult {
 	private int index;
 	private int segmentNumber;
 	private String indexName;
+	private List<FacetCount> facetCountList;
 	
 	public SegmentQueryResult(SegmentResponse sr) {
 		this.segmentNumber = sr.getSegmentNumber();
@@ -19,6 +23,11 @@ public class SegmentQueryResult {
 		this.index = -1;
 		this.moreAvailable = sr.getMoreAvailable();
 		this.indexName = sr.getIndexName();
+		this.facetCountList = sr.getFacetCountList();
+	}
+	
+	public List<FacetCount> getFacetCountList() {
+		return facetCountList;
 	}
 	
 	public int getIndex() {

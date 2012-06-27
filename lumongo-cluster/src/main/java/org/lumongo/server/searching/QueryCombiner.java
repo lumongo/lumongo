@@ -5,8 +5,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
+import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
 import org.lumongo.cluster.message.Lumongo.InternalQueryResponse;
 import org.lumongo.cluster.message.Lumongo.LastIndexResult;
@@ -121,6 +123,21 @@ public class QueryCombiner {
 			for (ScoredResult sr : lir.getLastForSegmentList()) {
 				lastForSegmentArr[sr.getSegment()] = sr;
 			}
+		}
+		
+		Map<String, AtomicLong> totalFacetCounts = new HashMap<String, AtomicLong>();
+		for (SegmentQueryResult sr : segmentQueryResults) {
+			for (FacetCount fc : sr.getFacetCountList()) {
+				String facet = fc.getFacet();
+				if (!totalFacetCounts.containsKey(facet)) {
+					totalFacetCounts.put(facet, new AtomicLong());
+				}
+				totalFacetCounts.get(facet).addAndGet(fc.getCount());
+			}
+		}
+		for (String facet : totalFacetCounts.keySet()) {
+			AtomicLong count = totalFacetCounts.get(facet);
+			builder.addFacetCount(FacetCount.newBuilder().setFacet(facet).setCount(count.get()));
 		}
 		
 		while (results.size() < resultsSize && !isShort) {
