@@ -214,6 +214,7 @@ message LMField {
 	repeated double doubleValue = 6;
 }
 
+
 message ResultDocument {
 	required string uniqueId = 1;
 	optional bytes document = 2;
@@ -248,6 +249,11 @@ message ScoredResult {
 	required uint32 segment = 5;
 }
 
+message FacetCount {
+	required string facet = 1;
+	required uint64 count = 2;
+}
+
 
 message SegmentResponse {
     required uint32 segmentNumber = 1;
@@ -255,6 +261,7 @@ message SegmentResponse {
     required uint32 totalHits = 3;
     repeated ScoredResult scoredResult = 4;
     required bool moreAvailable = 5;
+    repeated FacetCount facetCount = 6;
 }
 
 
@@ -283,8 +290,8 @@ message QueryRequest {
 	optional LastResult lastResult = 4;
 	optional bool fetchFull = 5 [default = false];
 	optional bool realTime = 6 [default = true];
-	optional LMFacet drillDown = 7;
-	repeated LMFacet count = 8;
+	repeated string drillDown = 7;
+	repeated string count = 8;
 }
 
 
@@ -293,6 +300,7 @@ message QueryResponse {
 	required uint64 totalHits = 1;
 	repeated ScoredResult results = 2;
 	required LastResult lastResult = 3;
+	repeated FacetCount facetCount = 4;
 }
 
 message InternalDeleteRequest {

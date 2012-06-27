@@ -21,8 +21,11 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.log4j.Logger;
+import org.apache.lucene.facet.search.DrillDown;
+import org.apache.lucene.facet.taxonomy.CategoryPath;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.search.Query;
+import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
@@ -705,7 +708,7 @@ public class IndexManager {
 		}
 	}
 	
-	private Map<String, Query> getQueryMap(Collection<String> indexNames, String queryString) throws Exception {
+	private Map<String, Query> getQueryMap(Collection<String> indexNames, String queryString, List<String> drillDownList) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			HashMap<String, Query> queryMap = new HashMap<String, Query>();
@@ -715,6 +718,15 @@ public class IndexManager {
 					throw new IndexDoesNotExist(indexName);
 				}
 				Query query = i.getQuery(queryString);
+				if (i.isFaceted() && !drillDownList.isEmpty()) {
+					List<CategoryPath> categoryPathList = new ArrayList<CategoryPath>();
+					for (String drillDown : drillDownList) {
+						CategoryPath cp = new CategoryPath(drillDown, LumongoConstants.FACET_DELIMITER);
+						categoryPathList.add(cp);
+					}
+					query = DrillDown.query(query, categoryPathList.toArray(new CategoryPath[0]));
+				}
+				
 				queryMap.put(indexName, query);
 			}
 			
@@ -729,7 +741,7 @@ public class IndexManager {
 		globalLock.readLock().lock();
 		try {
 			
-			final Map<String, Query> queryMap = getQueryMap(request.getIndexList(), request.getQuery());
+			final Map<String, Query> queryMap = getQueryMap(request.getIndexList(), request.getQuery(), request.getDrillDownList());
 			
 			final Map<String, Index> indexSegmentMap = new HashMap<String, Index>();
 			for (String indexName : request.getIndexList()) {
@@ -784,7 +796,7 @@ public class IndexManager {
 	public InternalQueryResponse internalQuery(QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			Map<String, Query> queryMap = getQueryMap(request.getIndexList(), request.getQuery());
+			Map<String, Query> queryMap = getQueryMap(request.getIndexList(), request.getQuery(), request.getDrillDownList());
 			return internalQuery(queryMap, request);
 		}
 		finally {

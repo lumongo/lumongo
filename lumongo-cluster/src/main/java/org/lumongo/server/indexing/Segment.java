@@ -34,7 +34,9 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.util.ReaderUtil;
+import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
@@ -48,6 +50,7 @@ import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 import org.lumongo.server.config.IndexConfig;
 
 public class Segment {
+	
 	private final static Logger log = Logger.getLogger(Segment.class);
 	
 	private final int segmentNumber;
@@ -102,7 +105,7 @@ public class Segment {
 		return segmentNumber;
 	}
 	
-	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after, List<LMFacet> count, boolean realTime) throws Exception {
+	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after, List<String> countList, boolean realTime) throws Exception {
 		
 		IndexReader ir = null;
 		
@@ -121,14 +124,27 @@ public class Segment {
 			
 			TopScoreDocCollector collector = TopScoreDocCollector.create(checkForMore, after, docsScoredInOrder);
 			
+			SegmentResponse.Builder builder = SegmentResponse.newBuilder();
+			
 			if (indexConfig.isFaceted()) {
 				taxonomyReader.refresh(realTime);
 				FacetSearchParams facetSearchParams = new FacetSearchParams();
-				facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath(), 10));
+				for (String count : countList) {
+					facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath(count, '/'), 10));
+				}
 				FacetsCollector facetsCollector = new FacetsCollector(facetSearchParams, ir, taxonomyReader);
 				is.search(q, MultiCollector.wrap(collector, facetsCollector));
 				
-				List<FacetResult> res = facetsCollector.getFacetResults();
+				List<FacetResult> facetResults = facetsCollector.getFacetResults();
+				for (FacetResult ft : facetResults) {
+					FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
+					CategoryPath cp = ft.getFacetResultNode().getLabel();
+					//TODO check this
+					long count = (long) ft.getFacetResultNode().getValue();
+					facetCountBuilder.setCount(count);
+					facetCountBuilder.setFacet(cp.toString(LumongoConstants.FACET_DELIMITER));
+					builder.addFacetCount(facetCountBuilder);
+				}
 			}
 			else {
 				is.search(w, null, collector);
@@ -138,7 +154,6 @@ public class Segment {
 			
 			int totalHits = collector.getTotalHits();
 			
-			SegmentResponse.Builder builder = SegmentResponse.newBuilder();
 			builder.setTotalHits(totalHits);
 			
 			boolean moreAvailable = (results.length == checkForMore);

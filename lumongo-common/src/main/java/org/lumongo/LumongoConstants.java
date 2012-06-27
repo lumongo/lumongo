@@ -27,4 +27,6 @@ public class LumongoConstants {
 	
 	//General
 	public static final String UTF8 = "UTF-8";
+	
+	public static final char FACET_DELIMITER = '/';
 }
