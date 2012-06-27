@@ -283,7 +283,8 @@ message QueryRequest {
 	optional LastResult lastResult = 4;
 	optional bool fetchFull = 5 [default = false];
 	optional bool realTime = 6 [default = true];
-	repeated LMFacet facet = 7;
+	optional LMFacet drillDown = 7;
+	repeated LMFacet count = 8;
 }
 
 
