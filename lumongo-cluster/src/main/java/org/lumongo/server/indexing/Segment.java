@@ -102,7 +102,7 @@ public class Segment {
 		return segmentNumber;
 	}
 	
-	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after, boolean realTime) throws Exception {
+	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after, List<LMFacet> count, boolean realTime) throws Exception {
 		
 		IndexReader ir = null;
 		

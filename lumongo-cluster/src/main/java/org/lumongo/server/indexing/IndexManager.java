@@ -804,6 +804,7 @@ public class IndexManager {
 					throw new IndexDoesNotExist(indexName);
 				}
 				Query query = queryMap.get(indexName);
+				
 				IndexSegmentResponse isr = i.queryInternal(query, request);
 				internalQueryResponseBuilder.addIndexSegmentResponse(isr);
 			}

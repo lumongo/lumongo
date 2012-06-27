@@ -786,7 +786,8 @@ public class Index {
 					
 					@Override
 					public SegmentResponse call() throws Exception {
-						return segment.querySegment(query, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getRealTime());
+						return segment.querySegment(query, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getCountList(),
+								queryRequest.getRealTime());
 					}
 					
 				});
@@ -1072,6 +1073,10 @@ public class Index {
 		finally {
 			indexLock.readLock().unlock();
 		}
+	}
+	
+	public boolean isFaceted() {
+		return indexConfig.isFaceted();
 	}
 	
 	private static IndexConfig loadIndexSettings(Mongo mongo, String database, String indexName) throws InvalidIndexConfig {
