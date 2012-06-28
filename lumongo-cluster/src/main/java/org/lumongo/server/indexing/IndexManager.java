@@ -235,7 +235,7 @@ public class IndexManager {
 	public IndexCreateResponse createIndex(IndexCreateRequest request) throws Exception {
 		globalLock.writeLock().lock();
 		try {
-			log.info("Creating index: <" + request.getIndexName() + ">: " + request);
+			log.info("Creating index: <" + request.getIndexName() + ">");
 			
 			IndexConfig indexConfig = new IndexConfig(request);
 			
