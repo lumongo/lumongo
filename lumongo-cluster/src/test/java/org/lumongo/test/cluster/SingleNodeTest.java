@@ -9,6 +9,7 @@ import org.lumongo.LumongoConstants;
 import org.lumongo.client.LumongoClient;
 import org.lumongo.client.config.LumongoClientConfig;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
+import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
@@ -173,6 +174,41 @@ public class SingleNodeTest {
 		indexSettingsBuilder.setSegmentTolerance(0.05);
 		
 		lumongoClient.createIndex(FACET_TEST_INDEX, 16, "uid", true, indexSettingsBuilder.build());
+	}
+	
+	@Test(groups = { "facet" }, dependsOnGroups = { "init" })
+	public void facetTest() throws Exception {
+		final int COUNT_PER_ISSN = 4;
+		final String uniqueIdPrefix = "myId-";
+		final String[] issns = new String[] { "1234-1234", "3333-1234", "1234-5555", "1234-4444" };
+		{
+			for (String issn : issns) {
+				for (int i = 0; i < COUNT_PER_ISSN; i++) {
+					String uniqueId = uniqueIdPrefix + i;
+					LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
+					indexedDocBuilder.setIndexName(FACET_TEST_INDEX);
+					indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue(issn).build());
+					indexedDocBuilder
+							.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Distributed Search and Storage System").build());
+					indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("an").addIntValue(i).build());
+					indexedDocBuilder.addFacet("/issn/" + issn);
+					ByteString byteString = ByteString.copyFromUtf8("<sampleXML>" + i + "</sampleXML>");
+					
+					boolean compressed = (i % 2 == 0);
+					
+					ResultDocument rd = ResultDocument.newBuilder().setType(ResultDocument.Type.TEXT).setDocument(byteString).setUniqueId(uniqueId)
+							.setCompressed(compressed).build();
+					lumongoClient.storeDocument(rd, indexedDocBuilder.build());
+				}
+			}
+		}
+		{
+			QueryResponse qr = lumongoClient.query("title:search", 10, FACET_TEST_INDEX);
+			Assert.assertEquals(qr.getFacetCountCount(), issns.length, "Total facets not " + issns.length);
+			for (FacetCount fc : qr.getFacetCountList()) {
+				Assert.assertEquals(fc.getCount(), COUNT_PER_ISSN, "Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">");
+			}
+		}
 	}
 	
 	@Test(groups = { "first" }, dependsOnGroups = { "init" })
@@ -482,7 +518,7 @@ public class SingleNodeTest {
 		}
 	}
 	
-	@Test(groups = { "drop" }, dependsOnGroups = { "last" })
+	@Test(groups = { "drop" }, dependsOnGroups = { "last", "facet" })
 	public void dropIndex() throws Exception {
 		GetIndexesResponse gir = lumongoClient.getIndexes();
 		Assert.assertEquals(gir.getIndexNameCount(), 2, "Expected two indexes");

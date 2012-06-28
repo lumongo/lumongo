@@ -42,7 +42,6 @@ import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
-import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.LMField;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
@@ -289,8 +288,8 @@ public class Segment {
 		
 		if (indexConfig.isFaceted()) {
 			List<CategoryPath> categories = new ArrayList<CategoryPath>();
-			for (LMFacet lmFacet : lmDoc.getFacetList()) {
-				categories.add(new CategoryPath(lmFacet.getComponentList().toArray(new String[0])));
+			for (String facet : lmDoc.getFacetList()) {
+				categories.add(new CategoryPath(facet, LumongoConstants.FACET_DELIMITER));
 			}
 			CategoryDocumentBuilder categoryDocBuilder = new CategoryDocumentBuilder(taxonomyWriter);
 			categoryDocBuilder.setCategoryPaths(categories);

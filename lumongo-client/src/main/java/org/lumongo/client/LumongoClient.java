@@ -287,6 +287,11 @@ public class LumongoClient {
 			for (String index : indexes) {
 				requestBuilder.addIndex(index);
 			}
+			if (drillDownList != null) {
+				for (String drillDown : drillDownList) {
+					requestBuilder.addDrillDown(drillDown);
+				}
+			}
 			
 			QueryResponse queryResponse = service.query(controller, requestBuilder.build());
 			return queryResponse;

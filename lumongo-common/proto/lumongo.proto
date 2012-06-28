@@ -198,12 +198,9 @@ message StoreResponse {
 message LMDoc {
 	required string indexName = 1;
 	repeated LMField indexedField = 2;
-	repeated LMFacet facet = 3;
+	repeated string facet = 3;
 }
 
-message LMFacet {
-	repeated string component = 1;
-}
 
 message LMField {
 	required string fieldName = 1;
