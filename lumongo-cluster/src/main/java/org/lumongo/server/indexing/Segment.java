@@ -77,7 +77,7 @@ public class Segment {
 		this.indexWriter = indexWriter;
 		
 		this.taxonomyWriter = taxonomyWriter;
-		if (this.indexWriter != null) {
+		if (this.taxonomyWriter != null) {
 			this.taxonomyReader = new LumongoDirectoryTaxonomyReader(taxonomyWriter);
 		}
 		

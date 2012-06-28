@@ -1102,7 +1102,7 @@ public class Index {
 	
 	public static Index createIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, Mongo mongo,
 			IndexConfig indexConfig) {
-		log.info("Creating index <" + indexConfig.getIndexName() + ">");
+		log.info("Creating index <" + indexConfig.getIndexName() + ">: " + indexConfig);
 		Index i = new Index(hazelcastManager, mongoConfig, clusterConfig, mongo, indexConfig);
 		i.storeIndexSettings();
 		return i;
