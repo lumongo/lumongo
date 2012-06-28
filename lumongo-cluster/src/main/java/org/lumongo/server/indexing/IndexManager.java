@@ -718,7 +718,7 @@ public class IndexManager {
 					throw new IndexDoesNotExist(indexName);
 				}
 				Query query = i.getQuery(queryString);
-				if (drillDownList.isEmpty()) {
+				if (!drillDownList.isEmpty()) {
 					if (i.isFaceted()) {
 						List<CategoryPath> categoryPathList = new ArrayList<CategoryPath>();
 						for (String drillDown : drillDownList) {
