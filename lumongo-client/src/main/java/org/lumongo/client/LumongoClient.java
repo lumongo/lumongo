@@ -477,10 +477,18 @@ public class LumongoClient {
 	}
 	
 	public IndexCreateResponse createIndex(String indexName, int numberOfSegments, String uniqueIdField, IndexSettings indexSettings) throws Exception {
+		return createIndex(indexName, numberOfSegments, uniqueIdField, null, indexSettings);
+	}
+	
+	public IndexCreateResponse createIndex(String indexName, int numberOfSegments, String uniqueIdField, Boolean faceted, IndexSettings indexSettings)
+			throws Exception {
 		IndexCreateRequest.Builder indexCreateRequest = IndexCreateRequest.newBuilder();
 		indexCreateRequest.setIndexName(indexName);
 		indexCreateRequest.setNumberOfSegments(numberOfSegments);
 		indexCreateRequest.setUniqueIdField(uniqueIdField);
+		if (faceted != null) {
+			indexCreateRequest.setFaceted(faceted);
+		}
 		indexCreateRequest.setIndexSettings(indexSettings);
 		return createIndex(indexCreateRequest.build());
 	}

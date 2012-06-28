@@ -47,6 +47,8 @@ import com.mongodb.Mongo;
 public class SingleNodeTest {
 	private static final String MY_TEST_INDEX = "myTestIndex";
 	
+	private static final String FACET_TEST_INDEX = "facetTestIndex";
+	
 	private static Logger log = Logger.getLogger(SingleNodeTest.class);
 	
 	private LumongoClient lumongoClient;
@@ -161,6 +163,16 @@ public class SingleNodeTest {
 		
 		lumongoClient.createIndex(MY_TEST_INDEX, 16, "uid", indexSettingsBuilder.build());
 		
+		indexSettingsBuilder = IndexSettings.newBuilder();
+		indexSettingsBuilder.setDefaultSearchField("title");
+		indexSettingsBuilder.setDefaultAnalyzer(LMAnalyzer.KEYWORD);
+		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("title").setAnalyzer(LMAnalyzer.STANDARD));
+		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("issn").setAnalyzer(LMAnalyzer.LC_KEYWORD));
+		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("uid").setAnalyzer(LMAnalyzer.LC_KEYWORD));
+		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("an").setAnalyzer(LMAnalyzer.NUMERIC_INT));
+		indexSettingsBuilder.setSegmentTolerance(0.05);
+		
+		lumongoClient.createIndex(FACET_TEST_INDEX, 16, "uid", true, indexSettingsBuilder.build());
 	}
 	
 	@Test(groups = { "first" }, dependsOnGroups = { "init" })
