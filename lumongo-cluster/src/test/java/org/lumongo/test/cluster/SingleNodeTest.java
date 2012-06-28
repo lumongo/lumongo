@@ -485,9 +485,9 @@ public class SingleNodeTest {
 	@Test(groups = { "drop" }, dependsOnGroups = { "last" })
 	public void dropIndex() throws Exception {
 		GetIndexesResponse gir = lumongoClient.getIndexes();
-		Assert.assertEquals(gir.getIndexNameCount(), 1, "Expected one index");
+		Assert.assertEquals(gir.getIndexNameCount(), 2, "Expected two indexes");
 		lumongoClient.deleteIndex(MY_TEST_INDEX);
 		gir = lumongoClient.getIndexes();
-		Assert.assertEquals(gir.getIndexNameCount(), 0, "Expected zero indexes");
+		Assert.assertEquals(gir.getIndexNameCount(), 1, "Expected one indexes");
 	}
 }
