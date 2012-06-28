@@ -217,38 +217,56 @@ public class LumongoClient {
 	}
 	
 	public QueryResponse query(String query, int amount, String index) throws Exception {
-		return query(query, amount, index, null, null);
+		return query(query, amount, index, null, null, null);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes) throws Exception {
-		return query(query, amount, indexes, null, null);
+		return query(query, amount, indexes, null, null, null);
 	}
 	
 	public QueryResponse query(String query, int amount, String index, Boolean realTime) throws Exception {
-		return query(query, amount, index, null, realTime);
+		return query(query, amount, index, null, null, realTime);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes, Boolean realTime) throws Exception {
-		return query(query, amount, indexes, null, realTime);
+		return query(query, amount, indexes, null, null, realTime);
 	}
 	
 	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse) throws Exception {
-		return query(query, amount, new String[] { index }, lastResponse, null, retryCount);
+		return query(query, amount, new String[] { index }, lastResponse, null, null, retryCount);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse) throws Exception {
-		return query(query, amount, indexes, lastResponse, null, retryCount);
+		return query(query, amount, indexes, lastResponse, null, null, retryCount);
 	}
 	
 	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, Boolean realTime) throws Exception {
-		return query(query, amount, new String[] { index }, lastResponse, realTime, retryCount);
+		return query(query, amount, new String[] { index }, lastResponse, null, realTime, retryCount);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, Boolean realTime) throws Exception {
-		return query(query, amount, indexes, lastResponse, realTime, retryCount);
+		return query(query, amount, indexes, lastResponse, null, realTime, retryCount);
 	}
 	
-	protected QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, Boolean realTime, int retries) throws Exception {
+	public QueryResponse query(String query, int amount, String index, String[] drillDownList, Boolean realTime) throws Exception {
+		return query(query, amount, new String[] { index }, null, drillDownList, realTime, retryCount);
+	}
+	
+	public QueryResponse query(String query, int amount, String[] indexes, String[] drillDownList, Boolean realTime) throws Exception {
+		return query(query, amount, indexes, null, drillDownList, realTime, retryCount);
+	}
+	
+	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, String[] drillDownList, Boolean realTime) throws Exception {
+		return query(query, amount, new String[] { index }, lastResponse, drillDownList, realTime, retryCount);
+	}
+	
+	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, String[] drillDownList, Boolean realTime)
+			throws Exception {
+		return query(query, amount, indexes, lastResponse, drillDownList, realTime, retryCount);
+	}
+	
+	protected QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, String[] drillDownList, Boolean realTime, int retries)
+			throws Exception {
 		
 		RpcController controller = null;
 		try {
@@ -281,7 +299,7 @@ public class LumongoClient {
 			cycleServers();
 			
 			if (retries > 0) {
-				return query(query, amount, indexes, lastResponse, realTime, retries - 1);
+				return query(query, amount, indexes, lastResponse, drillDownList, realTime, retries - 1);
 			}
 			else {
 				throw new Exception(e.getMessage());
