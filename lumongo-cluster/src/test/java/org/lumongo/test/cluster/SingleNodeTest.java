@@ -532,6 +532,21 @@ public class SingleNodeTest {
 				System.out.println("Document: " + contents);
 			}
 		}
+		{
+			CountRequest countRequest = CountRequest.newBuilder().setFacet("issn").setMaxFacets(30).build();
+			FacetRequest facetRequest = FacetRequest.newBuilder().addCountRequest(countRequest).build();
+			QueryResponse qr = lumongoClient.query("title:userguide", 10, FACET_TEST_INDEX, facetRequest, true);
+			
+			for (FacetCount fc : qr.getFacetCountList()) {
+				System.out.println("Facet <" + fc.getFacet() + "> has <" + fc.getCount() + "> items");
+			}
+		}
+		
+		{
+			FacetRequest facetRequest = FacetRequest.newBuilder().addDrillDown("issn/1234-1234").build();
+			
+			QueryResponse qr = lumongoClient.query("title:userguide", 10, FACET_TEST_INDEX, facetRequest, true);
+		}
 	}
 	
 	@Test(groups = { "drop" }, dependsOnGroups = { "last", "facet" })
