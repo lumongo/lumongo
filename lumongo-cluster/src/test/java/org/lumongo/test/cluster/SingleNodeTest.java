@@ -545,7 +545,9 @@ public class SingleNodeTest {
 		{
 			FacetRequest facetRequest = FacetRequest.newBuilder().addDrillDown("issn/1234-1234").build();
 			
+			@SuppressWarnings("unused")
 			QueryResponse qr = lumongoClient.query("title:userguide", 10, FACET_TEST_INDEX, facetRequest, true);
+			
 		}
 	}
 	

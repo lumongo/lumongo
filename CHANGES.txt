@@ -1,3 +1,7 @@
+0.13
+Defect #19: Index Readers Not Closed Correctly
+Feature #1: Add Faceting Support (initial)
+
 0.12
 Fixed Bug #6: Index configuration is not refreshed correctly in segments
 Added Feature #3: Add numeric field support
