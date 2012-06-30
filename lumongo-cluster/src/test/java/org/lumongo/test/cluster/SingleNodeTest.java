@@ -208,10 +208,22 @@ public class SingleNodeTest {
 			CountRequest countRequest = CountRequest.newBuilder().setFacet("issn").setMaxFacets(30).build();
 			FacetRequest facetRequest = FacetRequest.newBuilder().addCountRequest(countRequest).build();
 			QueryResponse qr = lumongoClient.query("title:userguide", 10, FACET_TEST_INDEX, facetRequest, true);
+			
+			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN * issns.length, "Total record count not " + COUNT_PER_ISSN * issns.length);
+			
 			Assert.assertEquals(qr.getFacetCountCount(), issns.length, "Total facets not " + issns.length);
 			for (FacetCount fc : qr.getFacetCountList()) {
 				Assert.assertEquals(fc.getCount(), COUNT_PER_ISSN, "Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">");
 			}
+			
+		}
+		
+		{
+			FacetRequest facetRequest = FacetRequest.newBuilder().addDrillDown("issn/1234-1234").build();
+			
+			QueryResponse qr = lumongoClient.query("title:userguide", 10, FACET_TEST_INDEX, facetRequest, true);
+			
+			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN, "Total record count after drill down not " + COUNT_PER_ISSN);
 		}
 	}
 	
