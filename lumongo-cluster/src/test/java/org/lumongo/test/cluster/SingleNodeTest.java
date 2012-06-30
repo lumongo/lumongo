@@ -203,7 +203,7 @@ public class SingleNodeTest {
 			}
 		}
 		{
-			QueryResponse qr = lumongoClient.query("title:search", 10, FACET_TEST_INDEX);
+			QueryResponse qr = lumongoClient.query("title:search", 10, FACET_TEST_INDEX, new String[] { "/issn" }, null, true);
 			Assert.assertEquals(qr.getFacetCountCount(), issns.length, "Total facets not " + issns.length);
 			for (FacetCount fc : qr.getFacetCountList()) {
 				Assert.assertEquals(fc.getCount(), COUNT_PER_ISSN, "Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">");

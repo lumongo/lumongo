@@ -17,6 +17,7 @@ import org.apache.lucene.facet.search.FacetsCollector;
 import org.apache.lucene.facet.search.params.CountFacetRequest;
 import org.apache.lucene.facet.search.params.FacetSearchParams;
 import org.apache.lucene.facet.search.results.FacetResult;
+import org.apache.lucene.facet.search.results.FacetResultNode;
 import org.apache.lucene.facet.taxonomy.CategoryPath;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
@@ -128,21 +129,29 @@ public class Segment {
 			if (indexConfig.isFaceted()) {
 				taxonomyReader.refresh(realTime);
 				FacetSearchParams facetSearchParams = new FacetSearchParams();
+				
 				for (String count : countList) {
-					facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath(count, '/'), 10));
+					facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath("issn"), 30));
+				}
+				for (String count : countList) {
+					//TODO fix this
+					//facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath(count, '/'), 30));
 				}
 				FacetsCollector facetsCollector = new FacetsCollector(facetSearchParams, ir, taxonomyReader);
 				is.search(q, MultiCollector.wrap(collector, facetsCollector));
 				
 				List<FacetResult> facetResults = facetsCollector.getFacetResults();
-				for (FacetResult ft : facetResults) {
-					FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
-					CategoryPath cp = ft.getFacetResultNode().getLabel();
-					//TODO check this
-					long count = (long) ft.getFacetResultNode().getValue();
-					facetCountBuilder.setCount(count);
-					facetCountBuilder.setFacet(cp.toString(LumongoConstants.FACET_DELIMITER));
-					builder.addFacetCount(facetCountBuilder);
+				
+				for (FacetResult fc : facetResults) {
+					for (FacetResultNode subResult : fc.getFacetResultNode().getSubResults()) {
+						FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
+						CategoryPath cp = subResult.getLabel();
+						long count = (long) fc.getFacetResultNode().getValue();
+						facetCountBuilder.setCount(count);
+						facetCountBuilder.setFacet(cp.toString(LumongoConstants.FACET_DELIMITER));
+						builder.addFacetCount(facetCountBuilder);
+						System.out.println(cp.toString(LumongoConstants.FACET_DELIMITER) + "-" + count);
+					}
 				}
 			}
 			else {
