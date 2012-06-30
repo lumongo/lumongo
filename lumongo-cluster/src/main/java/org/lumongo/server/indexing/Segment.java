@@ -146,11 +146,10 @@ public class Segment {
 					for (FacetResultNode subResult : fc.getFacetResultNode().getSubResults()) {
 						FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
 						CategoryPath cp = subResult.getLabel();
-						long count = (long) fc.getFacetResultNode().getValue();
+						long count = (long) subResult.getValue();
 						facetCountBuilder.setCount(count);
 						facetCountBuilder.setFacet(cp.toString(LumongoConstants.FACET_DELIMITER));
 						builder.addFacetCount(facetCountBuilder);
-						System.out.println(cp.toString(LumongoConstants.FACET_DELIMITER) + "-" + count);
 					}
 				}
 			}
@@ -203,7 +202,9 @@ public class Segment {
 			forceCommit();
 		}
 		else if (count % indexConfig.getSegmentFlushInterval() == 0) {
-			taxonomyWriter.flush();
+			if (indexConfig.isFaceted()) {
+				taxonomyWriter.flush();
+			}
 			indexWriter.flush(indexConfig.getApplyUncommitedDeletes());
 		}
 	}

@@ -178,20 +178,20 @@ public class SingleNodeTest {
 	
 	@Test(groups = { "facet" }, dependsOnGroups = { "init" })
 	public void facetTest() throws Exception {
-		final int COUNT_PER_ISSN = 4;
+		final int COUNT_PER_ISSN = 100;
 		final String uniqueIdPrefix = "myId-";
-		final String[] issns = new String[] { "1234-1234", "3333-1234", "1234-5555", "1234-4444" };
+		final String[] issns = new String[] { "1234-1234", "3333-1234", "1234-5555", "1234-4444", "2222-2222" };
+		int id = 0;
 		{
 			for (String issn : issns) {
 				for (int i = 0; i < COUNT_PER_ISSN; i++) {
-					String uniqueId = uniqueIdPrefix + i;
+					id++;
+					String uniqueId = uniqueIdPrefix + id;
 					LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
 					indexedDocBuilder.setIndexName(FACET_TEST_INDEX);
 					indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue(issn).build());
-					indexedDocBuilder
-							.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Distributed Search and Storage System").build());
-					indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("an").addIntValue(i).build());
-					indexedDocBuilder.addFacet("/issn/" + issn);
+					indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Facet Userguide").build());
+					indexedDocBuilder.addFacet("issn/" + issn);
 					ByteString byteString = ByteString.copyFromUtf8("<sampleXML>" + i + "</sampleXML>");
 					
 					boolean compressed = (i % 2 == 0);
@@ -203,7 +203,7 @@ public class SingleNodeTest {
 			}
 		}
 		{
-			QueryResponse qr = lumongoClient.query("title:search", 10, FACET_TEST_INDEX, new String[] { "/issn" }, null, true);
+			QueryResponse qr = lumongoClient.query("title:userguide", 10, FACET_TEST_INDEX, new String[] { "issn" }, null, true);
 			Assert.assertEquals(qr.getFacetCountCount(), issns.length, "Total facets not " + issns.length);
 			for (FacetCount fc : qr.getFacetCountList()) {
 				Assert.assertEquals(fc.getCount(), COUNT_PER_ISSN, "Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">");
