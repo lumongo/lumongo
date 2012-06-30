@@ -786,7 +786,7 @@ public class Index {
 					
 					@Override
 					public SegmentResponse call() throws Exception {
-						return segment.querySegment(query, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getCountList(),
+						return segment.querySegment(query, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
 								queryRequest.getRealTime());
 					}
 					

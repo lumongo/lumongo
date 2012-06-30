@@ -32,6 +32,7 @@ import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.DeleteResponse;
+import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
@@ -708,9 +709,12 @@ public class IndexManager {
 		}
 	}
 	
-	private Map<String, Query> getQueryMap(Collection<String> indexNames, String queryString, List<String> drillDownList) throws Exception {
+	private Map<String, Query> getQueryMap(QueryRequest queryRequest) throws Exception {
 		globalLock.readLock().lock();
 		try {
+			String queryString = queryRequest.getQuery();
+			List<String> indexNames = queryRequest.getIndexList();
+			
 			HashMap<String, Query> queryMap = new HashMap<String, Query>();
 			for (String indexName : indexNames) {
 				Index i = indexMap.get(indexName);
@@ -718,18 +722,22 @@ public class IndexManager {
 					throw new IndexDoesNotExist(indexName);
 				}
 				Query query = i.getQuery(queryString);
-				if (!drillDownList.isEmpty()) {
+				if (queryRequest.hasFacetRequest()) {
 					if (i.isFaceted()) {
+						FacetRequest facetRequest = queryRequest.getFacetRequest();
 						List<CategoryPath> categoryPathList = new ArrayList<CategoryPath>();
-						for (String drillDown : drillDownList) {
-							CategoryPath cp = new CategoryPath(drillDown, LumongoConstants.FACET_DELIMITER);
-							categoryPathList.add(cp);
+						List<String> drillDownList = facetRequest.getDrillDownList();
+						if (!drillDownList.isEmpty()) {
+							for (String drillDown : drillDownList) {
+								CategoryPath cp = new CategoryPath(drillDown, LumongoConstants.FACET_DELIMITER);
+								categoryPathList.add(cp);
+							}
+							query = DrillDown.query(query, categoryPathList.toArray(new CategoryPath[0]));
 						}
-						query = DrillDown.query(query, categoryPathList.toArray(new CategoryPath[0]));
 					}
 					else {
 						//TODO make this fail silently if multiple indexes queried?
-						throw new IOException("Cannot drill down non-faceted index <" + indexName + ">");
+						throw new IOException("Cannot use facet request on non-faceted index <" + indexName + ">");
 					}
 				}
 				
@@ -747,7 +755,7 @@ public class IndexManager {
 		globalLock.readLock().lock();
 		try {
 			
-			final Map<String, Query> queryMap = getQueryMap(request.getIndexList(), request.getQuery(), request.getDrillDownList());
+			final Map<String, Query> queryMap = getQueryMap(request);
 			
 			final Map<String, Index> indexSegmentMap = new HashMap<String, Index>();
 			for (String indexName : request.getIndexList()) {
@@ -802,7 +810,7 @@ public class IndexManager {
 	public InternalQueryResponse internalQuery(QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			Map<String, Query> queryMap = getQueryMap(request.getIndexList(), request.getQuery(), request.getDrillDownList());
+			Map<String, Query> queryMap = getQueryMap(request);
 			return internalQuery(queryMap, request);
 		}
 		finally {

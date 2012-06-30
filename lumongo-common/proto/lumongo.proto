@@ -251,6 +251,16 @@ message FacetCount {
 	required uint64 count = 2;
 }
 
+message FacetRequest {
+	repeated CountRequest countRequest = 1;
+	repeated string drillDown = 2;
+}
+
+message CountRequest {
+	required string facet = 1;
+	optional uint32 maxFacets = 2 [default = 10];
+}
+
 
 message SegmentResponse {
     required uint32 segmentNumber = 1;
@@ -287,10 +297,8 @@ message QueryRequest {
 	optional LastResult lastResult = 4;
 	optional bool fetchFull = 5 [default = false];
 	optional bool realTime = 6 [default = true];
-	repeated string drillDown = 7;
-	repeated string count = 8;
+	optional FacetRequest facetRequest = 7;
 }
-
 
 
 message QueryResponse {

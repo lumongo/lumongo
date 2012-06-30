@@ -37,7 +37,9 @@ import org.apache.lucene.search.Weight;
 import org.apache.lucene.util.ReaderUtil;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
+import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
@@ -105,7 +107,7 @@ public class Segment {
 		return segmentNumber;
 	}
 	
-	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after, List<String> countList, boolean realTime) throws Exception {
+	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after, FacetRequest facetRequest, boolean realTime) throws Exception {
 		
 		IndexReader ir = null;
 		
@@ -130,12 +132,9 @@ public class Segment {
 				taxonomyReader.refresh(realTime);
 				FacetSearchParams facetSearchParams = new FacetSearchParams();
 				
-				for (String count : countList) {
-					facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath("issn"), 30));
-				}
-				for (String count : countList) {
-					//TODO fix this
-					//facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath(count, '/'), 30));
+				for (CountRequest count : facetRequest.getCountRequestList()) {
+					facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath(count.getFacet(), LumongoConstants.FACET_DELIMITER), count
+							.getMaxFacets()));
 				}
 				FacetsCollector facetsCollector = new FacetsCollector(facetSearchParams, ir, taxonomyReader);
 				is.search(q, MultiCollector.wrap(collector, facetsCollector));

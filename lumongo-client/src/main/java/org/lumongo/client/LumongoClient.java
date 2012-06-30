@@ -19,6 +19,7 @@ import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.DeleteResponse;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.ExternalService.BlockingInterface;
+import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
@@ -233,41 +234,41 @@ public class LumongoClient {
 	}
 	
 	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse) throws Exception {
-		return query(query, amount, new String[] { index }, lastResponse, null, null, null, retryCount);
+		return query(query, amount, index, lastResponse, null, null);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse) throws Exception {
-		return query(query, amount, indexes, lastResponse, null, null, null, retryCount);
+		return query(query, amount, indexes, lastResponse, null, null);
 	}
 	
 	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, Boolean realTime) throws Exception {
-		return query(query, amount, new String[] { index }, lastResponse, null, null, realTime, retryCount);
+		return query(query, amount, index, lastResponse, null, realTime);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, Boolean realTime) throws Exception {
-		return query(query, amount, indexes, lastResponse, null, null, realTime, retryCount);
+		return query(query, amount, indexes, lastResponse, null, realTime);
 	}
 	
-	public QueryResponse query(String query, int amount, String index, String[] countList, String[] drillDownList, Boolean realTime) throws Exception {
-		return query(query, amount, new String[] { index }, null, countList, drillDownList, realTime, retryCount);
+	public QueryResponse query(String query, int amount, String index, FacetRequest facetRequest, Boolean realTime) throws Exception {
+		return query(query, amount, index, null, facetRequest, realTime);
 	}
 	
-	public QueryResponse query(String query, int amount, String[] indexes, String[] countList, String[] drillDownList, Boolean realTime) throws Exception {
-		return query(query, amount, indexes, null, countList, drillDownList, realTime, retryCount);
+	public QueryResponse query(String query, int amount, String[] indexes, FacetRequest facetRequest, Boolean realTime) throws Exception {
+		return query(query, amount, indexes, null, facetRequest, realTime, retryCount);
 	}
 	
-	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, String[] countList, String[] drillDownList, Boolean realTime)
+	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, FacetRequest facetRequest, Boolean realTime)
 			throws Exception {
-		return query(query, amount, new String[] { index }, lastResponse, countList, drillDownList, realTime, retryCount);
+		return query(query, amount, new String[] { index }, lastResponse, facetRequest, realTime);
 	}
 	
-	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, String[] countList, String[] drillDownList,
-			Boolean realTime) throws Exception {
-		return query(query, amount, indexes, lastResponse, countList, drillDownList, realTime, retryCount);
+	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, FacetRequest facetRequest, Boolean realTime)
+			throws Exception {
+		return query(query, amount, indexes, lastResponse, facetRequest, realTime, retryCount);
 	}
 	
-	protected QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, String[] countList, String[] drillDownList,
-			Boolean realTime, int retries) throws Exception {
+	protected QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, FacetRequest facetRequest, Boolean realTime,
+			int retries) throws Exception {
 		
 		RpcController controller = null;
 		try {
@@ -288,15 +289,8 @@ public class LumongoClient {
 			for (String index : indexes) {
 				requestBuilder.addIndex(index);
 			}
-			if (drillDownList != null) {
-				for (String drillDown : drillDownList) {
-					requestBuilder.addDrillDown(drillDown);
-				}
-			}
-			if (countList != null) {
-				for (String count : countList) {
-					requestBuilder.addCount(count);
-				}
+			if (facetRequest != null) {
+				requestBuilder.setFacetRequest(facetRequest);
 			}
 			
 			QueryResponse queryResponse = service.query(controller, requestBuilder.build());
@@ -310,7 +304,7 @@ public class LumongoClient {
 			cycleServers();
 			
 			if (retries > 0) {
-				return query(query, amount, indexes, lastResponse, countList, drillDownList, realTime, retries - 1);
+				return query(query, amount, indexes, lastResponse, facetRequest, realTime, retries - 1);
 			}
 			else {
 				throw new Exception(e.getMessage());

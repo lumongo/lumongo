@@ -9,7 +9,9 @@ import org.lumongo.LumongoConstants;
 import org.lumongo.client.LumongoClient;
 import org.lumongo.client.config.LumongoClientConfig;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
+import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
+import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
@@ -203,7 +205,9 @@ public class SingleNodeTest {
 			}
 		}
 		{
-			QueryResponse qr = lumongoClient.query("title:userguide", 10, FACET_TEST_INDEX, new String[] { "issn" }, null, true);
+			CountRequest countRequest = CountRequest.newBuilder().setFacet("issn").setMaxFacets(30).build();
+			FacetRequest facetRequest = FacetRequest.newBuilder().addCountRequest(countRequest).build();
+			QueryResponse qr = lumongoClient.query("title:userguide", 10, FACET_TEST_INDEX, facetRequest, true);
 			Assert.assertEquals(qr.getFacetCountCount(), issns.length, "Total facets not " + issns.length);
 			for (FacetCount fc : qr.getFacetCountList()) {
 				Assert.assertEquals(fc.getCount(), COUNT_PER_ISSN, "Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">");
