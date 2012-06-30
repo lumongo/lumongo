@@ -10,7 +10,7 @@ subprojects {
 	sourceCompatibility = 1.7
 	targetCompatibility = 1.7
 	
-	version = '0.12'
+	version = '0.13'
 
 	group = 'org.lumongo'
 	
@@ -21,7 +21,7 @@ subprojects {
 	test {
 		useTestNG()
 		
-		systemProperty 'mongoServer', 'localhost'
+		systemProperty 'mongoServer', '192.168.0.1'
 		systemProperty 'mongoPort', '27017'
 		
 		//tweaking memory settings for the forked vm that runs tests
