@@ -110,7 +110,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		if (!doc.getCompressed() && doc.getType().equals(ResultDocument.Type.BSON)) {
 			document.putAll(BSON.decode(doc.getDocument().toByteArray()));
 		}
-		if (!doc.getCompressed() && doc.getType().equals(ResultDocument.Type.TEXT)) {
+		else if (!doc.getCompressed() && doc.getType().equals(ResultDocument.Type.TEXT)) {
 			document.put(DOC, new String(doc.getDocument().toByteArray(), UTF_8_CHARSET));
 		}
 		else {
