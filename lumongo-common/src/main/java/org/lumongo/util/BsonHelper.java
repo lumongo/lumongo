@@ -10,7 +10,7 @@ import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
-public class BSONHelper {
+public class BsonHelper {
 	public static DBObject dbObjectFromResultDocument(ResultDocument rd) {
 		if (rd.hasDocument()) {
 			if (rd.getType().equals(ResultDocument.Type.BSON)) {

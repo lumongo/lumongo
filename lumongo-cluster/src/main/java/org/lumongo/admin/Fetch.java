@@ -11,7 +11,7 @@ import org.lumongo.client.LumongoClient;
 import org.lumongo.client.config.LumongoClientConfig;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
-import org.lumongo.util.BSONHelper;
+import org.lumongo.util.BsonHelper;
 import org.lumongo.util.LogUtil;
 
 import com.mongodb.DBObject;
@@ -44,7 +44,7 @@ public class Fetch {
 				if (fr.hasResultDocument()) {
 					ResultDocument rd = fr.getResultDocument();
 					if (ResultDocument.Type.BSON.equals(rd.getType())) {
-						DBObject dbObject = BSONHelper.dbObjectFromResultDocument(rd);
+						DBObject dbObject = BsonHelper.dbObjectFromResultDocument(rd);
 						System.out.println(dbObject.toString());
 					}
 					else if (ResultDocument.Type.TEXT.equals(rd.getType())) {

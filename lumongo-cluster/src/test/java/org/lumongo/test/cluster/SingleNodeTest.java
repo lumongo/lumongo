@@ -28,7 +28,7 @@ import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
 import org.lumongo.storage.rawfiles.MongoDocumentStorage;
-import org.lumongo.util.BSONHelper;
+import org.lumongo.util.BsonHelper;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LogUtil;
 import org.lumongo.util.ServerNameHelper;
@@ -322,7 +322,7 @@ public class SingleNodeTest {
 			DBObject dbObject = new BasicDBObject();
 			dbObject.put("someKey", "someValue");
 			dbObject.put("other key", "other value");
-			ResultDocument rd = BSONHelper.dbObjectToResultDocument(uniqueId, dbObject);
+			ResultDocument rd = BsonHelper.dbObjectToResultDocument(uniqueId, dbObject);
 			
 			lumongoClient.storeDocument(rd, indexedDocBuilder.build());
 		}
@@ -331,7 +331,7 @@ public class SingleNodeTest {
 			FetchResponse response = lumongoClient.fetchDocument(uniqueId);
 			Assert.assertTrue(response.hasResultDocument(), "Fetch failed for <" + uniqueId + ">");
 			ResultDocument rd = response.getResultDocument();
-			DBObject dbObject = BSONHelper.dbObjectFromResultDocument(rd);
+			DBObject dbObject = BsonHelper.dbObjectFromResultDocument(rd);
 			Assert.assertEquals(dbObject.get("someKey"), "someValue", "BSON object is missing field");
 			Assert.assertEquals(dbObject.get("other key"), "other value", "BSON object is missing field");
 		}
@@ -352,7 +352,7 @@ public class SingleNodeTest {
 				DBObject dbObject = new BasicDBObject();
 				dbObject.put("key1", "val1");
 				dbObject.put("key2", "val2");
-				ResultDocument rd = BSONHelper.dbObjectToResultDocument(uniqueId, dbObject);
+				ResultDocument rd = BsonHelper.dbObjectToResultDocument(uniqueId, dbObject);
 				
 				AssociatedDocument.Builder adBuilder = AssociatedDocument.newBuilder();
 				adBuilder.setCompressed(true);
@@ -395,7 +395,7 @@ public class SingleNodeTest {
 				FetchResponse response = lumongoClient.fetchDocumentAndAssociatedMeta(uniqueId);
 				Assert.assertTrue(response.hasResultDocument(), "Fetch failed for <" + uniqueId + ">");
 				ResultDocument rd = response.getResultDocument();
-				DBObject dbObject = BSONHelper.dbObjectFromResultDocument(rd);
+				DBObject dbObject = BsonHelper.dbObjectFromResultDocument(rd);
 				Assert.assertEquals(dbObject.get("key1"), "val1", "BSON object is missing field");
 				Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 				
@@ -408,7 +408,7 @@ public class SingleNodeTest {
 				FetchResponse response = lumongoClient.fetchDocumentAndAssociated(uniqueId);
 				Assert.assertTrue(response.hasResultDocument(), "Fetch failed for <" + uniqueId + ">");
 				ResultDocument rd = response.getResultDocument();
-				DBObject dbObject = BSONHelper.dbObjectFromResultDocument(rd);
+				DBObject dbObject = BsonHelper.dbObjectFromResultDocument(rd);
 				Assert.assertEquals(dbObject.get("key1"), "val1", "BSON object is missing field");
 				Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 				
