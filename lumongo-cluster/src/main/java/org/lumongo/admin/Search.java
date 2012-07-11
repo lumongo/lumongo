@@ -60,7 +60,15 @@ public class Search {
 				for (String facet : facets) {
 					fr.addCountRequest(CountRequest.newBuilder().setFacet(facet));
 				}
-				QueryResponse qr = client.query(query, amount, indexes.toArray(new String[0]), fr.build(), realTime);
+				
+				QueryResponse qr;
+				if (fr.getCountRequestList().isEmpty()) {
+					qr = client.query(query, amount, indexes.toArray(new String[0]), fr.build(), realTime);
+				}
+				else {
+					//TODO fix so not required to do this
+					qr = client.query(query, amount, indexes.toArray(new String[0]), realTime);
+				}
 				
 				List<ScoredResult> srList = qr.getResultsList();
 				
@@ -100,6 +108,7 @@ public class Search {
 					System.out.print("Facet");
 					System.out.print("\t");
 					System.out.print("Count");
+					System.out.println();
 					for (FacetCount fc : qr.getFacetCountList()) {
 						System.out.print(fc.getFacet());
 						System.out.print("\t");
