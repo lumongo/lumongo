@@ -22,5 +22,6 @@ public class AdminConstants {
 	public static final String REAL_TIME = "realTime";
 	public static final String QUERY = "query";
 	public static final String AMOUNT = "amount";
+	public static final String FACET = "facet";
 	
 }

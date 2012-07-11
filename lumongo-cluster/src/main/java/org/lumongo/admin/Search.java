@@ -11,6 +11,9 @@ import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.LumongoClient;
 import org.lumongo.client.config.LumongoClientConfig;
+import org.lumongo.cluster.message.Lumongo.CountRequest;
+import org.lumongo.cluster.message.Lumongo.FacetCount;
+import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.util.LogUtil;
@@ -30,6 +33,7 @@ public class Search {
 		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT).withRequiredArg().required().ofType(Integer.class)
 				.describedAs("Amount of results to return");
 		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME).withRequiredArg().ofType(Boolean.class).describedAs("Real time search");
+		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.INDEX).withRequiredArg().required().describedAs("Index to search");
 		
 		try {
 			OptionSet options = parser.parse(args);
@@ -40,6 +44,7 @@ public class Search {
 			String query = options.valueOf(queryArg);
 			int amount = options.valueOf(amountArg);
 			Boolean realTime = options.valueOf(realTimeArg);
+			List<String> facets = options.valuesOf(facetsArg);
 			
 			LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
 			lumongoClientConfig.addMember(address, port);
@@ -51,13 +56,20 @@ public class Search {
 				
 				long startTime = System.currentTimeMillis();
 				
-				QueryResponse qr = client.query(query, amount, indexes.toArray(new String[0]), realTime);
+				FacetRequest.Builder fr = FacetRequest.newBuilder();
+				for (String facet : facets) {
+					fr.addCountRequest(CountRequest.newBuilder().setFacet(facet));
+				}
+				QueryResponse qr = client.query(query, amount, indexes.toArray(new String[0]), fr.build(), realTime);
+				
 				List<ScoredResult> srList = qr.getResultsList();
 				
 				long endTime = System.currentTimeMillis();
 				
 				System.out.println("QueryTime: " + (endTime - startTime) + "ms");
 				System.out.println("TotalResults: " + qr.getTotalHits());
+				
+				System.out.println("Results:");
 				
 				System.out.print("UniqueId");
 				System.out.print("\t");
@@ -81,6 +93,20 @@ public class Search {
 					System.out.print("\t");
 					System.out.print(sr.getDocId());
 					System.out.println();
+				}
+				
+				if (!qr.getFacetCountList().isEmpty()) {
+					System.out.println("Facets:");
+					System.out.print("Facet");
+					System.out.print("\t");
+					System.out.print("Count");
+					for (FacetCount fc : qr.getFacetCountList()) {
+						System.out.print(fc.getFacet());
+						System.out.print("\t");
+						System.out.print(fc.getCount());
+						System.out.println();
+					}
+					
 				}
 			}
 			finally {
