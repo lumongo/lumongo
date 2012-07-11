@@ -61,14 +61,7 @@ public class Search {
 					fr.addCountRequest(CountRequest.newBuilder().setFacet(facet));
 				}
 				
-				QueryResponse qr;
-				if (!fr.getCountRequestList().isEmpty()) {
-					qr = client.query(query, amount, indexes.toArray(new String[0]), fr.build(), realTime);
-				}
-				else {
-					//TODO fix so not required to do this
-					qr = client.query(query, amount, indexes.toArray(new String[0]), realTime);
-				}
+				QueryResponse qr = client.query(query, amount, indexes.toArray(new String[0]), fr.build(), realTime);
 				
 				List<ScoredResult> srList = qr.getResultsList();
 				

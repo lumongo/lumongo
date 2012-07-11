@@ -128,7 +128,7 @@ public class Segment {
 			
 			SegmentResponse.Builder builder = SegmentResponse.newBuilder();
 			
-			if (indexConfig.isFaceted()) {
+			if (indexConfig.isFaceted() && facetRequest != null && !facetRequest.getCountRequestList().isEmpty()) {
 				taxonomyReader.refresh(realTime);
 				FacetSearchParams facetSearchParams = new FacetSearchParams();
 				
