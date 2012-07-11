@@ -33,7 +33,7 @@ public class Search {
 		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT).withRequiredArg().required().ofType(Integer.class)
 				.describedAs("Amount of results to return");
 		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME).withRequiredArg().ofType(Boolean.class).describedAs("Real time search");
-		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET).withRequiredArg().required().describedAs("Facet on field");
+		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET).withRequiredArg().describedAs("Facet on field");
 		
 		try {
 			OptionSet options = parser.parse(args);
