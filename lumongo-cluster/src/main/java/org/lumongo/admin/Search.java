@@ -62,7 +62,7 @@ public class Search {
 				}
 				
 				QueryResponse qr;
-				if (fr.getCountRequestList().isEmpty()) {
+				if (!fr.getCountRequestList().isEmpty()) {
 					qr = client.query(query, amount, indexes.toArray(new String[0]), fr.build(), realTime);
 				}
 				else {
