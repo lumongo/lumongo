@@ -33,7 +33,8 @@ public class Search {
 		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT).withRequiredArg().required().ofType(Integer.class)
 				.describedAs("Amount of results to return");
 		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME).withRequiredArg().ofType(Boolean.class).describedAs("Real time search");
-		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET).withRequiredArg().describedAs("Facet on field");
+		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET).withRequiredArg().describedAs("Count facets on");
+		OptionSpec<String> drillDownArg = parser.accepts(AdminConstants.DRILL_DOWN).withRequiredArg().describedAs("Drill down on");
 		
 		try {
 			OptionSet options = parser.parse(args);
@@ -45,6 +46,7 @@ public class Search {
 			int amount = options.valueOf(amountArg);
 			Boolean realTime = options.valueOf(realTimeArg);
 			List<String> facets = options.valuesOf(facetsArg);
+			List<String> drillDowns = options.valuesOf(drillDownArg);
 			
 			LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
 			lumongoClientConfig.addMember(address, port);
@@ -59,6 +61,10 @@ public class Search {
 				FacetRequest.Builder fr = FacetRequest.newBuilder();
 				for (String facet : facets) {
 					fr.addCountRequest(CountRequest.newBuilder().setFacet(facet));
+				}
+				
+				for (String drillDown : drillDowns) {
+					fr.addDrillDown(drillDown);
 				}
 				
 				QueryResponse qr = client.query(query, amount, indexes.toArray(new String[0]), fr.build(), realTime);
