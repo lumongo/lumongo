@@ -27,7 +27,7 @@ public class FacetCountResult implements Comparable<FacetCountResult> {
 	
 	@Override
 	public int compareTo(FacetCountResult o) {
-		return Long.compare(this.count, o.count);
+		return Long.compare(o.count, this.count);
 	}
 	
 }
