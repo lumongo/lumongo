@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
@@ -135,9 +137,14 @@ public class QueryCombiner {
 				totalFacetCounts.get(facet).addAndGet(fc.getCount());
 			}
 		}
+		
+		SortedSet<FacetCountResult> sortedFacetResuls = new TreeSet<FacetCountResult>();
 		for (String facet : totalFacetCounts.keySet()) {
-			AtomicLong count = totalFacetCounts.get(facet);
-			builder.addFacetCount(FacetCount.newBuilder().setFacet(facet).setCount(count.get()));
+			sortedFacetResuls.add(new FacetCountResult(facet, totalFacetCounts.get(facet).get()));
+		}
+		
+		for (FacetCountResult facet : sortedFacetResuls) {
+			builder.addFacetCount(FacetCount.newBuilder().setFacet(facet.getFacet()).setCount(facet.getCount()));
 		}
 		
 		while (results.size() < resultsSize && !isShort) {

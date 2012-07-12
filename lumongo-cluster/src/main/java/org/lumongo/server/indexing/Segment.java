@@ -133,8 +133,8 @@ public class Segment {
 				FacetSearchParams facetSearchParams = new FacetSearchParams();
 				
 				for (CountRequest count : facetRequest.getCountRequestList()) {
-					facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath(count.getFacet(), LumongoConstants.FACET_DELIMITER), count
-							.getMaxFacets()));
+					facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath(count.getFacet(), LumongoConstants.FACET_DELIMITER),
+							Integer.MAX_VALUE));
 				}
 				FacetsCollector facetsCollector = new FacetsCollector(facetSearchParams, ir, taxonomyReader);
 				is.search(q, MultiCollector.wrap(collector, facetsCollector));
