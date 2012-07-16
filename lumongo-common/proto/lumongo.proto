@@ -246,6 +246,16 @@ message ScoredResult {
 	required uint32 segment = 5;
 }
 
+message SortRequest {
+	enum Direction {
+		ASCENDING = 1;
+		DESCENDING = 2;
+	};
+
+	required string sortField = 1;
+	optional Direction direction = 2 [default = ASCENDING];
+}
+
 message FacetCount {
 	required string facet = 1;
 	required uint64 count = 2;
@@ -298,6 +308,7 @@ message QueryRequest {
 	optional bool fetchFull = 5 [default = false];
 	optional bool realTime = 6 [default = true];
 	optional FacetRequest facetRequest = 7;
+	optional SortRequest sortRequest = 8;
 }
 
 
