@@ -247,6 +247,10 @@ message ScoredResult {
 }
 
 message SortRequest {
+	repeated FieldSort fieldSort = 1;
+}
+
+message FieldSort {
 	enum Direction {
 		ASCENDING = 1;
 		DESCENDING = 2;
