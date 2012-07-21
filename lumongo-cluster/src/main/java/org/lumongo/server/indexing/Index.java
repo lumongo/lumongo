@@ -82,7 +82,8 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 
 public class Index {
-	private final static Logger log = Logger.getLogger(Index.class);
+	private static final String FACETS_SUFFIX = "facets";
+    private final static Logger log = Logger.getLogger(Index.class);
 	private static final String SETTINGS_ID = "settings";
 	public static final String CONFIG_SUFFIX = "_config";
 	
@@ -409,7 +410,7 @@ public class Index {
 				
 				if (indexConfig.isFaceted()) {
 					MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, mongoConfig.getDatabaseName(), indexName + "_" + segmentNumber + "_"
-							+ "facets", clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
+							+ FACETS_SUFFIX, clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
 					DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
 					taxonomyWriter = new LumongoDirectoryTaxonomyWriter(ddFacet);
 				}
@@ -702,6 +703,9 @@ public class Index {
 		for (int i = 0; i < numberOfSegments; i++) {
 			String indexSegment = indexName + "_" + i;
 			MongoDirectory.dropIndex(mongo, mongoConfig.getDatabaseName(), indexSegment);
+			if (indexConfig.isFaceted()) {
+			    MongoDirectory.dropIndex(mongo, mongoConfig.getDatabaseName(), indexSegment + "_" + FACETS_SUFFIX);
+			}
 		}
 		
 	}
