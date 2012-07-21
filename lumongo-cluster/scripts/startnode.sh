@@ -2,7 +2,7 @@
 
 WORKING_DIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 
-if [ -z $LUMONGO_JAVA_SETTINGS ]
+if [ -z "$LUMONGO_JAVA_SETTINGS" ]
 then
 	export LUMONGO_JAVA_SETTINGS="-Xmx2048m"
 fi
