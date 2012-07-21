@@ -3,7 +3,7 @@ package org.apache.lucene.facet.taxonomy.directory;
 import java.io.IOException;
 
 import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.store.Directory;
@@ -29,12 +29,8 @@ public class LumongoDirectoryTaxonomyWriter extends DirectoryTaxonomyWriter {
 		return myIndexWriter;
 	}
 	
-	@Override
-	protected IndexReader openReader() throws IOException {
-		return openReader(true);
-	}
 	
-	public IndexReader openReader(boolean realTime) throws IOException {
+	public DirectoryReader openReader(boolean realTime) throws IOException {
 		return myIndexWriter.getReader(true, realTime);
 	}
 	

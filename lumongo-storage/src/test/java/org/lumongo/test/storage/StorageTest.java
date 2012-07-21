@@ -8,14 +8,19 @@ import java.util.List;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.NumericField;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
+
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
@@ -79,10 +84,10 @@ public class StorageTest {
 	
 	private static void addDoc(IndexWriter w, String title, String uid) throws IOException {
 		Document doc = new Document();
-		doc.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
-		doc.add(new Field("uid", uid, Field.Store.YES, Field.Index.ANALYZED));
-		doc.add(new Field("uid", uid, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
-		doc.add(new NumericField("testIntField").setIntValue(3));
+		doc.add(new TextField("title", title, Field.Store.YES));
+		doc.add(new TextField("uid", uid, Field.Store.YES));
+		doc.add(new StringField("uid", uid, Field.Store.YES));
+		doc.add(new IntField("testIntField", 3, Field.Store.YES));
 		System.out.println(doc.toString());
 		Term uidTerm = new Term("uid", uid);
 		w.updateDocument(uidTerm, doc);
@@ -90,24 +95,26 @@ public class StorageTest {
 	
 	@Test(groups = "query", dependsOnGroups = "load")
 	public void queryDocs() throws CorruptIndexException, ParseException, IOException {
-		IndexReader indexReader = IndexReader.open(directory);
+		IndexReader indexReader = DirectoryReader.open(directory);
 		
 		StandardAnalyzer analyzer = new StandardAnalyzer(LuceneConstants.VERSION);
 		QueryParser qp = new QueryParser(LuceneConstants.VERSION, "title", analyzer) {
+		    
+		    
 			@Override
-			protected Query getRangeQuery(final String fieldName, final String lower, final String upper, final boolean inclusive) throws ParseException {
+			protected Query getRangeQuery(final String fieldName, final String start, final String end, final boolean startInclusive, final boolean endInclusive) throws ParseException {
 				
 				if ("testIntField".equals(fieldName)) {
-					return NumericRangeQuery.newIntRange(fieldName, Integer.parseInt(lower), Integer.parseInt(upper), inclusive, inclusive);
+					return NumericRangeQuery.newIntRange(fieldName, Integer.parseInt(start), Integer.parseInt(end), startInclusive, endInclusive);
 				}
 				
 				// return default
-				return super.getRangeQuery(fieldName, lower, upper, inclusive);
+				return super.getRangeQuery(fieldName, start, end, startInclusive, endInclusive);
 				
 			}
 			
 			@Override
-			protected org.apache.lucene.search.Query newTermQuery(org.apache.lucene.index.Term term) {
+			protected Query newTermQuery(org.apache.lucene.index.Term term) {
 				String field = term.field();
 				String text = term.text();
 				if ("testIntField".equals(field)) {
@@ -195,7 +202,7 @@ public class StorageTest {
 			
 			boolean applyDeletes = true;
 			
-			IndexReader ir = IndexReader.open(w, applyDeletes);
+			IndexReader ir = DirectoryReader.open(w, applyDeletes);
 			
 			ir.close();
 			
@@ -210,7 +217,7 @@ public class StorageTest {
 			
 			Mongo mongo = new Mongo(hostName);
 			Directory d = new DistributedDirectory(new MongoDirectory(mongo, databaseName, STORAGE_TEST_INDEX));
-			IndexReader indexReader = IndexReader.open(d);
+			IndexReader indexReader = DirectoryReader.open(d);
 			indexReader.close();
 			d.close();
 			

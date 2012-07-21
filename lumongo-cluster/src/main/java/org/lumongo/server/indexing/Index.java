@@ -26,16 +26,18 @@ import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.KeywordAnalyzer;
-import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
+
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LumongoIndexWriter;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
+
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -169,31 +171,31 @@ public class Index {
 	private QueryParser createQueryParser() throws Exception {
 		return new QueryParser(LuceneConstants.VERSION, indexConfig.getDefaultSearchField(), getAnalyzer()) {
 			@Override
-			protected Query getRangeQuery(final String fieldName, final String start, final String end, final boolean inclusive) throws ParseException {
+			protected Query getRangeQuery(String field, String start,String end, boolean startInclusive, boolean endInclusive) throws ParseException {
 				
-				if (indexConfig.isNumericField(fieldName)) {
-					return getNumericRange(fieldName, start, end, inclusive);
+				if (indexConfig.isNumericField(field)) {
+					return getNumericRange(field, start, end, startInclusive, endInclusive);
 				}
 				
-				return super.getRangeQuery(fieldName, start, end, inclusive);
+				return super.getRangeQuery(field, start, end, startInclusive, endInclusive);
 				
 			}
 			
-			private NumericRangeQuery<?> getNumericRange(final String fieldName, final String start, final String end, final boolean inclusive) {
+			private NumericRangeQuery<?> getNumericRange(final String fieldName, final String start, final String end, final boolean startInclusive, final boolean endInclusive) {
 				if (indexConfig.isNumericIntField(fieldName)) {
-					return NumericRangeQuery.newIntRange(fieldName, Integer.parseInt(start), Integer.parseInt(end), inclusive, inclusive);
+					return NumericRangeQuery.newIntRange(fieldName, Integer.parseInt(start), Integer.parseInt(end), startInclusive, endInclusive);
 				}
 				else if (indexConfig.isNumericLongField(fieldName)) {
-					return NumericRangeQuery.newLongRange(fieldName, Long.parseLong(start), Long.parseLong(end), inclusive, inclusive);
+					return NumericRangeQuery.newLongRange(fieldName, Long.parseLong(start), Long.parseLong(end), startInclusive, endInclusive);
 				}
 				else if (indexConfig.isNumericLongField(fieldName)) {
-					return NumericRangeQuery.newLongRange(fieldName, Long.parseLong(start), Long.parseLong(end), inclusive, inclusive);
+					return NumericRangeQuery.newLongRange(fieldName, Long.parseLong(start), Long.parseLong(end), startInclusive, endInclusive);
 				}
 				else if (indexConfig.isNumericFloatField(fieldName)) {
-					return NumericRangeQuery.newFloatRange(fieldName, Float.parseFloat(start), Float.parseFloat(end), inclusive, inclusive);
+					return NumericRangeQuery.newFloatRange(fieldName, Float.parseFloat(start), Float.parseFloat(end), startInclusive, endInclusive);
 				}
 				else if (indexConfig.isNumericDoubleField(fieldName)) {
-					return NumericRangeQuery.newDoubleRange(fieldName, Double.parseDouble(start), Double.parseDouble(end), inclusive, inclusive);
+					return NumericRangeQuery.newDoubleRange(fieldName, Double.parseDouble(start), Double.parseDouble(end), startInclusive, endInclusive);
 				}
 				throw new RuntimeException("Not a valid numeric field <" + fieldName + ">");
 			}
@@ -204,7 +206,7 @@ public class Index {
 				String text = term.text();
 				
 				if (indexConfig.isNumericField(field)) {
-					return getNumericRange(field, text, text, true);
+					return getNumericRange(field, text, text, true, true);
 				}
 				
 				return super.newTermQuery(term);

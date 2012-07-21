@@ -2,25 +2,22 @@ package org.lumongo.analyzer;
 
 import java.io.Reader;
 
-import org.apache.lucene.analysis.KeywordTokenizer;
-import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.ReusableAnalyzerBase;
+import org.apache.lucene.analysis.Analyzer;
+
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.KeywordTokenizer;
+import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.lumongo.LuceneConstants;
 
-public class LowercaseKeywordAnalyzer extends ReusableAnalyzerBase {
-	
-	public LowercaseKeywordAnalyzer() {
-		
-	}
-	
-	@Override
-	protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
-		
-		KeywordTokenizer src = new KeywordTokenizer(reader);
-		TokenStream tok = new LowerCaseFilter(LuceneConstants.VERSION, src);
-		
-		return new TokenStreamComponents(src, tok);
-	}
-	
+public class LowercaseKeywordAnalyzer extends Analyzer {
+    public LowercaseKeywordAnalyzer() {
+    }
+
+    @Override
+    protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
+        KeywordTokenizer src = new KeywordTokenizer(reader);
+        TokenStream tok = new LowerCaseFilter(LuceneConstants.VERSION, src);
+
+        return new TokenStreamComponents(src, tok);
+    }
 }
