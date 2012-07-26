@@ -166,9 +166,25 @@ public class Segment {
 			    for (FieldSort fs : sortRequest.getFieldSortList()) {		
 			        boolean reverse = Direction.DESCENDING.equals(fs.getDirection());
 			        
-			        //TODO support other types
-			        SortField.Type type = SortField.Type.STRING;			        
-			        sortFields.add(new SortField(fs.getSortField(), type, reverse));
+			        String sortField = fs.getSortField();
+			        
+			        SortField.Type type = SortField.Type.STRING;
+			        if (indexConfig.isNumericField(sortField)) {
+			            if (indexConfig.isNumericIntField(sortField)) {
+			                type = SortField.Type.INT;
+			            }
+			            else if (indexConfig.isNumericLongField(sortField)) {
+                            type = SortField.Type.LONG;
+                        }
+			            else if (indexConfig.isNumericFloatField(sortField)) {
+			                type = SortField.Type.FLOAT;
+			            }
+			            else if (indexConfig.isNumericDoubleField(sortField)) {
+                            type = SortField.Type.DOUBLE;
+                        }
+			        }
+			        
+			        sortFields.add(new SortField(sortField, type, reverse));
 			    }
 			    Sort sort = new Sort();
 			    sort.setSort(sortFields.toArray(new SortField[0]));
@@ -266,7 +282,10 @@ public class Segment {
                     BytesRef b = (BytesRef) o;		
                     srBuilder.addSortTerms(b.utf8ToString());				            
                 }
-                //TODO handle other field types
+                else {
+                    //TODO handle other field types                             
+                    log.info("Unsupported sort type: <" + o.getClass() + ">");
+                }
             }
         }
         return srBuilder;

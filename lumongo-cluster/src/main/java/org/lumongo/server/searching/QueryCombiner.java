@@ -181,7 +181,7 @@ public class QueryCombiner {
                     int i = 0;
                     for (FieldSort fs : fieldSortList) {
                         String a = o1.getSortTermsList().get(i);
-                        String b = o1.getSortTermsList().get(i);
+                        String b = o2.getSortTermsList().get(i);
                         
                         if (a == null) {
                             a = ""; //TODO think about whether null and empty should be same
