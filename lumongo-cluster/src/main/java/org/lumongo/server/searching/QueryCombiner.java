@@ -213,9 +213,10 @@ public class QueryCombiner {
 		    myCompare = sortCompare;
 		}
 
-		Collections.sort(mergedResults, myCompare);
+		
 		
 		if (!mergedResults.isEmpty()) {
+		    Collections.sort(mergedResults, myCompare);
 		    results = mergedResults.subList(0, resultsSize);
 		    
 		    for (ScoredResult sr :mergedResults) {
