@@ -2,6 +2,7 @@ package org.lumongo.server.searching;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,24 +12,29 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
+import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
 import org.lumongo.cluster.message.Lumongo.InternalQueryResponse;
 import org.lumongo.cluster.message.Lumongo.LastIndexResult;
 import org.lumongo.cluster.message.Lumongo.LastResult;
+import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
+import org.lumongo.cluster.message.Lumongo.SortRequest;
 import org.lumongo.server.indexing.Index;
 
 public class QueryCombiner {
 	
+    private final static Comparator<ScoredResult> scoreCompare = new ScoreCompare();
+    
 	private final static Logger log = Logger.getLogger(QueryCombiner.class);
 	
 	private final Map<String, Index> usedIndexMap;
 	private final List<InternalQueryResponse> responses;
 	
-	private final Map<String, Map<Integer, SegmentQueryResult>> indexToSegmentResponseMap;
-	private final List<SegmentQueryResult> segmentQueryResults;
+	private final Map<String, Map<Integer, SegmentResponse>> indexToSegmentResponseMap;
+	private final List<SegmentResponse> segmentResponses;
 	
 	private final int amount;
 	private final LastResult lastResult;
@@ -36,40 +42,47 @@ public class QueryCombiner {
 	private boolean isShort;
 	private List<ScoredResult> results;
 	private int resultsSize;
+
+    private SortRequest sortRequest;
+
+    private String query;
 	
-	public QueryCombiner(Map<String, Index> usedIndexMap, int amount, List<InternalQueryResponse> responses, LastResult lastResult) {
+	public QueryCombiner(Map<String, Index> usedIndexMap, QueryRequest request, List<InternalQueryResponse> responses) {
 		this.usedIndexMap = usedIndexMap;
 		this.responses = responses;
-		this.amount = amount;
-		this.indexToSegmentResponseMap = new HashMap<String, Map<Integer, SegmentQueryResult>>();
-		this.segmentQueryResults = new ArrayList<SegmentQueryResult>();
-		this.lastResult = lastResult;
+		this.amount = request.getAmount();
+		this.indexToSegmentResponseMap = new HashMap<String, Map<Integer, SegmentResponse>>();
+		this.segmentResponses = new ArrayList<SegmentResponse>();
+		this.lastResult = request.getLastResult();
+		this.sortRequest = request.getSortRequest();
+		this.query = request.getQuery();
 		this.isShort = false;
 		this.results = Collections.emptyList();
 		this.resultsSize = 0;
 	}
 	
-	public void validate() throws Exception {
+
+
+    public void validate() throws Exception {
 		for (InternalQueryResponse iqr : responses) {
 			
 			for (IndexSegmentResponse isr : iqr.getIndexSegmentResponseList()) {
 				String indexName = isr.getIndexName();
 				if (!indexToSegmentResponseMap.containsKey(indexName)) {
-					indexToSegmentResponseMap.put(indexName, new HashMap<Integer, SegmentQueryResult>());
+					indexToSegmentResponseMap.put(indexName, new HashMap<Integer, SegmentResponse>());
 				}
 				
 				for (SegmentResponse sr : isr.getSegmentReponseList()) {
 					int segmentNumber = sr.getSegmentNumber();
 					
-					Map<Integer, SegmentQueryResult> segmentResponseMap = indexToSegmentResponseMap.get(indexName);
+					Map<Integer, SegmentResponse> segmentResponseMap = indexToSegmentResponseMap.get(indexName);
 					
 					if (segmentResponseMap.containsKey(segmentNumber)) {
 						throw new Exception("Segment <" + segmentNumber + "> is repeated for <" + indexName + ">");
 					}
 					else {
-						SegmentQueryResult sqr = new SegmentQueryResult(sr);
-						segmentResponseMap.put(segmentNumber, sqr);
-						segmentQueryResults.add(sqr);
+						segmentResponseMap.put(segmentNumber, sr);
+						segmentResponses.add(sr);
 					}
 				}
 				
@@ -79,7 +92,7 @@ public class QueryCombiner {
 		
 		for (String indexName : usedIndexMap.keySet()) {
 			int numberOfSegments = usedIndexMap.get(indexName).getNumberOfSegments();
-			Map<Integer, SegmentQueryResult> segmentResponseMap = indexToSegmentResponseMap.get(indexName);
+			Map<Integer, SegmentResponse> segmentResponseMap = indexToSegmentResponseMap.get(indexName);
 			
 			if (segmentResponseMap == null) {
 				throw new Exception("Missing index <" + indexName + "> in response");
@@ -98,11 +111,14 @@ public class QueryCombiner {
 	}
 	
 	public QueryResponse getQueryResponse() {
+	    
+	    boolean sorting = (sortRequest != null && !sortRequest.getFieldSortList().isEmpty());
+
 		long totalHits = 0;
 		long returnedHits = 0;
-		for (SegmentQueryResult sr : segmentQueryResults) {
+		for (SegmentResponse sr : segmentResponses) {
 			totalHits += sr.getTotalHits();
-			returnedHits += sr.getReturnedHits();
+			returnedHits += sr.getScoredResultList().size();
 		}
 		
 		QueryResponse.Builder builder = QueryResponse.newBuilder();
@@ -110,7 +126,7 @@ public class QueryCombiner {
 		
 		resultsSize = Math.min(amount, (int) returnedHits);
 		
-		results = new ArrayList<ScoredResult>(resultsSize);
+		results = Collections.emptyList();
 		
 		Map<String, ScoredResult[]> lastIndexResultMap = new HashMap<String, ScoredResult[]>();
 		
@@ -128,7 +144,7 @@ public class QueryCombiner {
 		}
 		
 		Map<String, AtomicLong> totalFacetCounts = new HashMap<String, AtomicLong>();
-		for (SegmentQueryResult sr : segmentQueryResults) {
+		for (SegmentResponse sr : segmentResponses) {
 			for (FacetCount fc : sr.getFacetCountList()) {
 				String facet = fc.getFacet();
 				if (!totalFacetCounts.containsKey(facet)) {
@@ -146,58 +162,126 @@ public class QueryCombiner {
 		for (FacetCountResult facet : sortedFacetResuls) {
 			builder.addFacetCount(FacetCount.newBuilder().setFacet(facet.getFacet()).setCount(facet.getCount()));
 		}
+	
+		List<ScoredResult> mergedResults = new ArrayList<ScoredResult>((int)returnedHits);
+		for (SegmentResponse sr : segmentResponses) {
+		    mergedResults.addAll(sr.getScoredResultList());
+		}
 		
-		while (results.size() < resultsSize && !isShort) {
-			float maxScore = Float.MIN_VALUE;
-			SegmentQueryResult maxResult = null;
-			
-			boolean anyEmpty = false;
-			for (SegmentQueryResult sr : segmentQueryResults) {
-				if (!sr.hasNext() && sr.moreAvailable()) {
-					anyEmpty = true;
-					break;
-				}
-			}
-			
-			if (!anyEmpty) {
-				for (SegmentQueryResult sr : segmentQueryResults) {
-					if (sr.hasNext()) {
-						
-						ScoredResult sd = sr.previewNext();
-						if (sd != null) {
-							boolean notNearEnd = ((sr.getIndex() + 2) < sr.getReturnedHits());
-							if (maxResult == null || ((sd.getScore() > maxScore) && notNearEnd)) {
-								maxScore = sd.getScore();
-								maxResult = sr;
-							}
-							else if (sr.getIndex() < maxResult.getIndex()) {
-								
-								if (maxResult.getIndexName().equals(sd.getIndexName())) {
-									double segmentTolerance = usedIndexMap.get(maxResult.getIndexName()).getSegmentTolerance();
-									double diff = (Math.abs(sd.getScore() - maxScore));
-									
-									if (diff < segmentTolerance) {
-										maxScore = sd.getScore();
-										maxResult = sr;
-									}
-								}
-							}
-							
-						}
-						
-					}
-				}
-			}
-			
-			if (maxResult != null) {
-				ScoredResult max = maxResult.next();
-				ScoredResult[] lastForSegmentArr = lastIndexResultMap.get(max.getIndexName());
-				lastForSegmentArr[max.getSegment()] = max;
-				results.add(max);
-			}
-			else {
-				isShort = true;
-			}
+		Comparator<ScoredResult> myCompare = scoreCompare;
+		
+		if (sorting) {
+		    final List<FieldSort> fieldSortList = sortRequest.getFieldSortList();
+		    Comparator<ScoredResult> sortCompare = new Comparator<ScoredResult>() {
+
+                @Override
+                public int compare(ScoredResult o1, ScoredResult o2) {
+                    int compare = 0;
+                    
+                    int i = 0;
+                    for (FieldSort fs : fieldSortList) {
+                        String a = o1.getSortTermsList().get(i);
+                        String b = o1.getSortTermsList().get(i);
+                        
+                        if (a == null) {
+                            a = ""; //TODO think about whether null and empty should be same
+                            //what does lucene do?
+                        }
+                        if (b == null) {
+                            b = ""; //TODO think about whether null and empty should be same
+                            //what does lucene do?
+                        }
+                        
+                        compare = a.compareTo(b);
+                        
+                        if (FieldSort.Direction.DESCENDING.equals(fs.getDirection())) {
+                            compare *= -1;
+                        }
+                        
+                        if (compare != 0) {
+                            return compare;
+                        }
+                        
+                        i++;
+                    }
+                    
+                    
+                    return compare;
+                }
+		        
+		    };
+		    myCompare = sortCompare;
+		}
+
+		Collections.sort(mergedResults, myCompare);
+		
+		if (!mergedResults.isEmpty()) {
+		    results = mergedResults.subList(0, resultsSize);
+		    
+		    for (ScoredResult sr :mergedResults) {
+		        ScoredResult[] lastForSegmentArr = lastIndexResultMap.get(sr.getIndexName());
+		        lastForSegmentArr[sr.getSegment()] = sr;
+		    }
+		    
+		    outside:
+		    for (String indexName : usedIndexMap.keySet()) {
+		        ScoredResult[] lastForSegmentArr = lastIndexResultMap.get(indexName);
+		        ScoredResult lastForIndex = null;
+		        for (ScoredResult sr : lastForSegmentArr) {
+		            if (sr != null) {
+		                if (lastForIndex == null) {
+		                    lastForIndex = sr;
+		                }
+		                else {
+		                    if (myCompare.compare(sr, lastForIndex) < 0) {
+		                        lastForIndex = sr;
+		                    }
+		                }
+		            }
+		        }
+		        
+		        double segmentTolerance = usedIndexMap.get(indexName).getSegmentTolerance();
+		        		        
+	            int numberOfSegments = usedIndexMap.get(indexName).getNumberOfSegments();
+	            Map<Integer, SegmentResponse> segmentResponseMap = indexToSegmentResponseMap.get(indexName);
+	            for (int segmentNumber = 0; segmentNumber < numberOfSegments; segmentNumber++) {
+	                SegmentResponse sr = segmentResponseMap.get(segmentNumber);
+	                if (sr.hasNext()) {
+	                    ScoredResult next = sr.getNext();
+	                    if (myCompare.compare(lastForIndex, next) < 0) {
+	                        	                        
+                            if (sorting) {
+                                String msg = "Result set did not return the most relevant sorted documents for index <" + indexName + ">\n";
+                                msg += "    Last for index from segment <" + lastForIndex.getSegment() + "> has sort values <" +lastForIndex.getSortTermsList() + ">\n";
+                                msg += "    Next for segment <" + next.getSegment() + ">  has sort values <" +next.getSortTermsList() + ">\n";                                
+                                msg += "    If this happens frequently increase requestFactor or minSegmentRequest\n";
+                                msg += "    Retrying with full request.\n";
+                                log.error(msg);
+                                
+                                isShort = true;
+                                break outside;
+	                        }
+                            
+                            double diff = (Math.abs(lastForIndex.getScore() - next.getScore()));
+	                        if (diff > segmentTolerance) {
+	                            String msg = "Result set did not return the most relevant documents for index <" + indexName + "> with segment tolerance <" + segmentTolerance + ">\n";
+	                            msg += "    Query <" + query + ">\n";
+	                            msg += "    Last for index from segment <" + lastForIndex.getSegment() + "> has score <" +lastForIndex.getScore() + ">\n";
+	                            msg += "    Next for segment <" + next.getSegment() + "> has score <" +next.getScore() + ">\n";
+	                            msg += "    If this happens frequently increase requestFactor, minSegmentRequest, or segmentTolerance\n";
+	                            msg += "    Retrying with full request.\n";
+	                            log.error(msg);
+	                            
+	                            isShort = true;
+	                            break outside;
+	                        }
+                        }
+	                }
+	            }
+		    }
+		    
+		    
+		    
 		}
 		
 		builder.addAllResults(results);
@@ -226,21 +310,5 @@ public class QueryCombiner {
 	public boolean isShort() {
 		return isShort;
 	}
-	
-	public void logShort() {
-		String msg = "Result set is short. Expected <" + resultsSize + "> only found <" + results.size() + ">\n";
-		for (SegmentQueryResult sr : segmentQueryResults) {
-			msg += "    ";
-			msg += "Segment: " + sr.getSegmentNumber() + "\n";
-			msg += "      Current Index: " + sr.getIndex() + "\n";
-			msg += "      Score at Current Index: " + (sr.getCurrent() != null ? sr.getCurrent().getScore() : "No Current") + "\n";
-			msg += "      Score at Next Index: " + (sr.hasNext() ? sr.previewNext().getScore() : "No Next") + "\n";
-			msg += "      Returned Hits: " + sr.getReturnedHits() + "\n";
-			msg += "      Total Hits: " + sr.getTotalHits();
-			msg += "\n";
-		}
-		msg += "    If this happens frequently increase requestFactor, minSegmentRequest, or segmentTolerance";
-		msg += "    Retrying with full request.";
-		log.error(msg);
-	}
+
 }

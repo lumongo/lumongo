@@ -47,6 +47,7 @@ import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
+import org.lumongo.cluster.message.Lumongo.SortRequest;
 import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.util.LumongoThreadFactory;
@@ -218,56 +219,64 @@ public class LumongoClient {
 	}
 	
 	public QueryResponse query(String query, int amount, String index) throws Exception {
-		return query(query, amount, index, null, null, null);
+		return query(query, amount, index, null, null, null, null);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes) throws Exception {
-		return query(query, amount, indexes, null, null, null);
+		return query(query, amount, indexes, null, null, null, null);
 	}
 	
 	public QueryResponse query(String query, int amount, String index, Boolean realTime) throws Exception {
-		return query(query, amount, index, null, null, realTime);
+		return query(query, amount, index, null, null, null, realTime);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes, Boolean realTime) throws Exception {
-		return query(query, amount, indexes, null, null, realTime);
+		return query(query, amount, indexes, null, null, null, realTime);
 	}
 	
 	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse) throws Exception {
-		return query(query, amount, index, lastResponse, null, null);
+		return query(query, amount, index, lastResponse, null, null, null);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse) throws Exception {
-		return query(query, amount, indexes, lastResponse, null, null);
+		return query(query, amount, indexes, lastResponse, null, null, null);
 	}
 	
 	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, Boolean realTime) throws Exception {
-		return query(query, amount, index, lastResponse, null, realTime);
+		return query(query, amount, index, lastResponse, null, null, realTime);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, Boolean realTime) throws Exception {
-		return query(query, amount, indexes, lastResponse, null, realTime);
+		return query(query, amount, indexes, lastResponse, null, null, realTime);
 	}
 	
+	public QueryResponse query(String query, int amount, String index, SortRequest sortRequest, Boolean realTime) throws Exception {
+        return query(query, amount, index, null, null, sortRequest, realTime);
+    }	
+    
+    public QueryResponse query(String query, int amount, String[] indexes, SortRequest sortRequest, Boolean realTime) throws Exception {
+        return query(query, amount, indexes, null, null, sortRequest, realTime);
+    }
+	
 	public QueryResponse query(String query, int amount, String index, FacetRequest facetRequest, Boolean realTime) throws Exception {
-		return query(query, amount, index, null, facetRequest, realTime);
+		return query(query, amount, index, null, facetRequest, null, realTime);
 	}
 	
 	public QueryResponse query(String query, int amount, String[] indexes, FacetRequest facetRequest, Boolean realTime) throws Exception {
-		return query(query, amount, indexes, null, facetRequest, realTime, retryCount);
+		return query(query, amount, indexes, null, facetRequest, null, realTime);
 	}
 	
-	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, FacetRequest facetRequest, Boolean realTime)
+	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, FacetRequest facetRequest, SortRequest sortRequest, Boolean realTime)
 			throws Exception {
-		return query(query, amount, new String[] { index }, lastResponse, facetRequest, realTime);
+		return query(query, amount, new String[] { index }, lastResponse, facetRequest, sortRequest, realTime);
 	}
 	
-	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, FacetRequest facetRequest, Boolean realTime)
+	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, FacetRequest facetRequest, SortRequest sortRequest, Boolean realTime)
 			throws Exception {
-		return query(query, amount, indexes, lastResponse, facetRequest, realTime, retryCount);
+		return query(query, amount, indexes, lastResponse, facetRequest, sortRequest, realTime, retryCount);
 	}
 	
-	protected QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, FacetRequest facetRequest, Boolean realTime,
+	protected QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, FacetRequest facetRequest, SortRequest sortRequest, Boolean realTime,
 			int retries) throws Exception {
 		
 		RpcController controller = null;
@@ -292,6 +301,9 @@ public class LumongoClient {
 			if (facetRequest != null) {
 				requestBuilder.setFacetRequest(facetRequest);
 			}
+			if (sortRequest != null) {
+			    requestBuilder.setSortRequest(sortRequest);
+			}
 			
 			QueryResponse queryResponse = service.query(controller, requestBuilder.build());
 			return queryResponse;
@@ -304,7 +316,7 @@ public class LumongoClient {
 			cycleServers();
 			
 			if (retries > 0) {
-				return query(query, amount, indexes, lastResponse, facetRequest, realTime, retries - 1);
+				return query(query, amount, indexes, lastResponse, facetRequest, sortRequest, realTime, retries - 1);
 			}
 			else {
 				throw new Exception(e.getMessage());

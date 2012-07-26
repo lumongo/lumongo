@@ -782,7 +782,7 @@ public class IndexManager {
 			
 			List<InternalQueryResponse> results = queryFederator.send(request);
 			
-			QueryCombiner queryCombiner = new QueryCombiner(indexSegmentMap, request.getAmount(), results, request.getLastResult());
+			QueryCombiner queryCombiner = new QueryCombiner(indexSegmentMap, request, results);
 			
 			queryCombiner.validate();
 			
@@ -792,8 +792,6 @@ public class IndexManager {
 				return qr;
 			}
 			else {
-				queryCombiner.logShort();
-				
 				if (!request.getFetchFull()) {
 					return query(request.toBuilder().setFetchFull(true).build());
 				}

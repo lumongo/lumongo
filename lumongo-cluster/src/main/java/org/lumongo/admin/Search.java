@@ -14,8 +14,10 @@ import org.lumongo.client.config.LumongoClientConfig;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
+import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
+import org.lumongo.cluster.message.Lumongo.SortRequest;
 import org.lumongo.util.LogUtil;
 
 public class Search {
@@ -35,6 +37,7 @@ public class Search {
 		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME).withRequiredArg().ofType(Boolean.class).describedAs("Real time search");
 		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET).withRequiredArg().describedAs("Count facets on");
 		OptionSpec<String> drillDownArg = parser.accepts(AdminConstants.DRILL_DOWN).withRequiredArg().describedAs("Drill down on");
+		OptionSpec<String> sortArg = parser.accepts(AdminConstants.SORT).withRequiredArg().describedAs("Field to sort on");
 		
 		try {
 			OptionSet options = parser.parse(args);
@@ -47,6 +50,7 @@ public class Search {
 			Boolean realTime = options.valueOf(realTimeArg);
 			List<String> facets = options.valuesOf(facetsArg);
 			List<String> drillDowns = options.valuesOf(drillDownArg);
+			List<String> sortList = options.valuesOf(sortArg);
 			
 			LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
 			lumongoClientConfig.addMember(address, port);
@@ -67,7 +71,12 @@ public class Search {
 					fr.addDrillDown(drillDown);
 				}
 				
-				QueryResponse qr = client.query(query, amount, indexes.toArray(new String[0]), fr.build(), realTime);
+				SortRequest.Builder sortRequest = SortRequest.newBuilder();
+				for (String sort : sortList) {
+				    sortRequest.addFieldSort(FieldSort.newBuilder().setSortField(sort).setDirection(FieldSort.Direction.ASCENDING).build());
+				}
+				
+				QueryResponse qr = client.query(query, amount, indexes.toArray(new String[0]), null, fr.build(), sortRequest.build(), realTime);
 				
 				List<ScoredResult> srList = qr.getResultsList();
 				

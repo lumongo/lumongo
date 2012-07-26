@@ -15,7 +15,9 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoubleField;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.FloatField;
 import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
@@ -42,10 +44,15 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.index.TermsEnum.SeekStatus;
+import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MultiCollector;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.TopDocsCollector;
+import org.apache.lucene.search.TopFieldCollector;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.util.BytesRef;
@@ -54,6 +61,8 @@ import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
+import org.lumongo.cluster.message.Lumongo.FieldSort;
+import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
@@ -63,6 +72,7 @@ import org.lumongo.cluster.message.Lumongo.LMField;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
+import org.lumongo.cluster.message.Lumongo.SortRequest;
 import org.lumongo.server.config.IndexConfig;
 
 public class Segment {
@@ -87,6 +97,8 @@ public class Segment {
 	private Analyzer analyzer;
 	
 	private final Set<String> uniqueIdOnlySet;
+
+    private final FieldType notStoredTextField;
 	
 	public Segment(int segmentNumber, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter, IndexConfig indexConfig, Analyzer analyzer)
 			throws IOException {
@@ -110,7 +122,11 @@ public class Segment {
 		this.lastChange = null;
 		this.indexName = indexConfig.getIndexName();
 		
-
+		notStoredTextField = new FieldType(TextField.TYPE_NOT_STORED);
+		notStoredTextField.setStoreTermVectors(true);
+		notStoredTextField.setStoreTermVectorOffsets(true);
+		notStoredTextField.setStoreTermVectorPositions(true);
+        notStoredTextField.freeze();
 		
 	}
 	
@@ -123,7 +139,7 @@ public class Segment {
 		return segmentNumber;
 	}
 	
-	public SegmentResponse querySegment(Query q, int amount, ScoreDoc after, FacetRequest facetRequest, boolean realTime) throws Exception {
+	public SegmentResponse querySegment(Query q, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest, boolean realTime) throws Exception {
 		
 		IndexReader ir = null;
 		
@@ -133,14 +149,37 @@ public class Segment {
 			//ir = IndexReader.open(indexWriter.getDirectory());
 			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
 			
-			IndexSearcher is = new IndexSearcher(ir);
-						
+			IndexSearcher is = new IndexSearcher(ir);			
+			
 			Weight w = is.createNormalizedWeight(q);
 			boolean docsScoredInOrder = !w.scoresDocsOutOfOrder();
 			
 			int hasMoreAmount = amount + 1;
+
+			TopDocsCollector<?> collector;
 			
-			TopScoreDocCollector collector = TopScoreDocCollector.create(hasMoreAmount, after, docsScoredInOrder);
+			
+			List<SortField> sortFields = new ArrayList<SortField>();
+			boolean sorting = sortRequest != null && !sortRequest.getFieldSortList().isEmpty();
+			if (sorting) {
+			   
+			    for (FieldSort fs : sortRequest.getFieldSortList()) {		
+			        boolean reverse = Direction.DESCENDING.equals(fs.getDirection());
+			        
+			        //TODO support other types
+			        SortField.Type type = SortField.Type.STRING;			        
+			        sortFields.add(new SortField(fs.getSortField(), type, reverse));
+			    }
+			    Sort sort = new Sort();
+			    sort.setSort(sortFields.toArray(new SortField[0]));
+			    boolean fillFields = true;
+			    boolean trackDocScores = true;
+			    boolean trackMaxScore = true;
+			    collector = TopFieldCollector.create(sort, hasMoreAmount, after, fillFields, trackDocScores, trackMaxScore, docsScoredInOrder);
+			}
+			else {
+			    collector = TopScoreDocCollector.create(hasMoreAmount, after, docsScoredInOrder);
+			}			
 			
 			SegmentResponse.Builder builder = SegmentResponse.newBuilder();
 			
@@ -183,19 +222,18 @@ public class Segment {
 			int numResults = Math.min(results.length, amount);
 			
 			for (int i = 0; i < numResults; i++) {
-				int docId = results[i].doc;
-				Document d = is.document(docId, uniqueIdOnlySet);
-				ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
-				srBuilder.setScore(results[i].score);
-				srBuilder.setUniqueId(d.get(indexConfig.getUniqueIdField()));
-				srBuilder.setDocId(docId);
-				srBuilder.setSegment(segmentNumber);
-				srBuilder.setIndexName(indexName);
+				ScoredResult.Builder srBuilder = handleDocResult(is, sorting, results, i);
+
 				builder.addScoredResult(srBuilder.build());
 				
 			}
 			
-			builder.setMoreAvailable(moreAvailable);
+			if (moreAvailable) {
+			    ScoredResult.Builder srBuilder = handleDocResult(is, sorting, results, numResults);
+                builder.setNext(srBuilder);
+            }
+			
+			
 			builder.setIndexName(indexName);
 			builder.setSegmentNumber(segmentNumber);
 			return builder.build();
@@ -208,6 +246,31 @@ public class Segment {
 		}
 		
 	}
+
+    private ScoredResult.Builder handleDocResult(IndexSearcher is, boolean sorting, ScoreDoc[] results, int i)
+            throws CorruptIndexException, IOException {
+        int docId = results[i].doc;
+        Document d = is.document(docId, uniqueIdOnlySet);
+        ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
+        srBuilder.setScore(results[i].score);
+        srBuilder.setUniqueId(d.get(indexConfig.getUniqueIdField()));
+        srBuilder.setDocId(docId);
+        srBuilder.setSegment(segmentNumber);
+        srBuilder.setIndexName(indexName);
+        srBuilder.setResultIndex(i);
+        if (sorting) {
+            FieldDoc result = (FieldDoc) results[i];
+            				    
+            for (Object o : result.fields) {
+                if (o instanceof BytesRef) {
+                    BytesRef b = (BytesRef) o;		
+                    srBuilder.addSortTerms(b.utf8ToString());				            
+                }
+                //TODO handle other field types
+            }
+        }
+        return srBuilder;
+    }
 	
 	private void possibleCommit() throws CorruptIndexException, IOException {
 		lastChange = System.currentTimeMillis();
@@ -263,6 +326,8 @@ public class Segment {
 	
 	public void index(String uniqueId, LMDoc lmDoc) throws CorruptIndexException, IOException {
 		Document d = new Document();
+
+
 		
 		for (LMField indexedField : lmDoc.getIndexedFieldList()) {
 			String fieldName = indexedField.getFieldName();
@@ -270,8 +335,7 @@ public class Segment {
 			if (!indexConfig.isNumericField(fieldName)) {
 				List<String> fieldValueList = indexedField.getFieldValueList();
 				for (String fieldValue : fieldValueList) {
-				    //TODO if not analyzed add string field
-					d.add(new TextField(fieldName, fieldValue, Store.NO));
+				    d.add(new Field(fieldName, fieldValue, notStoredTextField));					
 				}
 			}
 			else {

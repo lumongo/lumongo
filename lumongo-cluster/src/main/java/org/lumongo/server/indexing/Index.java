@@ -38,6 +38,7 @@ import org.apache.lucene.index.LumongoIndexWriter;
 
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -765,8 +766,8 @@ public class Index {
 			
 			final int requestedAmount = amount;
 			
-			final HashMap<Integer, ScoreDoc> lastScoreDocMap = new HashMap<Integer, ScoreDoc>();
-			ScoreDoc after = null;
+			final HashMap<Integer, FieldDoc> lastScoreDocMap = new HashMap<Integer, FieldDoc>();
+			FieldDoc after = null;
 			
 			LastResult lr = queryRequest.getLastResult();
 			if (lr != null) {
@@ -775,7 +776,7 @@ public class Index {
 						for (ScoredResult sr : lir.getLastForSegmentList()) {
 							int docId = sr.getDocId();
 							float score = sr.getScore();
-							after = new ScoreDoc(docId, score, sr.getSegment());
+							after = new FieldDoc(docId, score, sr.getSortTermsList().toArray(new String[0]), sr.getSegment());
 							lastScoreDocMap.put(sr.getSegment(), after);
 						}
 					}
@@ -793,7 +794,7 @@ public class Index {
 					@Override
 					public SegmentResponse call() throws Exception {
 						return segment.querySegment(query, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
-								queryRequest.getRealTime());
+						        queryRequest.getSortRequest(), queryRequest.getRealTime());
 					}
 					
 				});
