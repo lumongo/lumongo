@@ -1,6 +1,7 @@
 package org.lumongo.server.searching;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -254,7 +255,12 @@ public class QueryCombiner {
                             if (sorting) {
                                 String msg = "Result set did not return the most relevant sorted documents for index <" + indexName + ">\n";
                                 msg += "    Last for index from segment <" + lastForIndex.getSegment() + "> has sort values <" +lastForIndex.getSortTermsList() + ">\n";
-                                msg += "    Next for segment <" + next.getSegment() + ">  has sort values <" +next.getSortTermsList() + ">\n";                                
+                                msg += "    Next for segment <" + next.getSegment() + ">  has sort values <" +next.getSortTermsList() + ">\n"; 
+                                msg += "    Next for segment <" + next.getSegment() + ">  has sort values <" +next.getSortTermsList() + ">\n";
+                                msg += "    Last for segments: \n";
+                                msg += "      " + Arrays.toString(lastForSegmentArr) + "\n";
+                                msg += "    Results: \n";
+                                msg += "      " + results + "\n";
                                 msg += "    If this happens frequently increase requestFactor or minSegmentRequest\n";
                                 msg += "    Retrying with full request.\n";
                                 log.error(msg);
