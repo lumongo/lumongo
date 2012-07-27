@@ -278,13 +278,19 @@ public class Segment {
             FieldDoc result = (FieldDoc) results[i];
             				    
             for (Object o : result.fields) {
-                if (o instanceof BytesRef) {
-                    BytesRef b = (BytesRef) o;		
-                    srBuilder.addSortTerms(b.utf8ToString());				            
+                if (o == null) {
+                    srBuilder.addSortTerms(null);
                 }
                 else {
-                    //TODO handle other field types                             
-                    log.info("Unsupported sort type: <" + o.getClass() + ">");
+                    if (o instanceof BytesRef) {
+                        BytesRef b = (BytesRef) o;		
+                        srBuilder.addSortTerms(b.utf8ToString());				            
+                    }
+                    else {
+                        
+                        //TODO handle other field types                             
+                        log.info("Unsupported sort type: <" + o.getClass() + ">");
+                    }
                 }
             }
         }
