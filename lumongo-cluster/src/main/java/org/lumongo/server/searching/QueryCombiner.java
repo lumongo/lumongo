@@ -274,7 +274,11 @@ public class QueryCombiner {
 	                            String msg = "Result set did not return the most relevant documents for index <" + indexName + "> with segment tolerance <" + segmentTolerance + ">\n";
 	                            msg += "    Query <" + query + ">\n";
 	                            msg += "    Last for index from segment <" + lastForIndex.getSegment() + "> has score <" +lastForIndex.getScore() + ">\n";
-	                            msg += "    Next for segment <" + next.getSegment() + "> has score <" +next.getScore() + ">\n";	                            
+	                            msg += "    Next for segment <" + next.getSegment() + "> has score <" +next.getScore() + ">\n";
+                                msg += "    Last for segments: \n";
+                                msg += "      " + Arrays.toString(lastForSegmentArr) + "\n";
+                                msg += "    Results: \n";
+                                msg += "      " + results + "\n";
 	                            msg += "    If this happens frequently increase requestFactor, minSegmentRequest, or segmentTolerance\n";
 	                            msg += "    Retrying with full request.\n";
 	                            log.error(msg);
