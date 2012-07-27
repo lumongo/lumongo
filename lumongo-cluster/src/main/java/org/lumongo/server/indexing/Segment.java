@@ -279,7 +279,7 @@ public class Segment {
             				    
             for (Object o : result.fields) {
                 if (o == null) {
-                    srBuilder.addSortTerms(null);
+                    srBuilder.addSortTerms("");
                 }
                 else {
                     if (o instanceof BytesRef) {
