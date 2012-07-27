@@ -235,7 +235,7 @@ public class QueryCombiner {
 		                    lastForIndex = sr;
 		                }
 		                else {
-		                    if (myCompare.compare(sr, lastForIndex) < 0) {
+		                    if (myCompare.compare(sr, lastForIndex) > 0) {
 		                        lastForIndex = sr;
 		                    }
 		                }
@@ -250,13 +250,13 @@ public class QueryCombiner {
 	                SegmentResponse sr = segmentResponseMap.get(segmentNumber);
 	                if (sr.hasNext()) {
 	                    ScoredResult next = sr.getNext();
-	                    if (myCompare.compare(lastForIndex, next) < 0) {
+	                    int compare = myCompare.compare(lastForIndex, next);
+	                    if (compare > 0) {
 	                        	                        
                             if (sorting) {
                                 String msg = "Result set did not return the most relevant sorted documents for index <" + indexName + ">\n";
                                 msg += "    Last for index from segment <" + lastForIndex.getSegment() + "> has sort values <" +lastForIndex.getSortTermsList() + ">\n";
-                                msg += "    Next for segment <" + next.getSegment() + ">  has sort values <" +next.getSortTermsList() + ">\n"; 
-                                msg += "    Next for segment <" + next.getSegment() + ">  has sort values <" +next.getSortTermsList() + ">\n";
+                                msg += "    Next for segment <" + next.getSegment() + ">  has sort values <" +next.getSortTermsList() + ">\n";                                 
                                 msg += "    Last for segments: \n";
                                 msg += "      " + Arrays.toString(lastForSegmentArr) + "\n";
                                 msg += "    Results: \n";

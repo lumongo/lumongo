@@ -1,8 +1,6 @@
 package org.lumongo.server.searching;
 
-
 import java.util.Comparator;
-
 
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 
@@ -16,7 +14,6 @@ public class ScoreCompare implements Comparator<ScoredResult> {
         return compare;
     }
     
-
 }
 
 
