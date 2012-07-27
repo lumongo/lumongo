@@ -219,7 +219,7 @@ public class QueryCombiner {
 		    Collections.sort(mergedResults, myCompare);
 		    results = mergedResults.subList(0, resultsSize);
 		    
-		    for (ScoredResult sr :mergedResults) {
+		    for (ScoredResult sr : results) {
 		        ScoredResult[] lastForSegmentArr = lastIndexResultMap.get(sr.getIndexName());
 		        lastForSegmentArr[sr.getSegment()] = sr;
 		    }
@@ -268,7 +268,7 @@ public class QueryCombiner {
 	                            String msg = "Result set did not return the most relevant documents for index <" + indexName + "> with segment tolerance <" + segmentTolerance + ">\n";
 	                            msg += "    Query <" + query + ">\n";
 	                            msg += "    Last for index from segment <" + lastForIndex.getSegment() + "> has score <" +lastForIndex.getScore() + ">\n";
-	                            msg += "    Next for segment <" + next.getSegment() + "> has score <" +next.getScore() + ">\n";
+	                            msg += "    Next for segment <" + next.getSegment() + "> has score <" +next.getScore() + ">\n";	                            
 	                            msg += "    If this happens frequently increase requestFactor, minSegmentRequest, or segmentTolerance\n";
 	                            msg += "    Retrying with full request.\n";
 	                            log.error(msg);
