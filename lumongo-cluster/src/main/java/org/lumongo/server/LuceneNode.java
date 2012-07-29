@@ -2,6 +2,7 @@ package org.lumongo.server;
 
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
 import org.jboss.netty.channel.ChannelException;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
@@ -10,6 +11,7 @@ import org.lumongo.server.config.Nodes;
 import org.lumongo.server.connection.ExternalServiceHandler;
 import org.lumongo.server.connection.InternalServiceHandler;
 import org.lumongo.server.hazelcast.HazelcastManager;
+import org.lumongo.server.indexing.Index;
 import org.lumongo.server.indexing.IndexManager;
 import org.lumongo.server.rest.RestServiceManager;
 import org.lumongo.storage.lucene.MongoDirectory;
@@ -19,7 +21,8 @@ import org.lumongo.util.LogUtil;
 import com.mongodb.MongoException;
 
 public class LuceneNode {
-	
+    private final static Logger log = Logger.getLogger(LuceneNode.class);
+    
 	static {
 		try {
 			LogUtil.loadLogConfig();
@@ -41,6 +44,8 @@ public class LuceneNode {
 		LocalNodeConfig localNodeConfig = ClusterHelper.getNodeConfig(mongoConfig, localServer, instance);
 		
 		ClusterConfig clusterConfig = ClusterHelper.getClusterConfig(mongoConfig);
+		
+		log.info("Loaded cluster config: <" + clusterConfig + ">");
 		
 		MongoDirectory.setMaxIndexBlocks(clusterConfig.getMaxIndexBlocks());
 		

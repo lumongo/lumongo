@@ -41,7 +41,6 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
 import org.lumongo.LuceneConstants;
 import org.lumongo.analyzer.LowercaseKeywordAnalyzer;
 import org.lumongo.analyzer.LowercaseWhitespaceAnalyzer;
