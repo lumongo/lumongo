@@ -139,7 +139,7 @@ public class IndexManager {
 			boolean sharded = clusterConfig.isSharded();
 			
 			MongoOptions options = new MongoOptions();
-			options.connectionsPerHost = 15;
+			options.connectionsPerHost = 32;
 			this.mongo = new Mongo(new ServerAddress(mongoHost, mongoPort), options);
 			
 			if (sharded) {
