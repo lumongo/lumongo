@@ -25,5 +25,6 @@ public class AdminConstants {
 	public static final String FACET = "facet";
 	public static final String DRILL_DOWN = "drillDown";
 	public static final String SORT = "sort";
+	public static final String FETCH = "fetch";
 	
 }

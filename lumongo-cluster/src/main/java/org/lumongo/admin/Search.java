@@ -14,10 +14,13 @@ import org.lumongo.client.config.LumongoClientConfig;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
+import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
+import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
+import org.lumongo.util.BsonHelper;
 import org.lumongo.util.LogUtil;
 
 public class Search {
@@ -38,6 +41,7 @@ public class Search {
 		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET).withRequiredArg().describedAs("Count facets on");
 		OptionSpec<String> drillDownArg = parser.accepts(AdminConstants.DRILL_DOWN).withRequiredArg().describedAs("Drill down on");
 		OptionSpec<String> sortArg = parser.accepts(AdminConstants.SORT).withRequiredArg().describedAs("Field to sort on");
+		OptionSpec<Void> fetchArg = parser.accepts(AdminConstants.FETCH);
 		
 		try {
 			OptionSet options = parser.parse(args);
@@ -51,6 +55,7 @@ public class Search {
 			List<String> facets = options.valuesOf(facetsArg);
 			List<String> drillDowns = options.valuesOf(drillDownArg);
 			List<String> sortList = options.valuesOf(sortArg);
+			boolean fetch = options.has(fetchArg);
 			
 			LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
 			lumongoClientConfig.addMember(address, port);
@@ -124,6 +129,27 @@ public class Search {
 						System.out.println();
 					}
 					
+				}
+				
+				if (fetch) {
+				    for (ScoredResult sr : srList) {
+				        FetchResponse res = client.fetchDocument(sr.getUniqueId());
+				        if (res.hasResultDocument()) {
+				            ResultDocument doc = res.getResultDocument();
+				            if (ResultDocument.Type.TEXT.equals(doc.getType())) {
+				                System.out.println(sr.getUniqueId()  + ":\n" + res.getResultDocument().getDocument().toStringUtf8());
+				            }
+				            else if (ResultDocument.Type.BSON.equals(doc.getType())) {
+				                System.out.println(sr.getUniqueId()  + ":\n" + BsonHelper.dbObjectFromResultDocument(res.getResultDocument()));
+				            }
+				            else {
+                                System.out.println(sr.getUniqueId()  + ":\n [binary]");
+                            }
+				        }
+				        else {
+				            System.out.println(sr.getUniqueId()  + ":\n" + "Failed to fetch");
+				        }
+				    }
 				}
 			}
 			finally {
