@@ -132,6 +132,7 @@ public class Search {
 				}
 				
 				if (fetch) {
+				    System.out.println("\nDocuments\n\n");
 				    for (ScoredResult sr : srList) {
 				        FetchResponse res = client.fetchDocument(sr.getUniqueId());
 				        if (res.hasResultDocument()) {
