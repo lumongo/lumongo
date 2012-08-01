@@ -284,7 +284,9 @@ public class MongoFile implements NosqlFile {
 	public void flush() throws IOException {
 		// System.out.println("Flush");
 		
-		dirtyBlocks.put(currentWriteBlock.getBlockNumber(), currentWriteBlock);
+	    if (currentWriteBlock != null) {
+	        dirtyBlocks.put(currentWriteBlock.getBlockNumber(), currentWriteBlock);
+	    }
 		
 		Set<Integer> dirtyBlockKeys = new HashSet<Integer>(dirtyBlocks.asMap().keySet());
 		
