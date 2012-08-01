@@ -10,7 +10,7 @@ subprojects {
 	sourceCompatibility = 1.7
 	targetCompatibility = 1.7
 	
-	version = '0.14-SNAPSHOT'
+	version = '0.13.1'
 
 	group = 'org.lumongo'
 	
