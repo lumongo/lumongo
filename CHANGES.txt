@@ -1,3 +1,7 @@
+0.13.1
+Minor Bug Fixes
+Ability to Fetch From Search Command Line Tool Directly
+
 0.13
 Defect #19: Index Readers Not Closed Correctly
 Feature #1: Add Faceting Support (initial)
