@@ -1,0 +1,7 @@
+
+.clickable {
+  cursor: pointer;
+  cursor: hand;
+  font-style: bold;
+  color: #0000FF; 
+}
