@@ -1,5 +1,7 @@
 package org.lumongo.somongo.shared;
 
+import java.util.List;
+
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 public class SearchRequest implements IsSerializable {
@@ -34,6 +36,10 @@ public class SearchRequest implements IsSerializable {
 
     public void setIndexes(String[] indexes) {
         this.indexes = indexes;
+    }
+
+    public void setIndexes(List<String> indexes) {
+        this.indexes = indexes.toArray(new String[0]);
     }
 
 }

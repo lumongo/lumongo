@@ -53,6 +53,10 @@ public class Document implements IsSerializable {
         this.score = score;
     }
 
+    @Override
+    public String toString() {
+        return "Document [uniqueId=" + uniqueId + ", docId=" + docId + ", indexName=" + indexName + ", segment=" + segment + ", score=" + score + "]";
+    }
 
 
 }
