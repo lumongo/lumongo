@@ -1,0 +1,7 @@
+apply from: 'gwtBuild.gradle'
+
+compileGwt.modules = ['org.lumongo.somongo.SoMongo']
+
+dependencies {
+    compile project(':lumongo-client')	
+}
