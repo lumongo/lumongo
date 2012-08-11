@@ -115,7 +115,7 @@ public class Search {
 					System.out.print(sr.getSegment());
 					System.out.print("\t");
 					System.out.print(sr.getDocId());
-					System.out.println("\t");
+					System.out.print("\t");
 
 					StringBuffer sb = new StringBuffer();
 
