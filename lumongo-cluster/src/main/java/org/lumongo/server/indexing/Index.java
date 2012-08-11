@@ -170,7 +170,7 @@ public class Index {
 	}
 
 	private QueryParser createQueryParser() throws Exception {
-		return new QueryParser(LuceneConstants.VERSION, indexConfig.getDefaultSearchField(), getAnalyzer()) {
+		QueryParser qp = new QueryParser(LuceneConstants.VERSION, indexConfig.getDefaultSearchField(), getAnalyzer()) {
 			@Override
 			protected Query getRangeQuery(String field, String start,String end, boolean startInclusive, boolean endInclusive) throws ParseException {
 
@@ -213,6 +213,10 @@ public class Index {
 				return super.newTermQuery(term);
 			}
 		};
+
+		qp.setAllowLeadingWildcard(true);
+
+		return qp;
 
 	}
 
