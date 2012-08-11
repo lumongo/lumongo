@@ -754,6 +754,7 @@ public class IndexManager {
 	public QueryResponse query(final QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
+			log.info("Running query: <" + request.getQuery() + ">");
 
 			final Map<String, Query> queryMap = getQueryMap(request);
 
