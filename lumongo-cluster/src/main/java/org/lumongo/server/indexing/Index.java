@@ -216,6 +216,10 @@ public class Index {
 
 	}
 
+	public LMAnalyzer getLMAnalyzer(String fieldName) {
+		return indexConfig.getAnalyzer(fieldName);
+	}
+
 	public Analyzer getAnalyzer() throws Exception {
 		HashMap<String, Analyzer> customAnalyzerMap = new HashMap<String, Analyzer>();
 		for (FieldConfig fieldConfig : indexConfig.getFieldConfigList()) {

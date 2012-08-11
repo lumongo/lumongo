@@ -12,10 +12,12 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
+import org.apache.lucene.search.SortField;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
 import org.lumongo.cluster.message.Lumongo.InternalQueryResponse;
+import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LastIndexResult;
 import org.lumongo.cluster.message.Lumongo.LastResult;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
@@ -110,7 +112,7 @@ public class QueryCombiner {
 		}
 	}
 
-	public QueryResponse getQueryResponse() {
+	public QueryResponse getQueryResponse() throws Exception {
 
 		boolean sorting = (sortRequest != null && !sortRequest.getFieldSortList().isEmpty());
 
@@ -171,32 +173,107 @@ public class QueryCombiner {
 		Comparator<ScoredResult> myCompare = scoreCompare;
 
 		if (sorting) {
-			// TODO loop over indexes being sorted
-			// check a sort field is never defined differently between indexes
-			// add logic for non string types
-
 			final List<FieldSort> fieldSortList = sortRequest.getFieldSortList();
+
+			final Map<String, SortField.Type> fieldToTypeMap = new HashMap<String, SortField.Type>();
+
+			for (FieldSort fieldSort : fieldSortList) {
+				String sortField = fieldSort.getSortField();
+
+				LMAnalyzer lmAnalyzer = null;
+				for (String indexName : usedIndexMap.keySet()) {
+					Index index = usedIndexMap.get(indexName);
+					if (lmAnalyzer == null) {
+						lmAnalyzer = index.getLMAnalyzer(sortField);
+					}
+					else {
+						if (!lmAnalyzer.equals(index.getLMAnalyzer(sortField))) {
+							log.error("Sort fields must be defined the same in all indexes searched in a single query");
+							String message = "Cannot sort on field <" + sortField + ">: found type: <" + lmAnalyzer + "> then type: <"
+									+ index.getLMAnalyzer(sortField) + ">";
+							log.error(message);
+
+							throw new Exception(message);
+						}
+					}
+				}
+
+				if (LMAnalyzer.NUMERIC_INT.equals(lmAnalyzer)) {
+					fieldToTypeMap.put(sortField, SortField.Type.INT);
+				}
+				else if (LMAnalyzer.NUMERIC_LONG.equals(lmAnalyzer)) {
+					fieldToTypeMap.put(sortField, SortField.Type.LONG);
+				}
+				else if (LMAnalyzer.NUMERIC_FLOAT.equals(lmAnalyzer)) {
+					fieldToTypeMap.put(sortField, SortField.Type.FLOAT);
+				}
+				else if (LMAnalyzer.NUMERIC_DOUBLE.equals(lmAnalyzer)) {
+					fieldToTypeMap.put(sortField, SortField.Type.DOUBLE);
+				}
+				else if (LMAnalyzer.KEYWORD.equals(lmAnalyzer) || LMAnalyzer.LC_KEYWORD.equals(lmAnalyzer)) {
+					fieldToTypeMap.put(sortField, SortField.Type.STRING);
+				}
+				else {
+					String message = " Unsupported sort analyzer <" + lmAnalyzer + "> for field <" + sortField + ">";
+					log.error(message);
+					throw new Exception(message);
+				}
+
+			}
+
+
 			Comparator<ScoredResult> sortCompare = new Comparator<ScoredResult>() {
 
 				@Override
 				public int compare(ScoredResult o1, ScoredResult o2) {
 					int compare = 0;
 
-					int i = 0;
+					int sortTermsIndex = 0;
+					int stringIndex = 0;
+					int intIndex = 0;
+					int longIndex = 0;
+					int floatIndex = 0;
+					int doubleIndex = 0;
+
 					for (FieldSort fs : fieldSortList) {
-						String a = o1.getSortTermList().get(i);
-						String b = o2.getSortTermList().get(i);
+						SortField.Type st = fieldToTypeMap.get(fs.getSortField());
 
-						if (a == null) {
-							a = ""; // TODO think about whether null and empty should be same
-							// what does lucene do?
+						if (SortField.Type.STRING.equals(st)) {
+							String a = o1.getSortTermList().get(stringIndex);
+							String b = o2.getSortTermList().get(stringIndex);
+							compare = a.compareTo(b);
+							stringIndex++;
 						}
-						if (b == null) {
-							b = ""; // TODO think about whether null and empty should be same
-							// what does lucene do?
+						else if (SortField.Type.INT.equals(st)) {
+							int a = o1.getSortIntegerList().get(intIndex);
+							int b = o2.getSortIntegerList().get(intIndex);
+							compare = Integer.compare(a, b);
+							intIndex++;
+						}
+						else if (SortField.Type.LONG.equals(st)) {
+							long a = o1.getSortLongList().get(longIndex);
+							long b = o2.getSortLongList().get(longIndex);
+							compare = Long.compare(a, b);
+							longIndex++;
+						}
+						else if (SortField.Type.FLOAT.equals(st)) {
+							float a = o1.getSortFloatList().get(floatIndex);
+							float b = o2.getSortFloatList().get(floatIndex);
+							compare = Float.compare(a, b);
+							floatIndex++;
+						}
+						else if (SortField.Type.DOUBLE.equals(st)) {
+							double a = o1.getSortFloatList().get(doubleIndex);
+							double b = o2.getSortFloatList().get(doubleIndex);
+							compare = Double.compare(a, b);
+							doubleIndex++;
+						}
+						else {
+							// shouldn't happen
+							String message = "Unsupported sort type <" + st + "> for field <" + fs.getSortField() + ">";
+							log.error(message);
 						}
 
-						compare = a.compareTo(b);
 
 						if (FieldSort.Direction.DESCENDING.equals(fs.getDirection())) {
 							compare *= -1;
@@ -206,7 +283,6 @@ public class QueryCombiner {
 							return compare;
 						}
 
-						i++;
 					}
 
 					return compare;
