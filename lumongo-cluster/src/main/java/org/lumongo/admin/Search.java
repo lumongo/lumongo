@@ -24,11 +24,11 @@ import org.lumongo.util.BsonHelper;
 import org.lumongo.util.LogUtil;
 
 public class Search {
-	
+
 	public static void main(String[] args) throws Exception {
-		
+
 		LogUtil.loadLogConfig();
-		
+
 		OptionParser parser = new OptionParser();
 		OptionSpec<String> addressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
 		OptionSpec<Integer> portArg = parser.accepts(AdminConstants.PORT).withRequiredArg().ofType(Integer.class)
@@ -42,10 +42,10 @@ public class Search {
 		OptionSpec<String> drillDownArg = parser.accepts(AdminConstants.DRILL_DOWN).withRequiredArg().describedAs("Drill down on");
 		OptionSpec<String> sortArg = parser.accepts(AdminConstants.SORT).withRequiredArg().describedAs("Field to sort on");
 		OptionSpec<Void> fetchArg = parser.accepts(AdminConstants.FETCH);
-		
+
 		try {
 			OptionSet options = parser.parse(args);
-			
+
 			List<String> indexes = options.valuesOf(indexesArg);
 			String address = options.valueOf(addressArg);
 			int port = options.valueOf(portArg);
@@ -56,42 +56,42 @@ public class Search {
 			List<String> drillDowns = options.valuesOf(drillDownArg);
 			List<String> sortList = options.valuesOf(sortArg);
 			boolean fetch = options.has(fetchArg);
-			
+
 			LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
 			lumongoClientConfig.addMember(address, port);
 			LumongoClient client = new LumongoClient(lumongoClientConfig);
-			
+
 			try {
 				//force connect
 				client.openConnection();
-				
+
 				long startTime = System.currentTimeMillis();
-				
+
 				FacetRequest.Builder fr = FacetRequest.newBuilder();
 				for (String facet : facets) {
 					fr.addCountRequest(CountRequest.newBuilder().setFacet(facet));
 				}
-				
+
 				for (String drillDown : drillDowns) {
 					fr.addDrillDown(drillDown);
 				}
-				
+
 				SortRequest.Builder sortRequest = SortRequest.newBuilder();
 				for (String sort : sortList) {
-				    sortRequest.addFieldSort(FieldSort.newBuilder().setSortField(sort).setDirection(FieldSort.Direction.ASCENDING).build());
+					sortRequest.addFieldSort(FieldSort.newBuilder().setSortField(sort).setDirection(FieldSort.Direction.ASCENDING).build());
 				}
-				
+
 				QueryResponse qr = client.query(query, amount, indexes.toArray(new String[0]), null, fr.build(), sortRequest.build(), realTime);
-				
+
 				List<ScoredResult> srList = qr.getResultsList();
-				
+
 				long endTime = System.currentTimeMillis();
-				
+
 				System.out.println("QueryTime: " + (endTime - startTime) + "ms");
 				System.out.println("TotalResults: " + qr.getTotalHits());
-				
+
 				System.out.println("Results:");
-				
+
 				System.out.print("UniqueId");
 				System.out.print("\t");
 				System.out.print("Score");
@@ -101,8 +101,10 @@ public class Search {
 				System.out.print("Segment");
 				System.out.print("\t");
 				System.out.print("SegmentId");
+				System.out.print("\t");
+				System.out.print("Sort");
 				System.out.println();
-				
+
 				for (ScoredResult sr : srList) {
 					System.out.print(sr.getUniqueId());
 					System.out.print("\t");
@@ -113,9 +115,51 @@ public class Search {
 					System.out.print(sr.getSegment());
 					System.out.print("\t");
 					System.out.print(sr.getDocId());
+					System.out.println("\t");
+
+					StringBuffer sb = new StringBuffer();
+
+					for (String s : sr.getSortTermList()) {
+						if (sb.length() != 0) {
+							sb.append(",");
+						}
+						sb.append(s);
+					}
+					for (Integer i : sr.getSortIntegerList()) {
+						if (sb.length() != 0) {
+							sb.append(",");
+						}
+						sb.append(i);
+					}
+					for (Long l : sr.getSortLongList()) {
+						if (sb.length() != 0) {
+							sb.append(",");
+						}
+						sb.append(l);
+					}
+					for (Float f : sr.getSortFloatList()) {
+						if (sb.length() != 0) {
+							sb.append(",");
+						}
+						sb.append(f);
+					}
+					for (Double d : sr.getSortDoubleList()) {
+						if (sb.length() != 0) {
+							sb.append(",");
+						}
+						sb.append(d);
+					}
+					if (sb.length() != 0) {
+						System.out.print(sb);
+					}
+					else {
+						System.out.print("--");
+					}
+
 					System.out.println();
 				}
-				
+
+
 				if (!qr.getFacetCountList().isEmpty()) {
 					System.out.println("Facets:");
 					System.out.print("Facet");
@@ -128,30 +172,30 @@ public class Search {
 						System.out.print(fc.getCount());
 						System.out.println();
 					}
-					
+
 				}
-				
+
 				if (fetch) {
-				    System.out.println("\nDocuments\n");
-				    for (ScoredResult sr : srList) {
-				        System.out.println();
-				        FetchResponse res = client.fetchDocument(sr.getUniqueId());
-				        if (res.hasResultDocument()) {
-				            ResultDocument doc = res.getResultDocument();
-				            if (ResultDocument.Type.TEXT.equals(doc.getType())) {
-				                System.out.println(sr.getUniqueId()  + ":\n" + res.getResultDocument().getDocument().toStringUtf8());
-				            }
-				            else if (ResultDocument.Type.BSON.equals(doc.getType())) {
-				                System.out.println(sr.getUniqueId()  + ":\n" + BsonHelper.dbObjectFromResultDocument(res.getResultDocument()));
-				            }
-				            else {
-                                System.out.println(sr.getUniqueId()  + ":\n [binary]");
-                            }
-				        }
-				        else {
-				            System.out.println(sr.getUniqueId()  + ":\n" + "Failed to fetch");
-				        }
-				    }
+					System.out.println("\nDocuments\n");
+					for (ScoredResult sr : srList) {
+						System.out.println();
+						FetchResponse res = client.fetchDocument(sr.getUniqueId());
+						if (res.hasResultDocument()) {
+							ResultDocument doc = res.getResultDocument();
+							if (ResultDocument.Type.TEXT.equals(doc.getType())) {
+								System.out.println(sr.getUniqueId()  + ":\n" + res.getResultDocument().getDocument().toStringUtf8());
+							}
+							else if (ResultDocument.Type.BSON.equals(doc.getType())) {
+								System.out.println(sr.getUniqueId()  + ":\n" + BsonHelper.dbObjectFromResultDocument(res.getResultDocument()));
+							}
+							else {
+								System.out.println(sr.getUniqueId()  + ":\n [binary]");
+							}
+						}
+						else {
+							System.out.println(sr.getUniqueId()  + ":\n" + "Failed to fetch");
+						}
+					}
 				}
 			}
 			finally {
