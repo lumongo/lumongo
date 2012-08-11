@@ -149,6 +149,7 @@ public class Search {
 						}
 						sb.append(d);
 					}
+
 					if (sb.length() != 0) {
 						System.out.print(sb);
 					}
