@@ -245,7 +245,11 @@ message ScoredResult {
 	required string indexName = 4;
 	required uint32 segment = 5;
 	required uint32 resultIndex = 6;
-	repeated string sortTerms = 7;
+	repeated string sortTerm = 7;
+	repeated int32 sortInteger = 8;
+	repeated int64 sortLong = 9;
+	repeated float sortFloat = 10;
+	repeated double sortDouble = 11;
 }
 
 message SortRequest {
