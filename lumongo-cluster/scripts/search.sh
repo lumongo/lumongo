@@ -7,5 +7,5 @@ then
 	export LUMONGO_CLIENT_JAVA_SETTINGS="-Xmx256m"
 fi
 
-STARTCMD="java $LUMONGO_CLIENT_JAVA_SETTINGS -cp $WORKING_DIR/@project@-@version@.jar org.lumongo.admin.Search $@"
-$STARTCMD
+java $LUMONGO_CLIENT_JAVA_SETTINGS -cp $WORKING_DIR/@project@-@version@.jar org.lumongo.admin.Search "$@"
+
