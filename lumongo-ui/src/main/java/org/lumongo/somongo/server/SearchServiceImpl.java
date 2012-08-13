@@ -22,55 +22,63 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 public class SearchServiceImpl extends RemoteServiceServlet implements SearchService {
 
-    private LumongoClient lumongoClient;
+	private LumongoClient lumongoClient;
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    @Override
-    public void init() throws ServletException {
-        // TODO make configurable
-        LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
-        lumongoClientConfig.addMember("192.168.0.1");
-        lumongoClientConfig.setDefaultRetries(4);
-        try {
-            lumongoClient = new LumongoClient(lumongoClientConfig);
-        } catch (IOException e) {
-            throw new ServletException(e);
-        }
-    }
+	@Override
+	public void init() throws ServletException {
 
-    @Override
-    public SearchResults search(SearchRequest searchRequest) throws Exception {
+		LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
 
-        String query = searchRequest.getQuery();
-        int amount = searchRequest.getAmount();
-        String[] indexes = searchRequest.getIndexes();
-        QueryResponse queryResponse = lumongoClient.query(query, amount, indexes);
+		String lumongoServer = System.getenv("lumongoServer");
 
-        SearchResults searchResults = new SearchResults();
+		if (lumongoServer == null) {
+			lumongoServer = "localhost";
+			System.err.println("--Environment variable lumongoServer is not defined, using localhost as default--");
+		}
 
-        searchResults.setTotalHits(queryResponse.getTotalHits());
+		lumongoClientConfig.addMember(lumongoServer);
+		lumongoClientConfig.setDefaultRetries(4);
+		try {
+			lumongoClient = new LumongoClient(lumongoClientConfig);
+		} catch (IOException e) {
+			throw new ServletException(e);
+		}
+	}
 
-        List<ScoredResult> scoredResults = queryResponse.getResultsList();
-        for (ScoredResult sr : scoredResults) {
-            Document d = new Document();
-            d.setUniqueId(sr.getUniqueId());
-            d.setDocId(sr.getDocId());
-            d.setIndexName(sr.getIndexName());
-            d.setSegment(sr.getSegment());
-            d.setScore(sr.getScore());
-            searchResults.addDocument(d);
-        }
+	@Override
+	public SearchResults search(SearchRequest searchRequest) throws Exception {
 
-        return searchResults;
-    }
+		String query = searchRequest.getQuery();
+		int amount = searchRequest.getAmount();
+		String[] indexes = searchRequest.getIndexes();
+		QueryResponse queryResponse = lumongoClient.query(query, amount, indexes);
 
-    @Override
-    public List<String> getIndexes() throws Exception {
+		SearchResults searchResults = new SearchResults();
 
-        GetIndexesResponse getIndexesResponse = lumongoClient.getIndexes();
+		searchResults.setTotalHits(queryResponse.getTotalHits());
 
-        return new ArrayList<String>(getIndexesResponse.getIndexNameList());
+		List<ScoredResult> scoredResults = queryResponse.getResultsList();
+		for (ScoredResult sr : scoredResults) {
+			Document d = new Document();
+			d.setUniqueId(sr.getUniqueId());
+			d.setDocId(sr.getDocId());
+			d.setIndexName(sr.getIndexName());
+			d.setSegment(sr.getSegment());
+			d.setScore(sr.getScore());
+			searchResults.addDocument(d);
+		}
 
-    }
+		return searchResults;
+	}
+
+	@Override
+	public List<String> getIndexes() throws Exception {
+
+		GetIndexesResponse getIndexesResponse = lumongoClient.getIndexes();
+
+		return new ArrayList<String>(getIndexesResponse.getIndexNameList());
+
+	}
 }
