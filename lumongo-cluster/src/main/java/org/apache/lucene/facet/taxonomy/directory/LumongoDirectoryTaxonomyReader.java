@@ -130,7 +130,7 @@ public class LumongoDirectoryTaxonomyReader implements TaxonomyReader {
     parentArray.refresh(indexReader);
   }
 
-  protected DirectoryReader openIndexReader(Directory directory) throws CorruptIndexException, IOException {
+  protected DirectoryReader openIndexReader(Directory directory) throws IOException {
     return DirectoryReader.open(directory);
   }
 
@@ -199,7 +199,8 @@ public class LumongoDirectoryTaxonomyReader implements TaxonomyReader {
       indexReaderLock.readLock().lock();
       // TODO (Facet): avoid Multi*?
       Bits liveDocs = MultiFields.getLiveDocs(indexReader);
-      DocsEnum docs = MultiFields.getTermDocsEnum(indexReader, liveDocs, Consts.FULL, new BytesRef(path), false);
+      
+      DocsEnum docs = MultiFields.getTermDocsEnum(indexReader, liveDocs, Consts.FULL, new BytesRef(path), 0);
       if (docs != null && docs.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
         ret = docs.docID();
       }
