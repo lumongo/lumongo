@@ -1,4 +1,4 @@
-package org.lumongo.annotations;
+package org.lumongo.fields.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -11,6 +11,6 @@ import java.lang.annotation.Target;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD })
-public @interface AsField {
-	String value();
+public @interface Saved {
+
 }
