@@ -2,7 +2,7 @@ package org.lumongo.fields;
 
 import java.lang.reflect.Field;
 
-public class SavedFieldInfo {
+public class SavedFieldInfo<T> {
 	private String fieldName;
 	private Field field;
 
@@ -13,6 +13,10 @@ public class SavedFieldInfo {
 
 	public String getFieldName() {
 		return fieldName;
+	}
+
+	Object getValue(T object) throws IllegalArgumentException, IllegalAccessException {
+		return field.get(object);
 	}
 
 }
