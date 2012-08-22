@@ -21,7 +21,7 @@ public class IndexedFieldInfo<T> {
 		return fieldName;
 	}
 
-	public LMField build(Object object) throws IllegalArgumentException, IllegalAccessException {
+	public LMField build(T object) throws IllegalArgumentException, IllegalAccessException {
 
 		if (object != null) {
 			LMField.Builder lmFieldBuilder = LMField.newBuilder();

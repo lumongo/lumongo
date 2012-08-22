@@ -2,6 +2,7 @@ package org.lumongo.fields;
 
 import java.lang.reflect.Field;
 import java.util.HashSet;
+import java.util.List;
 
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
@@ -20,7 +21,7 @@ import com.mongodb.DBObject;
 
 public class Mapper <T> {
 
-	private Class<T> clazz;
+	private final Class<T> clazz;
 
 	private HashSet<FactedFieldInfo<T>> facetedFields;
 	private HashSet<IndexedFieldInfo<T>> indexedFields;
@@ -66,8 +67,12 @@ public class Mapper <T> {
 		}
 	}
 
-	public StoreRequest toStoreRequest(String uniqueId, T object) throws IllegalArgumentException, IllegalAccessException {
-		LMDoc lmDoc = toLMDoc(uniqueId, object);
+	public Class<T> getClazz() {
+		return clazz;
+	}
+
+	public StoreRequest toStoreRequest(String index, String uniqueId, T object) throws IllegalArgumentException, IllegalAccessException {
+		LMDoc lmDoc = toLMDoc(index, uniqueId, object);
 		ResultDocument rd = toResultDocument(uniqueId, object);
 		StoreRequest.Builder storeBuilder = StoreRequest.newBuilder();
 		storeBuilder.setResultDocument(rd);
@@ -76,9 +81,10 @@ public class Mapper <T> {
 
 	}
 
-	public LMDoc toLMDoc(String uniqueId, T object) throws IllegalArgumentException, IllegalAccessException {
+	public LMDoc toLMDoc(String index, String uniqueId, T object) throws IllegalArgumentException, IllegalAccessException {
 
 		LMDoc.Builder lmBuilder = LMDoc.newBuilder();
+		lmBuilder.setIndexName(index);
 
 		for (IndexedFieldInfo<T> ifi : indexedFields) {
 			LMField lmField = ifi.build(object);
@@ -88,7 +94,12 @@ public class Mapper <T> {
 		}
 
 		for (FactedFieldInfo<T> ffi : facetedFields) {
-			// TODO: implement
+			List<String> values = ffi.build(object);
+
+			for (String value : values) {
+				lmBuilder.addFacet(ffi.getFacetPrefix() + value);
+			}
+
 		}
 
 		return lmBuilder.build();
@@ -102,6 +113,8 @@ public class Mapper <T> {
 		}
 		return BsonHelper.dbObjectToResultDocument(uniqueId, document);
 	}
+
+
 
 
 }
