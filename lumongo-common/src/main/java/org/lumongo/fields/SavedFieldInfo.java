@@ -3,8 +3,8 @@ package org.lumongo.fields;
 import java.lang.reflect.Field;
 
 public class SavedFieldInfo<T> {
-	private String fieldName;
-	private Field field;
+	private final String fieldName;
+	private final Field field;
 
 	public SavedFieldInfo(Field field, String fieldName) {
 		this.fieldName = fieldName;

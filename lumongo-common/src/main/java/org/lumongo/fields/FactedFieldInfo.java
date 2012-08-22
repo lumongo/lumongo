@@ -7,8 +7,8 @@ import java.util.Collections;
 import java.util.List;
 
 public class FactedFieldInfo<T> {
-	private String facetPrefix;
-	private Field field;
+	private final String facetPrefix;
+	private final Field field;
 
 	public FactedFieldInfo(Field field, String facetPrefix) {
 		this.facetPrefix = facetPrefix;

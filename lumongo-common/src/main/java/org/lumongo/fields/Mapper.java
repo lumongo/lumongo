@@ -1,9 +1,11 @@
 package org.lumongo.fields;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMField;
@@ -114,6 +116,21 @@ public class Mapper <T> {
 		return BsonHelper.dbObjectToResultDocument(uniqueId, document);
 	}
 
+	public List<FieldConfig> getFieldConfig() {
+
+		List<FieldConfig> results = new ArrayList<FieldConfig>();
+
+		for (IndexedFieldInfo<T> ifi : indexedFields) {
+			FieldConfig.Builder fc = FieldConfig.newBuilder();
+			fc.setAnalyzer(ifi.getLMAnalyzer());
+			fc.setFieldName(ifi.getFieldName());
+			results.add(fc.build());
+
+		}
+
+		return results;
+
+	}
 
 
 

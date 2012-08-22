@@ -7,14 +7,18 @@ import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMField;
 
 public class IndexedFieldInfo<T> {
-	private String fieldName;
-	private Field field;
-	private LMAnalyzer lmAnalyzer;
+	private final String fieldName;
+	private final Field field;
+	private final LMAnalyzer lmAnalyzer;
 
 	public IndexedFieldInfo(Field field, String fieldName, LMAnalyzer lmAnalyzer) {
 		this.fieldName = fieldName;
 		this.field = field;
 		this.lmAnalyzer = lmAnalyzer;
+	}
+
+	public LMAnalyzer getLMAnalyzer() {
+		return lmAnalyzer;
 	}
 
 	public String getFieldName() {
