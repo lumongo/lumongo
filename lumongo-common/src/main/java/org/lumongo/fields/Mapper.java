@@ -132,6 +132,17 @@ public class Mapper <T> {
 
 	}
 
+	public T fromResultDocument(ResultDocument rd) throws InstantiationException, IllegalAccessException {
+		T newInstance = clazz.newInstance();
+
+		DBObject savedDBObject = BsonHelper.dbObjectFromResultDocument(rd);
+		for (SavedFieldInfo<T> sfi : savedFields) {
+			sfi.populate(newInstance, savedDBObject);
+		}
+
+		return newInstance;
+	}
+
 
 
 }

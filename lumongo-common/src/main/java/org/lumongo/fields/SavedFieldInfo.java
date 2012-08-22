@@ -2,6 +2,8 @@ package org.lumongo.fields;
 
 import java.lang.reflect.Field;
 
+import com.mongodb.DBObject;
+
 public class SavedFieldInfo<T> {
 	private final String fieldName;
 	private final Field field;
@@ -19,4 +21,8 @@ public class SavedFieldInfo<T> {
 		return field.get(object);
 	}
 
+	public void populate(T newInstance, DBObject savedDBObject) throws IllegalArgumentException, IllegalAccessException {
+		Object value = savedDBObject.get(fieldName);
+		field.set(newInstance, value);
+	}
 }
