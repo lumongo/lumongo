@@ -58,6 +58,12 @@ subprojects {
 	
 	artifacts { archives sourcesJar }
 	
+	//artifacts { 
+	//	runtime (sourcesJar) {
+	//		type = 'sources'
+	//	}
+	//}
+
 	compileJava {
 		options.debug = true
 		options.debugOptions.debugLevel = "source,lines,vars"
