@@ -7,6 +7,7 @@ service ExternalService {
 	rpc Store (StoreRequest) returns (StoreResponse);
 	rpc Delete (DeleteRequest) returns (DeleteResponse);
 	rpc Fetch (FetchRequest) returns (FetchResponse);
+	rpc GroupFetch (GroupFetchRequest) returns (GroupFetchResponse);
 	rpc CreateIndex (IndexCreateRequest) returns (IndexCreateResponse);
 	rpc ChangeIndex (IndexSettingsRequest) returns (IndexSettingsResponse);
 	rpc DeleteIndex (IndexDeleteRequest) returns (IndexDeleteResponse);
@@ -348,6 +349,14 @@ message DeleteRequest {
 
 message DeleteResponse {
 
+}
+
+message GroupFetchRequest {
+	repeated FetchRequest fetchRequest = 1;
+}
+
+message GroupFetchResponse {
+	repeated FetchResponse fetchResponse = 1;
 }
 
 message FetchRequest {
