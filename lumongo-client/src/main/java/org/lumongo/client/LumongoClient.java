@@ -69,955 +69,955 @@ import com.googlecode.protobuf.pro.duplex.execute.ThreadPoolCallExecutor;
  */
 public class LumongoClient {
 
-    private static LumongoThreadFactory rpcFactory = new LumongoThreadFactory(LumongoClient.class.getSimpleName() + "-Rpc");
-    private static LumongoThreadFactory bossFactory = new LumongoThreadFactory(LumongoClient.class.getSimpleName() + "-Boss");
-    private static LumongoThreadFactory workerFactory = new LumongoThreadFactory(LumongoClient.class.getSimpleName() + "-Worker");
-
-    private List<LMMember> members;
-    private int myServerIndex;
-    private ExternalService.BlockingInterface service;
-    private RpcClient rpcClient;
-    private DuplexTcpClientBootstrap bootstrap;
-    private final String myHostName;
-    private int retryCount;
-
-    private static CleanShutdownHandler shutdownHandler = new CleanShutdownHandler();
-
-    /**
-     * 
-     * @param lumongoClientConfig
-     *            - Gives settings for the client
-     * @throws IOException
-     *             -if cannot get hostname
-     */
-    public LumongoClient(LumongoClientConfig lumongoClientConfig) throws IOException {
-
-        this.myHostName = InetAddress.getLocalHost().getCanonicalHostName();
-        this.retryCount = lumongoClientConfig.getDefaultRetries();
-
-        updateMembers(lumongoClientConfig.getMembers());
-
-    }
-
-    public void openConnection() throws Exception {
-        openConnection(retryCount);
-    }
-
-    protected void openConnection(int retries) throws Exception {
-
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-
-            //TODO is this needed?, if so actually make a function
-            //force something to happen
-            getCurrentMembers();
-
-        }
-        catch (Exception e) {
-
-            System.err.println("ERROR: Open connection failed on server <" + members.get(myServerIndex).getServerAddress() + ">: " + e);
-            cycleServers();
-
-            if (retries > 0) {
-                openConnection(retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public void updateMembers(List<LMMember> members) {
-        if (members == null || members.isEmpty()) {
-            throw new IllegalArgumentException("At least one member must be given");
-        }
-
-        close();
-
-        this.members = members;
-        this.myServerIndex = (int) (Math.random() * members.size());
-    }
-
-    public void setRetryCount(int retriesCount) {
-        if (retriesCount < 0) {
-            throw new IllegalArgumentException("retries must be postive");
-        }
-        this.retryCount = retriesCount;
-    }
-
-    /**
-     * invalidates the current service and cycles to the next server index
-     */
-    protected void cycleServers() {
-        close();
-        myServerIndex = (myServerIndex + 1) % members.size();
-    }
-
-    public StoreResponse storeDocument(ResultDocument resultDoc, LMDoc indexedDoc) throws Exception {
-        StoreRequest.Builder storeRequestBuilder = StoreRequest.newBuilder();
-        storeRequestBuilder.addIndexedDocument(indexedDoc);
-        storeRequestBuilder.setResultDocument(resultDoc);
-        String uniqueId = resultDoc.getUniqueId();
-        storeRequestBuilder.setUniqueId(uniqueId);
-        return store(storeRequestBuilder.build());
-    }
-
-    public StoreResponse storeAssociatedDocument(AssociatedDocument associatedDocument) throws Exception {
-        StoreRequest.Builder storeRequestBuilder = StoreRequest.newBuilder();
-        storeRequestBuilder.addAssociatedDocument(associatedDocument);
-        String uniqueId = associatedDocument.getDocumentUniqueId();
-        storeRequestBuilder.setUniqueId(uniqueId);
-        return store(storeRequestBuilder.build());
-    }
-
-    public StoreResponse storeDocumentWithAssociated(ResultDocument resultDoc, LMDoc indexedDoc, List<AssociatedDocument> associatedDocuments) throws Exception {
-        String uniqueId = resultDoc.getUniqueId();
-
-        StoreRequest.Builder storeRequestBuilder = StoreRequest.newBuilder();
-        for (AssociatedDocument associatedDocument : associatedDocuments) {
-            if (!uniqueId.equals(associatedDocument.getDocumentUniqueId())) {
-                throw new IllegalArgumentException("Associate document unique id must match the indexed document's unique id for <" + uniqueId + ">");
-            }
-        }
-        storeRequestBuilder.setUniqueId(uniqueId);
-        storeRequestBuilder.addIndexedDocument(indexedDoc);
-        storeRequestBuilder.setResultDocument(resultDoc);
-        storeRequestBuilder.addAllAssociatedDocument(associatedDocuments);
-        return store(storeRequestBuilder.build());
-
-    }
-
-    protected StoreResponse store(StoreRequest request) throws Exception {
-        return store(request, retryCount);
-    }
-
-    protected StoreResponse store(StoreRequest request, int retries) throws Exception {
-
-        RpcController controller = null;
-
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.store(controller, request);
-        }
-        catch (Exception e) {
-
-            System.err.println("ERROR: Index <" + request.getUniqueId() + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-            cycleServers();
-
-            if (retries > 0) {
-                return store(request, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public QueryResponse query(String query, int amount, String index) throws Exception {
-        return query(query, amount, index, null, null, null, null);
-    }
-
-    public QueryResponse query(String query, int amount, String[] indexes) throws Exception {
-        return query(query, amount, indexes, null, null, null, null);
-    }
-
-    public QueryResponse query(String query, int amount, String index, Boolean realTime) throws Exception {
-        return query(query, amount, index, null, null, null, realTime);
-    }
-
-    public QueryResponse query(String query, int amount, String[] indexes, Boolean realTime) throws Exception {
-        return query(query, amount, indexes, null, null, null, realTime);
-    }
-
-    public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse) throws Exception {
-        return query(query, amount, index, lastResponse, null, null, null);
-    }
-
-    public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse) throws Exception {
-        return query(query, amount, indexes, lastResponse, null, null, null);
-    }
-
-    public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, Boolean realTime) throws Exception {
-        return query(query, amount, index, lastResponse, null, null, realTime);
-    }
-
-    public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, Boolean realTime) throws Exception {
-        return query(query, amount, indexes, lastResponse, null, null, realTime);
-    }
-
-    public QueryResponse query(String query, int amount, String index, SortRequest sortRequest, Boolean realTime) throws Exception {
-        return query(query, amount, index, null, null, sortRequest, realTime);
-    }
-
-    public QueryResponse query(String query, int amount, String[] indexes, SortRequest sortRequest, Boolean realTime) throws Exception {
-        return query(query, amount, indexes, null, null, sortRequest, realTime);
-    }
-
-    public QueryResponse query(String query, int amount, String index, FacetRequest facetRequest, Boolean realTime) throws Exception {
-        return query(query, amount, index, null, facetRequest, null, realTime);
-    }
-
-    public QueryResponse query(String query, int amount, String[] indexes, FacetRequest facetRequest, Boolean realTime) throws Exception {
-        return query(query, amount, indexes, null, facetRequest, null, realTime);
-    }
-
-    public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, FacetRequest facetRequest, SortRequest sortRequest, Boolean realTime)
-            throws Exception {
-        return query(query, amount, new String[] { index }, lastResponse, facetRequest, sortRequest, realTime);
-    }
-
-    public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, FacetRequest facetRequest, SortRequest sortRequest, Boolean realTime)
-            throws Exception {
-        return query(query, amount, indexes, lastResponse, facetRequest, sortRequest, realTime, retryCount);
-    }
-
-    protected QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, FacetRequest facetRequest, SortRequest sortRequest, Boolean realTime,
-            int retries) throws Exception {
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-            QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
-            requestBuilder.setAmount(amount);
-            requestBuilder.setQuery(query);
-            if (realTime != null) {
-                requestBuilder.setRealTime(realTime);
-            }
-            if (lastResponse != null) {
-                requestBuilder.setLastResult(lastResponse.getLastResult());
-            }
-
-            for (String index : indexes) {
-                requestBuilder.addIndex(index);
-            }
-            if (facetRequest != null) {
-                requestBuilder.setFacetRequest(facetRequest);
-            }
-            if (sortRequest != null) {
-                requestBuilder.setSortRequest(sortRequest);
-            }
-
-            QueryResponse queryResponse = service.query(controller, requestBuilder.build());
-            return queryResponse;
-        }
-        catch (Exception e) {
-
-            System.err.println("ERROR: Query <" + query + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return query(query, amount, indexes, lastResponse, facetRequest, sortRequest, realTime, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public DeleteResponse delete(String uniqueId) throws Exception {
-        return delete(uniqueId, retryCount);
-    }
-
-    protected DeleteResponse delete(String uniqueId, int retries) throws Exception {
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-
-            controller = rpcClient.newRpcController();
-
-            DeleteRequest.Builder requestBuilder = DeleteRequest.newBuilder();
-            requestBuilder.setUniqueId(uniqueId);
-            requestBuilder.setDeleteDocument(true);
-            requestBuilder.setDeleteAllAssociated(true);
-            return service.delete(controller, requestBuilder.build());
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Delete <" + uniqueId + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return delete(uniqueId, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public DeleteResponse deleteAssociated(String uniqueId, String fileName) throws Exception {
-        return deleteAssociated(uniqueId, fileName, retryCount);
-    }
-
-    protected DeleteResponse deleteAssociated(String uniqueId, String fileName, int retries) throws Exception {
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-
-            controller = rpcClient.newRpcController();
-
-            DeleteRequest.Builder requestBuilder = DeleteRequest.newBuilder();
-            requestBuilder.setUniqueId(uniqueId);
-            requestBuilder.setFilename(fileName);
-            requestBuilder.setDeleteDocument(false);
-            requestBuilder.setDeleteAllAssociated(false);
-            return service.delete(controller, requestBuilder.build());
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Delete <" + uniqueId + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return delete(uniqueId, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public DeleteResponse deleteAllAssociated(String uniqueId) throws Exception {
-        return deleteAllAssociated(uniqueId, retryCount);
-    }
-
-    protected DeleteResponse deleteAllAssociated(String uniqueId, int retries) throws Exception {
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-
-            controller = rpcClient.newRpcController();
-
-            DeleteRequest.Builder requestBuilder = DeleteRequest.newBuilder();
-            requestBuilder.setUniqueId(uniqueId);
-            requestBuilder.setDeleteDocument(false);
-            requestBuilder.setDeleteAllAssociated(true);
-            return service.delete(controller, requestBuilder.build());
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Delete <" + uniqueId + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return delete(uniqueId, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public FetchResponse fetchDocument(String uniqueId) throws Exception {
-        FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
-        fetchRequestBuilder.setUniqueId(uniqueId);
-        fetchRequestBuilder.setResultFetchType(FetchType.FULL);
-        fetchRequestBuilder.setAssociatedFetchType(FetchType.NONE);
-        return fetch(fetchRequestBuilder.build());
-    }
-
-    public FetchResponse fetchDocumentAndAssociatedMeta(String uniqueId) throws Exception {
-        FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
-        fetchRequestBuilder.setUniqueId(uniqueId);
-        fetchRequestBuilder.setResultFetchType(FetchType.FULL);
-        fetchRequestBuilder.setAssociatedFetchType(FetchType.META);
-        return fetch(fetchRequestBuilder.build());
-    }
-
-    public FetchResponse fetchDocumentAndAssociated(String uniqueId) throws Exception {
-        FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
-        fetchRequestBuilder.setUniqueId(uniqueId);
-        fetchRequestBuilder.setResultFetchType(FetchType.FULL);
-        fetchRequestBuilder.setAssociatedFetchType(FetchType.FULL);
-        return fetch(fetchRequestBuilder.build());
-    }
-
-    public FetchResponse fetchAssociatedDocument(String uniqueId, String fileName) throws Exception {
-        FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
-        fetchRequestBuilder.setUniqueId(uniqueId);
-        fetchRequestBuilder.setFileName(fileName);
-        fetchRequestBuilder.setResultFetchType(FetchType.NONE);
-        fetchRequestBuilder.setAssociatedFetchType(FetchType.FULL);
-        return fetch(fetchRequestBuilder.build());
-    }
-
-    public FetchResponse fetch(FetchRequest request) throws Exception {
-        return fetch(request, retryCount);
-    }
-
-
-
-
-
-    protected FetchResponse fetch(FetchRequest request, int retries) throws Exception {
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.fetch(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Fetch <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return fetch(request, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-
-    public GroupFetchResponse fetchDocuments(List<String> uniqueIds) throws Exception {
-        GroupFetchRequest.Builder gfrb = GroupFetchRequest.newBuilder();
-        for (String uniqueId : uniqueIds) {
-            FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
-            fetchRequestBuilder.setUniqueId(uniqueId);
-            fetchRequestBuilder.setResultFetchType(FetchType.FULL);
-            fetchRequestBuilder.setAssociatedFetchType(FetchType.NONE);
-            gfrb.addFetchRequest(fetchRequestBuilder);
-        }
-        return groupFetch(gfrb.build());
-    }
-
-    public GroupFetchResponse groupFetch(GroupFetchRequest request) throws Exception {
-        return groupFetch(request, retryCount);
-    }
-
-    protected GroupFetchResponse groupFetch(GroupFetchRequest request, int retries) throws Exception {
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.groupFetch(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Group fetch <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return groupFetch(request, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public IndexCreateResponse createIndex(String indexName, int numberOfSegments, String uniqueIdField, IndexSettings indexSettings) throws Exception {
-        return createIndex(indexName, numberOfSegments, uniqueIdField, null, indexSettings);
-    }
-
-    public IndexCreateResponse createIndex(String indexName, int numberOfSegments, String uniqueIdField, Boolean faceted, IndexSettings indexSettings)
-            throws Exception {
-        IndexCreateRequest.Builder indexCreateRequest = IndexCreateRequest.newBuilder();
-        indexCreateRequest.setIndexName(indexName);
-        indexCreateRequest.setNumberOfSegments(numberOfSegments);
-        indexCreateRequest.setUniqueIdField(uniqueIdField);
-        if (faceted != null) {
-            indexCreateRequest.setFaceted(faceted);
-        }
-        indexCreateRequest.setIndexSettings(indexSettings);
-        return createIndex(indexCreateRequest.build());
-    }
-
-    public IndexCreateResponse createIndex(IndexCreateRequest request) throws Exception {
-        return createIndex(request, retryCount);
-    }
-
-    protected IndexCreateResponse createIndex(IndexCreateRequest request, int retries) throws Exception {
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.createIndex(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Create index <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return createIndex(request, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public IndexSettingsResponse updateIndexSettings(String indexName, IndexSettings indexSettings) throws Exception {
-        IndexSettingsRequest isr = IndexSettingsRequest.newBuilder().setIndexName(indexName).setIndexSettings(indexSettings).build();
-        return updateIndexSettings(isr, retryCount);
-    }
-
-    protected IndexSettingsResponse updateIndexSettings(IndexSettingsRequest request, int retries) throws Exception {
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.changeIndex(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Update index <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return updateIndexSettings(request, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public LumongoRestClient getRestClient() throws Exception {
-        LMMember lm = members.get(myServerIndex);
-        LumongoRestClient lrc = new LumongoRestClient(lm.getServerAddress(), lm.getRestPort());
-        return lrc;
-    }
-
-    public IndexDeleteResponse deleteIndex(String indexName) throws Exception {
-        return deleteIndex(IndexDeleteRequest.newBuilder().setIndexName(indexName).build(), retryCount);
-    }
-
-    protected IndexDeleteResponse deleteIndex(IndexDeleteRequest request, int retries) throws Exception {
-        if (retries < 0) {
-            throw new IllegalArgumentException("retries must be postive");
-        }
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.deleteIndex(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Delete index <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return deleteIndex(request, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public GetIndexesResponse getIndexes() throws Exception {
-        return getIndexes(retryCount);
-    }
-
-    protected GetIndexesResponse getIndexes(int retries) throws Exception {
-
-        GetIndexesRequest request = GetIndexesRequest.newBuilder().build();
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.getIndexes(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Get index request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return getIndexes(retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Not recommended by Lucene
-     * @param indexName
-     * @return
-     * @throws Exception
-     */
-    public OptimizeResponse optimizeIndex(String indexName) throws Exception {
-        return optimizeIndex(indexName, retryCount);
-    }
-
-    protected OptimizeResponse optimizeIndex(String indexName, int retries) throws Exception {
-
-        OptimizeRequest request = OptimizeRequest.newBuilder().setIndexName(indexName).build();
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.optimize(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Optimize request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return optimizeIndex(indexName, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public ClearResponse clearIndex(String indexName) throws Exception {
-        return clearIndex(indexName, retryCount);
-    }
-
-    protected ClearResponse clearIndex(String indexName, int retries) throws Exception {
-
-        ClearRequest request = ClearRequest.newBuilder().setIndexName(indexName).build();
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.clear(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Clear request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return clearIndex(indexName, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public GetNumberOfDocsResponse getNumberOfDocs(String indexName) throws Exception {
-        return getNumberOfDocs(indexName, true);
-    }
-
-    public GetNumberOfDocsResponse getNumberOfDocs(String indexName, Boolean realTime) throws Exception {
-        return getNumberOfDocs(indexName, realTime, retryCount);
-    }
-
-    public GetNumberOfDocsResponse getNumberOfDocs(String indexName, Boolean realTime, int retries) throws Exception {
-
-        GetNumberOfDocsRequest.Builder requestB = GetNumberOfDocsRequest.newBuilder();
-        requestB.setIndexName(indexName);
-        if (realTime != null) {
-            requestB.setRealTime(realTime);
-        }
-        GetNumberOfDocsRequest request = requestB.build();
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.getNumberOfDocs(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Get number of docs request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return getNumberOfDocs(indexName, realTime, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public GetFieldNamesResponse getFieldNames(String indexName) throws Exception {
-        return getFieldNames(indexName, retryCount);
-    }
-
-    public GetFieldNamesResponse getFieldNames(String indexName, int retries) throws Exception {
-
-        GetFieldNamesRequest request = GetFieldNamesRequest.newBuilder().setIndexName(indexName).build();
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.getFieldNames(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Get field names request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return getFieldNames(indexName, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    public GetTermsResponse getTerms(String indexName, String fieldName) throws Exception {
-        return getTerms(indexName, fieldName, null, null, null);
-    }
-
-    public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, Integer minDocFreq, Boolean realTime) throws Exception {
-        GetTermsResponse.Builder fullResponse = GetTermsResponse.newBuilder();
-
-        Set<Lumongo.Term> terms = new LinkedHashSet<Lumongo.Term>();
-        GetTermsResponse response = null;
-        Lumongo.Term currentStartTerm = null;
-        Lumongo.Term nextStartTerm = null;
-        if (startTerm != null) {
-            nextStartTerm = Lumongo.Term.newBuilder().setValue(startTerm).build();
-        }
-
-        do {
-            currentStartTerm = nextStartTerm;
-            response = getTerms(indexName, fieldName, currentStartTerm != null ? currentStartTerm.getValue() : null, 1024 * 64, minDocFreq, realTime);
-            terms.addAll(response.getTermList());
-            if (response.hasLastTerm()) {
-                nextStartTerm = response.getLastTerm();
-            }
-            else {
-                nextStartTerm = null;
-            }
-
-        }
-        while (nextStartTerm != null && !nextStartTerm.equals(currentStartTerm));
-
-        fullResponse.addAllTerm(terms);
-
-        return fullResponse.build();
-    }
-
-    public GetTermsResponse getTerms(String indexName, String fieldName, int amount) throws Exception {
-        return getTerms(indexName, fieldName, null, amount);
-    }
-
-    public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount) throws Exception {
-        return getTerms(indexName, fieldName, startTerm, amount, null);
-    }
-
-    public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq) throws Exception {
-        return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, null);
-    }
-
-    public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq, Boolean realTime) throws Exception {
-        return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, realTime, retryCount);
-    }
-
-    protected GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq, Boolean realTime, int retries)
-            throws Exception {
-
-        GetTermsRequest.Builder requestBuilder = GetTermsRequest.newBuilder();
-        requestBuilder.setIndexName(indexName);
-        requestBuilder.setFieldName(fieldName);
-        requestBuilder.setAmount(amount);
-        if (realTime != null) {
-            requestBuilder.setRealTime(realTime);
-        }
-        if (minDocFreq != null) {
-            requestBuilder.setMinDocFreq(minDocFreq);
-        }
-
-        if (startTerm != null) {
-            requestBuilder.setStartingTerm(startTerm);
-        }
-
-        GetTermsRequest request = requestBuilder.build();
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.getTerms(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Get terms request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
-                    + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, realTime, retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Returns a connection to a server node based on the current server index
-     * 
-     * @return
-     * @throws IOException
-     */
-    protected ExternalService.BlockingInterface getInternalBlockingConnection() throws IOException {
-        LMMember member = members.get(myServerIndex);
-
-        PeerInfo server = new PeerInfo(member.getServerAddress(), member.getExternalPort());
-
-        PeerInfo client = new PeerInfo(myHostName + "-" + UUID.randomUUID().toString(), 1234);
-
-        System.err.println("INFO: Connecting from <" + client + "> to <" + server + ">");
-
-        ChannelFactory cf = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory), Executors.newCachedThreadPool(workerFactory));
-        // should never be used here because we are just doing server side calls
-        ThreadPoolCallExecutor executor = new ThreadPoolCallExecutor(1, 1, rpcFactory);
-        bootstrap = new DuplexTcpClientBootstrap(client, cf, executor);
-
-        bootstrap.setCompression(true);
-
-        bootstrap.setRpcLogger(null);
-
-        bootstrap.setOption("connectTimeoutMillis", 10000);
-        bootstrap.setOption("connectResponseTimeoutMillis", 10000);
-        bootstrap.setOption("receiveBufferSize", 1048576);
-        bootstrap.setOption("tcpNoDelay", false);
-        shutdownHandler.addResource(bootstrap);
-
-        rpcClient = bootstrap.peerWith(server);
-
-        BlockingInterface externalService = ExternalService.newBlockingStub(rpcClient);
-
-        return externalService;
-    }
-
-    public GetMembersResponse getCurrentMembers() throws Exception {
-        return getCurrentMembers(retryCount);
-    }
-
-    protected GetMembersResponse getCurrentMembers(int retries) throws Exception {
-        GetMembersRequest request = GetMembersRequest.newBuilder().build();
-
-        RpcController controller = null;
-        try {
-            if (service == null) {
-                service = getInternalBlockingConnection();
-            }
-            controller = rpcClient.newRpcController();
-
-            return service.getMembers(controller, request);
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Get current members request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress()
-                    + ">: " + (controller != null ? controller.errorText() : e.toString()));
-
-            cycleServers();
-
-            if (retries > 0) {
-                return getCurrentMembers(retries - 1);
-            }
-            else {
-                throw new Exception(e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * closes the connection to the server if open, calling a method (index, query, ...) will open a new connection
-     */
-    public void close() {
-        try {
-
-            if (rpcClient != null) {
-                System.err.println("INFO: Closing connection to " + rpcClient.getPeerInfo());
-                rpcClient.close();
-            }
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Exception: " + e);
-            e.printStackTrace();
-        }
-        rpcClient = null;
-        try {
-            if (bootstrap != null) {
-                bootstrap.releaseExternalResources();
-            }
-        }
-        catch (Exception e) {
-            System.err.println("ERROR: Exception: " + e);
-            e.printStackTrace();
-        }
-        bootstrap = null;
-        service = null;
-    }
+	private static LumongoThreadFactory rpcFactory = new LumongoThreadFactory(LumongoClient.class.getSimpleName() + "-Rpc");
+	private static LumongoThreadFactory bossFactory = new LumongoThreadFactory(LumongoClient.class.getSimpleName() + "-Boss");
+	private static LumongoThreadFactory workerFactory = new LumongoThreadFactory(LumongoClient.class.getSimpleName() + "-Worker");
+
+	private List<LMMember> members;
+	private int myServerIndex;
+	private ExternalService.BlockingInterface service;
+	private RpcClient rpcClient;
+	private DuplexTcpClientBootstrap bootstrap;
+	private final String myHostName;
+	private int retryCount;
+
+	private static CleanShutdownHandler shutdownHandler = new CleanShutdownHandler();
+
+	/**
+	 * 
+	 * @param lumongoClientConfig
+	 *            - Gives settings for the client
+	 * @throws IOException
+	 *             -if cannot get hostname
+	 */
+	public LumongoClient(LumongoClientConfig lumongoClientConfig) throws IOException {
+
+		this.myHostName = InetAddress.getLocalHost().getCanonicalHostName();
+		this.retryCount = lumongoClientConfig.getDefaultRetries();
+
+		updateMembers(lumongoClientConfig.getMembers());
+
+	}
+
+	public void openConnection() throws Exception {
+		openConnection(retryCount);
+	}
+
+	protected void openConnection(int retries) throws Exception {
+
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+
+			//TODO is this needed?, if so actually make a function
+			//force something to happen
+			getCurrentMembers();
+
+		}
+		catch (Exception e) {
+
+			System.err.println("ERROR: Open connection failed on server <" + members.get(myServerIndex).getServerAddress() + ">: " + e);
+			cycleServers();
+
+			if (retries > 0) {
+				openConnection(retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public void updateMembers(List<LMMember> members) {
+		if (members == null || members.isEmpty()) {
+			throw new IllegalArgumentException("At least one member must be given");
+		}
+
+		close();
+
+		this.members = members;
+		this.myServerIndex = (int) (Math.random() * members.size());
+	}
+
+	public void setRetryCount(int retriesCount) {
+		if (retriesCount < 0) {
+			throw new IllegalArgumentException("retries must be postive");
+		}
+		this.retryCount = retriesCount;
+	}
+
+	/**
+	 * invalidates the current service and cycles to the next server index
+	 */
+	protected void cycleServers() {
+		close();
+		myServerIndex = (myServerIndex + 1) % members.size();
+	}
+
+	public StoreResponse storeDocument(ResultDocument resultDoc, LMDoc indexedDoc) throws Exception {
+		StoreRequest.Builder storeRequestBuilder = StoreRequest.newBuilder();
+		storeRequestBuilder.addIndexedDocument(indexedDoc);
+		storeRequestBuilder.setResultDocument(resultDoc);
+		String uniqueId = resultDoc.getUniqueId();
+		storeRequestBuilder.setUniqueId(uniqueId);
+		return store(storeRequestBuilder.build());
+	}
+
+	public StoreResponse storeAssociatedDocument(AssociatedDocument associatedDocument) throws Exception {
+		StoreRequest.Builder storeRequestBuilder = StoreRequest.newBuilder();
+		storeRequestBuilder.addAssociatedDocument(associatedDocument);
+		String uniqueId = associatedDocument.getDocumentUniqueId();
+		storeRequestBuilder.setUniqueId(uniqueId);
+		return store(storeRequestBuilder.build());
+	}
+
+	public StoreResponse storeDocumentWithAssociated(ResultDocument resultDoc, LMDoc indexedDoc, List<AssociatedDocument> associatedDocuments) throws Exception {
+		String uniqueId = resultDoc.getUniqueId();
+
+		StoreRequest.Builder storeRequestBuilder = StoreRequest.newBuilder();
+		for (AssociatedDocument associatedDocument : associatedDocuments) {
+			if (!uniqueId.equals(associatedDocument.getDocumentUniqueId())) {
+				throw new IllegalArgumentException("Associate document unique id must match the indexed document's unique id for <" + uniqueId + ">");
+			}
+		}
+		storeRequestBuilder.setUniqueId(uniqueId);
+		storeRequestBuilder.addIndexedDocument(indexedDoc);
+		storeRequestBuilder.setResultDocument(resultDoc);
+		storeRequestBuilder.addAllAssociatedDocument(associatedDocuments);
+		return store(storeRequestBuilder.build());
+
+	}
+
+	protected StoreResponse store(StoreRequest request) throws Exception {
+		return store(request, retryCount);
+	}
+
+	protected StoreResponse store(StoreRequest request, int retries) throws Exception {
+
+		RpcController controller = null;
+
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.store(controller, request);
+		}
+		catch (Exception e) {
+
+			System.err.println("ERROR: Index <" + request.getUniqueId() + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+			cycleServers();
+
+			if (retries > 0) {
+				return store(request, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public QueryResponse query(String query, int amount, String index) throws Exception {
+		return query(query, amount, index, null, null, null, null);
+	}
+
+	public QueryResponse query(String query, int amount, String[] indexes) throws Exception {
+		return query(query, amount, indexes, null, null, null, null);
+	}
+
+	public QueryResponse query(String query, int amount, String index, Boolean realTime) throws Exception {
+		return query(query, amount, index, null, null, null, realTime);
+	}
+
+	public QueryResponse query(String query, int amount, String[] indexes, Boolean realTime) throws Exception {
+		return query(query, amount, indexes, null, null, null, realTime);
+	}
+
+	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse) throws Exception {
+		return query(query, amount, index, lastResponse, null, null, null);
+	}
+
+	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse) throws Exception {
+		return query(query, amount, indexes, lastResponse, null, null, null);
+	}
+
+	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, Boolean realTime) throws Exception {
+		return query(query, amount, index, lastResponse, null, null, realTime);
+	}
+
+	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, Boolean realTime) throws Exception {
+		return query(query, amount, indexes, lastResponse, null, null, realTime);
+	}
+
+	public QueryResponse query(String query, int amount, String index, SortRequest sortRequest, Boolean realTime) throws Exception {
+		return query(query, amount, index, null, null, sortRequest, realTime);
+	}
+
+	public QueryResponse query(String query, int amount, String[] indexes, SortRequest sortRequest, Boolean realTime) throws Exception {
+		return query(query, amount, indexes, null, null, sortRequest, realTime);
+	}
+
+	public QueryResponse query(String query, int amount, String index, FacetRequest facetRequest, Boolean realTime) throws Exception {
+		return query(query, amount, index, null, facetRequest, null, realTime);
+	}
+
+	public QueryResponse query(String query, int amount, String[] indexes, FacetRequest facetRequest, Boolean realTime) throws Exception {
+		return query(query, amount, indexes, null, facetRequest, null, realTime);
+	}
+
+	public QueryResponse query(String query, int amount, String index, QueryResponse lastResponse, FacetRequest facetRequest, SortRequest sortRequest, Boolean realTime)
+			throws Exception {
+		return query(query, amount, new String[] { index }, lastResponse, facetRequest, sortRequest, realTime);
+	}
+
+	public QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, FacetRequest facetRequest, SortRequest sortRequest, Boolean realTime)
+			throws Exception {
+		return query(query, amount, indexes, lastResponse, facetRequest, sortRequest, realTime, retryCount);
+	}
+
+	protected QueryResponse query(String query, int amount, String[] indexes, QueryResponse lastResponse, FacetRequest facetRequest, SortRequest sortRequest, Boolean realTime,
+			int retries) throws Exception {
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+			QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
+			requestBuilder.setAmount(amount);
+			requestBuilder.setQuery(query);
+			if (realTime != null) {
+				requestBuilder.setRealTime(realTime);
+			}
+			if (lastResponse != null) {
+				requestBuilder.setLastResult(lastResponse.getLastResult());
+			}
+
+			for (String index : indexes) {
+				requestBuilder.addIndex(index);
+			}
+			if (facetRequest != null) {
+				requestBuilder.setFacetRequest(facetRequest);
+			}
+			if (sortRequest != null) {
+				requestBuilder.setSortRequest(sortRequest);
+			}
+
+			QueryResponse queryResponse = service.query(controller, requestBuilder.build());
+			return queryResponse;
+		}
+		catch (Exception e) {
+
+			System.err.println("ERROR: Query <" + query + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return query(query, amount, indexes, lastResponse, facetRequest, sortRequest, realTime, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public DeleteResponse delete(String uniqueId) throws Exception {
+		return delete(uniqueId, retryCount);
+	}
+
+	protected DeleteResponse delete(String uniqueId, int retries) throws Exception {
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+
+			controller = rpcClient.newRpcController();
+
+			DeleteRequest.Builder requestBuilder = DeleteRequest.newBuilder();
+			requestBuilder.setUniqueId(uniqueId);
+			requestBuilder.setDeleteDocument(true);
+			requestBuilder.setDeleteAllAssociated(true);
+			return service.delete(controller, requestBuilder.build());
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Delete <" + uniqueId + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return delete(uniqueId, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public DeleteResponse deleteAssociated(String uniqueId, String fileName) throws Exception {
+		return deleteAssociated(uniqueId, fileName, retryCount);
+	}
+
+	protected DeleteResponse deleteAssociated(String uniqueId, String fileName, int retries) throws Exception {
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+
+			controller = rpcClient.newRpcController();
+
+			DeleteRequest.Builder requestBuilder = DeleteRequest.newBuilder();
+			requestBuilder.setUniqueId(uniqueId);
+			requestBuilder.setFilename(fileName);
+			requestBuilder.setDeleteDocument(false);
+			requestBuilder.setDeleteAllAssociated(false);
+			return service.delete(controller, requestBuilder.build());
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Delete <" + uniqueId + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return delete(uniqueId, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public DeleteResponse deleteAllAssociated(String uniqueId) throws Exception {
+		return deleteAllAssociated(uniqueId, retryCount);
+	}
+
+	protected DeleteResponse deleteAllAssociated(String uniqueId, int retries) throws Exception {
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+
+			controller = rpcClient.newRpcController();
+
+			DeleteRequest.Builder requestBuilder = DeleteRequest.newBuilder();
+			requestBuilder.setUniqueId(uniqueId);
+			requestBuilder.setDeleteDocument(false);
+			requestBuilder.setDeleteAllAssociated(true);
+			return service.delete(controller, requestBuilder.build());
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Delete <" + uniqueId + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return delete(uniqueId, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public FetchResponse fetchDocument(String uniqueId) throws Exception {
+		FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
+		fetchRequestBuilder.setUniqueId(uniqueId);
+		fetchRequestBuilder.setResultFetchType(FetchType.FULL);
+		fetchRequestBuilder.setAssociatedFetchType(FetchType.NONE);
+		return fetch(fetchRequestBuilder.build());
+	}
+
+	public FetchResponse fetchDocumentAndAssociatedMeta(String uniqueId) throws Exception {
+		FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
+		fetchRequestBuilder.setUniqueId(uniqueId);
+		fetchRequestBuilder.setResultFetchType(FetchType.FULL);
+		fetchRequestBuilder.setAssociatedFetchType(FetchType.META);
+		return fetch(fetchRequestBuilder.build());
+	}
+
+	public FetchResponse fetchDocumentAndAssociated(String uniqueId) throws Exception {
+		FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
+		fetchRequestBuilder.setUniqueId(uniqueId);
+		fetchRequestBuilder.setResultFetchType(FetchType.FULL);
+		fetchRequestBuilder.setAssociatedFetchType(FetchType.FULL);
+		return fetch(fetchRequestBuilder.build());
+	}
+
+	public FetchResponse fetchAssociatedDocument(String uniqueId, String fileName) throws Exception {
+		FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
+		fetchRequestBuilder.setUniqueId(uniqueId);
+		fetchRequestBuilder.setFileName(fileName);
+		fetchRequestBuilder.setResultFetchType(FetchType.NONE);
+		fetchRequestBuilder.setAssociatedFetchType(FetchType.FULL);
+		return fetch(fetchRequestBuilder.build());
+	}
+
+	public FetchResponse fetch(FetchRequest request) throws Exception {
+		return fetch(request, retryCount);
+	}
+
+
+
+
+
+	protected FetchResponse fetch(FetchRequest request, int retries) throws Exception {
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.fetch(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Fetch <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return fetch(request, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+
+	public GroupFetchResponse fetchDocuments(List<String> uniqueIds) throws Exception {
+		GroupFetchRequest.Builder gfrb = GroupFetchRequest.newBuilder();
+		for (String uniqueId : uniqueIds) {
+			FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
+			fetchRequestBuilder.setUniqueId(uniqueId);
+			fetchRequestBuilder.setResultFetchType(FetchType.FULL);
+			fetchRequestBuilder.setAssociatedFetchType(FetchType.NONE);
+			gfrb.addFetchRequest(fetchRequestBuilder);
+		}
+		return groupFetch(gfrb.build());
+	}
+
+	public GroupFetchResponse groupFetch(GroupFetchRequest request) throws Exception {
+		return groupFetch(request, retryCount);
+	}
+
+	protected GroupFetchResponse groupFetch(GroupFetchRequest request, int retries) throws Exception {
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.groupFetch(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Group fetch <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return groupFetch(request, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public IndexCreateResponse createIndex(String indexName, int numberOfSegments, String uniqueIdField, IndexSettings indexSettings) throws Exception {
+		return createIndex(indexName, numberOfSegments, uniqueIdField, null, indexSettings);
+	}
+
+	public IndexCreateResponse createIndex(String indexName, int numberOfSegments, String uniqueIdField, Boolean faceted, IndexSettings indexSettings)
+			throws Exception {
+		IndexCreateRequest.Builder indexCreateRequest = IndexCreateRequest.newBuilder();
+		indexCreateRequest.setIndexName(indexName);
+		indexCreateRequest.setNumberOfSegments(numberOfSegments);
+		indexCreateRequest.setUniqueIdField(uniqueIdField);
+		if (faceted != null) {
+			indexCreateRequest.setFaceted(faceted);
+		}
+		indexCreateRequest.setIndexSettings(indexSettings);
+		return createIndex(indexCreateRequest.build());
+	}
+
+	public IndexCreateResponse createIndex(IndexCreateRequest request) throws Exception {
+		return createIndex(request, retryCount);
+	}
+
+	protected IndexCreateResponse createIndex(IndexCreateRequest request, int retries) throws Exception {
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.createIndex(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Create index <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return createIndex(request, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public IndexSettingsResponse updateIndexSettings(String indexName, IndexSettings indexSettings) throws Exception {
+		IndexSettingsRequest isr = IndexSettingsRequest.newBuilder().setIndexName(indexName).setIndexSettings(indexSettings).build();
+		return updateIndexSettings(isr, retryCount);
+	}
+
+	protected IndexSettingsResponse updateIndexSettings(IndexSettingsRequest request, int retries) throws Exception {
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.changeIndex(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Update index <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return updateIndexSettings(request, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public LumongoRestClient getRestClient() throws Exception {
+		LMMember lm = members.get(myServerIndex);
+		LumongoRestClient lrc = new LumongoRestClient(lm.getServerAddress(), lm.getRestPort());
+		return lrc;
+	}
+
+	public IndexDeleteResponse deleteIndex(String indexName) throws Exception {
+		return deleteIndex(IndexDeleteRequest.newBuilder().setIndexName(indexName).build(), retryCount);
+	}
+
+	protected IndexDeleteResponse deleteIndex(IndexDeleteRequest request, int retries) throws Exception {
+		if (retries < 0) {
+			throw new IllegalArgumentException("retries must be postive");
+		}
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.deleteIndex(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Delete index <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return deleteIndex(request, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public GetIndexesResponse getIndexes() throws Exception {
+		return getIndexes(retryCount);
+	}
+
+	protected GetIndexesResponse getIndexes(int retries) throws Exception {
+
+		GetIndexesRequest request = GetIndexesRequest.newBuilder().build();
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.getIndexes(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Get index request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return getIndexes(retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * Not recommended by Lucene
+	 * @param indexName
+	 * @return
+	 * @throws Exception
+	 */
+	public OptimizeResponse optimizeIndex(String indexName) throws Exception {
+		return optimizeIndex(indexName, retryCount);
+	}
+
+	protected OptimizeResponse optimizeIndex(String indexName, int retries) throws Exception {
+
+		OptimizeRequest request = OptimizeRequest.newBuilder().setIndexName(indexName).build();
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.optimize(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Optimize request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return optimizeIndex(indexName, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public ClearResponse clearIndex(String indexName) throws Exception {
+		return clearIndex(indexName, retryCount);
+	}
+
+	protected ClearResponse clearIndex(String indexName, int retries) throws Exception {
+
+		ClearRequest request = ClearRequest.newBuilder().setIndexName(indexName).build();
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.clear(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Clear request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return clearIndex(indexName, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public GetNumberOfDocsResponse getNumberOfDocs(String indexName) throws Exception {
+		return getNumberOfDocs(indexName, true);
+	}
+
+	public GetNumberOfDocsResponse getNumberOfDocs(String indexName, Boolean realTime) throws Exception {
+		return getNumberOfDocs(indexName, realTime, retryCount);
+	}
+
+	public GetNumberOfDocsResponse getNumberOfDocs(String indexName, Boolean realTime, int retries) throws Exception {
+
+		GetNumberOfDocsRequest.Builder requestB = GetNumberOfDocsRequest.newBuilder();
+		requestB.setIndexName(indexName);
+		if (realTime != null) {
+			requestB.setRealTime(realTime);
+		}
+		GetNumberOfDocsRequest request = requestB.build();
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.getNumberOfDocs(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Get number of docs request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return getNumberOfDocs(indexName, realTime, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public GetFieldNamesResponse getFieldNames(String indexName) throws Exception {
+		return getFieldNames(indexName, retryCount);
+	}
+
+	public GetFieldNamesResponse getFieldNames(String indexName, int retries) throws Exception {
+
+		GetFieldNamesRequest request = GetFieldNamesRequest.newBuilder().setIndexName(indexName).build();
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.getFieldNames(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Get field names request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return getFieldNames(indexName, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	public GetTermsResponse getTerms(String indexName, String fieldName) throws Exception {
+		return getTerms(indexName, fieldName, null, null, null);
+	}
+
+	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, Integer minDocFreq, Boolean realTime) throws Exception {
+		GetTermsResponse.Builder fullResponse = GetTermsResponse.newBuilder();
+
+		Set<Lumongo.Term> terms = new LinkedHashSet<Lumongo.Term>();
+		GetTermsResponse response = null;
+		Lumongo.Term currentStartTerm = null;
+		Lumongo.Term nextStartTerm = null;
+		if (startTerm != null) {
+			nextStartTerm = Lumongo.Term.newBuilder().setValue(startTerm).build();
+		}
+
+		do {
+			currentStartTerm = nextStartTerm;
+			response = getTerms(indexName, fieldName, currentStartTerm != null ? currentStartTerm.getValue() : null, 1024 * 64, minDocFreq, realTime);
+			terms.addAll(response.getTermList());
+			if (response.hasLastTerm()) {
+				nextStartTerm = response.getLastTerm();
+			}
+			else {
+				nextStartTerm = null;
+			}
+
+		}
+		while (nextStartTerm != null && !nextStartTerm.equals(currentStartTerm));
+
+		fullResponse.addAllTerm(terms);
+
+		return fullResponse.build();
+	}
+
+	public GetTermsResponse getTerms(String indexName, String fieldName, int amount) throws Exception {
+		return getTerms(indexName, fieldName, null, amount);
+	}
+
+	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount) throws Exception {
+		return getTerms(indexName, fieldName, startTerm, amount, null);
+	}
+
+	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq) throws Exception {
+		return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, null);
+	}
+
+	public GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq, Boolean realTime) throws Exception {
+		return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, realTime, retryCount);
+	}
+
+	protected GetTermsResponse getTerms(String indexName, String fieldName, String startTerm, int amount, Integer minDocFreq, Boolean realTime, int retries)
+			throws Exception {
+
+		GetTermsRequest.Builder requestBuilder = GetTermsRequest.newBuilder();
+		requestBuilder.setIndexName(indexName);
+		requestBuilder.setFieldName(fieldName);
+		requestBuilder.setAmount(amount);
+		if (realTime != null) {
+			requestBuilder.setRealTime(realTime);
+		}
+		if (minDocFreq != null) {
+			requestBuilder.setMinDocFreq(minDocFreq);
+		}
+
+		if (startTerm != null) {
+			requestBuilder.setStartingTerm(startTerm);
+		}
+
+		GetTermsRequest request = requestBuilder.build();
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.getTerms(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Get terms request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress() + ">: "
+					+ (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return getTerms(indexName, fieldName, startTerm, amount, minDocFreq, realTime, retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * Returns a connection to a server node based on the current server index
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	protected ExternalService.BlockingInterface getInternalBlockingConnection() throws IOException {
+		LMMember member = members.get(myServerIndex);
+
+		PeerInfo server = new PeerInfo(member.getServerAddress(), member.getExternalPort());
+
+		PeerInfo client = new PeerInfo(myHostName + "-" + UUID.randomUUID().toString(), 1234);
+
+		System.err.println("INFO: Connecting from <" + client + "> to <" + server + ">");
+
+		ChannelFactory cf = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory), Executors.newCachedThreadPool(workerFactory));
+		// should never be used here because we are just doing server side calls
+		ThreadPoolCallExecutor executor = new ThreadPoolCallExecutor(1, 1, rpcFactory);
+		bootstrap = new DuplexTcpClientBootstrap(client, cf, executor);
+
+		bootstrap.setCompression(true);
+
+		bootstrap.setRpcLogger(null);
+
+		bootstrap.setOption("connectTimeoutMillis", 10000);
+		bootstrap.setOption("connectResponseTimeoutMillis", 10000);
+		bootstrap.setOption("receiveBufferSize", 1048576);
+		bootstrap.setOption("tcpNoDelay", false);
+		shutdownHandler.addResource(bootstrap);
+
+		rpcClient = bootstrap.peerWith(server);
+
+		BlockingInterface externalService = ExternalService.newBlockingStub(rpcClient);
+
+		return externalService;
+	}
+
+	public GetMembersResponse getCurrentMembers() throws Exception {
+		return getCurrentMembers(retryCount);
+	}
+
+	protected GetMembersResponse getCurrentMembers(int retries) throws Exception {
+		GetMembersRequest request = GetMembersRequest.newBuilder().build();
+
+		RpcController controller = null;
+		try {
+			if (service == null) {
+				service = getInternalBlockingConnection();
+			}
+			controller = rpcClient.newRpcController();
+
+			return service.getMembers(controller, request);
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Get current members request <" + request + "> failed on server <" + members.get(myServerIndex).getServerAddress()
+					+ ">: " + (controller != null ? controller.errorText() : e.toString()));
+
+			cycleServers();
+
+			if (retries > 0) {
+				return getCurrentMembers(retries - 1);
+			}
+			else {
+				throw new Exception(e.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * closes the connection to the server if open, calling a method (index, query, ...) will open a new connection
+	 */
+	public void close() {
+		try {
+
+			if (rpcClient != null) {
+				System.err.println("INFO: Closing connection to " + rpcClient.getPeerInfo());
+				rpcClient.close();
+			}
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Exception: " + e);
+			e.printStackTrace();
+		}
+		rpcClient = null;
+		try {
+			if (bootstrap != null) {
+				bootstrap.releaseExternalResources();
+			}
+		}
+		catch (Exception e) {
+			System.err.println("ERROR: Exception: " + e);
+			e.printStackTrace();
+		}
+		bootstrap = null;
+		service = null;
+	}
 }
