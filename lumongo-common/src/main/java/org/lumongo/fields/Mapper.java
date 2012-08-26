@@ -67,6 +67,7 @@ public class Mapper <T> {
 				facetedFields.add(new FactedFieldInfo<T>(f, fieldName));
 			}
 
+
 		}
 	}
 
@@ -101,6 +102,7 @@ public class Mapper <T> {
 
 			for (String value : values) {
 				lmBuilder.addFacet(ffi.getFacetPrefix() + LumongoConstants.FACET_DELIMITER + value);
+
 			}
 
 		}
