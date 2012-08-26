@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
@@ -99,7 +100,7 @@ public class Mapper <T> {
 			List<String> values = ffi.build(object);
 
 			for (String value : values) {
-				lmBuilder.addFacet(ffi.getFacetPrefix() + value);
+				lmBuilder.addFacet(ffi.getFacetPrefix() + LumongoConstants.FACET_DELIMITER + value);
 			}
 
 		}
