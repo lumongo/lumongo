@@ -454,12 +454,11 @@ public class Index {
 			}
 			finally {
 				try {
-					hzLock.unlock();
 					hzLock.forceUnlock();
 					log.info("Unlocked lock for index <" + indexName + "> segment <" + segmentNumber + ">");
 				}
 				catch (Exception e) {
-					log.error("Failed to unlock <" + segmentNumber + ">");
+					log.error("Failed to unlock <" + segmentNumber + ">: ", e);
 				}
 			}
 		}
