@@ -1,7 +1,7 @@
 
 dependencies {
 	compile 'org.mongodb:mongo-java-driver:2.8.0'
-	compile 'com.google.guava:guava:12.0'
+	compile 'com.google.guava:guava:13.0'
 	compile 'org.apache.lucene:lucene-core:4.0.0-BETA'
 	compile 'log4j:log4j:1.2.16'
     testCompile 'org.apache.lucene:lucene-queryparser:4.0.0-BETA'
