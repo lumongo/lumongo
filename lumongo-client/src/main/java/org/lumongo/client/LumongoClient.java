@@ -559,6 +559,31 @@ public class LumongoClient {
 		return createIndex(indexCreateRequest.build());
 	}
 
+
+	/**
+	 * Creates index or updates index if the index already exists.
+	 * Unique id field and the number segments for an index are immutable and cannot be changed one
+	 * the index is created
+	 * 
+	 * @param request
+	 *            -
+	 * @return - true if new index created, false if index updated
+	 * @throws Exception
+	 */
+	public boolean createOrUpdateIndex(IndexCreateRequest request) throws Exception {
+		GetIndexesResponse getIndexesResponse = getIndexes();
+		List<String> indexList = getIndexesResponse.getIndexNameList();
+		if (indexList.contains(request.getIndexName())) {
+			updateIndexSettings(request.getIndexName(), request.getIndexSettings());
+			return false;
+		}
+		else {
+			createIndex(request);
+			return true;
+		}
+
+	}
+
 	public IndexCreateResponse createIndex(IndexCreateRequest request) throws Exception {
 		return createIndex(request, retryCount);
 	}
