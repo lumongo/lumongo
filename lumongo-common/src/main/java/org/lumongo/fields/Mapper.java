@@ -177,6 +177,7 @@ public class Mapper <T> {
 		StoreRequest.Builder storeBuilder = StoreRequest.newBuilder();
 		storeBuilder.setResultDocument(rd);
 		storeBuilder.addIndexedDocument(lmDoc);
+		storeBuilder.setUniqueId(rd.getUniqueId());
 		return storeBuilder.build();
 
 	}
