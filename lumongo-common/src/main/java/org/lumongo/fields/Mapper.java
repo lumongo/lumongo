@@ -154,6 +154,8 @@ public class Mapper <T> {
 		indexSettingsBuilder.setSegmentTolerance(settings.segmentTolerance());
 		indexSettingsBuilder.setSegmentFlushInterval(settings.segmentFlushInterval());
 
+		indexCreateRequestBuilder.setIndexSettings(indexSettingsBuilder);
+
 		return indexCreateRequestBuilder.build();
 	}
 
