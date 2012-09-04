@@ -24,23 +24,25 @@ public class FactedFieldInfo<T> {
 			ArrayList<String> list = new ArrayList<String>();
 			Object o = field.get(object);
 
-			if (o instanceof Collection<?>) {
-				Collection<?> l = (Collection<?>) o;
-				for (Object s : l) {
-					list.add(s.toString());
+			if (o != null) {
+				if (o instanceof Collection<?>) {
+					Collection<?> l = (Collection<?>) o;
+					for (Object s : l) {
+						list.add(s.toString());
+					}
 				}
-			}
-			else if (o.getClass().isArray()) {
-				Object[] l = (Object[]) o;
-				for (Object s : l) {
-					list.add(s.toString());
+				else if (o.getClass().isArray()) {
+					Object[] l = (Object[]) o;
+					for (Object s : l) {
+						list.add(s.toString());
+					}
 				}
-			}
-			else {
-				list.add(o.toString());
-			}
+				else {
+					list.add(o.toString());
+				}
 
-			return list;
+				return list;
+			}
 		}
 
 		return Collections.emptyList();
