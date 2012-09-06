@@ -81,7 +81,7 @@ public class MongoFile implements NosqlFile {
 
                         MongoBlock mb = notification.getValue();
 
-                        if (mb.isDirty()) {
+                        if (mb.dirty) {
                             storeBlock(mb);
                         }
 
@@ -168,7 +168,7 @@ public class MongoFile implements NosqlFile {
 
             MongoBlock mb = currentReadBlock;
 
-            if (mb == null || block != mb.getBlockNumber()) {
+            if (mb == null || block != mb.blockNumber) {
                 currentReadBlock = mb = cache.get(block);
             }
 
@@ -192,7 +192,7 @@ public class MongoFile implements NosqlFile {
 
                 MongoBlock mb = currentReadBlock;
 
-                if (mb == null || block != mb.getBlockNumber()) {
+                if (mb == null || block != mb.blockNumber) {
                     currentReadBlock = mb = cache.get(block);
                 }
 
@@ -218,7 +218,7 @@ public class MongoFile implements NosqlFile {
 
             MongoBlock mb = currentWriteBlock;
 
-            if (mb == null || block != mb.getBlockNumber()) {
+            if (mb == null || block != mb.blockNumber) {
                 if (mb != null) {
                     markDirty(mb);
                 }
@@ -226,7 +226,7 @@ public class MongoFile implements NosqlFile {
             }
 
             mb.bytes[blockOffset] = b;
-            mb.setDirty(true);
+            mb.dirty = true;
 
             fileLength = Math.max(position + 1, fileLength);
         }
@@ -246,7 +246,7 @@ public class MongoFile implements NosqlFile {
 
                 MongoBlock mb = currentWriteBlock;
 
-                if (mb == null || block != mb.getBlockNumber()) {
+                if (mb == null || block != mb.blockNumber) {
                     if (mb != null) {
                         markDirty(mb);
                     }
@@ -254,7 +254,7 @@ public class MongoFile implements NosqlFile {
                 }
 
                 System.arraycopy(b, offset, mb.bytes, blockOffset, writeSize);
-                mb.setDirty(true);
+                mb.dirty = true;
                 position += writeSize;
                 offset += writeSize;
                 length -= writeSize;
@@ -267,12 +267,12 @@ public class MongoFile implements NosqlFile {
     }
 
     private void markDirty(MongoBlock mb) {
-        int blockNumber = mb.getBlockNumber();
+        int blockNumber = mb.blockNumber;
         Lock l = blockLocks.get(blockNumber);
         l.lock();
         try {
             MongoDirectory.cacheBlock(mb);
-            dirtyBlocks.put(mb.getBlockNumber(), mb);
+            dirtyBlocks.put(blockNumber, mb);
         }
         finally {
             l.unlock();
@@ -284,7 +284,7 @@ public class MongoFile implements NosqlFile {
         // System.out.println("Flush");
 
         if (currentWriteBlock != null) {
-            dirtyBlocks.put(currentWriteBlock.getBlockNumber(), currentWriteBlock);
+            dirtyBlocks.put(currentWriteBlock.blockNumber, currentWriteBlock);
         }
 
         Set<Integer> dirtyBlockKeys = new HashSet<Integer>(dirtyBlocks.asMap().keySet());
@@ -336,11 +336,11 @@ public class MongoFile implements NosqlFile {
 
         DBObject query = new BasicDBObject();
         query.put(MongoDirectory.FILE_NUMBER, fileNumber);
-        query.put(MongoDirectory.BLOCK_NUMBER, mongoBlock.getBlockNumber());
+        query.put(MongoDirectory.BLOCK_NUMBER, mongoBlock.blockNumber);
 
         DBObject object = new BasicDBObject();
         object.put(MongoDirectory.FILE_NUMBER, fileNumber);
-        object.put(MongoDirectory.BLOCK_NUMBER, mongoBlock.getBlockNumber());
+        object.put(MongoDirectory.BLOCK_NUMBER, mongoBlock.blockNumber);
         byte[] orgBytes = mongoBlock.bytes;
         byte[] newBytes = orgBytes;
         boolean blockCompressed = compressed;
@@ -364,7 +364,7 @@ public class MongoFile implements NosqlFile {
         object.put(MongoDirectory.COMPRESSED, blockCompressed);
 
         c.update(query, object, true, false, WriteConcern.SAFE);
-        mongoBlock.setDirty(false);
+        mongoBlock.dirty = false;
 
     }
 

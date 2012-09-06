@@ -17,11 +17,11 @@ public class MongoBlock {
 
     private MongoFile mongoFile;
     private final int fileNumber;
-    private final int blockNumber;
-    protected final byte[] bytes;
-
-    private boolean dirty;
     private String indexName;
+
+    protected final byte[] bytes;
+    protected boolean dirty;
+    protected final int blockNumber;
 
     public MongoBlock(MongoFile mongoFile, int fileNumber, int blockNumber, byte[] bytes) {
         this.mongoFile = mongoFile;
@@ -32,26 +32,9 @@ public class MongoBlock {
         dirty = false;
     }
 
-    public MongoFile getMongoFile() {
-        return mongoFile;
+    protected void storeBlock() {
+        mongoFile.storeBlock(this);
     }
-
-    public boolean isDirty() {
-        return dirty;
-    }
-
-    public void setDirty(boolean dirty) {
-        this.dirty = dirty;
-    }
-
-    public int getFileNumber() {
-        return fileNumber;
-    }
-
-    public int getBlockNumber() {
-        return blockNumber;
-    }
-
 
     @Override
     public int hashCode() {
