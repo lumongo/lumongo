@@ -82,7 +82,7 @@ public class MongoFile implements NosqlFile {
                         MongoBlock mb = notification.getValue();
 
                         if (mb.dirty) {
-                            storeBlock(mb);
+                            mb.storeBlock();                            
                         }
 
                     }
@@ -321,7 +321,7 @@ public class MongoFile implements NosqlFile {
             // System.out.println("Create: filename:" + fileName + " block: " + blockNumber);
             bytes = new byte[blockSize];
             MongoBlock mongoBlock = new MongoBlock(this, fileNumber, blockNumber, bytes);
-            storeBlock(mongoBlock);
+            mongoBlock.storeBlock();
             return mongoBlock;
         }
 
