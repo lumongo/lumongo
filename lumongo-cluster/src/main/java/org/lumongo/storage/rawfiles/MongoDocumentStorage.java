@@ -16,8 +16,8 @@ import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.storage.constants.MongoConstants;
-import org.lumongo.util.Compression;
-import org.lumongo.util.Compression.CompressionLevel;
+import org.lumongo.util.CommonCompression;
+import org.lumongo.util.CommonCompression.CompressionLevel;
 
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
@@ -116,7 +116,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		else {
 			byte[] bytes = doc.getDocument().toByteArray();
 			if (doc.getCompressed()) {
-				bytes = Compression.compressZlib(bytes, CompressionLevel.NORMAL);
+				bytes = CommonCompression.compressZlib(bytes, CompressionLevel.NORMAL);
 			}
 			document.put(DOC, bytes);
 		}
@@ -168,7 +168,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 					else {
 						byte[] bytes = (byte[]) result.get(DOC);
 						if (compressed) {
-							bytes = Compression.uncompressZlib(bytes);
+							bytes = CommonCompression.uncompressZlib(bytes);
 						}
 						document = ByteString.copyFrom(bytes);
 					}
@@ -220,7 +220,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		
 		byte[] bytes = doc.getDocument().toByteArray();
 		if (doc.getCompressed()) {
-			bytes = Compression.compressZlib(bytes, CompressionLevel.FASTEST);
+			bytes = CommonCompression.compressZlib(bytes, CompressionLevel.FASTEST);
 		}
 		
 		GridFSFile gFile = gridFS.createFile(bytes);
@@ -309,7 +309,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 			byte[] bytes = MongoConstants.Functions.readFileFromGridFS(file);
 			if (null != bytes) {
 				if (compressed) {
-					bytes = Compression.uncompressZlib(bytes);
+					bytes = CommonCompression.uncompressZlib(bytes);
 				}
 				aBuilder.setDocument(ByteString.copyFrom(bytes));
 			}
