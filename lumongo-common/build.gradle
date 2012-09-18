@@ -6,6 +6,7 @@ dependencies {
 	compile 'com.google.protobuf:protobuf-java:2.4.1'
 	compile 'com.googlecode.protobuf-rpc-pro:protobuf-rpc-pro-duplex:2.0.1'
 	compile 'log4j:log4j:1.2.16'
+	compile 'commons-pool:commons-pool:1.6'
 }
 
 
