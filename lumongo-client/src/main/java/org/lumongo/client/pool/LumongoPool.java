@@ -72,7 +72,9 @@ public class LumongoPool {
 
                 lumongoConnection = connectionPool.borrowObject(randomMember);
 
-                return command.execute(lumongoConnection);
+                R r = command.execute(lumongoConnection);
+                connectionPool.returnObject(randomMember, lumongoConnection);
+                return r;
             }
             catch (Exception e) {
                 if (randomMember != null && lumongoConnection != null) {
@@ -84,6 +86,7 @@ public class LumongoPool {
                     }
                 }
             }
+
         }
 
         return null;
