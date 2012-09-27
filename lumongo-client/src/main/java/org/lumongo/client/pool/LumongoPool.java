@@ -90,4 +90,8 @@ public class LumongoPool {
 
     }
 
+    public void close() throws Exception {
+        connectionPool.close();
+    }
+
 }

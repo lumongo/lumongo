@@ -16,102 +16,109 @@ import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
 public class Store extends Command<StoreResult> {
-	private String uniqueId;
-	private ResultDocument resultDocument;
-	private List<LMDoc> indexedDocuments;
-	private List<AssociatedDocument> associatedDocuments;
-	private Boolean clearExistingAssociated;
+    private String uniqueId;
+    private ResultDocument resultDocument;
+    private List<LMDoc> indexedDocuments;
+    private List<AssociatedDocument> associatedDocuments;
+    private Boolean clearExistingAssociated;
 
-	public Store(String uniqueId) {
-		this.uniqueId = uniqueId;
-		this.indexedDocuments = new ArrayList<LMDoc>();
-		this.associatedDocuments = new ArrayList<AssociatedDocument>();
-	}
+    public Store(String uniqueId) {
+        this.uniqueId = uniqueId;
+        this.indexedDocuments = new ArrayList<LMDoc>();
+        this.associatedDocuments = new ArrayList<AssociatedDocument>();
+    }
 
-	public String getUniqueId() {
-		return uniqueId;
-	}
+    public String getUniqueId() {
+        return uniqueId;
+    }
 
-	public Store setUniqueId(String uniqueId) {
-		this.uniqueId = uniqueId;
-		return this;
-	}
+    public Store setUniqueId(String uniqueId) {
+        this.uniqueId = uniqueId;
+        return this;
+    }
 
-	public ResultDocument getResultDocument() {
-		return resultDocument;
-	}
+    public ResultDocument getResultDocument() {
+        return resultDocument;
+    }
 
-	public Store setResultDocument(ResultDocument resultDocument) {
-		this.resultDocument = resultDocument;
-		return this;
-	}
+    public Store setResultDocument(ResultDocument resultDocument) {
+        this.resultDocument = resultDocument;
+        return this;
+    }
 
-	public Store addIndexedDocument(LMDoc indexedDocument) {
-		indexedDocuments.add(indexedDocument);
-		return this;
-	}
+    public Store addIndexedDocument(LMDoc indexedDocument) {
+        indexedDocuments.add(indexedDocument);
+        return this;
+    }
 
-	public List<LMDoc> getIndexedDocuments() {
-		return indexedDocuments;
-	}
+    public List<LMDoc> getIndexedDocuments() {
+        return indexedDocuments;
+    }
 
-	public Store setIndexedDocuments(List<LMDoc> indexedDocuments) {
-		this.indexedDocuments = indexedDocuments;
-		return this;
-	}
+    public Store setIndexedDocuments(List<LMDoc> indexedDocuments) {
+        this.indexedDocuments = indexedDocuments;
+        return this;
+    }
 
-	public Store addAssociatedDocument(AssociatedDocument associatedDocument) {
-		associatedDocuments.add(associatedDocument);
-		return this;
-	}
+    public Store addAssociatedDocument(AssociatedDocument associatedDocument) {
+        associatedDocuments.add(associatedDocument);
+        return this;
+    }
 
-	public List<AssociatedDocument> getAssociatedDocuments() {
-		return associatedDocuments;
-	}
+    public List<AssociatedDocument> getAssociatedDocuments() {
+        return associatedDocuments;
+    }
 
-	public Store setAssociatedDocuments(List<AssociatedDocument> associatedDocuments) {
-		this.associatedDocuments = associatedDocuments;
-		return this;
-	}
+    public Store setAssociatedDocuments(List<AssociatedDocument> associatedDocuments) {
+        this.associatedDocuments = associatedDocuments;
+        return this;
+    }
 
-	public Boolean isClearExistingAssociated() {
-		return clearExistingAssociated;
-	}
+    public Boolean isClearExistingAssociated() {
+        return clearExistingAssociated;
+    }
 
-	public Store setClearExistingAssociated(Boolean clearExistingAssociated) {
-		this.clearExistingAssociated = clearExistingAssociated;
-		return this;
-	}
+    public Store setClearExistingAssociated(Boolean clearExistingAssociated) {
+        this.clearExistingAssociated = clearExistingAssociated;
+        return this;
+    }
 
-	@Override
-	public StoreResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+    private StoreRequest.Builder getStoreRequestBuilder() {
+        StoreRequest.Builder storeRequestBuilder = StoreRequest.newBuilder();
+        storeRequestBuilder.setUniqueId(uniqueId);
 
-		RpcController controller = lumongoConnection.getController();
+        if (indexedDocuments != null) {
+            storeRequestBuilder.addAllIndexedDocument(indexedDocuments);
+        }
+        if (resultDocument != null) {
+            storeRequestBuilder.setResultDocument(resultDocument);
+        }
+        if (associatedDocuments != null) {
+            storeRequestBuilder.addAllAssociatedDocument(associatedDocuments);
+        }
 
-		StoreRequest.Builder storeRequestBuilder = StoreRequest.newBuilder();
-		storeRequestBuilder.setUniqueId(uniqueId);
+        if (clearExistingAssociated != null) {
+            storeRequestBuilder.setClearExistingAssociated(clearExistingAssociated);
+        }
+        return storeRequestBuilder;
+    }
 
-		if (indexedDocuments != null) {
-			storeRequestBuilder.addAllIndexedDocument(indexedDocuments);
-		}
-		if (resultDocument != null) {
-			storeRequestBuilder.setResultDocument(resultDocument);
-		}
-		if (associatedDocuments != null) {
-			storeRequestBuilder.addAllAssociatedDocument(associatedDocuments);
-		}
+    @Override
+    public StoreResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+        ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-		if (clearExistingAssociated != null) {
-			storeRequestBuilder.setClearExistingAssociated(clearExistingAssociated);
-		}
+        RpcController controller = lumongoConnection.getController();
 
-		long start = System.currentTimeMillis();
-		StoreResponse storeResponse = service.store(controller, storeRequestBuilder.build());
-		long end = System.currentTimeMillis();
-		long commandTimeMs = end - start;
+        StoreRequest.Builder storeRequestBuilder = getStoreRequestBuilder();
 
-		return new StoreResult(storeResponse, commandTimeMs);
-	}
+        long start = System.currentTimeMillis();
+        StoreResponse storeResponse = service.store(controller, storeRequestBuilder.build());
+        long end = System.currentTimeMillis();
+        long commandTimeMs = end - start;
+
+        return new StoreResult(storeResponse, commandTimeMs);
+    }
+
+
 
 }

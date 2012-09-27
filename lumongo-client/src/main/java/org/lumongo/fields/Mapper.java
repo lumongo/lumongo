@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.lumongo.LumongoConstants;
+import org.lumongo.client.command.Store;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
@@ -13,7 +14,6 @@ import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMField;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
-import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Faceted;
@@ -172,22 +172,20 @@ public class Mapper <T> {
         return clazz;
     }
 
-    public StoreRequest toStoreRequest(T object) throws Exception {
+    public Store newStore(T object) throws Exception {
         if (settings == null) {
             throw new RuntimeException("No Settings annonation for class <" + clazz.getSimpleName() + ">");
         }
-        return toStoreRequest(settings.indexName(), object);
+        return newStore(settings.indexName(), object);
     }
 
-    public StoreRequest toStoreRequest(String index, T object) throws Exception {
+    public Store newStore(String index, T object) throws Exception {
         LMDoc lmDoc = toLMDoc(index, object);
         ResultDocument rd = toResultDocument(object);
-        StoreRequest.Builder storeBuilder = StoreRequest.newBuilder();
-        storeBuilder.setResultDocument(rd);
-        storeBuilder.addIndexedDocument(lmDoc);
-        storeBuilder.setUniqueId(rd.getUniqueId());
-        return storeBuilder.build();
-
+        Store store = new Store(rd.getUniqueId());
+        store.setResultDocument(rd);
+        store.addIndexedDocument(lmDoc);
+        return store;
     }
 
     public LMDoc toLMDoc(String index, T object) throws IllegalArgumentException, IllegalAccessException {

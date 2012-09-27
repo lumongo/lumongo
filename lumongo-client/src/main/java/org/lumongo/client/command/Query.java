@@ -25,19 +25,15 @@ public class Query extends Command<QueryResult> {
     private FacetRequest facetRequest;
     private SortRequest sortRequest;
 
-    public static Query createQuery(String index, String query, int amount) {
-        return createQuery(new String[] {index}, query, amount);
+    public Query(String index, String query, int amount) {
+        this(new String[] { index }, query, amount);
     }
 
-    public static Query createQuery(String[] indexes, String query, int amount) {
-        return createQuery(new ArrayList<String>(Arrays.asList(indexes)), query, amount);
+    public Query(String[] indexes, String query, int amount) {
+        this(new ArrayList<String>(Arrays.asList(indexes)), query, amount);
     }
 
-    public static Query createQuery(Collection<String> indexes, String query, int amount) {
-        return new Query(indexes, query, amount);
-    }
-
-    private Query(Collection<String> indexes, String query, int amount) {
+    public Query(Collection<String> indexes, String query, int amount) {
         this.indexes = indexes;
         this.query = query;
         this.amount = amount;

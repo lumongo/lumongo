@@ -46,7 +46,7 @@ public class WorkPool {
         return pool.submit(task);
     }
 
-    public void shutdown() {
+    public void shutdown() throws Exception {
         pool.shutdown();
         boolean terminated = false;
         try {
