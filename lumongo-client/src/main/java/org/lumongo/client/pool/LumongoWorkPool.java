@@ -1,6 +1,7 @@
 package org.lumongo.client.pool;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.lumongo.client.command.CallableCommand;
 import org.lumongo.client.command.Command;
@@ -9,14 +10,25 @@ public class LumongoWorkPool extends WorkPool {
 
     private LumongoPool lumongoPool;
 
-    public LumongoWorkPool(LumongoPool lumongoPool, int threads, int maxQueued, String poolName) {
-        super(threads, maxQueued, poolName);
+    private static AtomicInteger counter = new AtomicInteger(0);
+
+    public LumongoWorkPool(LumongoPool lumongoPool) {
+        this(lumongoPool, "lumongoPool-" + counter.getAndIncrement());
+    }
+
+    public LumongoWorkPool(LumongoPool lumongoPool, String poolName) {
+        super(lumongoPool.getMaxConnections(), lumongoPool.getMaxConnections() * 2, poolName);
         this.lumongoPool = lumongoPool;
     }
 
     public <R> Future<R> executeAsync(Command<R> command) {
         CallableCommand<R> callableCommand = new CallableCommand<R>(lumongoPool, command);
         return executeAsync(callableCommand);
+    }
+
+    public <R> R execute(Command<R> command) throws Exception {
+        CallableCommand<R> callableCommand = new CallableCommand<R>(lumongoPool, command);
+        return execute(callableCommand);
     }
 
     @Override

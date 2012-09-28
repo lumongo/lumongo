@@ -5,18 +5,22 @@ import java.util.List;
 import org.apache.commons.pool.KeyedPoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericKeyedObjectPool;
 import org.lumongo.client.command.Command;
-import org.lumongo.client.config.LumongoClientConfig;
+import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 
 public class LumongoPool {
     private List<LMMember> members;
     private int retries;
+    private int maxIdle;
+    private int maxConnections;
 
     private GenericKeyedObjectPool<LMMember, LumongoConnection> connectionPool;
 
-    public LumongoPool(LumongoClientConfig lumongoClientConfig) {
-        members = lumongoClientConfig.getMembers();
-        retries = lumongoClientConfig.getDefaultRetries();
+    public LumongoPool(LumongoPoolConfig lumongoPoolConfig) {
+        members = lumongoPoolConfig.getMembers();
+        retries = lumongoPoolConfig.getDefaultRetries();
+        maxIdle = lumongoPoolConfig.getMaxIdle();
+        maxConnections = lumongoPoolConfig.getMaxConnections();
 
         KeyedPoolableObjectFactory<LMMember, LumongoConnection> factory = new KeyedPoolableObjectFactory<LMMember, LumongoConnection>() {
 
@@ -39,31 +43,34 @@ public class LumongoPool {
 
             @Override
             public void activateObject(LMMember key, LumongoConnection obj) throws Exception {
-                // TODO maybe close the connection when idle
-                // obj.close();
+
             }
 
             @Override
             public void passivateObject(LMMember key, LumongoConnection obj) throws Exception {
-                // TODO maybe open the connection when not idle anymore
-                // obj.open();
+
             }
 
         };
-        GenericKeyedObjectPool.Config poolConfig = new GenericKeyedObjectPool.Config();
-        // TODO from config
-        poolConfig.maxIdle = 2;
-        poolConfig.maxActive = 4;
+        GenericKeyedObjectPool.Config poolConfig = new GenericKeyedObjectPool.Config(); //
+        poolConfig.maxIdle = maxIdle;
+        poolConfig.maxActive = maxConnections;
+
         poolConfig.testOnBorrow = false;
         poolConfig.testOnReturn = false;
 
         connectionPool = new GenericKeyedObjectPool<LMMember, LumongoConnection>(factory, poolConfig);
     }
 
-    public <R> R execute(Command<R> command) {
+    public int getMaxConnections() {
+        return maxConnections;
+    }
 
-        // TODO use command retries if not null?
-        for (int i = 0; i <= retries; i++) {
+    public <R> R execute(Command<R> command) throws Exception {
+
+
+        int tries = 0;
+        while (true) {
             LumongoConnection lumongoConnection = null;
             LMMember randomMember = null;
             try {
@@ -82,14 +89,15 @@ public class LumongoPool {
                         connectionPool.invalidateObject(randomMember, lumongoConnection);
                     }
                     catch (Exception e1) {
-                        // TODO do something?
                     }
                 }
+                if (tries >= retries) {
+                    throw e;
+                }
+                tries++;
             }
-
         }
 
-        return null;
 
     }
 

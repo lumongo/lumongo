@@ -3,6 +3,7 @@ package org.lumongo.client.pool;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,24 @@ public class WorkPool {
 
     public <T> Future<T> executeAsync(Callable<T> task) {
         return pool.submit(task);
+    }
+
+    public <T> T execute(Callable<T> task) throws Exception {
+        try {
+            return executeAsync(task).get();
+        }
+        catch (InterruptedException e) {
+            throw e;
+        }
+        catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause != null) {
+                if (cause instanceof Exception) {
+                    throw (Exception) cause;
+                }
+            }
+            throw e;
+        }
     }
 
     public void shutdown() throws Exception {
