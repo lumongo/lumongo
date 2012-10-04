@@ -9,15 +9,17 @@ import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class GetIndexes extends Command<GetIndexesResult> {
+public class GetIndexes extends Command<GetIndexesRequest, GetIndexesResult> {
 
 
     public GetIndexes() {
 
     }
 
-
-
+    @Override
+    public GetIndexesRequest getRequest() {
+        return GetIndexesRequest.newBuilder().build();
+    }
 
     @Override
     public GetIndexesResult execute(LumongoConnection lumongoConnection) throws ServiceException {
@@ -26,10 +28,15 @@ public class GetIndexes extends Command<GetIndexesResult> {
         RpcController controller = lumongoConnection.getController();
 
         long start = System.currentTimeMillis();
-        GetIndexesResponse getIndexesResponse = service.getIndexes(controller, GetIndexesRequest.newBuilder().build());
+        GetIndexesResponse getIndexesResponse = service.getIndexes(controller, getRequest());
         long end = System.currentTimeMillis();
         long durationInMs = end - start;
         return new GetIndexesResult(getIndexesResponse, durationInMs);
     }
+
+
+
+
+
 
 }

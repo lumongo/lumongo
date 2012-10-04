@@ -15,7 +15,7 @@ import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class Store extends Command<StoreResult> {
+public class Store extends Command<StoreRequest, StoreResult> {
     private String uniqueId;
     private ResultDocument resultDocument;
     private List<LMDoc> indexedDocuments;
@@ -83,7 +83,8 @@ public class Store extends Command<StoreResult> {
         return this;
     }
 
-    private StoreRequest.Builder getStoreRequestBuilder() {
+    @Override
+    public StoreRequest getRequest() {
         StoreRequest.Builder storeRequestBuilder = StoreRequest.newBuilder();
         storeRequestBuilder.setUniqueId(uniqueId);
 
@@ -100,7 +101,7 @@ public class Store extends Command<StoreResult> {
         if (clearExistingAssociated != null) {
             storeRequestBuilder.setClearExistingAssociated(clearExistingAssociated);
         }
-        return storeRequestBuilder;
+        return storeRequestBuilder.build();
     }
 
     @Override
@@ -109,10 +110,8 @@ public class Store extends Command<StoreResult> {
 
         RpcController controller = lumongoConnection.getController();
 
-        StoreRequest.Builder storeRequestBuilder = getStoreRequestBuilder();
-
         long start = System.currentTimeMillis();
-        StoreResponse storeResponse = service.store(controller, storeRequestBuilder.build());
+        StoreResponse storeResponse = service.store(controller, getRequest());
         long end = System.currentTimeMillis();
         long commandTimeMs = end - start;
 

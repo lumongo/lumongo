@@ -21,13 +21,13 @@ public class LumongoWorkPool extends WorkPool {
         this.lumongoPool = lumongoPool;
     }
 
-    public <R> Future<R> executeAsync(Command<R> command) {
-        CallableCommand<R> callableCommand = new CallableCommand<R>(lumongoPool, command);
+    public <S, R> Future<R> executeAsync(Command<S, R> command) {
+        CallableCommand<S, R> callableCommand = new CallableCommand<S, R>(lumongoPool, command);
         return executeAsync(callableCommand);
     }
 
-    public <R> R execute(Command<R> command) throws Exception {
-        CallableCommand<R> callableCommand = new CallableCommand<R>(lumongoPool, command);
+    public <S, R> R execute(Command<S, R> command) throws Exception {
+        CallableCommand<S, R> callableCommand = new CallableCommand<S, R>(lumongoPool, command);
         return execute(callableCommand);
     }
 

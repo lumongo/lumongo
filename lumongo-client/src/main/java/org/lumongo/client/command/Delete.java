@@ -13,7 +13,7 @@ import org.lumongo.cluster.message.Lumongo.ExternalService;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class Delete extends Command<DeleteResult> {
+public class Delete extends Command<DeleteRequest, DeleteResult> {
     private Collection<String> indexes;
     private String uniqueId;
     private String fileName;
@@ -61,11 +61,7 @@ public class Delete extends Command<DeleteResult> {
     }
 
     @Override
-    public DeleteResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
-
-        RpcController controller = lumongoConnection.getController();
-
+    public DeleteRequest getRequest() {
         DeleteRequest.Builder deleteRequestBuilder = DeleteRequest.newBuilder();
         if (uniqueId != null) {
             deleteRequestBuilder.setUniqueId(uniqueId);
@@ -82,9 +78,17 @@ public class Delete extends Command<DeleteResult> {
         if (deleteAllAssociated != null) {
             deleteRequestBuilder.setDeleteAllAssociated(deleteAllAssociated);
         }
+        return deleteRequestBuilder.build();
+    }
+
+    @Override
+    public DeleteResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+        ExternalService.BlockingInterface service = lumongoConnection.getService();
+
+        RpcController controller = lumongoConnection.getController();
 
         long start = System.currentTimeMillis();
-        DeleteResponse deleteResponse = service.delete(controller, deleteRequestBuilder.build());
+        DeleteResponse deleteResponse = service.delete(controller, getRequest());
         long end = System.currentTimeMillis();
         long durationInMs = end - start;
         return new DeleteResult(deleteResponse, durationInMs);

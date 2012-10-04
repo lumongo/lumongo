@@ -10,7 +10,7 @@ import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class Fetch extends Command<FetchResult> {
+public class Fetch extends Command<FetchRequest, FetchResult> {
 
     private String uniqueId;
     private String fileName;
@@ -53,23 +53,7 @@ public class Fetch extends Command<FetchResult> {
     }
 
     @Override
-    public FetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
-
-        RpcController controller = lumongoConnection.getController();
-
-        FetchRequest fetchRequest = generateRequest();
-
-        long start = System.currentTimeMillis();
-        FetchResponse fetchResponse = service.fetch(controller, fetchRequest);
-        long end = System.currentTimeMillis();
-        long durationInMs = end - start;
-        return new FetchResult(fetchResponse, durationInMs);
-
-    }
-
-    private FetchRequest generateRequest() {
+    public FetchRequest getRequest() {
         FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
         if (uniqueId != null) {
             fetchRequestBuilder.setUniqueId(uniqueId);
@@ -85,5 +69,22 @@ public class Fetch extends Command<FetchResult> {
         }
         return fetchRequestBuilder.build();
     }
+
+    @Override
+    public FetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+
+        ExternalService.BlockingInterface service = lumongoConnection.getService();
+
+        RpcController controller = lumongoConnection.getController();
+
+        long start = System.currentTimeMillis();
+        FetchResponse fetchResponse = service.fetch(controller, getRequest());
+        long end = System.currentTimeMillis();
+        long durationInMs = end - start;
+        return new FetchResult(fetchResponse, durationInMs);
+
+    }
+
+
 
 }

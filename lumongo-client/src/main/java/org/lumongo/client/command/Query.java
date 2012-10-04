@@ -15,7 +15,7 @@ import org.lumongo.cluster.message.Lumongo.SortRequest;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class Query extends Command<QueryResult> {
+public class Query extends Command<QueryRequest, QueryResult> {
 
     private String query;
     private int amount;
@@ -84,13 +84,7 @@ public class Query extends Command<QueryResult> {
     }
 
     @Override
-    public QueryResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-
-
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
-
-        RpcController controller = lumongoConnection.getController();
-
+    public QueryRequest getRequest() {
         QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
         requestBuilder.setAmount(amount);
         requestBuilder.setQuery(query);
@@ -110,9 +104,18 @@ public class Query extends Command<QueryResult> {
         if (sortRequest != null) {
             requestBuilder.setSortRequest(sortRequest);
         }
+        return requestBuilder.build();
+    }
+
+    @Override
+    public QueryResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+
+        ExternalService.BlockingInterface service = lumongoConnection.getService();
+
+        RpcController controller = lumongoConnection.getController();
 
         long start = System.currentTimeMillis();
-        QueryResponse queryResponse = service.query(controller, requestBuilder.build());
+        QueryResponse queryResponse = service.query(controller, getRequest());
         long end = System.currentTimeMillis();
         long durationInMs = end - start;
         return new QueryResult(queryResponse, durationInMs);

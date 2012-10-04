@@ -10,7 +10,7 @@ import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class CreateIndex extends Command<CreateIndexResult> {
+public class CreateIndex extends Command<IndexCreateRequest, CreateIndexResult> {
 
     private String indexName;
     private Integer numberOfSegments;
@@ -36,11 +36,7 @@ public class CreateIndex extends Command<CreateIndexResult> {
     }
 
     @Override
-    public CreateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
-
-        RpcController controller = lumongoConnection.getController();
-
+    public IndexCreateRequest getRequest() {
         IndexCreateRequest.Builder indexCreateRequestBuilder = IndexCreateRequest.newBuilder();
 
         if (indexName != null) {
@@ -58,9 +54,17 @@ public class CreateIndex extends Command<CreateIndexResult> {
         if (indexSettings != null) {
             indexCreateRequestBuilder.setIndexSettings(indexSettings);
         }
+        return indexCreateRequestBuilder.build();
+    }
+
+    @Override
+    public CreateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+        ExternalService.BlockingInterface service = lumongoConnection.getService();
+
+        RpcController controller = lumongoConnection.getController();
 
         long start = System.currentTimeMillis();
-        IndexCreateResponse indexCreateResponse = service.createIndex(controller, indexCreateRequestBuilder.build());
+        IndexCreateResponse indexCreateResponse = service.createIndex(controller, getRequest());
         long end = System.currentTimeMillis();
         long durationInMs = end - start;
         return new CreateIndexResult(indexCreateResponse, durationInMs);
