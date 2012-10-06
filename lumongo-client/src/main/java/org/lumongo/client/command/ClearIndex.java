@@ -25,7 +25,6 @@ public class ClearIndex extends Command<ClearRequest, ClearResult> {
 	@Override
 	public ClearResult execute(LumongoConnection lumongoConnection) throws ServiceException {
 		ExternalService.BlockingInterface service = lumongoConnection.getService();
-
 		RpcController controller = lumongoConnection.getController();
 
 		ClearResponse clearResponse = service.clear(controller, getRequest());
