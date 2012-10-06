@@ -228,7 +228,6 @@ public class QueryCombiner {
 				public int compare(ScoredResult o1, ScoredResult o2) {
 					int compare = 0;
 
-					int sortTermsIndex = 0;
 					int stringIndex = 0;
 					int intIndex = 0;
 					int longIndex = 0;
