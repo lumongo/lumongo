@@ -4,12 +4,11 @@ import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
 
 public class OptimizeResult extends Result {
 
-    @SuppressWarnings("unused")
-    private OptimizeResponse optimizeResponse;
+	@SuppressWarnings("unused")
+	private OptimizeResponse optimizeResponse;
 
-    public OptimizeResult(OptimizeResponse optimizeResponse, long commandTimeMs) {
-        super(commandTimeMs);
-        this.optimizeResponse = optimizeResponse;
-    }
+	public OptimizeResult(OptimizeResponse optimizeResponse) {
+		this.optimizeResponse = optimizeResponse;
+	}
 
 }

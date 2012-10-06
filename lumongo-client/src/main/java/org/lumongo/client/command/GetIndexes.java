@@ -12,27 +12,25 @@ import com.google.protobuf.ServiceException;
 public class GetIndexes extends Command<GetIndexesRequest, GetIndexesResult> {
 
 
-    public GetIndexes() {
+	public GetIndexes() {
 
-    }
+	}
 
-    @Override
-    public GetIndexesRequest getRequest() {
-        return GetIndexesRequest.newBuilder().build();
-    }
+	@Override
+	public GetIndexesRequest getRequest() {
+		return GetIndexesRequest.newBuilder().build();
+	}
 
-    @Override
-    public GetIndexesResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
+	@Override
+	public GetIndexesResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+		ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-        RpcController controller = lumongoConnection.getController();
+		RpcController controller = lumongoConnection.getController();
 
-        long start = System.currentTimeMillis();
-        GetIndexesResponse getIndexesResponse = service.getIndexes(controller, getRequest());
-        long end = System.currentTimeMillis();
-        long durationInMs = end - start;
-        return new GetIndexesResult(getIndexesResponse, durationInMs);
-    }
+		GetIndexesResponse getIndexesResponse = service.getIndexes(controller, getRequest());
+
+		return new GetIndexesResult(getIndexesResponse);
+	}
 
 
 

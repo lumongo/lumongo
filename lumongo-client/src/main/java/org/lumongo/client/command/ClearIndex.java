@@ -11,29 +11,27 @@ import com.google.protobuf.ServiceException;
 
 public class ClearIndex extends Command<ClearRequest, ClearResult> {
 
-    private String indexName;
+	private String indexName;
 
-    public ClearIndex(String indexName) {
-        this.indexName = indexName;
-    }
+	public ClearIndex(String indexName) {
+		this.indexName = indexName;
+	}
 
-    @Override
-    public ClearRequest getRequest() {
-        return ClearRequest.newBuilder().setIndexName(indexName).build();
-    }
+	@Override
+	public ClearRequest getRequest() {
+		return ClearRequest.newBuilder().setIndexName(indexName).build();
+	}
 
-    @Override
-    public ClearResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
+	@Override
+	public ClearResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+		ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-        RpcController controller = lumongoConnection.getController();
+		RpcController controller = lumongoConnection.getController();
 
-        long start = System.currentTimeMillis();
-        ClearResponse clearResponse = service.clear(controller, getRequest());
-        long end = System.currentTimeMillis();
-        long durationInMs = end - start;
-        return new ClearResult(clearResponse, durationInMs);
-    }
+		ClearResponse clearResponse = service.clear(controller, getRequest());
+
+		return new ClearResult(clearResponse);
+	}
 
 
 

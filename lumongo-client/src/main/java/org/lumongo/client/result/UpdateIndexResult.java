@@ -4,14 +4,11 @@ import org.lumongo.cluster.message.Lumongo.IndexSettingsResponse;
 
 public class UpdateIndexResult extends Result {
 
-    @SuppressWarnings("unused")
-    private IndexSettingsResponse indexSettingsResponse;
+	@SuppressWarnings("unused")
+	private IndexSettingsResponse indexSettingsResponse;
 
-    public UpdateIndexResult(IndexSettingsResponse indexSettingsResponse, long commandTimeMs) {
-        super(commandTimeMs);
-
-        this.indexSettingsResponse = indexSettingsResponse;
-
-    }
+	public UpdateIndexResult(IndexSettingsResponse indexSettingsResponse) {
+		this.indexSettingsResponse = indexSettingsResponse;
+	}
 
 }

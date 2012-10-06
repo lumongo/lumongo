@@ -12,27 +12,25 @@ import com.google.protobuf.ServiceException;
 public class GetMembers extends Command<GetMembersRequest, GetMembersResult> {
 
 
-    public GetMembers() {
+	public GetMembers() {
 
-    }
+	}
 
-    @Override
-    public GetMembersRequest getRequest() {
-        return GetMembersRequest.newBuilder().build();
-    }
+	@Override
+	public GetMembersRequest getRequest() {
+		return GetMembersRequest.newBuilder().build();
+	}
 
-    @Override
-    public GetMembersResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
+	@Override
+	public GetMembersResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+		ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-        RpcController controller = lumongoConnection.getController();
+		RpcController controller = lumongoConnection.getController();
 
-        long start = System.currentTimeMillis();
-        GetMembersResponse getMembersResponse = service.getMembers(controller, getRequest());
-        long end = System.currentTimeMillis();
-        long durationInMs = end - start;
-        return new GetMembersResult(getMembersResponse, durationInMs);
-    }
+		GetMembersResponse getMembersResponse = service.getMembers(controller, getRequest());
+
+		return new GetMembersResult(getMembersResponse);
+	}
 
 
 

@@ -7,15 +7,14 @@ import org.lumongo.cluster.message.Lumongo.LMMember;
 
 public class GetMembersResult extends Result {
 
-    private GetMembersResponse getMembersResponse;
+	private GetMembersResponse getMembersResponse;
 
-    public GetMembersResult(GetMembersResponse getMembersResponse, long commandTimeMs) {
-        super(commandTimeMs);
-        this.getMembersResponse = getMembersResponse;
-    }
+	public GetMembersResult(GetMembersResponse getMembersResponse) {
+		this.getMembersResponse = getMembersResponse;
+	}
 
-    public List<LMMember> getMembers() {
-        return getMembersResponse.getMemberList();
-    }
+	public List<LMMember> getMembers() {
+		return getMembersResponse.getMemberList();
+	}
 
 }

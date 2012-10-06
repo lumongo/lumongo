@@ -12,78 +12,76 @@ import com.google.protobuf.ServiceException;
 
 public class Fetch extends Command<FetchRequest, FetchResult> {
 
-    private String uniqueId;
-    private String fileName;
-    private FetchType resultFetchType;
-    private FetchType associatedFetchType;
+	private String uniqueId;
+	private String fileName;
+	private FetchType resultFetchType;
+	private FetchType associatedFetchType;
 
-    public Fetch(String uniqueId) {
-        this.uniqueId = uniqueId;
-    }
+	public Fetch(String uniqueId) {
+		this.uniqueId = uniqueId;
+	}
 
-    public String getUniqueId() {
-        return uniqueId;
-    }
+	public String getUniqueId() {
+		return uniqueId;
+	}
 
-    public Fetch setFileName(String fileName) {
-        this.fileName = fileName;
-        return this;
-    }
+	public Fetch setFileName(String fileName) {
+		this.fileName = fileName;
+		return this;
+	}
 
-    public String getFileFame() {
-        return fileName;
-    }
+	public String getFileFame() {
+		return fileName;
+	}
 
-    public FetchType getResultFetchType() {
-        return resultFetchType;
-    }
+	public FetchType getResultFetchType() {
+		return resultFetchType;
+	}
 
-    public Fetch setResultFetchType(FetchType resultFetchType) {
-        this.resultFetchType = resultFetchType;
-        return this;
-    }
+	public Fetch setResultFetchType(FetchType resultFetchType) {
+		this.resultFetchType = resultFetchType;
+		return this;
+	}
 
-    public FetchType getAssociatedFetchType() {
-        return associatedFetchType;
-    }
+	public FetchType getAssociatedFetchType() {
+		return associatedFetchType;
+	}
 
-    public Fetch setAssociatedFetchType(FetchType associatedFetchType) {
-        this.associatedFetchType = associatedFetchType;
-        return this;
-    }
+	public Fetch setAssociatedFetchType(FetchType associatedFetchType) {
+		this.associatedFetchType = associatedFetchType;
+		return this;
+	}
 
-    @Override
-    public FetchRequest getRequest() {
-        FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
-        if (uniqueId != null) {
-            fetchRequestBuilder.setUniqueId(uniqueId);
-        }
-        if (fileName != null) {
-            fetchRequestBuilder.setFileName(fileName);
-        }
-        if (resultFetchType != null) {
-            fetchRequestBuilder.setResultFetchType(FetchType.NONE);
-        }
-        if (associatedFetchType != null) {
-            fetchRequestBuilder.setAssociatedFetchType(FetchType.FULL);
-        }
-        return fetchRequestBuilder.build();
-    }
+	@Override
+	public FetchRequest getRequest() {
+		FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
+		if (uniqueId != null) {
+			fetchRequestBuilder.setUniqueId(uniqueId);
+		}
+		if (fileName != null) {
+			fetchRequestBuilder.setFileName(fileName);
+		}
+		if (resultFetchType != null) {
+			fetchRequestBuilder.setResultFetchType(FetchType.NONE);
+		}
+		if (associatedFetchType != null) {
+			fetchRequestBuilder.setAssociatedFetchType(FetchType.FULL);
+		}
+		return fetchRequestBuilder.build();
+	}
 
-    @Override
-    public FetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+	@Override
+	public FetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
 
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
+		ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-        RpcController controller = lumongoConnection.getController();
+		RpcController controller = lumongoConnection.getController();
 
-        long start = System.currentTimeMillis();
-        FetchResponse fetchResponse = service.fetch(controller, getRequest());
-        long end = System.currentTimeMillis();
-        long durationInMs = end - start;
-        return new FetchResult(fetchResponse, durationInMs);
+		FetchResponse fetchResponse = service.fetch(controller, getRequest());
 
-    }
+		return new FetchResult(fetchResponse);
+
+	}
 
 
 

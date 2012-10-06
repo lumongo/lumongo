@@ -11,29 +11,27 @@ import com.google.protobuf.ServiceException;
 
 public class DeleteIndex extends Command<IndexDeleteRequest, DeleteIndexResult> {
 
-    private String indexName;
+	private String indexName;
 
-    public DeleteIndex(String indexName) {
-        this.indexName = indexName;
-    }
+	public DeleteIndex(String indexName) {
+		this.indexName = indexName;
+	}
 
-    @Override
-    public IndexDeleteRequest getRequest() {
-        return IndexDeleteRequest.newBuilder().setIndexName(indexName).build();
-    }
+	@Override
+	public IndexDeleteRequest getRequest() {
+		return IndexDeleteRequest.newBuilder().setIndexName(indexName).build();
+	}
 
-    @Override
-    public DeleteIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
+	@Override
+	public DeleteIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+		ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-        RpcController controller = lumongoConnection.getController();
+		RpcController controller = lumongoConnection.getController();
 
-        long start = System.currentTimeMillis();
-        IndexDeleteResponse indexDeleteResponse = service.deleteIndex(controller, getRequest());
-        long end = System.currentTimeMillis();
-        long durationInMs = end - start;
-        return new DeleteIndexResult(indexDeleteResponse, durationInMs);
-    }
+		IndexDeleteResponse indexDeleteResponse = service.deleteIndex(controller, getRequest());
+
+		return new DeleteIndexResult(indexDeleteResponse);
+	}
 
 
 

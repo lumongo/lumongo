@@ -11,29 +11,27 @@ import com.google.protobuf.ServiceException;
 
 public class OptimizeIndex extends Command<OptimizeRequest, OptimizeResult> {
 
-    private String indexName;
+	private String indexName;
 
-    public OptimizeIndex(String indexName) {
-        this.indexName = indexName;
-    }
+	public OptimizeIndex(String indexName) {
+		this.indexName = indexName;
+	}
 
-    @Override
-    public OptimizeRequest getRequest() {
-        return OptimizeRequest.newBuilder().setIndexName(indexName).build();
-    }
+	@Override
+	public OptimizeRequest getRequest() {
+		return OptimizeRequest.newBuilder().setIndexName(indexName).build();
+	}
 
-    @Override
-    public OptimizeResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
+	@Override
+	public OptimizeResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+		ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-        RpcController controller = lumongoConnection.getController();
+		RpcController controller = lumongoConnection.getController();
 
-        long start = System.currentTimeMillis();
-        OptimizeResponse optimizeResponse = service.optimize(controller, getRequest());
-        long end = System.currentTimeMillis();
-        long durationInMs = end - start;
-        return new OptimizeResult(optimizeResponse, durationInMs);
-    }
+		OptimizeResponse optimizeResponse = service.optimize(controller, getRequest());
+
+		return new OptimizeResult(optimizeResponse);
+	}
 
 
 

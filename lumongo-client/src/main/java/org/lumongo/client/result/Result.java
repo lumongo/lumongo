@@ -2,13 +2,18 @@ package org.lumongo.client.result;
 
 public class Result {
 
-    private long commandTimeMs;
+	private long commandTimeMs;
 
-    public Result(long commandTimeMs) {
-        this.commandTimeMs = commandTimeMs;
-    }
+	public Result() {
 
-    public long getCommandTimeMs() {
-        return commandTimeMs;
-    }
+	}
+
+	public Result setCommandTimeMs(long commandTimeMs) {
+		this.commandTimeMs = commandTimeMs;
+		return this;
+	}
+
+	public long getCommandTimeMs() {
+		return commandTimeMs;
+	}
 }

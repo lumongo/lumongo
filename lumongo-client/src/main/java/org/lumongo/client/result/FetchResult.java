@@ -9,8 +9,8 @@ import org.lumongo.cluster.message.Lumongo.ResultDocument;
 public class FetchResult extends Result {
 
 	private FetchResponse fetchResponse;
-	public FetchResult(FetchResponse fetchResponse, long durationInMs) {
-		super(durationInMs);
+
+	public FetchResult(FetchResponse fetchResponse) {
 		this.fetchResponse = fetchResponse;
 	}
 

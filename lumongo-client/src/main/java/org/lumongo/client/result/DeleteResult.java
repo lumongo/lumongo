@@ -4,8 +4,11 @@ import org.lumongo.cluster.message.Lumongo.DeleteResponse;
 
 public class DeleteResult extends Result {
 
-	public DeleteResult(DeleteResponse deleteResponse, long durationInMs) {
-		super(durationInMs);
+	@SuppressWarnings("unused")
+	private DeleteResponse deleteResponse;
+
+	public DeleteResult(DeleteResponse deleteResponse) {
+		this.deleteResponse = deleteResponse;
 	}
 
 }
