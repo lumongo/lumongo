@@ -11,7 +11,7 @@ import org.lumongo.cluster.message.Lumongo.GroupFetchResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class BatchFetch extends Command<GroupFetchRequest, BatchFetchResult> {
+public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResult> {
 
 	private List<Fetch> fetchList;
 

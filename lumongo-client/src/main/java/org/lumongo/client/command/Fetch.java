@@ -10,7 +10,7 @@ import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class Fetch extends Command<FetchRequest, FetchResult> {
+public class Fetch extends SimpleCommand<FetchRequest, FetchResult> {
 
 	private String uniqueId;
 	private String fileName;

@@ -9,7 +9,7 @@ import org.lumongo.cluster.message.Lumongo.ExternalService;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class ClearIndex extends Command<ClearRequest, ClearResult> {
+public class ClearIndex extends SimpleCommand<ClearRequest, ClearResult> {
 
 	private String indexName;
 

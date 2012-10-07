@@ -9,7 +9,7 @@ import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class GetTerms extends Command<GetTermsRequest, GetTermsResult> {
+public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 
 	private String indexName;
 	private String fieldName;

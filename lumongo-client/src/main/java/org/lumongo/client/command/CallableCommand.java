@@ -5,13 +5,13 @@ import java.util.concurrent.Callable;
 import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.result.Result;
 
-public class CallableCommand<S, R extends Result> implements Callable<R> {
+public class CallableCommand<R extends Result> implements Callable<R> {
 
-	private Command<S, R> command;
+	private Command<R> command;
 	private LumongoPool lumongoPool;
 
 
-	public CallableCommand(LumongoPool lumongoPool, Command<S, R> command) {
+	public CallableCommand(LumongoPool lumongoPool, Command<R> command) {
 		this.lumongoPool = lumongoPool;
 		this.command = command;
 	}

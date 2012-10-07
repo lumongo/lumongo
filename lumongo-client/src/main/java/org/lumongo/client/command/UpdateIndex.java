@@ -10,7 +10,7 @@ import org.lumongo.cluster.message.Lumongo.IndexSettingsResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class UpdateIndex extends Command<IndexSettingsRequest, UpdateIndexResult> {
+public class UpdateIndex extends SimpleCommand<IndexSettingsRequest, UpdateIndexResult> {
 
 
 	private IndexSettings indexSettings;

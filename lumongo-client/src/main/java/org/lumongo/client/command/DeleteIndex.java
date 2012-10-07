@@ -9,7 +9,7 @@ import org.lumongo.cluster.message.Lumongo.IndexDeleteResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class DeleteIndex extends Command<IndexDeleteRequest, DeleteIndexResult> {
+public class DeleteIndex extends SimpleCommand<IndexDeleteRequest, DeleteIndexResult> {
 
 	private String indexName;
 

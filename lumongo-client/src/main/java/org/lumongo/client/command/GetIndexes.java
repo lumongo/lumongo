@@ -9,7 +9,7 @@ import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class GetIndexes extends Command<GetIndexesRequest, GetIndexesResult> {
+public class GetIndexes extends SimpleCommand<GetIndexesRequest, GetIndexesResult> {
 
 
 	public GetIndexes() {

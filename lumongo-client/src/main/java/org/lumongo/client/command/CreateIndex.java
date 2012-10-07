@@ -10,7 +10,7 @@ import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class CreateIndex extends Command<IndexCreateRequest, CreateIndexResult> {
+public class CreateIndex extends SimpleCommand<IndexCreateRequest, CreateIndexResult> {
 
 	private String indexName;
 	private Integer numberOfSegments;
@@ -24,7 +24,6 @@ public class CreateIndex extends Command<IndexCreateRequest, CreateIndexResult> 
 		this.uniqueIdField = uniqueIdField;
 		this.indexSettings = indexSettings;
 	}
-
 
 	public CreateIndex setFaceted(Boolean faceted) {
 		this.faceted = faceted;

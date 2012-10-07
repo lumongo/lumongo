@@ -5,9 +5,8 @@ import org.lumongo.client.result.Result;
 
 import com.google.protobuf.ServiceException;
 
-public abstract class Command<S, R extends Result> {
+public abstract class Command<R extends Result> {
 
-	public abstract S getRequest();
 
 	public abstract R execute(LumongoConnection lumongoConnection) throws ServiceException;
 

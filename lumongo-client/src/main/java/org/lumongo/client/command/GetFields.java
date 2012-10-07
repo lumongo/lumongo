@@ -9,7 +9,7 @@ import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class GetFields extends Command<GetFieldNamesRequest, GetFieldsResult> {
+public class GetFields extends SimpleCommand<GetFieldNamesRequest, GetFieldsResult> {
 
 	private String indexName;
 

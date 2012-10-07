@@ -9,7 +9,7 @@ import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class OptimizeIndex extends Command<OptimizeRequest, OptimizeResult> {
+public class OptimizeIndex extends SimpleCommand<OptimizeRequest, OptimizeResult> {
 
 	private String indexName;
 

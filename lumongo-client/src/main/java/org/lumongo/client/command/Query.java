@@ -15,7 +15,7 @@ import org.lumongo.cluster.message.Lumongo.SortRequest;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class Query extends Command<QueryRequest, QueryResult> {
+public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 	private String query;
 	private int amount;

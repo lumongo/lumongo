@@ -9,7 +9,7 @@ import org.lumongo.cluster.message.Lumongo.GetMembersResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class GetMembers extends Command<GetMembersRequest, GetMembersResult> {
+public class GetMembers extends SimpleCommand<GetMembersRequest, GetMembersResult> {
 
 
 	public GetMembers() {

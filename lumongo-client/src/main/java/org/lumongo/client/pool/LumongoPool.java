@@ -67,7 +67,7 @@ public class LumongoPool {
 		return maxConnections;
 	}
 
-	public <S, R extends Result> R execute(Command<S, R> command) throws Exception {
+	public <R extends Result> R execute(Command<R> command) throws Exception {
 
 
 		int tries = 0;

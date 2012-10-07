@@ -15,7 +15,7 @@ import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class Store extends Command<StoreRequest, StoreResult> {
+public class Store extends SimpleCommand<StoreRequest, StoreResult> {
 	private String uniqueId;
 	private ResultDocument resultDocument;
 	private List<LMDoc> indexedDocuments;
