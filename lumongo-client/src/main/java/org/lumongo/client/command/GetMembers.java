@@ -9,28 +9,33 @@ import org.lumongo.cluster.message.Lumongo.GetMembersResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
+/**
+ * Returns the current cluster members list
+ * @author mdavis
+ *
+ */
 public class GetMembers extends SimpleCommand<GetMembersRequest, GetMembersResult> {
 
 
-	public GetMembers() {
+    public GetMembers() {
 
-	}
+    }
 
-	@Override
-	public GetMembersRequest getRequest() {
-		return GetMembersRequest.newBuilder().build();
-	}
+    @Override
+    public GetMembersRequest getRequest() {
+        return GetMembersRequest.newBuilder().build();
+    }
 
-	@Override
-	public GetMembersResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+    @Override
+    public GetMembersResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+        ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
+        RpcController controller = lumongoConnection.getController();
 
-		GetMembersResponse getMembersResponse = service.getMembers(controller, getRequest());
+        GetMembersResponse getMembersResponse = service.getMembers(controller, getRequest());
 
-		return new GetMembersResult(getMembersResponse);
-	}
+        return new GetMembersResult(getMembersResponse);
+    }
 
 
 

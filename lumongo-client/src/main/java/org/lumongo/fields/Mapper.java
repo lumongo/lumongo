@@ -172,14 +172,14 @@ public class Mapper <T> {
         return clazz;
     }
 
-    public Store newStore(T object) throws Exception {
+    public Store createStore(T object) throws Exception {
         if (settings == null) {
             throw new RuntimeException("No Settings annonation for class <" + clazz.getSimpleName() + ">");
         }
-        return newStore(settings.indexName(), object);
+        return createStore(settings.indexName(), object);
     }
 
-    public Store newStore(String index, T object) throws Exception {
+    public Store createStore(String index, T object) throws Exception {
         LMDoc lmDoc = toLMDoc(index, object);
         ResultDocument rd = toResultDocument(object);
         Store store = new Store(rd.getUniqueId());

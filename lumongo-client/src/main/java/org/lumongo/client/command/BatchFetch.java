@@ -14,42 +14,47 @@ import org.lumongo.cluster.message.Lumongo.GroupFetchResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
+/**
+ * Fetches multiple documents in a single call
+ * @author mdavis
+ *
+ */
 public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResult> {
 
-	private List<Fetch> fetchList;
+    private List<Fetch> fetchList;
 
-	public BatchFetch(Collection<String> uniqueIds) {
-		this.fetchList = new ArrayList<Fetch>();
+    public BatchFetch(Collection<String> uniqueIds) {
+        this.fetchList = new ArrayList<Fetch>();
 
-		for (String uniqueId : uniqueIds) {
-			Fetch f = new Fetch(uniqueId);
-			f.setResultFetchType(FetchType.FULL);
-			f.setAssociatedFetchType(FetchType.NONE);
-			fetchList.add(f);
-		}
-	}
+        for (String uniqueId : uniqueIds) {
+            Fetch f = new Fetch(uniqueId);
+            f.setResultFetchType(FetchType.FULL);
+            f.setAssociatedFetchType(FetchType.NONE);
+            fetchList.add(f);
+        }
+    }
 
-	public BatchFetch(List<Fetch> fetchList) {
-		this.fetchList = fetchList;
-	}
+    public BatchFetch(List<Fetch> fetchList) {
+        this.fetchList = fetchList;
+    }
 
-	@Override
-	public GroupFetchRequest getRequest() {
-		GroupFetchRequest.Builder groupFetchRequestBuilder = GroupFetchRequest.newBuilder();
-		for (Fetch f : fetchList) {
-			groupFetchRequestBuilder.addFetchRequest(f.getRequest());
-		}
-		return groupFetchRequestBuilder.build();
-	}
+    @Override
+    public GroupFetchRequest getRequest() {
+        GroupFetchRequest.Builder groupFetchRequestBuilder = GroupFetchRequest.newBuilder();
+        for (Fetch f : fetchList) {
+            groupFetchRequestBuilder.addFetchRequest(f.getRequest());
+        }
+        return groupFetchRequestBuilder.build();
+    }
 
-	@Override
-	public BatchFetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
-		RpcController controller = lumongoConnection.getController();
+    @Override
+    public BatchFetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+        ExternalService.BlockingInterface service = lumongoConnection.getService();
+        RpcController controller = lumongoConnection.getController();
 
-		GroupFetchResponse groupFetchResponse = service.groupFetch(controller, getRequest());
+        GroupFetchResponse groupFetchResponse = service.groupFetch(controller, getRequest());
 
-		return new BatchFetchResult(groupFetchResponse);
-	}
+        return new BatchFetchResult(groupFetchResponse);
+    }
 
 }

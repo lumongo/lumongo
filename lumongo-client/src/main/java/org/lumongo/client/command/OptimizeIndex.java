@@ -9,29 +9,34 @@ import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
+/**
+ * Optimizes a given index
+ * @author mdavis
+ *
+ */
 public class OptimizeIndex extends SimpleCommand<OptimizeRequest, OptimizeResult> {
 
-	private String indexName;
+    private String indexName;
 
-	public OptimizeIndex(String indexName) {
-		this.indexName = indexName;
-	}
+    public OptimizeIndex(String indexName) {
+        this.indexName = indexName;
+    }
 
-	@Override
-	public OptimizeRequest getRequest() {
-		return OptimizeRequest.newBuilder().setIndexName(indexName).build();
-	}
+    @Override
+    public OptimizeRequest getRequest() {
+        return OptimizeRequest.newBuilder().setIndexName(indexName).build();
+    }
 
-	@Override
-	public OptimizeResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+    @Override
+    public OptimizeResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+        ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
+        RpcController controller = lumongoConnection.getController();
 
-		OptimizeResponse optimizeResponse = service.optimize(controller, getRequest());
+        OptimizeResponse optimizeResponse = service.optimize(controller, getRequest());
 
-		return new OptimizeResult(optimizeResponse);
-	}
+        return new OptimizeResult(optimizeResponse);
+    }
 
 
 

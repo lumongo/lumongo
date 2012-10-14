@@ -24,46 +24,46 @@ public class Delete extends SimpleCommand<DeleteRequest, DeleteResult> {
         this.uniqueId = uniqueId;
     }
 
-    public void setIndexes(Collection<String> indexes) {
+    protected void setIndexes(Collection<String> indexes) {
         this.indexes = indexes;
     }
 
-    public void setIndexes(String[] indexes) {
+    protected void setIndexes(String[] indexes) {
         setIndexes(new ArrayList<String>(Arrays.asList(indexes)));
     }
 
-    public void setIndex(String index) {
+    protected void setIndex(String index) {
         setIndexes(new String[] { index });
     }
 
-    public Collection<String> getIndexes() {
+    protected Collection<String> getIndexes() {
         return indexes;
     }
 
-    public Delete setFileName(String fileName) {
+    protected Delete setFileName(String fileName) {
         this.fileName = fileName;
         return this;
     }
 
-    public String getFileName() {
+    protected String getFileName() {
         return fileName;
     }
 
-    public Delete setDeleteDocument(Boolean deleteDocument) {
+    protected Delete setDeleteDocument(Boolean deleteDocument) {
         this.deleteDocument = deleteDocument;
         return this;
     }
 
-    public Boolean getDeleteDocument() {
+    protected Boolean getDeleteDocument() {
         return deleteDocument;
     }
 
-    public Delete setDeleteAllAssociated(Boolean deleteAllAssociated) {
+    protected Delete setDeleteAllAssociated(Boolean deleteAllAssociated) {
         this.deleteAllAssociated = deleteAllAssociated;
         return this;
     }
 
-    public Boolean getDeleteAllAssociated() {
+    protected Boolean getDeleteAllAssociated() {
         return deleteAllAssociated;
     }
 
