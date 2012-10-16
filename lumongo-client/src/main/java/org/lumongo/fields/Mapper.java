@@ -6,9 +6,9 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.lumongo.LumongoConstants;
+import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Store;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
@@ -132,20 +132,11 @@ public class Mapper <T> {
         }
     }
 
-    public IndexCreateRequest getIndexCreateRequest() {
+    public CreateOrUpdateIndex createOrUpdateIndex() {
 
         if (settings == null) {
             throw new RuntimeException("No Settings annonation for class <" + clazz.getSimpleName() + ">");
         }
-
-        IndexCreateRequest.Builder indexCreateRequestBuilder = IndexCreateRequest.newBuilder();
-        indexCreateRequestBuilder.setIndexName(settings.indexName());
-        indexCreateRequestBuilder.setNumberOfSegments(settings.numberOfSegments());
-        indexCreateRequestBuilder.setUniqueIdField(uniqueIdField.getFieldName());
-
-        // TODO consider this
-        // indexCreateRequestBuilder.setFaceted(!facetedFields.isEmpty());
-        indexCreateRequestBuilder.setFaceted(true);
 
         IndexSettings.Builder indexSettingsBuilder = IndexSettings.newBuilder();
 
@@ -162,9 +153,13 @@ public class Mapper <T> {
         indexSettingsBuilder.setSegmentTolerance(settings.segmentTolerance());
         indexSettingsBuilder.setSegmentFlushInterval(settings.segmentFlushInterval());
 
-        indexCreateRequestBuilder.setIndexSettings(indexSettingsBuilder);
+        CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(settings.indexName(), settings.numberOfSegments(), uniqueIdField.getFieldName(),
+                indexSettingsBuilder.build());
+        // TODO consider this
+        // indexCreateRequestBuilder.setFaceted(!facetedFields.isEmpty());
+        createOrUpdateIndex.setFaceted(true);
 
-        return indexCreateRequestBuilder.build();
+        return createOrUpdateIndex;
     }
 
 

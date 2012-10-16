@@ -13,34 +13,36 @@ import com.google.protobuf.ServiceException;
 public class UpdateIndex extends SimpleCommand<IndexSettingsRequest, UpdateIndexResult> {
 
 
-	private IndexSettings indexSettings;
+    private IndexSettings indexSettings;
+    private String indexName;
 
-	public UpdateIndex(IndexSettings indexSettings) {
-		this.indexSettings = indexSettings;
-	}
+    public UpdateIndex(String indexName, IndexSettings indexSettings) {
+        this.indexSettings = indexSettings;
+        this.indexName = indexName;
+    }
 
-	@Override
-	public IndexSettingsRequest getRequest() {
-		IndexSettingsRequest.Builder indexSettingsRequestBuilder = IndexSettingsRequest.newBuilder();
+    @Override
+    public IndexSettingsRequest getRequest() {
+        IndexSettingsRequest.Builder indexSettingsRequestBuilder = IndexSettingsRequest.newBuilder();
+        indexSettingsRequestBuilder.setIndexName(indexName);
+        if (indexSettings != null) {
+            indexSettingsRequestBuilder.setIndexSettings(indexSettings);
+        }
 
-		if (indexSettings != null) {
-			indexSettingsRequestBuilder.setIndexSettings(indexSettings);
-		}
-
-		return indexSettingsRequestBuilder.build();
-	}
+        return indexSettingsRequestBuilder.build();
+    }
 
 
-	@Override
-	public UpdateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+    @Override
+    public UpdateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+        ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
+        RpcController controller = lumongoConnection.getController();
 
-		IndexSettingsResponse indexSettingsResponse = service.changeIndex(controller, getRequest());
+        IndexSettingsResponse indexSettingsResponse = service.changeIndex(controller, getRequest());
 
-		return new UpdateIndexResult(indexSettingsResponse);
-	}
+        return new UpdateIndexResult(indexSettingsResponse);
+    }
 
 
 

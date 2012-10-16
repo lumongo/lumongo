@@ -44,7 +44,7 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
         GetIndexes gt = new GetIndexes();
         GetIndexesResult gtr = gt.execute(lumongoConnection);
         if (gtr.containsIndex(indexName)) {
-            UpdateIndex ui = new UpdateIndex(indexSettings);
+            UpdateIndex ui = new UpdateIndex(indexName, indexSettings);
             UpdateIndexResult uir = ui.execute(lumongoConnection);
             result.setUpdateIndexResult(uir);
             return result;
