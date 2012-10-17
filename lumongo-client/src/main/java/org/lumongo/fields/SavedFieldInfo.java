@@ -27,15 +27,20 @@ public class SavedFieldInfo<T> {
 
     Object getValue(T object) throws Exception {
 
+        Object o = field.get(object);
+
         if (compressed) {
-            if (object instanceof String) {
-                String s = (String) object;
-                return CommonCompression.compressZlib(s.getBytes("UTF-8"), CommonCompression.CompressionLevel.NORMAL);
+            if (String.class.equals(field.getType())) {
+                String s = (String) o;
+                o = CommonCompression.compressZlib(s.getBytes("UTF-8"), CommonCompression.CompressionLevel.NORMAL);
             }
-            // else ?
+            else if (byte[].class.equals(field.getType())) {
+                byte[] b = (byte[]) o;
+                o = CommonCompression.compressZlib(b, CommonCompression.CompressionLevel.NORMAL);
+            }
         }
 
-        return field.get(object);
+        return o;
     }
 
     public void populate(T newInstance, DBObject savedDBObject) throws Exception {
@@ -43,11 +48,19 @@ public class SavedFieldInfo<T> {
         if (compressed) {
             if (value instanceof byte[]) {
                 byte[] b = (byte[]) value;
-                field.set(newInstance, new String(CommonCompression.uncompressZlib(b), "UTF-8"));
-                return;
+                if (String.class.equals(field.getType())) {
+                    field.set(newInstance, new String(CommonCompression.uncompressZlib(b), "UTF-8"));
+                    return;
+                }
+                else if (byte[].class.equals(field.getType())) {
+                    field.set(newInstance, CommonCompression.uncompressZlib(b));
+                    return;
+                }
+
             }
-            // else ?
+
+            field.set(newInstance, value);
+
         }
-        field.set(newInstance, value);
     }
 }
