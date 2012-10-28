@@ -1,13 +1,56 @@
 package org.lumongo.client.config;
 
-public class LumongoPoolConfig extends LumongoClientConfig {
+import java.util.ArrayList;
+import java.util.List;
+
+import org.lumongo.LumongoConstants;
+import org.lumongo.cluster.message.Lumongo.LMMember;
+
+public class LumongoPoolConfig {
+
+    private List<LMMember> members;
 
     private int maxConnections;
     private int maxIdle;
+    private int defaultRetries;
+
+    public final static int DEFAULT_DEFAULT_RETRIES = 0;
 
     public LumongoPoolConfig() {
+        this.members = new ArrayList<LMMember>();
         this.maxConnections = 8;
         this.maxIdle = 8;
+        this.defaultRetries = DEFAULT_DEFAULT_RETRIES;
+    }
+
+
+    public void addMember(String serverAddress) {
+        addMember(serverAddress, LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
+    }
+
+
+    public void addMember(String serverAddress, int externalPort) {
+        addMember(serverAddress, externalPort, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
+    }
+
+
+    public void addMember(String serverAddress, int externalPort, int restPort) {
+        LMMember member = LMMember.newBuilder().setServerAddress(serverAddress).setExternalPort(externalPort).setRestPort(restPort).build();
+        members.add(member);
+    }
+
+
+    public void addMember(LMMember member) {
+        members.add(member);
+    }
+
+
+    public void clearMembers() {
+        members.clear();
+    }
+
+    public List<LMMember> getMembers() {
+        return members;
     }
 
     public int getMaxConnections() {
@@ -24,6 +67,14 @@ public class LumongoPoolConfig extends LumongoClientConfig {
 
     public void setMaxIdle(int maxIdle) {
         this.maxIdle = maxIdle;
+    }
+
+    public int getDefaultRetries() {
+        return defaultRetries;
+    }
+
+    public void setDefaultRetries(int defaultRetries) {
+        this.defaultRetries = defaultRetries;
     }
 
 }

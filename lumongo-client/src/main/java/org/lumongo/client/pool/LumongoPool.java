@@ -17,6 +17,7 @@ public class LumongoPool {
     private int maxIdle;
     private int maxConnections;
 
+
     private GenericKeyedObjectPool<LMMember, LumongoConnection> connectionPool;
 
     public LumongoPool(LumongoPoolConfig lumongoPoolConfig) {

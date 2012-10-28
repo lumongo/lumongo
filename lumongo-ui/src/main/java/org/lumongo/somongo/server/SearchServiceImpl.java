@@ -1,15 +1,17 @@
 package org.lumongo.somongo.server;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.ServletException;
 
-import org.lumongo.client.LumongoClient;
-import org.lumongo.client.config.LumongoClientConfig;
-import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
-import org.lumongo.cluster.message.Lumongo.QueryResponse;
+import org.lumongo.client.command.GetIndexes;
+import org.lumongo.client.command.Query;
+import org.lumongo.client.config.LumongoPoolConfig;
+import org.lumongo.client.pool.LumongoPool;
+import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.result.GetIndexesResult;
+import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.somongo.client.service.SearchService;
 import org.lumongo.somongo.shared.Document;
@@ -22,14 +24,14 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 public class SearchServiceImpl extends RemoteServiceServlet implements SearchService {
 
-	private LumongoClient lumongoClient;
+	private LumongoWorkPool lumongoWorkPool;
 
 	private static final long serialVersionUID = 1L;
 
 	@Override
 	public void init() throws ServletException {
 
-		LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
+		LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 
 		String lumongoServer = System.getenv("lumongoServer");
 
@@ -38,13 +40,11 @@ public class SearchServiceImpl extends RemoteServiceServlet implements SearchSer
 			System.err.println("--Environment variable lumongoServer is not defined, using localhost as default--");
 		}
 
-		lumongoClientConfig.addMember(lumongoServer);
-		lumongoClientConfig.setDefaultRetries(4);
-		try {
-			lumongoClient = new LumongoClient(lumongoClientConfig);
-		} catch (IOException e) {
-			throw new ServletException(e);
-		}
+		lumongoPoolConfig.addMember(lumongoServer);
+		lumongoPoolConfig.setDefaultRetries(4);
+
+		lumongoWorkPool = new LumongoWorkPool(new LumongoPool(lumongoPoolConfig));
+
 	}
 
 	@Override
@@ -53,13 +53,14 @@ public class SearchServiceImpl extends RemoteServiceServlet implements SearchSer
 		String query = searchRequest.getQuery();
 		int amount = searchRequest.getAmount();
 		String[] indexes = searchRequest.getIndexes();
-		QueryResponse queryResponse = lumongoClient.query(query, amount, indexes);
+		Query q = new Query(indexes, query, amount);
+		QueryResult queryResult = lumongoWorkPool.execute(q);
 
 		SearchResults searchResults = new SearchResults();
 
-		searchResults.setTotalHits(queryResponse.getTotalHits());
+		searchResults.setTotalHits(queryResult.getTotalHits());
 
-		List<ScoredResult> scoredResults = queryResponse.getResultsList();
+		List<ScoredResult> scoredResults = queryResult.getResults();
 		for (ScoredResult sr : scoredResults) {
 			Document d = new Document();
 			d.setUniqueId(sr.getUniqueId());
@@ -76,9 +77,9 @@ public class SearchServiceImpl extends RemoteServiceServlet implements SearchSer
 	@Override
 	public List<String> getIndexes() throws Exception {
 
-		GetIndexesResponse getIndexesResponse = lumongoClient.getIndexes();
+		GetIndexesResult getIndexesResult = lumongoWorkPool.execute(new GetIndexes());
 
-		return new ArrayList<String>(getIndexesResponse.getIndexNameList());
+		return new ArrayList<String>(getIndexesResult.getIndexNames());
 
 	}
 }

@@ -9,59 +9,52 @@ import joptsimple.OptionSpec;
 
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
-import org.lumongo.client.LumongoClient;
 import org.lumongo.server.LuceneNode;
 import org.lumongo.server.config.MongoConfig;
 import org.lumongo.util.LogUtil;
 import org.lumongo.util.ServerNameHelper;
 
 public class StartNode {
-	
+
 	public static void main(String[] args) throws Exception {
 		LogUtil.loadLogConfig();
-		
+
 		OptionParser parser = new OptionParser();
 		OptionSpec<File> mongoConfigArg = parser.accepts(AdminConstants.MONGO_CONFIG).withRequiredArg().ofType(File.class).describedAs("Mongo properties file")
 				.required();
 		OptionSpec<String> serverAddressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().describedAs("Specific Server Address Manually");
 		OptionSpec<Integer> hazelcastPortArg = parser.accepts(AdminConstants.HAZELCAST_PORT).withRequiredArg().ofType(Integer.class)
 				.describedAs("Hazelcast port if multiple instances on one server (expert)");
-		
-		LumongoClient client = null;
-		
+
 		try {
 			OptionSet options = parser.parse(args);
-			
+
 			File mongoConfigFile = options.valueOf(mongoConfigArg);
 			String serverAddress = options.valueOf(serverAddressArg);
 			Integer hazelcastPort = options.valueOf(hazelcastPortArg);
-			
+
 			MongoConfig mongoConfig = MongoConfig.getNodeConfig(mongoConfigFile);
-			
+
 			if (serverAddress == null) {
 				serverAddress = ServerNameHelper.getLocalServer();
 				System.out.println("Using <" + serverAddress + "> as the server address.  If this is not correct please specify on command line");
 			}
-			
+
 			if (hazelcastPort == null) {
 				hazelcastPort = LumongoConstants.DEFAULT_HAZELCAST_PORT;
 			}
-			
+
 			LuceneNode luceneNode = new LuceneNode(mongoConfig, serverAddress, hazelcastPort);
-			
+
 			luceneNode.start();
 			luceneNode.setupShutdownHook();
-			
+
 		}
 		catch (OptionException e) {
 			System.err.println("ERROR: " + e.getMessage());
 			parser.formatHelpWith(new LumongoHelpFormatter());
 			parser.printHelpOn(System.err);
 		}
-		finally {
-			if (client != null) {
-				client.close();
-			}
-		}
+
 	}
 }

@@ -9,18 +9,18 @@ import joptsimple.OptionSpec;
 
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
-import org.lumongo.client.LumongoClient;
-import org.lumongo.client.config.LumongoClientConfig;
-import org.lumongo.cluster.message.Lumongo.CountRequest;
+import org.lumongo.client.command.BatchFetch;
+import org.lumongo.client.command.Query;
+import org.lumongo.client.config.LumongoPoolConfig;
+import org.lumongo.client.pool.LumongoPool;
+import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.result.BatchFetchResult;
+import org.lumongo.client.result.FetchResult;
+import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
-import org.lumongo.cluster.message.Lumongo.FetchResponse;
-import org.lumongo.cluster.message.Lumongo.FieldSort;
-import org.lumongo.cluster.message.Lumongo.QueryResponse;
-import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
-import org.lumongo.util.BsonHelper;
 import org.lumongo.util.LogUtil;
 
 public class Search {
@@ -57,33 +57,36 @@ public class Search {
 			List<String> sortList = options.valuesOf(sortArg);
 			boolean fetch = options.has(fetchArg);
 
-			LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
-			lumongoClientConfig.addMember(address, port);
-			LumongoClient client = new LumongoClient(lumongoClientConfig);
+			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
+			lumongoPoolConfig.addMember(address, port);
+			LumongoWorkPool lumongoWorkPool = new LumongoWorkPool(new LumongoPool(lumongoPoolConfig));
 
 			try {
-				//force connect
-				client.openConnection();
+
+				Query q = new Query(indexes, query, amount);
 
 				long startTime = System.currentTimeMillis();
 
 				FacetRequest.Builder fr = FacetRequest.newBuilder();
 				for (String facet : facets) {
-					fr.addCountRequest(CountRequest.newBuilder().setFacet(facet));
+					q.addCountRequest(facet);
 				}
 
 				for (String drillDown : drillDowns) {
-					fr.addDrillDown(drillDown);
+					q.addDrillDown(drillDown);
 				}
 
 				SortRequest.Builder sortRequest = SortRequest.newBuilder();
 				for (String sort : sortList) {
-					sortRequest.addFieldSort(FieldSort.newBuilder().setSortField(sort).setDirection(FieldSort.Direction.ASCENDING).build());
+					q.addFieldSort(sort);
 				}
 
-				QueryResponse qr = client.query(query, amount, indexes.toArray(new String[0]), null, fr.build(), sortRequest.build(), realTime);
 
-				List<ScoredResult> srList = qr.getResultsList();
+				q.setRealTime(realTime);
+
+				QueryResult qr = lumongoWorkPool.execute(q);
+
+				List<ScoredResult> srList = qr.getResults();
 
 				long endTime = System.currentTimeMillis();
 
@@ -161,13 +164,13 @@ public class Search {
 				}
 
 
-				if (!qr.getFacetCountList().isEmpty()) {
+				if (!qr.getFacetCounts().isEmpty()) {
 					System.out.println("Facets:");
 					System.out.print("Facet");
 					System.out.print("\t");
 					System.out.print("Count");
 					System.out.println();
-					for (FacetCount fc : qr.getFacetCountList()) {
+					for (FacetCount fc : qr.getFacetCounts()) {
 						System.out.print(fc.getFacet());
 						System.out.print("\t");
 						System.out.print(fc.getCount());
@@ -178,29 +181,36 @@ public class Search {
 
 				if (fetch) {
 					System.out.println("\nDocuments\n");
-					for (ScoredResult sr : srList) {
+					BatchFetch batchFetch = new BatchFetch();
+					batchFetch.addFetchDocumentsFromResults(srList);
+
+					BatchFetchResult bfr = lumongoWorkPool.execute(batchFetch);
+
+					for (FetchResult fetchResult : bfr.getFetchResults()) {
 						System.out.println();
-						FetchResponse res = client.fetchDocument(sr.getUniqueId());
-						if (res.hasResultDocument()) {
-							ResultDocument doc = res.getResultDocument();
-							if (ResultDocument.Type.TEXT.equals(doc.getType())) {
-								System.out.println(sr.getUniqueId()  + ":\n" + res.getResultDocument().getDocument().toStringUtf8());
+
+						if (fetchResult.hasResultDocument()) {
+
+							if (fetchResult.isDocumentText()) {
+								System.out.println(fetchResult.getUniqueId()  + ":\n" + fetchResult.getDocumentAsUtf8());
 							}
-							else if (ResultDocument.Type.BSON.equals(doc.getType())) {
-								System.out.println(sr.getUniqueId()  + ":\n" + BsonHelper.dbObjectFromResultDocument(res.getResultDocument()));
+							else if (fetchResult.isDocumentBson()) {
+								System.out.println(fetchResult.getUniqueId()  + ":\n" + fetchResult.getDocumentAsBson());
 							}
 							else {
-								System.out.println(sr.getUniqueId()  + ":\n [binary]");
+								System.out.println(fetchResult.getUniqueId()  + ":\n [binary]");
 							}
 						}
 						else {
-							System.out.println(sr.getUniqueId()  + ":\n" + "Failed to fetch");
+							System.out.println(fetchResult.getUniqueId()  + ":\n" + "Failed to fetch");
 						}
 					}
 				}
 			}
 			finally {
-				client.close();
+				if (lumongoWorkPool != null) {
+					lumongoWorkPool.shutdown();
+				}
 			}
 		}
 		catch (OptionException e) {

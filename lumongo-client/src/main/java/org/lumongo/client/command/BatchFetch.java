@@ -10,6 +10,7 @@ import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.GroupFetchRequest;
 import org.lumongo.cluster.message.Lumongo.GroupFetchResponse;
+import org.lumongo.cluster.message.Lumongo.ScoredResult;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
@@ -23,8 +24,16 @@ public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResul
 
     private List<Fetch> fetchList;
 
-    public BatchFetch(Collection<String> uniqueIds) {
+    public BatchFetch() {
         this.fetchList = new ArrayList<Fetch>();
+    }
+
+    public BatchFetch addFetches(Collection<Fetch> fetches) {
+        this.fetchList.addAll(fetches);
+        return this;
+    }
+
+    public BatchFetch addFetchDocumentsFromUniqueIds(Collection<String> uniqueIds) {
 
         for (String uniqueId : uniqueIds) {
             Fetch f = new Fetch(uniqueId);
@@ -32,11 +41,20 @@ public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResul
             f.setAssociatedFetchType(FetchType.NONE);
             fetchList.add(f);
         }
+        return this;
     }
 
-    public BatchFetch(List<Fetch> fetchList) {
-        this.fetchList = fetchList;
+    public BatchFetch addFetchDocumentsFromResults(Collection<ScoredResult> scoredResults) {
+
+        for (ScoredResult scoredResult : scoredResults) {
+            Fetch f = new Fetch(scoredResult.getUniqueId());
+            f.setResultFetchType(FetchType.FULL);
+            f.setAssociatedFetchType(FetchType.NONE);
+            fetchList.add(f);
+        }
+        return this;
     }
+
 
     @Override
     public GroupFetchRequest getRequest() {
