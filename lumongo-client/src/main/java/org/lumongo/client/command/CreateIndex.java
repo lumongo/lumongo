@@ -60,6 +60,10 @@ public class CreateIndex extends SimpleCommand<IndexCreateRequest, CreateIndexRe
         if (indexSettings != null) {
             indexCreateRequestBuilder.setIndexSettings(indexSettings);
         }
+
+        if (faceted != null) {
+            indexCreateRequestBuilder.setFaceted(faceted);
+        }
         return indexCreateRequestBuilder.build();
     }
 

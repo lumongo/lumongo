@@ -182,7 +182,7 @@ public class SingleNodeTest {
 		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("an").setAnalyzer(LMAnalyzer.NUMERIC_INT));
 		indexSettingsBuilder.setSegmentTolerance(0.05);
 
-		lumongoWorkPool.execute(new CreateIndex(FACET_TEST_INDEX, 16, "uid", indexSettingsBuilder.build()));
+		lumongoWorkPool.execute(new CreateIndex(FACET_TEST_INDEX, 16, "uid", indexSettingsBuilder.build()).setFaceted(true));
 	}
 
 	@Test(groups = { "facet" }, dependsOnGroups = { "init" })
@@ -249,7 +249,8 @@ public class SingleNodeTest {
 
 				boolean compressed = (i % 2 == 0);
 
-				Store s = new Store(uniqueId).setResultDocument("<sampleXML>random xml</sampleXML>", compressed).addIndexedDocument(indexedDoc);
+				Store s = new Store(uniqueId).setResultDocument("<sampleXML>random xml</sampleXML>", compressed);
+				s.addIndexedDocument(indexedDoc);
 				lumongoWorkPool.execute(s);
 			}
 
@@ -264,7 +265,8 @@ public class SingleNodeTest {
 
 				boolean compressed = (i % 2 == 0);
 
-				Store s = new Store(uniqueId).setResultDocument("<sampleXML>random xml</sampleXML>", compressed).addIndexedDocument(indexedDoc);
+				Store s = new Store(uniqueId).setResultDocument("<sampleXML>" + i + "</sampleXML>", compressed);
+				s.addIndexedDocument(indexedDoc);
 				lumongoWorkPool.execute(s);
 			}
 		}
@@ -304,6 +306,7 @@ public class SingleNodeTest {
 				FetchResult response = lumongoWorkPool.execute(new FetchDocument(uniqueId));
 				Assert.assertTrue(response.hasResultDocument(), "Fetch failed for <" + uniqueId + ">");
 				String recordText = response.getDocumentAsUtf8();
+				System.out.println("\n:" + recordText + ":\n");
 				Assert.assertTrue(recordText.equals("<sampleXML>" + i + "</sampleXML>"), "Document contents is invalid for <" + uniqueId + ">");
 			}
 		}
@@ -350,6 +353,7 @@ public class SingleNodeTest {
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("6666-6666").build());
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("More Magic Java Beans").build());
 				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("eissn").addFieldValue("2222-1111").build());
+				LMDoc indexedDoc = indexedDocBuilder.build();
 
 				DBObject dbObject = new BasicDBObject();
 				dbObject.put("key1", "val1");
@@ -365,6 +369,7 @@ public class SingleNodeTest {
 				AssociatedDocument ad = adBuilder.build();
 
 				Store s = new Store(uniqueId);
+				s.addIndexedDocument(indexedDoc);
 				s.setResultDocument(dbObject);
 				s.addAssociatedDocument(ad);
 
@@ -395,6 +400,7 @@ public class SingleNodeTest {
 				AssociatedDocument ad = adBuilder.build();
 				Store s = new Store(uniqueId);
 				s.addAssociatedDocument(ad);
+				lumongoWorkPool.execute(s);
 			}
 		}
 		{

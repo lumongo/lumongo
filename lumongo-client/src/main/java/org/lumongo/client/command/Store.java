@@ -73,6 +73,7 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> {
             resultDocumentBuilder.setCompressed(compressed);
         }
         this.resultDocument = resultDocumentBuilder.build();
+
         return this;
     }
 

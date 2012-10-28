@@ -146,13 +146,15 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
             requestBuilder.addIndex(index);
         }
 
-        FacetRequest.Builder facetRequestBuilder = FacetRequest.newBuilder();
+        if (!drillDowns.isEmpty() || !countRequests.isEmpty()) {
+            FacetRequest.Builder facetRequestBuilder = FacetRequest.newBuilder();
 
-        facetRequestBuilder.addAllDrillDown(drillDowns);
+            facetRequestBuilder.addAllDrillDown(drillDowns);
 
-        facetRequestBuilder.addAllCountRequest(countRequests);
+            facetRequestBuilder.addAllCountRequest(countRequests);
 
-        requestBuilder.setFacetRequest(facetRequestBuilder.build());
+            requestBuilder.setFacetRequest(facetRequestBuilder.build());
+        }
 
         SortRequest.Builder sortRequestBuilder = SortRequest.newBuilder();
         sortRequestBuilder.addAllFieldSort(fieldSorts);
