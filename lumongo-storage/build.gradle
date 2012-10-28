@@ -1,11 +1,11 @@
 
 dependencies {
-	compile 'org.mongodb:mongo-java-driver:2.8.0'
-	compile 'com.google.guava:guava:13.0'
-	compile 'org.apache.lucene:lucene-core:4.0.0-BETA'
+	compile 'org.mongodb:mongo-java-driver:2.9.2'
+	compile 'com.google.guava:guava:13.0.1'
+	compile 'org.apache.lucene:lucene-core:4.0.0'
 	compile 'log4j:log4j:1.2.16'
-    testCompile 'org.apache.lucene:lucene-queryparser:4.0.0-BETA'
-    testCompile 'org.apache.lucene:lucene-analyzers-common:4.0.0-BETA'
+    testCompile 'org.apache.lucene:lucene-queryparser:4.0.0'
+    testCompile 'org.apache.lucene:lucene-analyzers-common:4.0.0'
 }
 
 

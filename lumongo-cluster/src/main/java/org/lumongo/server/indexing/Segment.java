@@ -32,7 +32,7 @@ import org.apache.lucene.facet.search.results.FacetResultNode;
 import org.apache.lucene.facet.taxonomy.CategoryPath;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
-import org.apache.lucene.index.AtomicReader;
+import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FieldInfo;
@@ -477,8 +477,8 @@ public class Segment {
 
 		Set<String> fields = new HashSet<String>();
 
-		for (AtomicReader subreader : ir.getSequentialSubReaders()) {
-			FieldInfos fieldInfos = subreader.getFieldInfos();
+		for (AtomicReaderContext subreaderContext : ir.leaves()) {
+			FieldInfos fieldInfos = subreaderContext.reader().getFieldInfos();
 			for (FieldInfo fi : fieldInfos) {
 				String fieldName = fi.name;
 				fields.add(fieldName);
@@ -516,8 +516,8 @@ public class Segment {
 
 			SortedMap<String, AtomicLong> termsMap = new TreeMap<String, AtomicLong>();
 
-			for (AtomicReader subreader : ir.getSequentialSubReaders()) {
-				Fields fields = subreader.fields();
+			for (AtomicReaderContext subreaderContext : ir.leaves()) {
+				Fields fields = subreaderContext.reader().fields();
 				if (fields != null) {
 
 					Terms terms = fields.terms(fieldName);
