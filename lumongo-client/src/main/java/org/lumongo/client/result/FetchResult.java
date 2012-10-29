@@ -70,7 +70,7 @@ public class FetchResult extends Result {
     public String getDocumentAsUtf8() {
         if (fetchResponse.hasResultDocument()) {
             ResultDocument rd = fetchResponse.getResultDocument();
-            String contents = rd.toByteString().toStringUtf8();
+            String contents = rd.getDocument().toStringUtf8();
             return contents;
         }
         return null;

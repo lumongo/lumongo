@@ -435,7 +435,7 @@ public class SingleNodeTest {
 		}
 	}
 
-	@Test(groups = { "next" }, dependsOnGroups = { "init" })
+	@Test(groups = { "next" }, dependsOnGroups = { "first" })
 	public void deleteTest() throws Exception {
 		{
 			String uniqueIdToDelete = "someUniqueId-" + 4;
