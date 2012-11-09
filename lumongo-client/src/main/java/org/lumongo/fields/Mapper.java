@@ -1,15 +1,13 @@
 package org.lumongo.fields;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
 import org.lumongo.LumongoConstants;
 import org.lumongo.client.command.CreateOrUpdateIndex;
+import org.lumongo.client.command.IndexConfig;
 import org.lumongo.client.command.Store;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMField;
@@ -138,23 +136,24 @@ public class Mapper <T> {
             throw new RuntimeException("No Settings annonation for class <" + clazz.getSimpleName() + ">");
         }
 
-        IndexSettings.Builder indexSettingsBuilder = IndexSettings.newBuilder();
+        IndexConfig indexConfig = new IndexConfig(defaultSearchField.getFieldName());
 
-        indexSettingsBuilder.setDefaultSearchField(defaultSearchField.getFieldName());
+        for (IndexedFieldInfo<T> ifi : indexedFields) {
+            indexConfig.setFieldAnalyzer(ifi.getFieldName(), ifi.getLMAnalyzer());
+        }
 
-        indexSettingsBuilder.addAllFieldConfig(getFieldConfig());
-        indexSettingsBuilder.setDefaultAnalyzer(settings.defaultAnalyzer());
-        indexSettingsBuilder.setApplyUncommitedDeletes(settings.applyUncommitedDeletes());
-        indexSettingsBuilder.setRequestFactor(settings.requestFactor());
-        indexSettingsBuilder.setMinSegmentRequest(settings.minSeqmentRequest());
-        indexSettingsBuilder.setIdleTimeWithoutCommit(settings.idleTimeWithoutCommit());
-        indexSettingsBuilder.setSegmentCommitInterval(settings.segmentCommitInterval());
-        indexSettingsBuilder.setBlockCompression(settings.blockCompression());
-        indexSettingsBuilder.setSegmentTolerance(settings.segmentTolerance());
-        indexSettingsBuilder.setSegmentFlushInterval(settings.segmentFlushInterval());
+        indexConfig.setDefaultAnalyzer(settings.defaultAnalyzer());
+        indexConfig.setApplyUncommitedDeletes(settings.applyUncommitedDeletes());
+        indexConfig.setRequestFactor(settings.requestFactor());
+        indexConfig.setMinSegmentRequest(settings.minSeqmentRequest());
+        indexConfig.setIdleTimeWithoutCommit(settings.idleTimeWithoutCommit());
+        indexConfig.setSegmentCommitInterval(settings.segmentCommitInterval());
+        indexConfig.setBlockCompression(settings.blockCompression());
+        indexConfig.setSegmentTolerance(settings.segmentTolerance());
+        indexConfig.setSegmentFlushInterval(settings.segmentFlushInterval());
 
         CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(settings.indexName(), settings.numberOfSegments(), uniqueIdField.getFieldName(),
-                indexSettingsBuilder.build());
+                indexConfig);
         // TODO consider this
         // indexCreateRequestBuilder.setFaceted(!facetedFields.isEmpty());
         createOrUpdateIndex.setFaceted(true);
@@ -218,21 +217,7 @@ public class Mapper <T> {
         return BsonHelper.dbObjectToResultDocument(uniqueId, document);
     }
 
-    public List<FieldConfig> getFieldConfig() {
 
-        List<FieldConfig> results = new ArrayList<FieldConfig>();
-
-        for (IndexedFieldInfo<T> ifi : indexedFields) {
-            FieldConfig.Builder fc = FieldConfig.newBuilder();
-            fc.setAnalyzer(ifi.getLMAnalyzer());
-            fc.setFieldName(ifi.getFieldName());
-            results.add(fc.build());
-
-        }
-
-        return results;
-
-    }
 
     public T fromResultDocument(ResultDocument rd) throws Exception {
         T newInstance = clazz.newInstance();

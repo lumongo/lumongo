@@ -5,7 +5,6 @@ import org.lumongo.client.result.CreateIndexResult;
 import org.lumongo.client.result.CreateOrUpdateIndexResult;
 import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.UpdateIndexResult;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
 
 import com.google.protobuf.ServiceException;
 
@@ -19,13 +18,13 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
     private Integer numberOfSegments;
     private String uniqueIdField;
     private Boolean faceted;
-    private IndexSettings indexSettings;
+    private IndexConfig indexConfig;
 
-    public CreateOrUpdateIndex(String indexName, Integer numberOfSegments, String uniqueIdField, IndexSettings indexSettings) {
+    public CreateOrUpdateIndex(String indexName, Integer numberOfSegments, String uniqueIdField, IndexConfig indexConfig) {
         this.indexName = indexName;
         this.numberOfSegments = numberOfSegments;
         this.uniqueIdField = uniqueIdField;
-        this.indexSettings = indexSettings;
+        this.indexConfig = indexConfig;
     }
 
     public CreateOrUpdateIndex setFaceted(Boolean faceted) {
@@ -44,13 +43,13 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
         GetIndexes gt = new GetIndexes();
         GetIndexesResult gtr = gt.execute(lumongoConnection);
         if (gtr.containsIndex(indexName)) {
-            UpdateIndex ui = new UpdateIndex(indexName, indexSettings);
+            UpdateIndex ui = new UpdateIndex(indexName, indexConfig);
             UpdateIndexResult uir = ui.execute(lumongoConnection);
             result.setUpdateIndexResult(uir);
             return result;
         }
 
-        CreateIndex ci = new CreateIndex(indexName, numberOfSegments, uniqueIdField, indexSettings);
+        CreateIndex ci = new CreateIndex(indexName, numberOfSegments, uniqueIdField, indexConfig);
         CreateIndexResult cir = ci.execute(lumongoConnection);
         result.setCreateIndexResult(cir);
         return result;

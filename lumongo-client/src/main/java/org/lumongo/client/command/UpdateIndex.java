@@ -3,7 +3,6 @@ package org.lumongo.client.command;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.UpdateIndexResult;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.IndexSettingsRequest;
 import org.lumongo.cluster.message.Lumongo.IndexSettingsResponse;
 
@@ -13,11 +12,11 @@ import com.google.protobuf.ServiceException;
 public class UpdateIndex extends SimpleCommand<IndexSettingsRequest, UpdateIndexResult> {
 
 
-    private IndexSettings indexSettings;
+    private IndexConfig indexConfig;
     private String indexName;
 
-    public UpdateIndex(String indexName, IndexSettings indexSettings) {
-        this.indexSettings = indexSettings;
+    public UpdateIndex(String indexName, IndexConfig indexConfig) {
+        this.indexConfig = indexConfig;
         this.indexName = indexName;
     }
 
@@ -25,8 +24,8 @@ public class UpdateIndex extends SimpleCommand<IndexSettingsRequest, UpdateIndex
     public IndexSettingsRequest getRequest() {
         IndexSettingsRequest.Builder indexSettingsRequestBuilder = IndexSettingsRequest.newBuilder();
         indexSettingsRequestBuilder.setIndexName(indexName);
-        if (indexSettings != null) {
-            indexSettingsRequestBuilder.setIndexSettings(indexSettings);
+        if (indexConfig != null) {
+            indexSettingsRequestBuilder.setIndexSettings(indexConfig.getIndexSettings());
         }
 
         return indexSettingsRequestBuilder.build();

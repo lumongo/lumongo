@@ -5,7 +5,6 @@ import org.lumongo.client.result.CreateIndexResult;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
 import org.lumongo.cluster.message.Lumongo.IndexCreateResponse;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
@@ -23,13 +22,13 @@ public class CreateIndex extends SimpleCommand<IndexCreateRequest, CreateIndexRe
     private Integer numberOfSegments;
     private String uniqueIdField;
     private Boolean faceted;
-    private IndexSettings indexSettings;
+    private IndexConfig indexConfig;
 
-    public CreateIndex(String indexName, Integer numberOfSegments, String uniqueIdField, IndexSettings indexSettings) {
+    public CreateIndex(String indexName, Integer numberOfSegments, String uniqueIdField, IndexConfig indexConfig) {
         this.indexName = indexName;
         this.numberOfSegments = numberOfSegments;
         this.uniqueIdField = uniqueIdField;
-        this.indexSettings = indexSettings;
+        this.indexConfig = indexConfig;
     }
 
     public CreateIndex setFaceted(Boolean faceted) {
@@ -57,8 +56,8 @@ public class CreateIndex extends SimpleCommand<IndexCreateRequest, CreateIndexRe
             indexCreateRequestBuilder.setUniqueIdField(uniqueIdField);
         }
 
-        if (indexSettings != null) {
-            indexCreateRequestBuilder.setIndexSettings(indexSettings);
+        if (indexConfig != null) {
+            indexCreateRequestBuilder.setIndexSettings(indexConfig.getIndexSettings());
         }
 
         if (faceted != null) {
