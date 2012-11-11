@@ -12,6 +12,7 @@ import org.lumongo.client.command.DeleteIndex;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.command.FetchDocumentAndAssociated;
 import org.lumongo.client.command.GetIndexes;
+import org.lumongo.client.command.IndexConfig;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.LumongoPoolConfig;
@@ -22,8 +23,6 @@ import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMField;
@@ -162,27 +161,17 @@ public class SingleNodeTest {
 	@Test(groups = { "init" })
 	public void createIndexTest() throws Exception {
 
-		IndexSettings.Builder indexSettingsBuilder = IndexSettings.newBuilder();
-		indexSettingsBuilder.setDefaultSearchField("title");
-		indexSettingsBuilder.setDefaultAnalyzer(LMAnalyzer.KEYWORD);
-		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("title").setAnalyzer(LMAnalyzer.STANDARD));
-		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("issn").setAnalyzer(LMAnalyzer.LC_KEYWORD));
-		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("uid").setAnalyzer(LMAnalyzer.LC_KEYWORD));
-		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("an").setAnalyzer(LMAnalyzer.NUMERIC_INT));
-		indexSettingsBuilder.setSegmentTolerance(0.05);
+		String defaultSearchField = "title";
+		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
+		indexConfig.setDefaultAnalyzer(LMAnalyzer.KEYWORD);
+		indexConfig.setSegmentTolerance(0.05);
+		indexConfig.setFieldAnalyzer("title", LMAnalyzer.STANDARD);
+		indexConfig.setFieldAnalyzer("issn", LMAnalyzer.LC_KEYWORD);
+		indexConfig.setFieldAnalyzer("uid", LMAnalyzer.LC_KEYWORD);
+		indexConfig.setFieldAnalyzer("an", LMAnalyzer.NUMERIC_INT);
 
-		lumongoWorkPool.execute(new CreateIndex(MY_TEST_INDEX, 16, "uid", indexSettingsBuilder.build()));
-
-		indexSettingsBuilder = IndexSettings.newBuilder();
-		indexSettingsBuilder.setDefaultSearchField("title");
-		indexSettingsBuilder.setDefaultAnalyzer(LMAnalyzer.KEYWORD);
-		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("title").setAnalyzer(LMAnalyzer.STANDARD));
-		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("issn").setAnalyzer(LMAnalyzer.LC_KEYWORD));
-		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("uid").setAnalyzer(LMAnalyzer.LC_KEYWORD));
-		indexSettingsBuilder.addFieldConfig(FieldConfig.newBuilder().setFieldName("an").setAnalyzer(LMAnalyzer.NUMERIC_INT));
-		indexSettingsBuilder.setSegmentTolerance(0.05);
-
-		lumongoWorkPool.execute(new CreateIndex(FACET_TEST_INDEX, 16, "uid", indexSettingsBuilder.build()).setFaceted(true));
+		lumongoWorkPool.execute(new CreateIndex(MY_TEST_INDEX, 16, "uid", indexConfig));
+		lumongoWorkPool.execute(new CreateIndex(FACET_TEST_INDEX, 16, "uid", indexConfig).setFaceted(true));
 	}
 
 	@Test(groups = { "facet" }, dependsOnGroups = { "init" })
