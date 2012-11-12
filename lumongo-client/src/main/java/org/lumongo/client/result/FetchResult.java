@@ -85,6 +85,10 @@ public class FetchResult extends Result {
         return null;
     }
 
+    public AssociatedDocument getAssociatedDocument(int index) {
+        return fetchResponse.getAssociatedDocumentList().get(index);
+    }
+
     public List<AssociatedDocument> getAssociatedDocuments() {
         return fetchResponse.getAssociatedDocumentList();
     }

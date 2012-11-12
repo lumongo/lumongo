@@ -25,10 +25,10 @@ import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
-import org.lumongo.cluster.message.Lumongo.LMField;
-import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
+import org.lumongo.doc.AssociatedBuilder;
+import org.lumongo.doc.IndexedDocBuilder;
 import org.lumongo.server.LuceneNode;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
@@ -48,7 +48,6 @@ import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 import org.testng.log4testng.Logger;
 
-import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
@@ -185,12 +184,12 @@ public class SingleNodeTest {
 				for (int i = 0; i < COUNT_PER_ISSN; i++) {
 					id++;
 					String uniqueId = uniqueIdPrefix + id;
-					LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
-					indexedDocBuilder.setIndexName(FACET_TEST_INDEX);
-					indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue(issn).build());
-					indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Facet Userguide").build());
-					indexedDocBuilder.addFacet("issn" + LumongoConstants.FACET_DELIMITER + issn);
-					LMDoc indexedDoc = indexedDocBuilder.build();
+
+					IndexedDocBuilder docBuilder = new IndexedDocBuilder(FACET_TEST_INDEX);
+					docBuilder.addField("issn", issn);
+					docBuilder.addField("title", "Facet Userguide");
+					docBuilder.addFacet("issn", issn);
+					LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
 					boolean compressed = (i % 2 == 0);
 
@@ -230,11 +229,13 @@ public class SingleNodeTest {
 		{
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
 				String uniqueId = uniqueIdPrefix + i;
-				LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
-				indexedDocBuilder.setIndexName(MY_TEST_INDEX);
-				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("1333-1333").build());
-				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Search and Storage").build());
-				LMDoc indexedDoc = indexedDocBuilder.build();
+
+
+				IndexedDocBuilder docBuilder = new IndexedDocBuilder(MY_TEST_INDEX);
+				docBuilder.addField("issn", "1333-1333");
+				docBuilder.addField("title", "Search and Storage");
+				LMDoc indexedDoc = docBuilder.getIndexedDoc();
+
 
 				boolean compressed = (i % 2 == 0);
 
@@ -245,12 +246,12 @@ public class SingleNodeTest {
 
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
 				String uniqueId = uniqueIdPrefix + i;
-				LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
-				indexedDocBuilder.setIndexName(MY_TEST_INDEX);
-				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("1234-1234").build());
-				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Distributed Search and Storage System").build());
-				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("an").addIntValue(i).build());
-				LMDoc indexedDoc = indexedDocBuilder.build();
+
+				IndexedDocBuilder docBuilder = new IndexedDocBuilder(MY_TEST_INDEX);
+				docBuilder.addField("issn", "1234-1234");
+				docBuilder.addField("title", "Distributed Search and Storage System");
+				docBuilder.addField("an", i);
+				LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
 				boolean compressed = (i % 2 == 0);
 
@@ -306,12 +307,11 @@ public class SingleNodeTest {
 
 		String uniqueId = "bsonTestObjectId";
 		{
-			LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
-			indexedDocBuilder.setIndexName(MY_TEST_INDEX);
-			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("4321-4321").build());
-			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("Magic Java Beans").build());
-			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("eissn").addFieldValue("3333-3333").build());
-			LMDoc indexedDoc = indexedDocBuilder.build();
+			IndexedDocBuilder docBuilder = new IndexedDocBuilder(MY_TEST_INDEX);
+			docBuilder.addField("issn", "4321-4321");
+			docBuilder.addField("title", "Magic Java Beans");
+			docBuilder.addField("eissn", "3333-3333");
+			LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
 			DBObject dbObject = new BasicDBObject();
 			dbObject.put("someKey", "someValue");
@@ -337,25 +337,22 @@ public class SingleNodeTest {
 		String uniqueId = "id3333";
 		{
 			{
-				LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
-				indexedDocBuilder.setIndexName(MY_TEST_INDEX);
-				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("6666-6666").build());
-				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("More Magic Java Beans").build());
-				indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("eissn").addFieldValue("2222-1111").build());
-				LMDoc indexedDoc = indexedDocBuilder.build();
+				IndexedDocBuilder docBuilder = new IndexedDocBuilder(MY_TEST_INDEX);
+				docBuilder.addField("issn", "6666-6666");
+				docBuilder.addField("title", "More Magic Java Beans");
+				docBuilder.addField("eissn", 2222 - 1111);
+				LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
 				DBObject dbObject = new BasicDBObject();
 				dbObject.put("key1", "val1");
 				dbObject.put("key2", "val2");
 
-				AssociatedDocument.Builder adBuilder = AssociatedDocument.newBuilder();
-				adBuilder.setCompressed(true);
-				adBuilder.setDocument(ByteString.copyFromUtf8("Some Text"));
-				adBuilder.addMetadata(Metadata.newBuilder().setKey("mydata").setValue("myvalue"));
-				adBuilder.addMetadata(Metadata.newBuilder().setKey("sometypeinfo").setValue("text file"));
-				adBuilder.setFilename("myfile");
-				adBuilder.setDocumentUniqueId(uniqueId);
-				AssociatedDocument ad = adBuilder.build();
+				AssociatedBuilder associatedBuilder = new AssociatedBuilder(uniqueId, "myfile");
+				associatedBuilder.setCompressed(true);
+				associatedBuilder.setDocument("Some Text");
+				associatedBuilder.addMetaData("mydata", "myvalue");
+				associatedBuilder.addMetaData("sometypeinfo", "text file");
+				AssociatedDocument ad = associatedBuilder.getAssociatedDocument();
 
 				Store s = new Store(uniqueId);
 				s.addIndexedDocument(indexedDoc);
@@ -366,27 +363,25 @@ public class SingleNodeTest {
 
 			}
 			{
-				AssociatedDocument.Builder adBuilder = AssociatedDocument.newBuilder();
-				adBuilder.setCompressed(false);
-				adBuilder.setDocument(ByteString.copyFromUtf8("Some Other Text"));
-				adBuilder.addMetadata(Metadata.newBuilder().setKey("mydata").setValue("myvalue 2"));
-				adBuilder.addMetadata(Metadata.newBuilder().setKey("sometypeinfo").setValue("text file"));
-				adBuilder.setFilename("myfile2");
-				adBuilder.setDocumentUniqueId(uniqueId);
-				AssociatedDocument ad = adBuilder.build();
+
+				AssociatedBuilder associatedBuilder = new AssociatedBuilder(uniqueId, "myfile2");
+				associatedBuilder.setCompressed(false);
+				associatedBuilder.setDocument("Some Other Text");
+				associatedBuilder.addMetaData("mydata", "myvalue 2");
+				associatedBuilder.addMetaData("sometypeinfo", "text file");
+				AssociatedDocument ad = associatedBuilder.getAssociatedDocument();
 
 				Store s = new Store(uniqueId);
 				s.addAssociatedDocument(ad);
 				lumongoWorkPool.execute(s);
 			}
 			{
-				AssociatedDocument.Builder adBuilder = AssociatedDocument.newBuilder();
-				adBuilder.setCompressed(true);
-				adBuilder.setDocument(ByteString.copyFromUtf8("Some Other Text"));
-				adBuilder.addMetadata(Metadata.newBuilder().setKey("stuff").setValue("mystuff"));
-				adBuilder.setFilename("filef");
-				adBuilder.setDocumentUniqueId(uniqueId);
-				AssociatedDocument ad = adBuilder.build();
+				AssociatedBuilder associatedBuilder = new AssociatedBuilder(uniqueId, "filef");
+				associatedBuilder.setCompressed(true);
+				associatedBuilder.setDocument("Some Other Text");
+				associatedBuilder.addMetaData("stuff", "mystuff");
+				AssociatedDocument ad = associatedBuilder.getAssociatedDocument();
+
 				Store s = new Store(uniqueId);
 				s.addAssociatedDocument(ad);
 				lumongoWorkPool.execute(s);
@@ -403,9 +398,9 @@ public class SingleNodeTest {
 				Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 
 				Assert.assertEquals(response.getAssociatedDocumentCount(), 3, "Expected 3 associated documents");
-				Assert.assertTrue(!response.getAssociatedDocuments().get(0).hasDocument(), "Associated Document should be meta only");
-				Assert.assertTrue(!response.getAssociatedDocuments().get(1).hasDocument(), "Associated Document should be meta only");
-				Assert.assertTrue(!response.getAssociatedDocuments().get(2).hasDocument(), "Associated Document should be meta only");
+				Assert.assertTrue(!response.getAssociatedDocument(0).hasDocument(), "Associated Document should be meta only");
+				Assert.assertTrue(!response.getAssociatedDocument(1).hasDocument(), "Associated Document should be meta only");
+				Assert.assertTrue(!response.getAssociatedDocument(2).hasDocument(), "Associated Document should be meta only");
 			}
 			{
 				FetchResult response = lumongoWorkPool.execute(new FetchDocumentAndAssociated(uniqueId));
@@ -416,9 +411,9 @@ public class SingleNodeTest {
 				Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 
 				Assert.assertEquals(response.getAssociatedDocumentCount(), 3, "Expected 3 associated documents");
-				Assert.assertTrue(response.getAssociatedDocuments().get(0).hasDocument(), "Associated document does not exist");
-				Assert.assertTrue(response.getAssociatedDocuments().get(1).hasDocument(), "Associated document does not exist");
-				Assert.assertTrue(response.getAssociatedDocuments().get(2).hasDocument(), "Associated document does not exist");
+				Assert.assertTrue(response.getAssociatedDocument(0).hasDocument(), "Associated document does not exist");
+				Assert.assertTrue(response.getAssociatedDocument(1).hasDocument(), "Associated document does not exist");
+				Assert.assertTrue(response.getAssociatedDocument(2).hasDocument(), "Associated document does not exist");
 
 			}
 		}
@@ -484,11 +479,10 @@ public class SingleNodeTest {
 	@Test(groups = { "last" }, dependsOnGroups = { "next" })
 	public void apiUsage() throws Exception {
 		{
-			LMDoc.Builder indexedDocBuilder = LMDoc.newBuilder();
-			indexedDocBuilder.setIndexName(MY_TEST_INDEX);
-			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("issn").addFieldValue("4444-1111").build());
-			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName("title").addFieldValue("A really special title to search").build());
-			LMDoc indexedDoc = indexedDocBuilder.build();
+			IndexedDocBuilder docBuilder = new IndexedDocBuilder(MY_TEST_INDEX);
+			docBuilder.addField("issn", "4444-1111");
+			docBuilder.addField("title", "A really special title to search");
+			LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
 			String uniqueId = "myid123";
 			Store s = new Store(uniqueId);
