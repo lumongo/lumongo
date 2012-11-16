@@ -8,6 +8,7 @@ import org.lumongo.LumongoConstants;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.IndexConfig;
 import org.lumongo.client.command.Store;
+import org.lumongo.client.result.FetchResult;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMField;
@@ -182,7 +183,11 @@ public class Mapper <T> {
         return store;
     }
 
-    public LMDoc toLMDoc(String index, T object) throws IllegalArgumentException, IllegalAccessException {
+    public T fromFetchResult(FetchResult fetchResult) throws Exception {
+        return fetchResult.getDocument(this);
+    }
+
+    public LMDoc toLMDoc(String index, T object) throws Exception {
 
         LMDoc.Builder lmBuilder = LMDoc.newBuilder();
         lmBuilder.setIndexName(index);

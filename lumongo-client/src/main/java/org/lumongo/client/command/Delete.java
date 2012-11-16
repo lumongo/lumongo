@@ -13,7 +13,7 @@ import org.lumongo.cluster.message.Lumongo.ExternalService;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class Delete extends SimpleCommand<DeleteRequest, DeleteResult> {
+public abstract class Delete extends SimpleCommand<DeleteRequest, DeleteResult> {
     private Collection<String> indexes;
     private String uniqueId;
     private String fileName;

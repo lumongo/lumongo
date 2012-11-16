@@ -5,6 +5,7 @@ import java.util.List;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
+import org.lumongo.fields.Mapper;
 import org.lumongo.util.BsonHelper;
 
 import com.google.protobuf.ByteString;
@@ -81,6 +82,13 @@ public class FetchResult extends Result {
             ResultDocument rd = fetchResponse.getResultDocument();
             DBObject dbObject = BsonHelper.dbObjectFromResultDocument(rd);
             return dbObject;
+        }
+        return null;
+    }
+
+    public <T> T getDocument(Mapper<T> mapper) throws Exception {
+        if (fetchResponse.hasResultDocument()) {
+            return mapper.fromResultDocument(fetchResponse.getResultDocument());
         }
         return null;
     }
