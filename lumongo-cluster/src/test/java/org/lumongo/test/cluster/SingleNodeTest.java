@@ -1,9 +1,5 @@
 package org.lumongo.test.cluster;
 
-import java.io.IOException;
-import java.util.HashMap;
-
-import org.lumongo.LumongoConstants;
 import org.lumongo.client.command.CreateIndex;
 import org.lumongo.client.command.DeleteAllAssociated;
 import org.lumongo.client.command.DeleteAssociated;
@@ -15,8 +11,6 @@ import org.lumongo.client.command.GetIndexes;
 import org.lumongo.client.command.IndexConfig;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
-import org.lumongo.client.config.LumongoPoolConfig;
-import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.GetIndexesResult;
@@ -29,28 +23,14 @@ import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.doc.AssociatedBuilder;
 import org.lumongo.doc.IndexedDocBuilder;
-import org.lumongo.server.LuceneNode;
-import org.lumongo.server.config.ClusterConfig;
-import org.lumongo.server.config.LocalNodeConfig;
-import org.lumongo.server.config.MongoConfig;
-import org.lumongo.storage.rawfiles.MongoDocumentStorage;
 import org.lumongo.util.BsonHelper;
-import org.lumongo.util.ClusterHelper;
-import org.lumongo.util.LogUtil;
-import org.lumongo.util.ServerNameHelper;
-import org.lumongo.util.TestHelper;
-import org.lumongo.util.properties.FakePropertiesReader;
-import org.lumongo.util.properties.PropertiesReader.PropertyException;
 import org.testng.Assert;
-import org.testng.annotations.AfterGroups;
-import org.testng.annotations.BeforeGroups;
-import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 import org.testng.log4testng.Logger;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import com.mongodb.Mongo;
+
 
 public class SingleNodeTest {
 	private static final String MY_TEST_INDEX = "myTestIndex";
@@ -61,104 +41,12 @@ public class SingleNodeTest {
 
 	private LumongoWorkPool lumongoWorkPool;
 
-	protected LuceneNode luceneNode;
 
-	@BeforeSuite
-	public static void cleanDatabaseAndInit() throws Exception {
-
-		Thread.currentThread().setName("Test");
-
-		LogUtil.loadLogConfig();
-
-		log.info("Cleaning existing test dbs and initing");
-
-		Mongo mongo = TestHelper.getMongo();
-		mongo.getDB(TestHelper.TEST_DATABASE_NAME).dropDatabase();
-		mongo.getDB(TestHelper.TEST_DATABASE_NAME + MongoDocumentStorage.STORAGE_DB_SUFFIX).dropDatabase();
-	}
-
-	@BeforeGroups(groups = { "init" })
-	public void startServer() throws Exception {
-
-		log.info("Starting server for single node test");
-
-		MongoConfig mongoConfig = getTestMongoConfig();
-		LocalNodeConfig localNodeConfig = getTestLocalNodeConfig();
-
-		ClusterConfig clusterConfig = getTestClusterConfig();
-		ClusterHelper.saveClusterConfig(mongoConfig, clusterConfig);
-
-		String localServer = ServerNameHelper.getLocalServer();
-
-		ClusterHelper.registerNode(mongoConfig, localNodeConfig, localServer);
-
-		int instance = localNodeConfig.getHazelcastPort();
-
-		luceneNode = new LuceneNode(mongoConfig, localServer, instance);
-
-		luceneNode.start();
-
-		startClient();
-
-	}
-
-	public ClusterConfig getTestClusterConfig() throws PropertyException {
-		HashMap<String, String> settings = new HashMap<String, String>();
-
-		settings.put(ClusterConfig.SHARDED, "false");
-		settings.put(ClusterConfig.INDEX_BLOCK_SIZE, "131072");
-		settings.put(ClusterConfig.MAX_INDEX_BLOCKS, "10000");
-		settings.put(ClusterConfig.MAX_INTERNAL_CLIENT_CONNECTIONS, "16");
-		settings.put(ClusterConfig.INTERNAL_WORKERS, "16");
-		settings.put(ClusterConfig.EXTERNAL_WORKERS, "16");
-		settings.put(ClusterConfig.INTERNAL_SHUTDOWN_TIMEOUT, "10");
-		settings.put(ClusterConfig.EXTERNAL_SHUTDOWN_TIMEOUT, "10");
-
-		ClusterConfig clusterConfig = new ClusterConfig(new FakePropertiesReader("test", settings));
-		return clusterConfig;
-	}
-
-	public LocalNodeConfig getTestLocalNodeConfig() throws PropertyException {
-		HashMap<String, String> settings = new HashMap<String, String>();
-
-		settings.put(LocalNodeConfig.HAZELCAST_PORT, LumongoConstants.DEFAULT_HAZELCAST_PORT + "");
-		settings.put(LocalNodeConfig.INTERNAL_SERVICE_PORT, LumongoConstants.DEFAULT_INTERNAL_SERVICE_PORT + "");
-		settings.put(LocalNodeConfig.EXTERNAL_SERVICE_PORT, LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT + "");
-		settings.put(LocalNodeConfig.REST_PORT, LumongoConstants.DEFAULT_REST_SERVICE_PORT + "");
-		LocalNodeConfig localNodeConfig = new LocalNodeConfig(new FakePropertiesReader("test", settings));
-		return localNodeConfig;
-	}
-
-	public MongoConfig getTestMongoConfig() throws PropertyException {
-		HashMap<String, String> settings = new HashMap<String, String>();
-
-		settings.put(MongoConfig.DATABASE_NAME, TestHelper.TEST_DATABASE_NAME);
-		settings.put(MongoConfig.MONGO_HOST, TestHelper.getMongoServer());
-		settings.put(MongoConfig.MONGO_PORT, String.valueOf(TestHelper.getMongoPort()));
-
-		MongoConfig mongoConfig = new MongoConfig(new FakePropertiesReader("test", settings));
-		return mongoConfig;
-	}
-
-	@AfterGroups(groups = { "drop" })
-	public void stopServer() throws Exception {
-		log.info("Stopping server for single node test");
-		stopClient();
-		luceneNode.shutdown();
-	}
-
-	public void startClient() throws IOException {
-		LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
-		lumongoPoolConfig.addMember("localhost");
-		lumongoWorkPool = new LumongoWorkPool(new LumongoPool(lumongoPoolConfig));
-	}
-
-	public void stopClient() throws Exception {
-		lumongoWorkPool.shutdown();
-	}
 
 	@Test(groups = { "init" })
 	public void createIndexTest() throws Exception {
+
+		lumongoWorkPool = SetupSuite.getLumongoWorkPool();
 
 		String defaultSearchField = "title";
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
