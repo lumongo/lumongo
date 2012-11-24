@@ -10,7 +10,7 @@ import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoPool;
-import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.util.LogUtil;
 
@@ -37,7 +37,7 @@ public class Fetch {
 
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 			lumongoPoolConfig.addMember(address, port);
-			LumongoWorkPool lumongoWorkPool = new LumongoWorkPool(new LumongoPool(lumongoPoolConfig));
+			LumongoBaseWorkPool lumongoWorkPool = new LumongoBaseWorkPool(new LumongoPool(lumongoPoolConfig));
 
 			try {
 

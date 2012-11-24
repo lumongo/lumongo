@@ -9,7 +9,7 @@ import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.command.GetAllTerms;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoPool;
-import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.util.LogUtil;
@@ -30,7 +30,7 @@ public class Terms {
 		OptionSpec<String> startTermArg = parser.accepts(AdminConstants.START_TERM).withRequiredArg().describedAs("Term to start search from");
 		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME).withRequiredArg().ofType(Boolean.class).describedAs("Real time search");
 
-		LumongoWorkPool lumongoWorkPool = null;
+		LumongoBaseWorkPool lumongoWorkPool = null;
 
 		try {
 			OptionSet options = parser.parse(args);
@@ -45,7 +45,7 @@ public class Terms {
 
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 			lumongoPoolConfig.addMember(address, port);
-			lumongoWorkPool = new LumongoWorkPool(new LumongoPool(lumongoPoolConfig));
+			lumongoWorkPool = new LumongoBaseWorkPool(new LumongoPool(lumongoPoolConfig));
 
 			GetTermsResult response = lumongoWorkPool.execute(new GetAllTerms(index, field).setStartTerm(startTerm).setMinDocFreq(minDocFreq)
 					.setRealTime(realTime));

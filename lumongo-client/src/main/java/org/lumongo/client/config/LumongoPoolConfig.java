@@ -13,6 +13,7 @@ public class LumongoPoolConfig {
     private int maxConnections;
     private int maxIdle;
     private int defaultRetries;
+    private String poolName;
 
     public final static int DEFAULT_DEFAULT_RETRIES = 0;
 
@@ -21,32 +22,35 @@ public class LumongoPoolConfig {
         this.maxConnections = 8;
         this.maxIdle = 8;
         this.defaultRetries = DEFAULT_DEFAULT_RETRIES;
+        this.poolName = null;
+    }
+
+    public LumongoPoolConfig addMember(String serverAddress) {
+        return addMember(serverAddress, LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
     }
 
 
-    public void addMember(String serverAddress) {
-        addMember(serverAddress, LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
+    public LumongoPoolConfig addMember(String serverAddress, int externalPort) {
+        return addMember(serverAddress, externalPort, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
     }
 
 
-    public void addMember(String serverAddress, int externalPort) {
-        addMember(serverAddress, externalPort, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
-    }
-
-
-    public void addMember(String serverAddress, int externalPort, int restPort) {
+    public LumongoPoolConfig addMember(String serverAddress, int externalPort, int restPort) {
         LMMember member = LMMember.newBuilder().setServerAddress(serverAddress).setExternalPort(externalPort).setRestPort(restPort).build();
         members.add(member);
+        return this;
     }
 
 
-    public void addMember(LMMember member) {
+    public LumongoPoolConfig addMember(LMMember member) {
         members.add(member);
+        return this;
     }
 
 
-    public void clearMembers() {
+    public LumongoPoolConfig clearMembers() {
         members.clear();
+        return this;
     }
 
     public List<LMMember> getMembers() {
@@ -57,24 +61,38 @@ public class LumongoPoolConfig {
         return maxConnections;
     }
 
-    public void setMaxConnections(int maxConnections) {
+    public LumongoPoolConfig setMaxConnections(int maxConnections) {
         this.maxConnections = maxConnections;
+        return this;
     }
 
     public int getMaxIdle() {
         return maxIdle;
     }
 
-    public void setMaxIdle(int maxIdle) {
+    public LumongoPoolConfig setMaxIdle(int maxIdle) {
         this.maxIdle = maxIdle;
+        return this;
     }
 
     public int getDefaultRetries() {
         return defaultRetries;
     }
 
-    public void setDefaultRetries(int defaultRetries) {
+    public LumongoPoolConfig setDefaultRetries(int defaultRetries) {
         this.defaultRetries = defaultRetries;
+        return this;
+    }
+
+
+    public String getPoolName() {
+        return poolName;
+    }
+
+
+    public LumongoPoolConfig setPoolName(String poolName) {
+        this.poolName = poolName;
+        return this;
     }
 
 }

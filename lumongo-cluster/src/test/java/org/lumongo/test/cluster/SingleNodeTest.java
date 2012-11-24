@@ -11,7 +11,7 @@ import org.lumongo.client.command.GetIndexes;
 import org.lumongo.client.command.IndexConfig;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
-import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.QueryResult;
@@ -39,7 +39,7 @@ public class SingleNodeTest {
 
 	private static Logger log = Logger.getLogger(SingleNodeTest.class);
 
-	private LumongoWorkPool lumongoWorkPool;
+	private LumongoBaseWorkPool lumongoWorkPool;
 
 
 

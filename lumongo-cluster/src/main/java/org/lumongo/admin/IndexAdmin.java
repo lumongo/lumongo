@@ -18,7 +18,7 @@ import org.lumongo.client.command.GetNumerOfDocs;
 import org.lumongo.client.command.OptimizeIndex;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoPool;
-import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.result.ClearResult;
 import org.lumongo.client.result.DeleteIndexResult;
 import org.lumongo.client.result.GetFieldsResult;
@@ -54,7 +54,7 @@ public class IndexAdmin {
 		OptionSpec<Command> commandArg = parser.accepts(AdminConstants.COMMAND).withRequiredArg().ofType(Command.class).required()
 				.describedAs("Command to run " + Arrays.toString(Command.values()));
 
-		LumongoWorkPool lumongoWorkPool = null;
+		LumongoBaseWorkPool lumongoWorkPool = null;
 
 		try {
 			OptionSet options = parser.parse(args);
@@ -66,7 +66,7 @@ public class IndexAdmin {
 
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 			lumongoPoolConfig.addMember(address, port);
-			lumongoWorkPool = new LumongoWorkPool(new LumongoPool(lumongoPoolConfig));
+			lumongoWorkPool = new LumongoBaseWorkPool(new LumongoPool(lumongoPoolConfig));
 
 			if (Command.getRealTimeCount.equals(command)) {
 				if (index == null) {

@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.lumongo.LumongoConstants;
 import org.lumongo.client.config.LumongoPoolConfig;
-import org.lumongo.client.pool.LumongoPool;
+import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.server.LuceneNode;
 import org.lumongo.server.config.ClusterConfig;
@@ -134,7 +134,7 @@ public class SetupSuite {
 	public static void startClient() throws Exception {
 		LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 		lumongoPoolConfig.addMember("localhost");
-		lumongoWorkPool = new LumongoWorkPool(new LumongoPool(lumongoPoolConfig));
+		lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 		lumongoWorkPool.updateMembers();
 	}
 
@@ -142,7 +142,7 @@ public class SetupSuite {
 		lumongoWorkPool.shutdown();
 	}
 
-	public static LumongoWorkPool getLumongoWorkPool() {
+	public static LumongoBaseWorkPool getLumongoWorkPool() {
 		return lumongoWorkPool;
 	}
 

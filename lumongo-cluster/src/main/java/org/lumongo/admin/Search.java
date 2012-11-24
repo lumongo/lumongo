@@ -13,7 +13,7 @@ import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoPool;
-import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.QueryResult;
@@ -59,7 +59,7 @@ public class Search {
 
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 			lumongoPoolConfig.addMember(address, port);
-			LumongoWorkPool lumongoWorkPool = new LumongoWorkPool(new LumongoPool(lumongoPoolConfig));
+			LumongoBaseWorkPool lumongoWorkPool = new LumongoBaseWorkPool(new LumongoPool(lumongoPoolConfig));
 
 			try {
 
