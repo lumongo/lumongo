@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.lumongo.LumongoConstants;
 import org.lumongo.client.config.LumongoPoolConfig;
-import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.server.LuceneNode;
 import org.lumongo.server.config.ClusterConfig;
@@ -142,7 +141,7 @@ public class SetupSuite {
 		lumongoWorkPool.shutdown();
 	}
 
-	public static LumongoBaseWorkPool getLumongoWorkPool() {
+	public static LumongoWorkPool getLumongoWorkPool() {
 		return lumongoWorkPool;
 	}
 
