@@ -20,7 +20,7 @@ public class LumongoPool {
 
     private GenericKeyedObjectPool<LMMember, LumongoConnection> connectionPool;
 
-    public LumongoPool(LumongoPoolConfig lumongoPoolConfig) {
+    public LumongoPool(final LumongoPoolConfig lumongoPoolConfig) {
         members = lumongoPoolConfig.getMembers();
         retries = lumongoPoolConfig.getDefaultRetries();
         maxIdle = lumongoPoolConfig.getMaxIdle();
@@ -31,7 +31,7 @@ public class LumongoPool {
             @Override
             public LumongoConnection makeObject(LMMember key) throws Exception {
                 LumongoConnection lc = new LumongoConnection(key);
-                lc.open();
+                lc.open(lumongoPoolConfig.isCompressedConnection());
                 return lc;
             }
 

@@ -14,6 +14,7 @@ public class LumongoPoolConfig {
     private int maxIdle;
     private int defaultRetries;
     private String poolName;
+    private boolean compressedConnection;
 
     public final static int DEFAULT_DEFAULT_RETRIES = 0;
 
@@ -23,6 +24,7 @@ public class LumongoPoolConfig {
         this.maxIdle = 8;
         this.defaultRetries = DEFAULT_DEFAULT_RETRIES;
         this.poolName = null;
+        this.compressedConnection = false;
     }
 
     public LumongoPoolConfig addMember(String serverAddress) {
@@ -93,6 +95,14 @@ public class LumongoPoolConfig {
     public LumongoPoolConfig setPoolName(String poolName) {
         this.poolName = poolName;
         return this;
+    }
+
+    public boolean isCompressedConnection() {
+        return compressedConnection;
+    }
+
+    public void setCompressedConnection(boolean compressedConnection) {
+        this.compressedConnection = compressedConnection;
     }
 
 }
