@@ -8,7 +8,6 @@ import javax.servlet.ServletException;
 import org.lumongo.client.command.GetIndexes;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.config.LumongoPoolConfig;
-import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.QueryResult;
@@ -43,7 +42,7 @@ public class SearchServiceImpl extends RemoteServiceServlet implements SearchSer
 		lumongoPoolConfig.addMember(lumongoServer);
 		lumongoPoolConfig.setDefaultRetries(4);
 
-		lumongoWorkPool = new LumongoWorkPool(new LumongoPool(lumongoPoolConfig));
+		lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 
 	}
 

@@ -39,6 +39,7 @@ import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
@@ -96,9 +97,10 @@ public class Segment {
 	private String indexName;
 	private Analyzer analyzer;
 
-	private final Set<String> uniqueIdOnlySet;
+	private final Set<String> fetchSet;
 
 	private final FieldType notStoredTextField;
+
 
 	public Segment(int segmentNumber, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter, IndexConfig indexConfig, Analyzer analyzer)
 			throws IOException {
@@ -115,7 +117,7 @@ public class Segment {
 
 		this.uniqueIdField = indexConfig.getUniqueIdField();
 
-		this.uniqueIdOnlySet = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(uniqueIdField)));
+		this.fetchSet = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(uniqueIdField, LumongoConstants.TIMESTAMP_FIELD)));
 
 		this.counter = new AtomicLong();
 		this.lastCommit = null;
@@ -266,10 +268,14 @@ public class Segment {
 	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i)
 			throws CorruptIndexException, IOException {
 		int docId = results[i].doc;
-		Document d = is.document(docId, uniqueIdOnlySet);
+		Document d = is.document(docId, fetchSet);
 		ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
 		srBuilder.setScore(results[i].score);
 		srBuilder.setUniqueId(d.get(indexConfig.getUniqueIdField()));
+
+		IndexableField f = d.getField(LumongoConstants.TIMESTAMP_FIELD);
+		srBuilder.setTimestampField(f.numericValue().longValue());
+
 		srBuilder.setDocId(docId);
 		srBuilder.setSegment(segmentNumber);
 		srBuilder.setIndexName(indexName);
@@ -434,6 +440,8 @@ public class Segment {
 
 		//make sure the update works because it is searching on a term
 		d.add(new StringField(indexConfig.getUniqueIdField(), uniqueId, Store.YES));
+
+		d.add(new LongField(LumongoConstants.TIMESTAMP_FIELD, lmDoc.getTimestamp(), Store.YES));
 
 		if (indexConfig.isFaceted()) {
 			List<CategoryPath> categories = new ArrayList<CategoryPath>();

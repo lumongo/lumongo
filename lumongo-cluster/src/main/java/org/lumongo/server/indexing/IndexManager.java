@@ -601,12 +601,13 @@ public class IndexManager {
 	public StoreResponse storeDocument(StoreRequest storeRequest) throws Exception {
 		globalLock.readLock().lock();
 		try {
-
+			long timestamp = hazelcastManager.getClusterTime();
 			String uniqueId = storeRequest.getUniqueId();
 			if (storeRequest.getIndexedDocumentCount() > 0) {
 				Set<String> indexNames = new HashSet<String>();
 				HashMap<Member, List<LMDoc>> indexForMember = new HashMap<Member, List<LMDoc>>();
 				for (LMDoc lmDoc : storeRequest.getIndexedDocumentList()) {
+					lmDoc = LMDoc.newBuilder(lmDoc).setTimestamp(timestamp).build();
 					String indexName = lmDoc.getIndexName();
 					if (indexNames.contains(indexName)) {
 						throw new Exception("Can not store a document for twice for index <" + indexName + ">");

@@ -196,4 +196,8 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 
 	}
 
+	public long getClusterTime() {
+		return hazelcastInstance.getCluster().getClusterTime();
+	}
+
 }

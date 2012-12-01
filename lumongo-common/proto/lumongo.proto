@@ -200,6 +200,7 @@ message LMDoc {
 	required string indexName = 1;
 	repeated LMField indexedField = 2;
 	repeated string facet = 3;
+	optional int64 timestamp = 4;
 }
 
 
@@ -251,6 +252,7 @@ message ScoredResult {
 	repeated int64 sortLong = 9;
 	repeated float sortFloat = 10;
 	repeated double sortDouble = 11;
+	required int64 timestampField = 12;
 }
 
 message SortRequest {
