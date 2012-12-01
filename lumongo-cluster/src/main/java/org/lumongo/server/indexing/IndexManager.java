@@ -662,10 +662,12 @@ public class IndexManager {
 			}
 
 			if (storeRequest.hasResultDocument()) {
-				documentStorage.storeSourceDocument(uniqueId, storeRequest.getResultDocument());
+				ResultDocument rd = ResultDocument.newBuilder(storeRequest.getResultDocument()).setTimestamp(timestamp).build();
+				documentStorage.storeSourceDocument(uniqueId, rd);
 			}
 
 			for (AssociatedDocument ad : storeRequest.getAssociatedDocumentList()) {
+				ad = AssociatedDocument.newBuilder(ad).setTimestamp(timestamp).build();
 				documentStorage.storeAssociatedDocument(ad);
 			}
 
@@ -1145,7 +1147,7 @@ public class IndexManager {
 			throws Exception {
 		globalLock.readLock().lock();
 		try {
-			documentStorage.storeAssociatedDocument(uniqueId, fileName, is, compress, metadataMap);
+			documentStorage.storeAssociatedDocument(uniqueId, fileName, is, compress, hazelcastManager.getClusterTime(), metadataMap);
 		}
 		finally {
 			globalLock.readLock().unlock();

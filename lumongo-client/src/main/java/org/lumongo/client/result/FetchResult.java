@@ -109,5 +109,13 @@ public class FetchResult extends Result {
         return fetchResponse.getAssociatedDocumentCount();
     }
 
+    public Long getDocumentTimestamp() {
+        if (fetchResponse.hasResultDocument()) {
+            ResultDocument rd = fetchResponse.getResultDocument();
+            return rd.getTimestamp();
+        }
+        return null;
+    }
+
 
 }

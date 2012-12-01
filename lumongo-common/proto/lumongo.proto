@@ -225,6 +225,7 @@ message ResultDocument {
 	optional Type type = 3 [default = BINARY];
 	optional bool compressed = 4 [default = false];
 	repeated Metadata metadata = 5;
+	optional int64 timestamp = 6;
 }
 
 message AssociatedDocument {
@@ -233,6 +234,7 @@ message AssociatedDocument {
 	optional bytes document = 3;
 	optional bool compressed = 4 [default = false];
 	repeated Metadata metadata = 5;
+	optional int64 timestamp = 6;
 }
 
 message Metadata {

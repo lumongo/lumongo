@@ -45,6 +45,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	private static final String FILENAME = "filename";
 	private static final String VALUE = "value";
 	private static final String DOC = "doc";
+	private static final String TIMESTAMP = "timestamp";
 	private static final String TYPE = "type";
 	private static final String COMPRESSED = "compressed";
 	private static final String METADATA = "metadata";
@@ -133,6 +134,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 			document.put(METADATA, metadata);
 		}
 
+		document.put(TIMESTAMP, doc.getTimestamp());
 		document.put(COMPRESSED, doc.getCompressed());
 		document.put(TYPE, doc.getType().toString());
 		document.put(MongoConstants.StandardFields._ID, uniqueId);
@@ -149,11 +151,14 @@ public class MongoDocumentStorage implements DocumentStorage {
 			if (null != result) {
 				boolean compressed = (boolean) result.removeField(COMPRESSED);
 
+				long timestamp = (long) result.removeField(TIMESTAMP);
+
 				ResultDocument.Type type = ResultDocument.Type.valueOf((String) result.removeField(TYPE));
 				ResultDocument.Builder dBuilder = ResultDocument.newBuilder();
 				dBuilder.setType(type);
 				dBuilder.setCompressed(compressed);
 				dBuilder.setUniqueId(uniqueId);
+				dBuilder.setTimestamp(timestamp);
 
 				if (result.containsField(METADATA)) {
 					DBObject metadata = (DBObject) result.removeField(METADATA);
@@ -196,7 +201,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	}
 
 	@Override
-	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, HashMap<String, String> metadataMap)
+	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long timestamp, HashMap<String, String> metadataMap)
 			throws Exception {
 		GridFS gridFS = createGridFSConnection();
 
@@ -214,6 +219,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 				metadata.put(key, metadataMap.get(key));
 			}
 		}
+		metadata.put(TIMESTAMP, timestamp);
 		metadata.put(COMPRESSED, compress);
 		metadata.put(UNIQUE_ID_KEY, uniqueId);
 		gFile.setMetaData(metadata);
@@ -236,6 +242,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		for (Metadata meta : doc.getMetadataList()) {
 			metadata.put(meta.getKey(), meta.getValue());
 		}
+		metadata.put(TIMESTAMP, doc.getTimestamp());
 		metadata.put(COMPRESSED, doc.getCompressed());
 		metadata.put(UNIQUE_ID_KEY, doc.getDocumentUniqueId());
 		gFile.setMetaData(metadata);
@@ -304,7 +311,11 @@ public class MongoDocumentStorage implements DocumentStorage {
 		if (metadata.containsField(COMPRESSED)) {
 			compressed = (boolean) metadata.removeField(COMPRESSED);
 		}
+
+		long timestamp = (long) metadata.removeField(TIMESTAMP);
+
 		aBuilder.setCompressed(compressed);
+		aBuilder.setTimestamp(timestamp);
 
 		aBuilder.setDocumentUniqueId((String) metadata.get(UNIQUE_ID_KEY));
 		for (String field : metadata.keySet()) {
