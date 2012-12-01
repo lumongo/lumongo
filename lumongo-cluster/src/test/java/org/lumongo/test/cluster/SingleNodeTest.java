@@ -389,7 +389,7 @@ public class SingleNodeTest {
 			for (ScoredResult sr : qr.getResults()) {
 				String uniqueId = sr.getUniqueId();
 				float score = sr.getScore();
-				System.out.println("Matching document <" + uniqueId + "> with score <" + score + ">");
+				System.out.println("Matching document <" + uniqueId + "> with score <" + score + "> and timestamp <" + sr.getTimestamp() + ">");
 			}
 
 			System.out.println("Query <" + normalLuceneQuery + "> found <" + totalHits + "> total hits.  Fetched <" + qr.getResults().size()

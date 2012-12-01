@@ -252,7 +252,7 @@ message ScoredResult {
 	repeated int64 sortLong = 9;
 	repeated float sortFloat = 10;
 	repeated double sortDouble = 11;
-	required int64 timestampField = 12;
+	required int64 timestamp = 12;
 }
 
 message SortRequest {

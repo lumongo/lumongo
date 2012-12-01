@@ -274,7 +274,7 @@ public class Segment {
 		srBuilder.setUniqueId(d.get(indexConfig.getUniqueIdField()));
 
 		IndexableField f = d.getField(LumongoConstants.TIMESTAMP_FIELD);
-		srBuilder.setTimestampField(f.numericValue().longValue());
+		srBuilder.setTimestamp(f.numericValue().longValue());
 
 		srBuilder.setDocId(docId);
 		srBuilder.setSegment(segmentNumber);
