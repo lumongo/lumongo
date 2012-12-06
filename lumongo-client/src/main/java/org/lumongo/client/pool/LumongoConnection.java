@@ -12,12 +12,11 @@ import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.util.LumongoThreadFactory;
 
+import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.pro.duplex.CleanShutdownHandler;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
 import com.googlecode.protobuf.pro.duplex.RpcClient;
-import com.googlecode.protobuf.pro.duplex.RpcClient.ClientRpcController;
 import com.googlecode.protobuf.pro.duplex.client.DuplexTcpClientBootstrap;
-import com.googlecode.protobuf.pro.duplex.execute.ThreadPoolCallExecutor;
 
 
 public class LumongoConnection {
@@ -49,9 +48,8 @@ public class LumongoConnection {
         System.err.println("INFO: Connecting from <" + client + "> to <" + server + ">");
 
         ChannelFactory cf = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory), Executors.newCachedThreadPool(workerFactory));
-        // should never be used here because we are just doing server side calls
-        ThreadPoolCallExecutor executor = new ThreadPoolCallExecutor(1, 1, rpcFactory);
-        bootstrap = new DuplexTcpClientBootstrap(client, cf, executor);
+
+        bootstrap = new DuplexTcpClientBootstrap(client, cf);
         bootstrap.setCompression(compressedConnection);
         bootstrap.setRpcLogger(null);
         bootstrap.setOption("connectTimeoutMillis", 10000);
@@ -71,7 +69,7 @@ public class LumongoConnection {
         return lrc;
     }
 
-    public ClientRpcController getController() {
+    public RpcController getController() {
         return rpcClient.newRpcController();
     }
 
