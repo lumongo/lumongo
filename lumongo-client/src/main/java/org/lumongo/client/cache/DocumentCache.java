@@ -8,6 +8,11 @@ import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+/**
+ * Caches lumongo result documents.  Timestamp associated with the result document can be used to match searches with result documents
+ * @author mdavis
+ *
+ */
 public class DocumentCache {
     private LumongoWorkPool lumongoWorkPool;
 
@@ -18,14 +23,33 @@ public class DocumentCache {
         documentCache = CacheBuilder.newBuilder().concurrencyLevel(16).maximumSize(maxSize).build();
     }
 
+    /**
+     * Returns the last cached version of the result document or fetches if the result document is not in the cache
+     * @param uniqueId - uniqueId to fetch
+     * @return
+     * @throws Exception
+     */
     public FetchResult fetch(String uniqueId) throws Exception {
         return fetch(uniqueId, null);
     }
 
+    /**
+     * Returns the last cached version of the result document if timestamp matches, fetches if the document is not in the cache or if the timestamp do not match
+     * @param scoredResult - scored result returned from a search
+     * @return
+     * @throws Exception
+     */
     public FetchResult fetch(ScoredResult scoredResult) throws Exception {
         return fetch(scoredResult.getUniqueId(), scoredResult.getTimestamp());
     }
 
+    /**
+     * Returns the last cached version of the result document if timestamp matches, fetches if the document is not in the cache or if the timestamp do not match
+     * @param uniqueId - uniqueId to fetch
+     * @param timestamp - timestamp to check against
+     * @return
+     * @throws Exception
+     */
     public FetchResult fetch(String uniqueId, Long timestamp) throws Exception {
         FetchResult fr = documentCache.getIfPresent(uniqueId);
 
