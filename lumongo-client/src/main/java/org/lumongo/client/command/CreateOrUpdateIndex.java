@@ -50,6 +50,7 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
         }
 
         CreateIndex ci = new CreateIndex(indexName, numberOfSegments, uniqueIdField, indexConfig);
+        ci.setFaceted(true);
         CreateIndexResult cir = ci.execute(lumongoConnection);
         result.setCreateIndexResult(cir);
         return result;
