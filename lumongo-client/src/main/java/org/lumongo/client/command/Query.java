@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.lumongo.LumongoConstants;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
@@ -15,6 +16,7 @@ import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
+import org.lumongo.util.StringUtil;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
@@ -95,6 +97,11 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
     public QueryResult getLastResult() {
         return lastResult;
+    }
+
+    public Query addDrillDown(String... drillDownParts) {
+        drillDowns.add(StringUtil.join(LumongoConstants.FACET_DELIMITER, drillDownParts));
+        return this;
     }
 
     public Query addDrillDown(String drillDown) {
