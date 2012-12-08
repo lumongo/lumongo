@@ -2,6 +2,7 @@ package org.lumongo.client.pool;
 
 import java.util.concurrent.Future;
 
+import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.CreateIndex;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Delete;
@@ -13,6 +14,7 @@ import org.lumongo.client.command.IndexConfig;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.LumongoPoolConfig;
+import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.CreateIndexResult;
 import org.lumongo.client.result.CreateOrUpdateIndexResult;
 import org.lumongo.client.result.DeleteIndexResult;
@@ -113,6 +115,14 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
 
     public Future<CreateOrUpdateIndexResult> createOrUpdateIndexAsync(CreateOrUpdateIndex createOrUpdateIndex) throws Exception {
         return executeAsync(createOrUpdateIndex);
+    }
+
+    public BatchFetchResult batchFetch(BatchFetch batchFetch) throws Exception {
+        return execute(batchFetch);
+    }
+
+    public Future<BatchFetchResult> batchFetchAsync(BatchFetch batchFetch) throws Exception {
+        return executeAsync(batchFetch);
     }
 }
 
