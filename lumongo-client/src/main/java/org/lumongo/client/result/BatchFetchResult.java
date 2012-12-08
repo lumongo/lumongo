@@ -38,5 +38,10 @@ public class BatchFetchResult extends Result {
         return list;
     }
 
+    @Override
+    public String toString() {
+        return fetchResults.toString();
+    }
+
 
 }

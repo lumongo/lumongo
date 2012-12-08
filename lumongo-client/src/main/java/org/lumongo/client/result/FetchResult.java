@@ -117,5 +117,39 @@ public class FetchResult extends Result {
         return null;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\nFetchResult: {\n");
+        if (hasResultDocument()) {
+            sb.append("  ResultDocument: {\n");
+            sb.append("    uniqueId: ");
+            sb.append(getUniqueId());
+            sb.append("\n");
+
+            sb.append("    document: ");
+            if (isDocumentBson()) {
+                sb.append(getDocumentAsBson());
+            }
+            else if (isDocumentText()) {
+                sb.append(getDocumentAsUtf8());
+            }
+            else if (isDocumentBinary()) {
+                sb.append("BINARY");
+            }
+            sb.append("\n  }\n");
+
+        }
+        if (getAssociatedDocumentCount() != 0) {
+            for (AssociatedDocument ad : getAssociatedDocuments()) {
+                sb.append("  AssociatedDocument: {\n");
+                sb.append("    filename: ");
+                sb.append(ad.getFilename());
+                sb.append("\n  }\n");
+            }
+        }
+        sb.append("}\n");
+        return sb.toString();
+    }
 
 }

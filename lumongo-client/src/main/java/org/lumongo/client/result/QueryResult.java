@@ -38,5 +38,10 @@ public class QueryResult extends Result {
         return queryResponse.getFacetCountCount();
     }
 
+    @Override
+    public String toString() {
+        return queryResponse.toString();
+    }
+
 
 }
