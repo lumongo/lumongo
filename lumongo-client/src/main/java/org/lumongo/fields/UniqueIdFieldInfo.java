@@ -2,6 +2,8 @@ package org.lumongo.fields;
 
 import java.lang.reflect.Field;
 
+import com.mongodb.DBObject;
+
 public class UniqueIdFieldInfo<T> {
     private final String fieldName;
     private final Field field;
@@ -25,6 +27,11 @@ public class UniqueIdFieldInfo<T> {
 
         }
         throw new RuntimeException("Unique id field <" + field.getName() + "> must not be null");
+    }
+
+    public void populate(T newInstance, DBObject savedDBObject) throws Exception {
+        Object value = savedDBObject.get("_id");
+        field.set(newInstance, value);
     }
 
 

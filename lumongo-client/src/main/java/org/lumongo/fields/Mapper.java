@@ -232,6 +232,8 @@ public class Mapper <T> {
             sfi.populate(newInstance, savedDBObject);
         }
 
+        uniqueIdField.populate(newInstance, savedDBObject);
+
         return newInstance;
     }
 
