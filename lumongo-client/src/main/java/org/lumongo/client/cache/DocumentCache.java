@@ -1,7 +1,13 @@
 package org.lumongo.client.cache;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 
@@ -53,6 +59,53 @@ public class DocumentCache {
     public FetchResult fetch(String uniqueId, Long timestamp) throws Exception {
         FetchResult fr = documentCache.getIfPresent(uniqueId);
 
+        boolean fetch = fetchNeeded(fr, timestamp);
+
+        if (fetch) {
+            fr = lumongoWorkPool.fetch(new FetchDocument(uniqueId));
+            if (fr.hasResultDocument()) {
+                documentCache.put(uniqueId, fr);
+            }
+        }
+
+        return fr;
+    }
+
+    public BatchFetchResult fetch(Collection<ScoredResult> scoredResults) throws Exception {
+
+        List<FetchResult> resultsFromCache = new ArrayList<FetchResult>();
+        List<FetchDocument> fetchDocumentList = new ArrayList<FetchDocument>();
+
+        for (ScoredResult sr : scoredResults) {
+            FetchResult fetchResult = documentCache.getIfPresent(sr.getUniqueId());
+            boolean fetch = fetchNeeded(fetchResult, sr.getTimestamp());
+
+            if (fetch) {
+                fetchDocumentList.add(new FetchDocument(sr.getUniqueId()));
+            }
+            else {
+                resultsFromCache.add(fetchResult);
+            }
+        }
+
+        if (!fetchDocumentList.isEmpty()) {
+            BatchFetchResult bfr = lumongoWorkPool.batchFetch(new BatchFetch().addFetches(fetchDocumentList));
+            for (FetchResult fr : bfr.getFetchResults()) {
+                if (fr.hasResultDocument()) {
+                    documentCache.put(fr.getUniqueId(), fr);
+                }
+            }
+
+            bfr.getFetchResults().addAll(resultsFromCache);
+            return bfr;
+        }
+        else {
+            return new BatchFetchResult(resultsFromCache);
+        }
+
+    }
+
+    private boolean fetchNeeded(FetchResult fr, Long timestamp) {
         boolean fetch = false;
 
         if (fr == null) { //no result in cache - fetch regardless of passed time stamp
@@ -66,12 +119,6 @@ public class DocumentCache {
                 fetch = true;
             }
         }
-
-        if (fetch) {
-            fr = lumongoWorkPool.fetch(new FetchDocument(uniqueId));
-            documentCache.put(uniqueId, fr);
-        }
-
-        return fr;
+        return fetch;
     }
 }

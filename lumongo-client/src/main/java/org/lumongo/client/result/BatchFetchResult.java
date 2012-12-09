@@ -14,6 +14,10 @@ public class BatchFetchResult extends Result {
 
     private List<FetchResult> fetchResults;
 
+    public BatchFetchResult(List<FetchResult> fetchResults) {
+        this.fetchResults = fetchResults;
+    }
+
     public BatchFetchResult(GroupFetchResponse groupFetchResponse) {
         this.groupFetchResponse = groupFetchResponse;
 

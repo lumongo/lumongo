@@ -28,7 +28,7 @@ public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResul
         this.fetchList = new ArrayList<Fetch>();
     }
 
-    public BatchFetch addFetches(Collection<Fetch> fetches) {
+    public BatchFetch addFetches(Collection<? extends Fetch> fetches) {
         this.fetchList.addAll(fetches);
         return this;
     }
