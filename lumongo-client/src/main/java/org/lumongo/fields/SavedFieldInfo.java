@@ -44,6 +44,7 @@ public class SavedFieldInfo<T> {
     }
 
     public void populate(T newInstance, DBObject savedDBObject) throws Exception {
+
         Object value = savedDBObject.get(fieldName);
         if (compressed) {
             if (value instanceof byte[]) {
@@ -59,8 +60,7 @@ public class SavedFieldInfo<T> {
 
             }
 
-            field.set(newInstance, value);
-
         }
+        field.set(newInstance, value);
     }
 }
