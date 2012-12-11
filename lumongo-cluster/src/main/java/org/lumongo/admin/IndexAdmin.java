@@ -14,11 +14,11 @@ import org.lumongo.client.command.DeleteIndex;
 import org.lumongo.client.command.GetFields;
 import org.lumongo.client.command.GetIndexes;
 import org.lumongo.client.command.GetMembers;
-import org.lumongo.client.command.GetNumerOfDocs;
+import org.lumongo.client.command.GetNumberOfDocs;
 import org.lumongo.client.command.OptimizeIndex;
 import org.lumongo.client.config.LumongoPoolConfig;
-import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.pool.LumongoBaseWorkPool;
+import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.result.ClearResult;
 import org.lumongo.client.result.DeleteIndexResult;
 import org.lumongo.client.result.GetFieldsResult;
@@ -73,7 +73,7 @@ public class IndexAdmin {
 					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
 				}
 
-				GetNumberOfDocsResult response = lumongoWorkPool.execute(new GetNumerOfDocs(index).setRealTime(true));
+				GetNumberOfDocsResult response = lumongoWorkPool.execute(new GetNumberOfDocs(index).setRealTime(true));
 				System.out.println("Segments:\n" + response.getSegmentCountResponseCount());
 				System.out.println("Count:\n" + response.getNumberOfDocs());
 				for (SegmentCountResponse scr : response.getSegmentCountResponses()) {
@@ -85,7 +85,7 @@ public class IndexAdmin {
 					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
 				}
 
-				GetNumberOfDocsResult response = lumongoWorkPool.execute(new GetNumerOfDocs(index).setRealTime(false));
+				GetNumberOfDocsResult response = lumongoWorkPool.execute(new GetNumberOfDocs(index).setRealTime(false));
 				System.out.println("Segments:\n" + response.getSegmentCountResponseCount());
 				System.out.println("Count:\n" + response.getNumberOfDocs());
 				for (SegmentCountResponse scr : response.getSegmentCountResponses()) {

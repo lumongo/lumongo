@@ -6,18 +6,23 @@ import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 
 public class GetFieldsResult extends Result {
 
-	private GetFieldNamesResponse getFieldNamesResponse;
+    private GetFieldNamesResponse getFieldNamesResponse;
 
-	public GetFieldsResult(GetFieldNamesResponse getFieldNamesResponse) {
-		this.getFieldNamesResponse = getFieldNamesResponse;
-	}
+    public GetFieldsResult(GetFieldNamesResponse getFieldNamesResponse) {
+        this.getFieldNamesResponse = getFieldNamesResponse;
+    }
 
-	public List<String> getFieldNames() {
-		return getFieldNamesResponse.getFieldNameList();
-	}
+    public List<String> getFieldNames() {
+        return getFieldNamesResponse.getFieldNameList();
+    }
 
-	public boolean containsField(String fieldName) {
-		return getFieldNamesResponse.getFieldNameList().contains(fieldName);
-	}
+    public boolean containsField(String fieldName) {
+        return getFieldNamesResponse.getFieldNameList().contains(fieldName);
+    }
+
+    @Override
+    public String toString() {
+        return "GetFieldsResult [fieldNames=" + getFieldNames() + ", commandTimeMs=" + getCommandTimeMs() + "]";
+    }
 
 }

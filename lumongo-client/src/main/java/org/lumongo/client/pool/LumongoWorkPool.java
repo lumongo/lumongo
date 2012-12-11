@@ -8,8 +8,12 @@ import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Delete;
 import org.lumongo.client.command.DeleteIndex;
 import org.lumongo.client.command.Fetch;
+import org.lumongo.client.command.GetAllTerms;
+import org.lumongo.client.command.GetFields;
 import org.lumongo.client.command.GetIndexes;
 import org.lumongo.client.command.GetMembers;
+import org.lumongo.client.command.GetNumberOfDocs;
+import org.lumongo.client.command.GetTerms;
 import org.lumongo.client.command.IndexConfig;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
@@ -20,8 +24,11 @@ import org.lumongo.client.result.CreateOrUpdateIndexResult;
 import org.lumongo.client.result.DeleteIndexResult;
 import org.lumongo.client.result.DeleteResult;
 import org.lumongo.client.result.FetchResult;
+import org.lumongo.client.result.GetFieldsResult;
 import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.GetMembersResult;
+import org.lumongo.client.result.GetNumberOfDocsResult;
+import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.client.result.StoreResult;
 
@@ -123,6 +130,38 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
 
     public Future<BatchFetchResult> batchFetchAsync(BatchFetch batchFetch) throws Exception {
         return executeAsync(batchFetch);
+    }
+
+    public GetTermsResult getTerms(GetTerms getTerms) throws Exception {
+        return execute(getTerms);
+    }
+
+    public Future<GetTermsResult> getTermsAsync(GetTerms getTerms) throws Exception {
+        return executeAsync(getTerms);
+    }
+
+    public GetTermsResult getAllTerms(GetAllTerms getTerms) throws Exception {
+        return execute(getTerms);
+    }
+
+    public Future<GetTermsResult> getAllTermsAsync(GetAllTerms getTerms) throws Exception {
+        return executeAsync(getTerms);
+    }
+
+    public GetFieldsResult getFields(GetFields getFields) throws Exception {
+        return execute(getFields);
+    }
+
+    public Future<GetFieldsResult> getFieldsAsync(GetFields getFields) throws Exception {
+        return executeAsync(getFields);
+    }
+
+    public GetNumberOfDocsResult getNumberOfDocs(GetNumberOfDocs getNumberOfDocs) throws Exception {
+        return execute(getNumberOfDocs);
+    }
+
+    public Future<GetNumberOfDocsResult> getNumberOfDocsAsync(GetNumberOfDocs getNumberOfDocs) throws Exception {
+        return executeAsync(getNumberOfDocs);
     }
 }
 

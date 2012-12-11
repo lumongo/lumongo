@@ -7,23 +7,27 @@ import org.lumongo.cluster.message.Lumongo.Term;
 
 public class GetTermsResult extends Result {
 
-	private GetTermsResponse getTermsResponse;
+    private GetTermsResponse getTermsResponse;
 
-	public GetTermsResult(GetTermsResponse getTermsResponse, long commandTimeMs) {
-		this.getTermsResponse = getTermsResponse;
-	}
+    public GetTermsResult(GetTermsResponse getTermsResponse, long commandTimeMs) {
+        this.getTermsResponse = getTermsResponse;
+    }
 
-	public List<Term> getTerms() {
-		return getTermsResponse.getTermList();
-	}
+    public List<Term> getTerms() {
+        return getTermsResponse.getTermList();
+    }
 
-	public Term getLastTerm() {
-		if (getTermsResponse.hasLastTerm()) {
-			return getTermsResponse.getLastTerm();
-		}
-		return null;
-	}
+    public Term getLastTerm() {
+        if (getTermsResponse.hasLastTerm()) {
+            return getTermsResponse.getLastTerm();
+        }
+        return null;
+    }
 
+    @Override
+    public String toString() {
+        return getTermsResponse.toString();
+    }
 
 
 

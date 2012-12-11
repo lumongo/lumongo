@@ -9,12 +9,12 @@ import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class GetNumerOfDocs extends SimpleCommand<GetNumberOfDocsRequest, GetNumberOfDocsResult> {
+public class GetNumberOfDocs extends SimpleCommand<GetNumberOfDocsRequest, GetNumberOfDocsResult> {
 
 	private String indexName;
 	private Boolean realTime;
 
-	public GetNumerOfDocs(String indexName) {
+	public GetNumberOfDocs(String indexName) {
 		this.indexName = indexName;
 	}
 
@@ -22,7 +22,7 @@ public class GetNumerOfDocs extends SimpleCommand<GetNumberOfDocsRequest, GetNum
 		return realTime;
 	}
 
-	public GetNumerOfDocs setRealTime(Boolean realTime) {
+	public GetNumberOfDocs setRealTime(Boolean realTime) {
 		this.realTime = realTime;
 		return this;
 	}

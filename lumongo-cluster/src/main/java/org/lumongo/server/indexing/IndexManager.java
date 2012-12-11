@@ -6,6 +6,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -899,10 +901,24 @@ public class IndexManager {
 			GetNumberOfDocsResponse.Builder responseBuilder = GetNumberOfDocsResponse.newBuilder();
 			responseBuilder.setNumberOfDocs(0);
 			List<GetNumberOfDocsResponse> responses = federator.send(request);
+
+			List<SegmentCountResponse> segmentCountResponses = new ArrayList<SegmentCountResponse>();
+
 			for (GetNumberOfDocsResponse r : responses) {
 				responseBuilder.setNumberOfDocs(responseBuilder.getNumberOfDocs() + r.getNumberOfDocs());
-				responseBuilder.addAllSegmentCountResponse(r.getSegmentCountResponseList());
+				segmentCountResponses.addAll(r.getSegmentCountResponseList());
 			}
+
+			Collections.sort(segmentCountResponses, new Comparator<SegmentCountResponse>() {
+
+				@Override
+				public int compare(SegmentCountResponse o1, SegmentCountResponse o2) {
+					return Integer.compare(o1.getSegmentNumber(), o2.getSegmentNumber());
+				}
+
+			});
+
+			responseBuilder.addAllSegmentCountResponse(segmentCountResponses);
 
 			GetNumberOfDocsResponse response = responseBuilder.build();
 

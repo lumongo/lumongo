@@ -11,74 +11,74 @@ import com.google.protobuf.ServiceException;
 
 public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 
-	private String indexName;
-	private String fieldName;
-	private int amount;
+    private String indexName;
+    private String fieldName;
+    private int amount;
 
-	private Integer minDocFreq;
-	private String startTerm;
-	private Boolean realTime;
+    private Integer minDocFreq;
+    private String startTerm;
+    private Boolean realTime;
 
-	public GetTerms(String indexName, String fieldName, int amount) {
-		this.indexName = indexName;
-		this.fieldName = fieldName;
-		this.amount = amount;
-	}
+    public GetTerms(String indexName, String fieldName, int amount) {
+        this.indexName = indexName;
+        this.fieldName = fieldName;
+        this.amount = amount;
+    }
 
-	public GetTerms setMinDocFreq(Integer minDocFreq) {
-		this.minDocFreq = minDocFreq;
-		return this;
-	}
+    public GetTerms setMinDocFreq(Integer minDocFreq) {
+        this.minDocFreq = minDocFreq;
+        return this;
+    }
 
-	public Integer getMinDocFreq() {
-		return minDocFreq;
-	}
+    public Integer getMinDocFreq() {
+        return minDocFreq;
+    }
 
-	public GetTerms setStartTerm(String startTerm) {
-		this.startTerm = startTerm;
-		return this;
-	}
+    public GetTerms setStartTerm(String startTerm) {
+        this.startTerm = startTerm;
+        return this;
+    }
 
-	public String getStartTerm() {
-		return startTerm;
-	}
+    public String getStartTerm() {
+        return startTerm;
+    }
 
-	public GetTerms setRealTime(Boolean realTime) {
-		this.realTime = realTime;
-		return this;
-	}
+    public GetTerms setRealTime(Boolean realTime) {
+        this.realTime = realTime;
+        return this;
+    }
 
-	public Boolean getRealTime() {
-		return realTime;
-	}
+    public Boolean getRealTime() {
+        return realTime;
+    }
 
-	@Override
-	public GetTermsRequest getRequest() {
-		GetTermsRequest.Builder getTermsRequestBuilder = GetTermsRequest.newBuilder().setIndexName(indexName).setFieldName(fieldName).setAmount(amount);
-		if (startTerm != null) {
-			getTermsRequestBuilder.setStartingTerm(startTerm);
-		}
-		if (realTime != null) {
-			getTermsRequestBuilder.setRealTime(realTime);
-		}
-		if (minDocFreq != null) {
-			getTermsRequestBuilder.setMinDocFreq(minDocFreq);
-		}
-		return getTermsRequestBuilder.build();
-	}
+    @Override
+    public GetTermsRequest getRequest() {
+        GetTermsRequest.Builder getTermsRequestBuilder = GetTermsRequest.newBuilder().setIndexName(indexName).setFieldName(fieldName).setAmount(amount);
+        if (startTerm != null) {
+            getTermsRequestBuilder.setStartingTerm(startTerm);
+        }
+        if (realTime != null) {
+            getTermsRequestBuilder.setRealTime(realTime);
+        }
+        if (minDocFreq != null) {
+            getTermsRequestBuilder.setMinDocFreq(minDocFreq);
+        }
+        return getTermsRequestBuilder.build();
+    }
 
-	@Override
-	public GetTermsResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+    @Override
+    public GetTermsResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+        ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
+        RpcController controller = lumongoConnection.getController();
 
-		long start = System.currentTimeMillis();
-		GetTermsResponse getTermsResponse = service.getTerms(controller, getRequest());
-		long end = System.currentTimeMillis();
-		long durationInMs = end - start;
-		return new GetTermsResult(getTermsResponse, durationInMs);
-	}
+        long start = System.currentTimeMillis();
+        GetTermsResponse getTermsResponse = service.getTerms(controller, getRequest());
+        long end = System.currentTimeMillis();
+        long durationInMs = end - start;
+        return new GetTermsResult(getTermsResponse, durationInMs);
+    }
 
 
 
