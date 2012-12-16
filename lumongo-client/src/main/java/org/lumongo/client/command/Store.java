@@ -3,6 +3,7 @@ package org.lumongo.client.command;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.StoreResult;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;

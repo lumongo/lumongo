@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.apache.commons.pool.KeyedPoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericKeyedObjectPool;
-import org.lumongo.client.command.Command;
 import org.lumongo.client.command.GetMembers;
+import org.lumongo.client.command.base.Command;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.result.GetMembersResult;
 import org.lumongo.client.result.Result;

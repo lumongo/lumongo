@@ -1,4 +1,4 @@
-package org.lumongo.client.command;
+package org.lumongo.client.command.base;
 
 import java.util.concurrent.Callable;
 

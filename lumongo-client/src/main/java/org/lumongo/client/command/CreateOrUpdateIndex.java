@@ -1,5 +1,7 @@
 package org.lumongo.client.command;
 
+import org.lumongo.client.command.base.Command;
+import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.CreateIndexResult;
 import org.lumongo.client.result.CreateOrUpdateIndexResult;

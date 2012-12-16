@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.lumongo.client.command.CallableCommand;
-import org.lumongo.client.command.Command;
+import org.lumongo.client.command.base.CallableCommand;
+import org.lumongo.client.command.base.Command;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.result.Result;
 import org.lumongo.cluster.message.Lumongo.LMMember;

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.OutputStream;
 
 import org.lumongo.client.LumongoRestClient;
+import org.lumongo.client.command.base.RestCommand;
 import org.lumongo.client.result.FetchLargeAssociatedResult;
 
 public class FetchLargeAssociated extends RestCommand<FetchLargeAssociatedResult> {

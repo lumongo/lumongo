@@ -19,13 +19,13 @@ import org.lumongo.client.command.OptimizeIndex;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.pool.LumongoPool;
-import org.lumongo.client.result.ClearResult;
+import org.lumongo.client.result.ClearIndexResult;
 import org.lumongo.client.result.DeleteIndexResult;
 import org.lumongo.client.result.GetFieldsResult;
 import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.GetMembersResult;
 import org.lumongo.client.result.GetNumberOfDocsResult;
-import org.lumongo.client.result.OptimizeResult;
+import org.lumongo.client.result.OptimizeIndexResult;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.util.LogUtil;
@@ -109,7 +109,7 @@ public class IndexAdmin {
 
 				System.out.println("Optimizing Index:\n" + index);
 				@SuppressWarnings("unused")
-				OptimizeResult response = lumongoWorkPool.execute(new OptimizeIndex(index));
+				OptimizeIndexResult response = lumongoWorkPool.execute(new OptimizeIndex(index));
 				System.out.println("Done");
 			}
 			else if (Command.clear.equals(command)) {
@@ -118,7 +118,7 @@ public class IndexAdmin {
 				}
 				System.out.println("Clearing Index:\n" + index);
 				@SuppressWarnings("unused")
-				ClearResult response = lumongoWorkPool.execute(new ClearIndex(index));
+				ClearIndexResult response = lumongoWorkPool.execute(new ClearIndex(index));
 				System.out.println("Done");
 			}
 			else if (Command.getIndexes.equals(command)) {

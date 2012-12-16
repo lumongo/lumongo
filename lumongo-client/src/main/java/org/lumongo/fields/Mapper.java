@@ -6,8 +6,8 @@ import java.util.List;
 
 import org.lumongo.LumongoConstants;
 import org.lumongo.client.command.CreateOrUpdateIndex;
-import org.lumongo.client.command.IndexConfig;
 import org.lumongo.client.command.Store;
+import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;

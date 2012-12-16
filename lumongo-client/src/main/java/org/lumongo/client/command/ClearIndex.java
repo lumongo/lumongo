@@ -1,7 +1,8 @@
 package org.lumongo.client.command;
 
+import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
-import org.lumongo.client.result.ClearResult;
+import org.lumongo.client.result.ClearIndexResult;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
@@ -14,7 +15,7 @@ import com.google.protobuf.ServiceException;
  * @author mdavis
  *
  */
-public class ClearIndex extends SimpleCommand<ClearRequest, ClearResult> {
+public class ClearIndex extends SimpleCommand<ClearRequest, ClearIndexResult> {
 
     private String indexName;
 
@@ -28,13 +29,13 @@ public class ClearIndex extends SimpleCommand<ClearRequest, ClearResult> {
     }
 
     @Override
-    public ClearResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+    public ClearIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
         ExternalService.BlockingInterface service = lumongoConnection.getService();
         RpcController controller = lumongoConnection.getController();
 
         ClearResponse clearResponse = service.clear(controller, getRequest());
 
-        return new ClearResult(clearResponse);
+        return new ClearIndexResult(clearResponse);
     }
 
 

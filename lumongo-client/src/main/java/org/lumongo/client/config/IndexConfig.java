@@ -1,4 +1,4 @@
-package org.lumongo.client.command;
+package org.lumongo.client.config;
 
 import java.util.TreeMap;
 

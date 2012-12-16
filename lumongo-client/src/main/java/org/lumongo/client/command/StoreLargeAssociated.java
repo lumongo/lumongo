@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.InputStream;
 
 import org.lumongo.client.LumongoRestClient;
+import org.lumongo.client.command.base.RestCommand;
 import org.lumongo.client.result.StoreLargeAssociatedResult;
 
 public class StoreLargeAssociated extends RestCommand<StoreLargeAssociatedResult> {
