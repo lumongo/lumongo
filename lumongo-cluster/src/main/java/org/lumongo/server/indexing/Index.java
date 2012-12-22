@@ -588,7 +588,7 @@ public class Index {
 				if (maxSegmentsForMember - minSegmentsForMember > 1) {
 					int valueToMove = memberToSegmentMap.get(maxMember).iterator().next();
 
-					log.info("Moving segment <" + valueToMove + "> from <" + maxMember + "> to <" + minMember + ">");
+					log.info("Moving segment <" + valueToMove + "> from <" + maxMember + "> to <" + minMember + "> of Index <" + indexName + ">");
 					memberToSegmentMap.get(maxMember).remove(valueToMove);
 
 					if (!memberToSegmentMap.containsKey(minMember)) {
