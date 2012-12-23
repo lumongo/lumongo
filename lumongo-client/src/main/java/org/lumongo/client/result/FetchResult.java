@@ -60,7 +60,7 @@ public class FetchResult extends Result {
     }
 
     public byte[] getDocumentAsBytes() {
-        if (!fetchResponse.hasResultDocument()) {
+        if (fetchResponse.hasResultDocument()) {
             ResultDocument rd = fetchResponse.getResultDocument();
             ByteString contents = rd.toByteString();
             return contents.toByteArray();
