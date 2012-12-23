@@ -12,6 +12,7 @@ import java.util.zip.InflaterInputStream;
 
 import org.apache.log4j.Logger;
 import org.bson.BSON;
+import org.bson.BSONObject;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.Metadata;
@@ -180,7 +181,14 @@ public class MongoDocumentStorage implements DocumentStorage {
 						if (compressed) {
 							bytes = CommonCompression.uncompressZlib(bytes);
 						}
-						document = ByteString.copyFrom(bytes);
+						if (type.equals(ResultDocument.Type.BSON)) {
+							BSONObject object = BSON.decode(bytes);
+							object.put(MongoConstants.StandardFields._ID, uniqueId);
+							document = ByteString.copyFrom(BSON.encode(object));
+						}
+						else {
+							document = ByteString.copyFrom(bytes);
+						}
 					}
 					dBuilder.setDocument(document);
 				}
