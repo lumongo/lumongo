@@ -25,13 +25,17 @@ public class BsonHelper {
 		}
 		return null;
 	}
-	
+
 	public static ResultDocument dbObjectToResultDocument(String uniqueId, DBObject document) {
-		return dbObjectToResultDocument(uniqueId, document, null);
+		return dbObjectToResultDocument(uniqueId, document, false);
 	}
-	
-	public static ResultDocument dbObjectToResultDocument(String uniqueId, DBObject document, Collection<Metadata> metadata) {
-		
+
+	public static ResultDocument dbObjectToResultDocument(String uniqueId, DBObject document, boolean compressed) {
+		return dbObjectToResultDocument(uniqueId, document, null, compressed);
+	}
+
+	public static ResultDocument dbObjectToResultDocument(String uniqueId, DBObject document, Collection<Metadata> metadata, boolean compressed) {
+
 		ByteString byteString = ByteString.copyFrom(BSON.encode(document));
 		ResultDocument.Builder builder = ResultDocument.newBuilder();
 		builder.setDocument(byteString);
@@ -40,6 +44,7 @@ public class BsonHelper {
 		}
 		builder.setType(ResultDocument.Type.BSON);
 		builder.setUniqueId(uniqueId);
+		builder.setCompressed(compressed);
 		return builder.build();
 	}
 }
