@@ -8,7 +8,6 @@ import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.fields.Mapper;
 import org.lumongo.util.BsonHelper;
 
-import com.google.protobuf.ByteString;
 import com.mongodb.DBObject;
 
 public class FetchResult extends Result {
@@ -62,8 +61,7 @@ public class FetchResult extends Result {
     public byte[] getDocumentAsBytes() {
         if (fetchResponse.hasResultDocument()) {
             ResultDocument rd = fetchResponse.getResultDocument();
-            ByteString contents = rd.toByteString();
-            return contents.toByteArray();
+            return rd.getDocument().toByteArray();
         }
         return null;
     }
