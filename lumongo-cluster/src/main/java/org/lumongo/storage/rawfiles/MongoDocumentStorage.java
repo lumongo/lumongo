@@ -44,7 +44,6 @@ public class MongoDocumentStorage implements DocumentStorage {
 	private static final String ASSOCIATED_FILES = "associatedFiles";
 	private static final String FILES = "files";
 	private static final String FILENAME = "filename";
-	private static final String VALUE = "value";
 	private static final String DOC = "doc";
 	private static final String TIMESTAMP = "timestamp";
 	private static final String TYPE = "type";
@@ -164,7 +163,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 				if (result.containsField(METADATA)) {
 					DBObject metadata = (DBObject) result.removeField(METADATA);
 					for (String key : metadata.keySet()) {
-						dBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue((String) metadata.get(VALUE)).build());
+						dBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue((String) metadata.get(key)));
 					}
 				}
 
