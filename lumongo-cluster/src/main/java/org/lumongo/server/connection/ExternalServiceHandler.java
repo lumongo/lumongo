@@ -80,7 +80,7 @@ public class ExternalServiceHandler extends ExternalService {
 
 		RpcServerCallExecutor rpcExecutor = new ThreadPoolCallExecutor(externalWorkers, externalWorkers, externalRpcFactory);
 		NioServerSocketChannelFactory nioServerSocketChannelFactory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(externalBossFactory),
-		        Executors.newCachedThreadPool(externalWorkerFactory));
+				Executors.newCachedThreadPool(externalWorkerFactory));
 		externalBootstrap = new DuplexTcpServerBootstrap(externalServerInfo, nioServerSocketChannelFactory);
 		externalBootstrap.setLogger(null);
 		externalBootstrap.setRpcServerCallExecutor(rpcExecutor);
@@ -146,7 +146,6 @@ public class ExternalServiceHandler extends ExternalService {
 		catch (Exception e) {
 			log.error("Failed to store: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
 			controller.setFailed(e.getMessage());
-			controller.startCancel();
 			done.run(null);
 		}
 	}
