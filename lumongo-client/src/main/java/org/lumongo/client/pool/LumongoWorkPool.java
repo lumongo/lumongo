@@ -161,8 +161,16 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return executeAsync(new GetMembers());
     }
 
+    public GetNumberOfDocsResult getNumberOfDocs(String indexName) throws Exception {
+        return getNumberOfDocs(new GetNumberOfDocs(indexName));
+    }
+
     public GetNumberOfDocsResult getNumberOfDocs(GetNumberOfDocs getNumberOfDocs) throws Exception {
         return execute(getNumberOfDocs);
+    }
+
+    public Future<GetNumberOfDocsResult> getNumberOfDocsAsync(String indexName) throws Exception {
+        return executeAsync(new GetNumberOfDocs(indexName));
     }
 
     public Future<GetNumberOfDocsResult> getNumberOfDocsAsync(GetNumberOfDocs getNumberOfDocs) throws Exception {
