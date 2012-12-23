@@ -19,11 +19,11 @@ public class CreateOrUpdateIndexResult extends Result {
 		this.createIndexResult = createIndexResult;
 	}
 
-	public boolean isNew() {
+	public boolean isNewIndex() {
 		return (createIndexResult != null);
 	}
 
-	public boolean isUpdate() {
+	public boolean isUpdatedIndex() {
 		return (updateIndexResult != null);
 	}
 }
