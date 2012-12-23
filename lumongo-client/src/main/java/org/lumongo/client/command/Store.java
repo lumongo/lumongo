@@ -2,6 +2,7 @@ package org.lumongo.client.command;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
@@ -12,7 +13,7 @@ import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.StoreResponse;
-import org.lumongo.util.BsonHelper;
+import org.lumongo.util.ResultDocHelper;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.RpcController;
@@ -45,11 +46,20 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> {
         return resultDocument;
     }
 
+
     public Store setResultDocument(byte[] bytes) {
-        return setResultDocument(bytes, false);
+        return setResultDocument(bytes, null, null);
+    }
+
+    public Store setResultDocument(byte[] bytes, Map<String, String> metadata) {
+        return setResultDocument(bytes, null, metadata);
     }
 
     public Store setResultDocument(byte[] bytes, Boolean compressed) {
+        return setResultDocument(bytes, compressed, null);
+    }
+
+    public Store setResultDocument(byte[] bytes, Boolean compressed, Map<String, String> metadata) {
         ResultDocument.Builder resultDocumentBuilder = ResultDocument.newBuilder();
         resultDocumentBuilder.setType(ResultDocument.Type.BINARY);
         resultDocumentBuilder.setDocument(ByteString.copyFrom(bytes));
@@ -57,35 +67,56 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> {
         if (compressed != null) {
             resultDocumentBuilder.setCompressed(compressed);
         }
+
+        ResultDocHelper.addMetaData(metadata, resultDocumentBuilder);
+
         this.resultDocument = resultDocumentBuilder.build();
         return this;
     }
 
     public Store setResultDocument(String utf8Text) {
-        return setResultDocument(utf8Text, false);
+        return setResultDocument(utf8Text, null, null);
+    }
+
+    public Store setResultDocument(String utf8Text, Map<String, String> metadata) {
+        return setResultDocument(utf8Text, null, metadata);
     }
 
     public Store setResultDocument(String utf8Text, Boolean compressed) {
+        return setResultDocument(utf8Text, compressed, null);
+    }
+
+    public Store setResultDocument(String utf8Text, Boolean compressed, Map<String, String> metadata) {
         ResultDocument.Builder resultDocumentBuilder = ResultDocument.newBuilder();
         resultDocumentBuilder.setType(ResultDocument.Type.TEXT);
         resultDocumentBuilder.setDocument(ByteString.copyFromUtf8(utf8Text));
         resultDocumentBuilder.setUniqueId(uniqueId);
+
         if (compressed != null) {
             resultDocumentBuilder.setCompressed(compressed);
         }
+
+        ResultDocHelper.addMetaData(metadata, resultDocumentBuilder);
+
         this.resultDocument = resultDocumentBuilder.build();
 
         return this;
     }
 
     public Store setResultDocument(DBObject resultDocument) {
-        this.resultDocument = BsonHelper.dbObjectToResultDocument(uniqueId, resultDocument);
-        return this;
+        return setResultDocument(resultDocument, null, null);
     }
 
+    public Store setResultDocument(DBObject resultDocument, Map<String, String> metadata) {
+        return setResultDocument(resultDocument, null, metadata);
+    }
 
-    public Store setResultDocument(DBObject resultDocument, boolean compressed) {
-        this.resultDocument = BsonHelper.dbObjectToResultDocument(uniqueId, resultDocument, compressed);
+    public Store setResultDocument(DBObject resultDocument, Boolean compressed) {
+        return setResultDocument(resultDocument, compressed, null);
+    }
+
+    public Store setResultDocument(DBObject resultDocument, Boolean compressed, Map<String, String> metadata) {
+        this.resultDocument = ResultDocHelper.dbObjectToResultDocument(uniqueId, resultDocument, compressed, metadata);
         return this;
     }
 

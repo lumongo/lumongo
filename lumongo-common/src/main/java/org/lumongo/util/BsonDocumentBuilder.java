@@ -54,7 +54,7 @@ public class BsonDocumentBuilder {
 		BasicDBObject dbObject = new BasicDBObject();
 		dbObject.putAll(fieldToValueMap);
 		
-		ResultDocument rd = BsonHelper.dbObjectToResultDocument(uniqueId, dbObject);
+		ResultDocument rd = ResultDocHelper.dbObjectToResultDocument(uniqueId, dbObject);
 		
 		return rd;
 	}

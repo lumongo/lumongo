@@ -21,7 +21,7 @@ import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.doc.AssociatedBuilder;
 import org.lumongo.doc.IndexedDocBuilder;
-import org.lumongo.util.BsonHelper;
+import org.lumongo.util.ResultDocHelper;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.testng.log4testng.Logger;
@@ -280,7 +280,7 @@ public class SingleNodeTest {
 
 				Assert.assertTrue(response.hasResultDocument(), "Fetch failed for <" + uniqueId + ">");
 				ResultDocument rd = response.getResultDocument();
-				DBObject dbObject = BsonHelper.dbObjectFromResultDocument(rd);
+				DBObject dbObject = ResultDocHelper.dbObjectFromResultDocument(rd);
 				Assert.assertEquals(dbObject.get("key1"), "val1", "BSON object is missing field");
 				Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 
@@ -293,7 +293,7 @@ public class SingleNodeTest {
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId));
 				Assert.assertTrue(response.hasResultDocument(), "Fetch failed for <" + uniqueId + ">");
 				ResultDocument rd = response.getResultDocument();
-				DBObject dbObject = BsonHelper.dbObjectFromResultDocument(rd);
+				DBObject dbObject = ResultDocHelper.dbObjectFromResultDocument(rd);
 				Assert.assertEquals(dbObject.get("key1"), "val1", "BSON object is missing field");
 				// Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 

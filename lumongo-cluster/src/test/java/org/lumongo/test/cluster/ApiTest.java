@@ -1,6 +1,8 @@
 package org.lumongo.test.cluster;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.lumongo.client.command.CreateIndex;
 import org.lumongo.client.command.CreateOrUpdateIndex;
@@ -139,10 +141,30 @@ public class ApiTest {
 		LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
 		byte[] binary = new byte[] { 1, 2, 3 };
-		System.out.println(Arrays.toString(binary));
 		Store s = new Store("myid333");
 		s.addIndexedDocument(indexedDoc);
-		s.setResultDocument(binary, false);
+		s.setResultDocument(binary);
+
+		lumongoWorkPool.store(s);
+	}
+
+	public void storeDocumentAndMeta() throws Exception {
+
+		IndexedDocBuilder docBuilder = new IndexedDocBuilder("myIndexName");
+		docBuilder.addField("issn", "1234-1234");
+		docBuilder.addField("title", "Special title");
+		LMDoc indexedDoc = docBuilder.getIndexedDoc();
+
+		String xml = "<sampleXML></sampleXML>";
+
+		HashMap<String, String> metadata = new HashMap<String, String>();
+		metadata.put("test1", "val1");
+		metadata.put("test2", "val2");
+
+		Store s = new Store("myid123");
+		s.addIndexedDocument(indexedDoc);
+		s.setResultDocument(xml, metadata);
+
 
 		lumongoWorkPool.store(s);
 	}
@@ -178,6 +200,21 @@ public class ApiTest {
 			byte[] bytes = fetchResult.getDocumentAsBytes();
 			System.out.println(Arrays.toString(bytes));
 		}
+	}
+
+	public void fetchDocumentMeta() throws Exception {
+		FetchDocument fetchDocument = new FetchDocument("myid123");
+
+		FetchResult fetchResult = lumongoWorkPool.fetch(fetchDocument);
+
+		if (fetchResult.hasResultDocument()) {
+			String text = fetchResult.getDocumentAsUtf8();
+			System.out.println(text);
+
+			Map<String, String> meta = fetchResult.getMeta();
+			System.out.println(meta);
+		}
+
 	}
 
 	public void simpleQuery() throws Exception {
@@ -239,10 +276,12 @@ public class ApiTest {
 			apiTest.storeDocumentText();
 			apiTest.storeDocumentBson();
 			apiTest.storeDocumentBinary();
+			apiTest.storeDocumentAndMeta();
 
 			apiTest.fetchDocumentText();
 			apiTest.fetchDocumentBson();
 			apiTest.fetchDocumentBinary();
+			apiTest.fetchDocumentMeta();
 
 			apiTest.getCount();
 		}

@@ -21,7 +21,7 @@ import org.lumongo.fields.annotations.Saved;
 import org.lumongo.fields.annotations.Settings;
 import org.lumongo.fields.annotations.UniqueId;
 import org.lumongo.util.AnnotationUtil;
-import org.lumongo.util.BsonHelper;
+import org.lumongo.util.ResultDocHelper;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -219,7 +219,7 @@ public class Mapper <T> {
             Object o = sfi.getValue(object);
             document.put(sfi.getFieldName(), o);
         }
-        return BsonHelper.dbObjectToResultDocument(uniqueId, document);
+        return ResultDocHelper.dbObjectToResultDocument(uniqueId, document);
     }
 
 
@@ -227,7 +227,7 @@ public class Mapper <T> {
     public T fromResultDocument(ResultDocument rd) throws Exception {
         T newInstance = clazz.newInstance();
 
-        DBObject savedDBObject = BsonHelper.dbObjectFromResultDocument(rd);
+        DBObject savedDBObject = ResultDocHelper.dbObjectFromResultDocument(rd);
         for (SavedFieldInfo<T> sfi : savedFields) {
             sfi.populate(newInstance, savedDBObject);
         }

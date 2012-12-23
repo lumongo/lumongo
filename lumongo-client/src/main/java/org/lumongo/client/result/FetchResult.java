@@ -1,12 +1,15 @@
 package org.lumongo.client.result;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
+import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.fields.Mapper;
-import org.lumongo.util.BsonHelper;
+import org.lumongo.util.ResultDocHelper;
 
 import com.mongodb.DBObject;
 
@@ -66,6 +69,18 @@ public class FetchResult extends Result {
         return null;
     }
 
+    public Map<String, String> getMeta() {
+        if (fetchResponse.hasResultDocument()) {
+            ResultDocument rd = fetchResponse.getResultDocument();
+            HashMap<String, String> metadata = new HashMap<String, String>();
+            for (Metadata md : rd.getMetadataList()) {
+                metadata.put(md.getKey(), md.getValue());
+            }
+            return metadata;
+        }
+        return null;
+    }
+
     public String getDocumentAsUtf8() {
         if (fetchResponse.hasResultDocument()) {
             ResultDocument rd = fetchResponse.getResultDocument();
@@ -78,7 +93,7 @@ public class FetchResult extends Result {
     public DBObject getDocumentAsBson() {
         if (fetchResponse.hasResultDocument()) {
             ResultDocument rd = fetchResponse.getResultDocument();
-            DBObject dbObject = BsonHelper.dbObjectFromResultDocument(rd);
+            DBObject dbObject = ResultDocHelper.dbObjectFromResultDocument(rd);
             return dbObject;
         }
         return null;
