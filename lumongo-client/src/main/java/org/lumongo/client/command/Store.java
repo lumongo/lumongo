@@ -78,13 +78,19 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> {
         return this;
     }
 
-    public Store setResultDocument(ResultDocument resultDocument) {
-        this.resultDocument = resultDocument;
+    public Store setResultDocument(DBObject resultDocument) {
+        this.resultDocument = BsonHelper.dbObjectToResultDocument(uniqueId, resultDocument);
         return this;
     }
 
-    public Store setResultDocument(DBObject resultDocument) {
-        this.resultDocument = BsonHelper.dbObjectToResultDocument(uniqueId, resultDocument);
+
+    public Store setResultDocument(DBObject resultDocument, boolean compressed) {
+        this.resultDocument = BsonHelper.dbObjectToResultDocument(uniqueId, resultDocument, compressed);
+        return this;
+    }
+
+    public Store setResultDocument(ResultDocument resultDocument) {
+        this.resultDocument = resultDocument;
         return this;
     }
 
