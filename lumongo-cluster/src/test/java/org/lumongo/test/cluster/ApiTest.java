@@ -113,6 +113,16 @@ public class ApiTest {
 		// s.setResultDocument(xml, true); // store compressed
 
 		lumongoWorkPool.store(s);
+
+		HashMap<String, String> metadata = new HashMap<String, String>();
+		metadata.put("test1", "val1");
+		metadata.put("test2", "val2");
+
+		Store s1 = new Store("myid1111");
+		s1.addIndexedDocument(indexedDoc);
+		s1.setResultDocument(xml, metadata);
+
+		lumongoWorkPool.store(s1);
 	}
 
 	public void storeDocumentBson() throws Exception {
@@ -128,9 +138,19 @@ public class ApiTest {
 
 		Store s = new Store("myid222");
 		s.addIndexedDocument(indexedDoc);
-		s.setResultDocument(dbObject);
+		s.setResultDocument(dbObject, true);
 
 		lumongoWorkPool.store(s);
+
+		HashMap<String, String> metadata = new HashMap<String, String>();
+		metadata.put("test1", "val1");
+		metadata.put("test2", "val2");
+
+		Store s1 = new Store("myid2222");
+		s1.addIndexedDocument(indexedDoc);
+		s1.setResultDocument(dbObject, metadata);
+
+		lumongoWorkPool.store(s1);
 
 	}
 
@@ -146,27 +166,16 @@ public class ApiTest {
 		s.setResultDocument(binary);
 
 		lumongoWorkPool.store(s);
-	}
-
-	public void storeDocumentAndMeta() throws Exception {
-
-		IndexedDocBuilder docBuilder = new IndexedDocBuilder("myIndexName");
-		docBuilder.addField("issn", "1234-1234");
-		docBuilder.addField("title", "Special title");
-		LMDoc indexedDoc = docBuilder.getIndexedDoc();
-
-		String xml = "<sampleXML></sampleXML>";
 
 		HashMap<String, String> metadata = new HashMap<String, String>();
 		metadata.put("test1", "val1");
 		metadata.put("test2", "val2");
 
-		Store s = new Store("myid123");
-		s.addIndexedDocument(indexedDoc);
-		s.setResultDocument(xml, metadata);
+		Store s1 = new Store("myid3333");
+		s1.addIndexedDocument(indexedDoc);
+		s1.setResultDocument(binary, metadata);
 
-
-		lumongoWorkPool.store(s);
+		lumongoWorkPool.store(s1);
 	}
 
 	public void fetchDocumentText() throws Exception {
@@ -177,6 +186,18 @@ public class ApiTest {
 		if (fetchResult.hasResultDocument()) {
 			String text = fetchResult.getDocumentAsUtf8();
 			System.out.println(text);
+		}
+
+		FetchDocument fetchDocument1 = new FetchDocument("myid1111");
+
+		FetchResult fetchResult1 = lumongoWorkPool.fetch(fetchDocument1);
+
+		if (fetchResult1.hasResultDocument()) {
+			String text = fetchResult1.getDocumentAsUtf8();
+			System.out.println(text);
+
+			Map<String, String> meta = fetchResult1.getMeta();
+			System.out.println(meta);
 		}
 	}
 
@@ -189,6 +210,18 @@ public class ApiTest {
 			DBObject object = fetchResult.getDocumentAsBson();
 			System.out.println(object);
 		}
+
+		FetchDocument fetchDocument1 = new FetchDocument("myid2222");
+
+		FetchResult fetchResult1 = lumongoWorkPool.fetch(fetchDocument1);
+
+		if (fetchResult1.hasResultDocument()) {
+			DBObject object = fetchResult1.getDocumentAsBson();
+			System.out.println(object);
+
+			Map<String, String> meta = fetchResult1.getMeta();
+			System.out.println(meta);
+		}
 	}
 
 	public void fetchDocumentBinary() throws Exception {
@@ -199,6 +232,18 @@ public class ApiTest {
 		if (fetchResult.hasResultDocument()) {
 			byte[] bytes = fetchResult.getDocumentAsBytes();
 			System.out.println(Arrays.toString(bytes));
+		}
+
+		FetchDocument fetchDocument1 = new FetchDocument("myid3333");
+
+		FetchResult fetchResult1 = lumongoWorkPool.fetch(fetchDocument1);
+
+		if (fetchResult1.hasResultDocument()) {
+			byte[] bytes = fetchResult1.getDocumentAsBytes();
+			System.out.println(Arrays.toString(bytes));
+
+			Map<String, String> meta = fetchResult1.getMeta();
+			System.out.println(meta);
 		}
 	}
 
@@ -276,12 +321,11 @@ public class ApiTest {
 			apiTest.storeDocumentText();
 			apiTest.storeDocumentBson();
 			apiTest.storeDocumentBinary();
-			apiTest.storeDocumentAndMeta();
+
 
 			apiTest.fetchDocumentText();
 			apiTest.fetchDocumentBson();
 			apiTest.fetchDocumentBinary();
-			apiTest.fetchDocumentMeta();
 
 			apiTest.getCount();
 		}
