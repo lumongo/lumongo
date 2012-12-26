@@ -216,6 +216,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 			is = new DeflaterInputStream(is);
 		}
 
+		deleteAssociatedDocument(uniqueId, fileName);	
 		GridFSFile gFile = gridFS.createFile(is);
 		gFile.put(MongoConstants.StandardFields._ID, getGridFsId(uniqueId, fileName));
 		gFile.put(FILENAME, fileName);
@@ -242,7 +243,8 @@ public class MongoDocumentStorage implements DocumentStorage {
 			bytes = CommonCompression.compressZlib(bytes, CompressionLevel.FASTEST);
 		}
 
-		GridFSFile gFile = gridFS.createFile(bytes);
+		deleteAssociatedDocument(doc.getDocumentUniqueId(), doc.getFilename());		
+		GridFSFile gFile = gridFS.createFile(bytes);		
 		gFile.put(MongoConstants.StandardFields._ID, getGridFsId(doc.getDocumentUniqueId(), doc.getFilename()));
 		gFile.put(FILENAME, doc.getFilename());
 		DBObject metadata = new BasicDBObject();
@@ -324,7 +326,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		aBuilder.setCompressed(compressed);
 		aBuilder.setTimestamp(timestamp);
 
-		aBuilder.setDocumentUniqueId((String) metadata.get(UNIQUE_ID_KEY));
+		aBuilder.setDocumentUniqueId((String) metadata.removeField(UNIQUE_ID_KEY));
 		for (String field : metadata.keySet()) {
 			aBuilder.addMetadata(Metadata.newBuilder().setKey(field).setValue((String) metadata.get(field)));
 		}

@@ -105,6 +105,14 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return executeAsync(delete);
     }
 
+    public DeleteIndexResult deleteIndex(String indexName) throws Exception {
+        return execute(new DeleteIndex(indexName));
+    }
+
+    public Future<DeleteIndexResult> deleteIndexAsync(String indexName) throws Exception {
+        return executeAsync(new DeleteIndex(indexName));
+    }
+    
     public DeleteIndexResult deleteIndex(DeleteIndex deleteIndex) throws Exception {
         return execute(deleteIndex);
     }

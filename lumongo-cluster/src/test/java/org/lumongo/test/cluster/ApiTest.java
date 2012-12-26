@@ -1,14 +1,20 @@
 package org.lumongo.test.cluster;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.lumongo.client.command.FetchAllAssociated;
+import org.lumongo.client.command.FetchAssociated;
 import org.lumongo.client.command.CreateIndex;
 import org.lumongo.client.command.CreateOrUpdateIndex;
+import org.lumongo.client.command.DeleteIndex;
 import org.lumongo.client.command.FetchDocument;
+import org.lumongo.client.command.FetchLargeAssociated;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
+import org.lumongo.client.command.StoreLargeAssociated;
 import org.lumongo.client.command.UpdateIndex;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.config.LumongoPoolConfig;
@@ -17,10 +23,13 @@ import org.lumongo.client.result.CreateOrUpdateIndexResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.GetNumberOfDocsResult;
 import org.lumongo.client.result.QueryResult;
+import org.lumongo.client.result.StoreLargeAssociatedResult;
+import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
+import org.lumongo.doc.AssociatedBuilder;
 import org.lumongo.doc.IndexedDocBuilder;
 
 import com.mongodb.BasicDBObject;
@@ -47,6 +56,10 @@ public class ApiTest {
 
 	public void stopClient() throws Exception {
 		lumongoWorkPool.shutdown();
+	}
+	
+	public void deleteIndex() throws Exception {		
+		lumongoWorkPool.deleteIndex("myIndexName");
 	}
 
 	public void createIndex() throws Exception {
@@ -130,6 +143,7 @@ public class ApiTest {
 		IndexedDocBuilder docBuilder = new IndexedDocBuilder("myIndexName");
 		docBuilder.addField("title", "Magic Java Beans");
 		docBuilder.addField("issn", "4321-4321");
+		docBuilder.addFacet("issn", "4321-4321");
 		LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
 		DBObject dbObject = new BasicDBObject();
@@ -156,8 +170,9 @@ public class ApiTest {
 
 	public void storeDocumentBinary() throws Exception {
 		IndexedDocBuilder docBuilder = new IndexedDocBuilder("myIndexName");
-		docBuilder.addField("title", "Another great book");
+		docBuilder.addField("title", "Another great and special book");
 		docBuilder.addField("issn", "1111-1111");
+		docBuilder.addFacet("issn", "1111-1111");
 		LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
 		byte[] binary = new byte[] { 1, 2, 3 };
@@ -269,18 +284,17 @@ public class ApiTest {
 
 		QueryResult queryResult = lumongoWorkPool.query(query);
 
+		@SuppressWarnings("unused")
 		long totalHits = queryResult.getTotalHits();
 
 		for (ScoredResult sr : queryResult.getResults()) {
 			System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + ">");
 		}
 
-		System.out.println("Query <" + normalLuceneQuery + "> found <" + totalHits + "> total hits.  Fetched <" + queryResult.getResults().size()
-				+ "> documents.");
 	}
 
 	public void pagingQuery() throws Exception {
-		int numberOfResults = 10;
+		int numberOfResults = 2;
 		String normalLuceneQuery = "issn:1234-1234 AND title:special";
 		Query query = new Query("myIndexName", normalLuceneQuery, numberOfResults);
 
@@ -289,13 +303,17 @@ public class ApiTest {
 		query.setLastResult(firstResult);
 
 		QueryResult secondResult = lumongoWorkPool.query(query);
+		
+		for (ScoredResult sr : secondResult.getResults()) {
+			System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + ">");
+		}
 
 	}
 
 	public void facetQuery() throws Exception {
 		// Can set number of documents to return to 0 unless you want the documents
 		// at the same time
-		Query query = new Query("myIndexName", "title:userguide", 0);
+		Query query = new Query("myIndexName", "title:special", 0);
 		int maxFacets = 30;
 		query.addCountRequest("issn", maxFacets);
 
@@ -303,18 +321,77 @@ public class ApiTest {
 		for (FacetCount fc : queryResult.getFacetCounts()) {
 			System.out.println("Facet <" + fc.getFacet() + "> with count <" + fc.getCount() + ">");
 		}
+		
+	}
+	
+	public void drillDownQuery() throws Exception {
+		Query query = new Query("myIndexName", "title:special", 0);
+		query.addDrillDown("issn", "1111-1111");
+		QueryResult queryResult = lumongoWorkPool.query(query);
+		for (FacetCount fc : queryResult.getFacetCounts()) {
+			System.out.println("Facet <" + fc.getFacet() + "> with count <" + fc.getCount() + ">");
+		}
 	}
 
+	
+	
 	public void getCount() throws Exception {
 		GetNumberOfDocsResult result = lumongoWorkPool.getNumberOfDocs("myIndexName");
 		System.out.println(result.getNumberOfDocs());
 	}
+	
+	public void storeAssociated() throws Exception {
+		String uniqueId = "myid123";
+		String filename = "myfile2";
+		
+		AssociatedBuilder associatedBuilder = new AssociatedBuilder(uniqueId, filename);
+		associatedBuilder.setCompressed(false);
+		associatedBuilder.setDocument("Some Text3");
+		associatedBuilder.addMetaData("mydata", "myvalue2");
+		associatedBuilder.addMetaData("sometypeinfo", "text file2");
+		AssociatedDocument ad = associatedBuilder.getAssociatedDocument();
 
+		Store s = new Store(uniqueId);		
+		s.addAssociatedDocument(ad);
+
+		lumongoWorkPool.store(s);
+	}
+	
+	public void fetchAssociated() throws Exception {
+		String uniqueId = "myid123";
+		
+		FetchAllAssociated fetchAssociated = new FetchAllAssociated(uniqueId);
+		
+
+		FetchResult fetchResult = lumongoWorkPool.fetch(fetchAssociated);
+		System.out.println(fetchResult.getAssociatedDocuments());
+	}
+
+	public void storeLargeAssociated() throws Exception {
+		String uniqueId = "myid333";
+		String filename = "myfilename";
+		
+		StoreLargeAssociated storeLargeAssociated = new StoreLargeAssociated(uniqueId, filename, new File("/home/mdavis/Downloads/guice-3.0.zip"));
+		
+		lumongoWorkPool.storeLargeAssociated(storeLargeAssociated);
+		
+	}
+	
+	public void fetchLargeAssociated() throws Exception {
+		String uniqueId = "myid333";
+		String filename = "myfilename";
+		
+		FetchLargeAssociated fetchLargeAssociated = new FetchLargeAssociated(uniqueId, filename, new File("/home/mdavis/t.zip"));
+		lumongoWorkPool.fetchLargeAssociated(fetchLargeAssociated);
+		
+	}
+	
 	public static void main(String[] args) throws Exception {
 		ApiTest apiTest = new ApiTest();
 		apiTest.startClient();
 		try {
 			apiTest.updateMembers();
+			//apiTest.deleteIndex();
 			// apiTest.createIndex();
 			// apiTest.updateIndex();
 			apiTest.createOrUpdateIndex();
@@ -326,8 +403,19 @@ public class ApiTest {
 			apiTest.fetchDocumentText();
 			apiTest.fetchDocumentBson();
 			apiTest.fetchDocumentBinary();
+			
+			apiTest.simpleQuery();
+			apiTest.pagingQuery();
+			apiTest.facetQuery();
+			apiTest.drillDownQuery();
 
 			apiTest.getCount();
+			
+			apiTest.storeAssociated();
+			apiTest.fetchAssociated();
+			
+			apiTest.storeLargeAssociated();
+			apiTest.fetchLargeAssociated();
 		}
 		catch (Exception e) {
 			System.err.println(e);
@@ -336,4 +424,6 @@ public class ApiTest {
 			apiTest.stopClient();
 		}
 	}
+
+
 }
