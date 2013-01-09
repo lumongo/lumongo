@@ -2,14 +2,14 @@ package org.lumongo.util;
 
 import java.net.UnknownHostException;
 
-import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 
 public class TestHelper {
 	public static final String MONGO_SERVER_PROPERTY = "mongoServer";
 	public static final String MONGO_PORT_PROPERTY = "mongoPort";
 	public static final String TEST_DATABASE_NAME = "lumongoUnitTest";
-	
+
 	public static String getMongoServer() {
 		String mongoServer = System.getProperty(MONGO_SERVER_PROPERTY);
 		if (mongoServer == null) {
@@ -17,7 +17,7 @@ public class TestHelper {
 		}
 		return mongoServer;
 	}
-	
+
 	public static int getMongoPort() {
 		String portStr = System.getProperty(MONGO_PORT_PROPERTY);
 		if (portStr == null) {
@@ -25,8 +25,8 @@ public class TestHelper {
 		}
 		return Integer.parseInt(portStr);
 	}
-	
-	public static Mongo getMongo() throws UnknownHostException, MongoException {
-		return new Mongo(getMongoServer(), getMongoPort());
+
+	public static MongoClient getMongo() throws UnknownHostException, MongoException {
+		return new MongoClient(getMongoServer(), getMongoPort());
 	}
 }

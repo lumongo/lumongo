@@ -94,15 +94,13 @@ import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
-import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
-import com.mongodb.MongoOptions;
-import com.mongodb.ServerAddress;
 
 public class IndexManager {
 	private final static Logger log = Logger.getLogger(IndexManager.class);
 
-	private Mongo mongo;
+	private MongoClient mongo;
 	private MongoDocumentStorage documentStorage;
 
 	private final ReadWriteLock globalLock;
@@ -140,9 +138,7 @@ public class IndexManager {
 			int mongoPort = mongoConfig.getMongoPort();
 			boolean sharded = clusterConfig.isSharded();
 
-			MongoOptions options = new MongoOptions();
-			options.connectionsPerHost = 32;
-			this.mongo = new Mongo(new ServerAddress(mongoHost, mongoPort), options);
+			this.mongo = new MongoClient(mongoHost, mongoPort);
 
 			if (sharded) {
 				DB db = mongo.getDB(MongoConstants.StandardDBs.ADMIN);
@@ -759,7 +755,7 @@ public class IndexManager {
 	public QueryResponse query(final QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			log.info("Running query: <" + request.getQuery() + ">");
+			log.info("Running query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + ">");
 
 			final Map<String, Query> queryMap = getQueryMap(request);
 

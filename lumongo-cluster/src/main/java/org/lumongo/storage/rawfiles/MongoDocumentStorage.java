@@ -27,9 +27,8 @@ import com.mongodb.CommandResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
-import com.mongodb.WriteConcern;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSFile;
@@ -53,17 +52,14 @@ public class MongoDocumentStorage implements DocumentStorage {
 	private static final String UNIQUE_ID_KEY = "unique_id";
 	private static final String CHUNKS = "chunks";
 
-	private Mongo pool;
+	private MongoClient pool;
 	private String database;
 
-	// TODO: make this configurable?
-	private WriteConcern documentWriteConcern = WriteConcern.NORMAL;
-
-	public MongoDocumentStorage(Mongo pool, String database) {
+	public MongoDocumentStorage(MongoClient pool, String database) {
 		this(pool, database, false);
 	}
 
-	public MongoDocumentStorage(Mongo pool, String database, boolean sharded) {
+	public MongoDocumentStorage(MongoClient pool, String database, boolean sharded) {
 		this.pool = pool;
 		this.database = database;
 
@@ -87,7 +83,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	}
 
 	public MongoDocumentStorage(String mongoHost, int mongoPort, String database, boolean sharded) throws UnknownHostException, MongoException {
-		this(new Mongo(mongoHost, mongoPort), database, sharded);
+		this(new MongoClient(mongoHost, mongoPort), database, sharded);
 	}
 
 	private void shardCollection(DB db, DB adminDb, String collectionName) {
@@ -138,7 +134,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		document.put(COMPRESSED, doc.getCompressed());
 		document.put(TYPE, doc.getType().toString());
 		document.put(MongoConstants.StandardFields._ID, uniqueId);
-		coll.save(document, documentWriteConcern);
+		coll.save(document);
 	}
 
 	@Override
@@ -204,7 +200,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		DB db = pool.getDB(database);
 		DBCollection coll = db.getCollection(RESULT_STORAGE_COLLECTION);
 		DBObject search = new BasicDBObject(MongoConstants.StandardFields._ID, uniqueId);
-		coll.remove(search, documentWriteConcern);
+		coll.remove(search);
 	}
 
 	@Override
@@ -216,7 +212,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 			is = new DeflaterInputStream(is);
 		}
 
-		deleteAssociatedDocument(uniqueId, fileName);	
+		deleteAssociatedDocument(uniqueId, fileName);
 		GridFSFile gFile = gridFS.createFile(is);
 		gFile.put(MongoConstants.StandardFields._ID, getGridFsId(uniqueId, fileName));
 		gFile.put(FILENAME, fileName);
@@ -243,8 +239,8 @@ public class MongoDocumentStorage implements DocumentStorage {
 			bytes = CommonCompression.compressZlib(bytes, CompressionLevel.FASTEST);
 		}
 
-		deleteAssociatedDocument(doc.getDocumentUniqueId(), doc.getFilename());		
-		GridFSFile gFile = gridFS.createFile(bytes);		
+		deleteAssociatedDocument(doc.getDocumentUniqueId(), doc.getFilename());
+		GridFSFile gFile = gridFS.createFile(bytes);
 		gFile.put(MongoConstants.StandardFields._ID, getGridFsId(doc.getDocumentUniqueId(), doc.getFilename()));
 		gFile.put(FILENAME, doc.getFilename());
 		DBObject metadata = new BasicDBObject();

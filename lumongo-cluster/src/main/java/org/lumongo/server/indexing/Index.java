@@ -40,6 +40,7 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.lumongo.LuceneConstants;
+import org.lumongo.LumongoConstants;
 import org.lumongo.analyzer.LowercaseKeywordAnalyzer;
 import org.lumongo.analyzer.LowercaseWhitespaceAnalyzer;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
@@ -80,6 +81,7 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 
 public class Index {
 	private static final String FACETS_SUFFIX = "facets";
@@ -88,7 +90,7 @@ public class Index {
 	public static final String CONFIG_SUFFIX = "_config";
 
 	private final IndexConfig indexConfig;
-	private final Mongo mongo;
+	private final MongoClient mongo;
 	private final MongoConfig mongoConfig;
 	private final ClusterConfig clusterConfig;
 
@@ -113,7 +115,7 @@ public class Index {
 
 	private final HazelcastManager hazelcastManager;
 
-	private Index(HazelcastManager hazelcastManger, MongoConfig mongoConfig, ClusterConfig clusterConfig, Mongo mongo, IndexConfig indexConfig) {
+	private Index(HazelcastManager hazelcastManger, MongoConfig mongoConfig, ClusterConfig clusterConfig, MongoClient mongo, IndexConfig indexConfig) {
 		this.hazelcastManager = hazelcastManger;
 
 		this.mongoConfig = mongoConfig;
@@ -470,7 +472,7 @@ public class Index {
 
 	/**
 	 * called on older cluster node when a new member is added
-	 * 
+	 *
 	 * @param currentMembers
 	 *            - current cluster members
 	 * @param memberAdded
@@ -537,7 +539,7 @@ public class Index {
 
 	/**
 	 * Called on older cluster node when member is removed
-	 * 
+	 *
 	 * @param currentMembers
 	 *            - current cluster members
 	 * @param memberRemoved
@@ -700,7 +702,7 @@ public class Index {
 		return segmentNumber;
 	}
 
-	public void deleteIndex(Mongo mongo) throws Exception {
+	public void deleteIndex(MongoClient mongo) throws Exception {
 
 		DB db = mongo.getDB(mongoConfig.getDatabaseName());
 
@@ -1015,6 +1017,8 @@ public class Index {
 				}
 			}
 
+			fields.remove(LumongoConstants.TIMESTAMP_FIELD);
+			fields.remove(LumongoConstants.LUCENE_FACET_FIELD);
 			responseBuilder.addAllFieldName(fields);
 			return responseBuilder.build();
 		}
@@ -1139,7 +1143,7 @@ public class Index {
 		return indexConfig;
 	}
 
-	public static Index loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, Mongo mongo, String indexName)
+	public static Index loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, MongoClient mongo, String indexName)
 			throws InvalidIndexConfig {
 		IndexConfig indexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
 		log.info("Loading index <" + indexName + ">");
@@ -1149,7 +1153,7 @@ public class Index {
 
 	}
 
-	public static Index createIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, Mongo mongo,
+	public static Index createIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, MongoClient mongo,
 			IndexConfig indexConfig) {
 		log.info("Creating index <" + indexConfig.getIndexName() + ">: " + indexConfig);
 		Index i = new Index(hazelcastManager, mongoConfig, clusterConfig, mongo, indexConfig);

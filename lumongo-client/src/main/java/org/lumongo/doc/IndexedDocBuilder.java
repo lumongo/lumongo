@@ -18,6 +18,11 @@ public class IndexedDocBuilder {
         return indexedDocBuilder.getIndexName();
     }
 
+    public IndexedDocBuilder setIndexName(String indexName) {
+    	indexedDocBuilder.setIndexName(indexName);
+    	return this;
+    }
+
     public IndexedDocBuilder addField(String fieldName, String... values) {
 
         for (String value : values) {

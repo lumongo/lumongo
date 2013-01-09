@@ -124,6 +124,10 @@ public class Segment {
 		this.lastChange = null;
 		this.indexName = indexConfig.getIndexName();
 
+		//For PostingsHighlighter in Lucene 4.1
+		//IndexOptions options = FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS;
+
+		//term vectors enabled for sorting code
 		notStoredTextField = new FieldType(TextField.TYPE_NOT_STORED);
 		notStoredTextField.setStoreTermVectors(true);
 		notStoredTextField.setStoreTermVectorOffsets(true);

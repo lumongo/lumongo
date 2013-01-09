@@ -31,4 +31,5 @@ public class LumongoConstants {
 	public static final char FACET_DELIMITER = '/';
 
 	public static final String TIMESTAMP_FIELD = "lmtsf";
+	public static final String LUCENE_FACET_FIELD = "$facets";
 }

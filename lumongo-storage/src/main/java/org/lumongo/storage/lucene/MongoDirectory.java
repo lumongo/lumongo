@@ -17,18 +17,17 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
-import com.mongodb.WriteConcern;
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE
  * file distributed with this work for additional information regarding copyright ownership. The ASF licenses this file
  * to You under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
  * License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
@@ -55,7 +54,7 @@ public class MongoDirectory implements NosqlDirectory {
     public static final String BLOCKS_SUFFIX = ".blocks";
     public static final String COUNTER_SUFFIX = ".counter";
 
-    private final Mongo mongo;
+    private final MongoClient mongo;
     private final String dbname;
     private final String indexName;
     private final int blockSize;
@@ -74,7 +73,7 @@ public class MongoDirectory implements NosqlDirectory {
      * @param dbname
      * @param indexName
      */
-    public static void dropIndex(Mongo mongo, String dbname, String indexName) {
+    public static void dropIndex(MongoClient mongo, String dbname, String indexName) {
         DB db = mongo.getDB(dbname);
         db.getCollection(indexName + MongoDirectory.BLOCKS_SUFFIX).drop();
         db.getCollection(indexName + MongoDirectory.COUNTER_SUFFIX).drop();
@@ -118,15 +117,15 @@ public class MongoDirectory implements NosqlDirectory {
         blockCache.invalidate(mb);
     }
 
-    public MongoDirectory(Mongo mongo, String dbname, String indexName) throws MongoException, IOException {
+    public MongoDirectory(MongoClient mongo, String dbname, String indexName) throws MongoException, IOException {
         this(mongo, dbname, indexName, false, false);
     }
 
-    public MongoDirectory(Mongo mongo, String dbname, String indexName, boolean sharded, boolean compressed) throws MongoException, IOException {
+    public MongoDirectory(MongoClient mongo, String dbname, String indexName, boolean sharded, boolean compressed) throws MongoException, IOException {
         this(mongo, dbname, indexName, sharded, compressed, DEFAULT_BLOCK_SIZE);
     }
 
-    public MongoDirectory(Mongo mongo, String dbname, String indexName, boolean sharded, boolean compressed, int blockSize) throws MongoException, IOException {
+    public MongoDirectory(MongoClient mongo, String dbname, String indexName, boolean sharded, boolean compressed, int blockSize) throws MongoException, IOException {
         this.compressed = compressed;
         this.mongo = mongo;
         this.dbname = dbname;
@@ -307,7 +306,7 @@ public class MongoDirectory implements NosqlDirectory {
         query.put(FILE_NUMBER, nosqlFile.getFileNumber());
 
         DBObject object = toDbObject(nosqlFile);
-        c.update(query, object, true, false, WriteConcern.SAFE);
+        c.update(query, object, true, false);
 
     }
 
@@ -320,7 +319,7 @@ public class MongoDirectory implements NosqlDirectory {
         c.remove(query);
 
         DBCollection b = getBlocksCollection();
-        b.remove(query, WriteConcern.SAFE);
+        b.remove(query);
         nameToFileMap.remove(nosqlFile.getFileName());
     }
 
