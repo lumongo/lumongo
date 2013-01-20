@@ -11,7 +11,6 @@ import joptsimple.OptionSpec;
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.admin.help.RequiredOptionException;
-import org.lumongo.client.LumongoClient;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
@@ -26,7 +25,7 @@ public class ClusterAdmin {
 	private static final String ADDRESS = "address";
 	private static final String HAZELCAST_PORT = "hazelcastPort";
 	private static final String COMMAND = "command";
-	
+
 	public static enum Command {
 		createCluster,
 		updateCluster,
@@ -36,10 +35,10 @@ public class ClusterAdmin {
 		removeNode,
 		listNodes,
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		LogUtil.loadLogConfig();
-		
+
 		OptionParser parser = new OptionParser();
 		OptionSpec<File> mongoConfigArg = parser.accepts(MONGO_CONFIG).withRequiredArg().ofType(File.class).describedAs("Mongo properties file");
 		OptionSpec<File> nodeConfigArg = parser.accepts(NODE_CONFIG).withRequiredArg().ofType(File.class).describedAs("Node properties file");
@@ -49,36 +48,35 @@ public class ClusterAdmin {
 				.describedAs("Hazelcast port if multiple instances on one server for node commands");
 		OptionSpec<Command> commandArg = parser.accepts(COMMAND).withRequiredArg().ofType(Command.class).required()
 				.describedAs("Command to run " + Arrays.toString(Command.values()));
-		
-		LumongoClient client = null;
-		
+
+
 		try {
 			OptionSet options = parser.parse(args);
-			
+
 			File mongoConfigFile = options.valueOf(mongoConfigArg);
 			File nodeConfigFile = options.valueOf(nodeConfigArg);
 			File clusterConfigFile = options.valueOf(clusterConfigArg);
 			String serverAddress = options.valueOf(serverAddressArg);
 			Integer hazelcastPort = options.valueOf(hazelcastPortArg);
-			
+
 			Command command = options.valueOf(commandArg);
-			
+
 			if (mongoConfigFile == null) {
 				throw new RequiredOptionException(MONGO_CONFIG, command.toString());
 			}
-			
+
 			MongoConfig mongoConfig = MongoConfig.getNodeConfig(mongoConfigFile);
-			
+
 			LocalNodeConfig localNodeConfig = null;
 			if (nodeConfigFile != null) {
 				localNodeConfig = LocalNodeConfig.getNodeConfig(nodeConfigFile);
 			}
-			
+
 			ClusterConfig clusterConfig = null;
 			if (clusterConfigFile != null) {
 				clusterConfig = ClusterConfig.getClusterConfig(clusterConfigFile);
 			}
-			
+
 			if (Command.createCluster.equals(command)) {
 				System.out.println("Creating cluster in database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost() + ">");
 				if (clusterConfig == null) {
@@ -114,22 +112,22 @@ public class ClusterAdmin {
 				if (serverAddress == null) {
 					serverAddress = ServerNameHelper.getLocalServer();
 				}
-				
+
 				System.out.println("Registering node with server address <" + serverAddress + ">");
-				
+
 				ClusterHelper.registerNode(mongoConfig, localNodeConfig, serverAddress);
 			}
 			else if (Command.removeNode.equals(command)) {
 				if (serverAddress == null) {
 					serverAddress = ServerNameHelper.getLocalServer();
 				}
-				
+
 				if (hazelcastPort == null) {
 					hazelcastPort = LumongoConstants.DEFAULT_HAZELCAST_PORT;
 				}
-				
+
 				System.out.println("Removing node with server address <" + serverAddress + "> and hazelcastPort <" + hazelcastPort + ">");
-				
+
 				ClusterHelper.removeNode(mongoConfig, serverAddress, hazelcastPort);
 			}
 			else if (Command.listNodes.equals(command)) {
@@ -138,17 +136,13 @@ public class ClusterAdmin {
 			else {
 				System.err.println(command + " not supported");
 			}
-			
+
 		}
 		catch (OptionException e) {
 			System.err.println("ERROR: " + e.getMessage());
 			parser.formatHelpWith(new LumongoHelpFormatter());
 			parser.printHelpOn(System.err);
 		}
-		finally {
-			if (client != null) {
-				client.close();
-			}
-		}
+
 	}
 }

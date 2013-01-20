@@ -7,6 +7,7 @@ service ExternalService {
 	rpc Store (StoreRequest) returns (StoreResponse);
 	rpc Delete (DeleteRequest) returns (DeleteResponse);
 	rpc Fetch (FetchRequest) returns (FetchResponse);
+	rpc GroupFetch (GroupFetchRequest) returns (GroupFetchResponse);
 	rpc CreateIndex (IndexCreateRequest) returns (IndexCreateResponse);
 	rpc ChangeIndex (IndexSettingsRequest) returns (IndexSettingsResponse);
 	rpc DeleteIndex (IndexDeleteRequest) returns (IndexDeleteResponse);
@@ -199,6 +200,7 @@ message LMDoc {
 	required string indexName = 1;
 	repeated LMField indexedField = 2;
 	repeated string facet = 3;
+	optional int64 timestamp = 4;
 }
 
 
@@ -223,6 +225,7 @@ message ResultDocument {
 	optional Type type = 3 [default = BINARY];
 	optional bool compressed = 4 [default = false];
 	repeated Metadata metadata = 5;
+	optional int64 timestamp = 6;
 }
 
 message AssociatedDocument {
@@ -231,6 +234,7 @@ message AssociatedDocument {
 	optional bytes document = 3;
 	optional bool compressed = 4 [default = false];
 	repeated Metadata metadata = 5;
+	optional int64 timestamp = 6;
 }
 
 message Metadata {
@@ -244,6 +248,13 @@ message ScoredResult {
 	required uint32 docId = 3;
 	required string indexName = 4;
 	required uint32 segment = 5;
+	required uint32 resultIndex = 6;
+	repeated string sortTerm = 7;
+	repeated int32 sortInteger = 8;
+	repeated int64 sortLong = 9;
+	repeated float sortFloat = 10;
+	repeated double sortDouble = 11;
+	required int64 timestamp = 12;
 }
 
 message SortRequest {
@@ -281,7 +292,7 @@ message SegmentResponse {
     required string indexName = 2;
     required uint32 totalHits = 3;
     repeated ScoredResult scoredResult = 4;
-    required bool moreAvailable = 5;
+    optional ScoredResult next = 5;
     repeated FacetCount facetCount = 6;
 }
 
@@ -342,6 +353,14 @@ message DeleteRequest {
 
 message DeleteResponse {
 
+}
+
+message GroupFetchRequest {
+	repeated FetchRequest fetchRequest = 1;
+}
+
+message GroupFetchResponse {
+	repeated FetchResponse fetchResponse = 1;
 }
 
 message FetchRequest {

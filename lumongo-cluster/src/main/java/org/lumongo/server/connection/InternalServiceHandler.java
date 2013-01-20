@@ -30,61 +30,66 @@ import org.lumongo.util.LumongoThreadFactory;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
+import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
 import com.googlecode.protobuf.pro.duplex.execute.ThreadPoolCallExecutor;
 import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerBootstrap;
 
 public class InternalServiceHandler extends InternalService {
-	
+
 	private final static Logger log = Logger.getLogger(InternalServiceHandler.class);
-	
+
 	private LumongoThreadFactory internalRpcFactory;
 	private LumongoThreadFactory internalBossFactory;
 	private LumongoThreadFactory internalWorkerFactory;
-	
+
 	private final IndexManager indexManager;
 	private final ClusterConfig clusterConfig;
 	private final LocalNodeConfig localNodeConfig;
-	
+
 	private DuplexTcpServerBootstrap internalBootstrap;
-	
+
 	public InternalServiceHandler(ClusterConfig clusterConfig, LocalNodeConfig localNodeConfig, IndexManager indexManager) {
 		this.clusterConfig = clusterConfig;
 		this.localNodeConfig = localNodeConfig;
 		this.indexManager = indexManager;
-		
+
 		internalRpcFactory = new LumongoThreadFactory(InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc");
 		internalBossFactory = new LumongoThreadFactory(InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Boss");
 		internalWorkerFactory = new LumongoThreadFactory(InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Worker");
 	}
-	
+
 	public void start() throws ChannelException {
 		int internalServicePort = localNodeConfig.getInternalServicePort();
-		
+
 		PeerInfo internalServerInfo = new PeerInfo(ConnectionHelper.getHostName(), internalServicePort);
-		
+
 		int coreInternalWorkers = clusterConfig.getInternalWorkers();
 		int maxInternalWorkers = 1024; // TODO fix this
-		
-		internalBootstrap = new DuplexTcpServerBootstrap(internalServerInfo, new NioServerSocketChannelFactory(
-				Executors.newCachedThreadPool(internalBossFactory), Executors.newCachedThreadPool(internalWorkerFactory)), new ThreadPoolCallExecutor(
-				coreInternalWorkers, maxInternalWorkers, internalRpcFactory), null);
+
+		RpcServerCallExecutor rpcExecutor = new ThreadPoolCallExecutor(
+				coreInternalWorkers, maxInternalWorkers, internalRpcFactory);
+		NioServerSocketChannelFactory nioServerSocketChannelFactory = new NioServerSocketChannelFactory(
+				Executors.newCachedThreadPool(internalBossFactory), Executors.newCachedThreadPool(internalWorkerFactory));
+		internalBootstrap = new DuplexTcpServerBootstrap(internalServerInfo, nioServerSocketChannelFactory);
+		internalBootstrap.setLogger(null);
+		internalBootstrap.setRpcServerCallExecutor(rpcExecutor);
 		internalBootstrap.setOption("sendBufferSize", 1048576);
 		internalBootstrap.setOption("receiveBufferSize", 1048576);
 		internalBootstrap.setOption("child.receiveBufferSize", 1048576);
 		internalBootstrap.setOption("child.sendBufferSize", 1048576);
 		internalBootstrap.setOption("tcpNoDelay", false);
-		
+
 		internalBootstrap.registerConnectionEventListener(new StandardConnectionNotifier(log));
-		
+
 		internalBootstrap.getRpcServiceRegistry().registerService(this);
-		
+
 		internalBootstrap.bind();
 	}
-	
+
 	public void shutdown() {
-		
+
 		int internalShutdownTimeout = clusterConfig.getInternalShutdownTimeout() * 1000;
-		
+
 		Thread internalShutdown = new Thread("InternalServiceShutdown-" + localNodeConfig.getHazelcastPort()) {
 			@Override
 			public void run() {
@@ -93,19 +98,19 @@ public class InternalServiceHandler extends InternalService {
 			}
 		};
 		internalShutdown.start();
-		
+
 		try {
 			internalShutdown.join(internalShutdownTimeout);
 		}
 		catch (Exception e) {
-			
+
 		}
-		
+
 		if (internalShutdown.isAlive()) {
 			log.info("Failed to stop internal service within " + internalShutdownTimeout + "ms");
 		}
 	}
-	
+
 	@Override
 	public void queryInternal(RpcController controller, QueryRequest request, RpcCallback<InternalQueryResponse> done) {
 		try {
@@ -118,7 +123,7 @@ public class InternalServiceHandler extends InternalService {
 			done.run(null);
 		}
 	}
-	
+
 	@Override
 	public void indexInternal(RpcController controller, InternalIndexRequest request, RpcCallback<InternalIndexResponse> done) {
 		try {
@@ -131,7 +136,7 @@ public class InternalServiceHandler extends InternalService {
 			done.run(null);
 		}
 	}
-	
+
 	@Override
 	public void deleteInternal(RpcController controller, InternalDeleteRequest request, RpcCallback<InternalDeleteResponse> done) {
 		try {
@@ -144,7 +149,7 @@ public class InternalServiceHandler extends InternalService {
 			done.run(null);
 		}
 	}
-	
+
 	@Override
 	public void getNumberOfDocsInternal(RpcController controller, GetNumberOfDocsRequest request, RpcCallback<GetNumberOfDocsResponse> done) {
 		try {
@@ -157,7 +162,7 @@ public class InternalServiceHandler extends InternalService {
 			done.run(null);
 		}
 	}
-	
+
 	@Override
 	public void clear(RpcController controller, ClearRequest request, RpcCallback<ClearResponse> done) {
 		try {
@@ -170,7 +175,7 @@ public class InternalServiceHandler extends InternalService {
 			done.run(null);
 		}
 	}
-	
+
 	@Override
 	public void optimize(RpcController controller, OptimizeRequest request, RpcCallback<OptimizeResponse> done) {
 		try {
@@ -183,7 +188,7 @@ public class InternalServiceHandler extends InternalService {
 			done.run(null);
 		}
 	}
-	
+
 	@Override
 	public void getFieldNames(RpcController controller, GetFieldNamesRequest request, RpcCallback<GetFieldNamesResponse> done) {
 		try {
@@ -196,7 +201,7 @@ public class InternalServiceHandler extends InternalService {
 			done.run(null);
 		}
 	}
-	
+
 	@Override
 	public void getTerms(RpcController controller, GetTermsRequest request, RpcCallback<GetTermsResponse> done) {
 		try {
@@ -209,5 +214,5 @@ public class InternalServiceHandler extends InternalService {
 			done.run(null);
 		}
 	}
-	
+
 }
