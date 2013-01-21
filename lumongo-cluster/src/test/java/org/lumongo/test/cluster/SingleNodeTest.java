@@ -17,11 +17,10 @@ import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
-import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.doc.AssociatedBuilder;
 import org.lumongo.doc.IndexedDocBuilder;
-import org.lumongo.util.ResultDocHelper;
+import org.lumongo.doc.ResultDocBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.testng.log4testng.Logger;
@@ -72,7 +71,8 @@ public class SingleNodeTest {
 					id++;
 					String uniqueId = uniqueIdPrefix + id;
 
-					IndexedDocBuilder docBuilder = new IndexedDocBuilder(FACET_TEST_INDEX);
+					IndexedDocBuilder docBuilder = new IndexedDocBuilder();
+					docBuilder.setIndexName(FACET_TEST_INDEX);
 					docBuilder.addField("issn", issn);
 					docBuilder.addField("title", "Facet Userguide");
 					docBuilder.addFacet("issn", issn);
@@ -80,7 +80,13 @@ public class SingleNodeTest {
 
 					boolean compressed = (i % 2 == 0);
 
-					Store s = new Store(uniqueId).setResultDocument("<sampleXML>" + i + "</sampleXML>", compressed).addIndexedDocument(indexedDoc);
+					String xml = "<sampleXML>" + i + "</sampleXML>";
+
+
+
+					Store s = new Store(uniqueId);
+					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(xml).setCompressed(compressed));
+					s.addIndexedDocument(indexedDoc);
 
 					lumongoWorkPool.store(s);
 				}
@@ -118,7 +124,8 @@ public class SingleNodeTest {
 				String uniqueId = uniqueIdPrefix + i;
 
 
-				IndexedDocBuilder docBuilder = new IndexedDocBuilder(MY_TEST_INDEX);
+				IndexedDocBuilder docBuilder = new IndexedDocBuilder();
+				docBuilder.setIndexName(MY_TEST_INDEX);
 				docBuilder.addField("issn", "1333-1333");
 				docBuilder.addField("title", "Search and Storage");
 				LMDoc indexedDoc = docBuilder.getIndexedDoc();
@@ -126,7 +133,9 @@ public class SingleNodeTest {
 
 				boolean compressed = (i % 2 == 0);
 
-				Store s = new Store(uniqueId).setResultDocument("<sampleXML>random xml</sampleXML>", compressed);
+				String xml = "<sampleXML>random xml</sampleXML>";
+
+				Store s = new Store(uniqueId).setResultDocument(ResultDocBuilder.newBuilder().setDocument(xml).setCompressed(compressed));
 				s.addIndexedDocument(indexedDoc);
 				lumongoWorkPool.store(s);
 			}
@@ -134,7 +143,8 @@ public class SingleNodeTest {
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
 				String uniqueId = uniqueIdPrefix + i;
 
-				IndexedDocBuilder docBuilder = new IndexedDocBuilder(MY_TEST_INDEX);
+				IndexedDocBuilder docBuilder = new IndexedDocBuilder();
+				docBuilder.setIndexName(MY_TEST_INDEX);
 				docBuilder.addField("issn", "1234-1234");
 				docBuilder.addField("title", "Distributed Search and Storage System");
 				docBuilder.addField("an", i);
@@ -142,7 +152,9 @@ public class SingleNodeTest {
 
 				boolean compressed = (i % 2 == 0);
 
-				Store s = new Store(uniqueId).setResultDocument("<sampleXML>" + i + "</sampleXML>", compressed);
+				String xml = "<sampleXML>" + i + "</sampleXML>";
+
+				Store s = new Store(uniqueId).setResultDocument(ResultDocBuilder.newBuilder().setDocument(xml).setCompressed(compressed));
 				s.addIndexedDocument(indexedDoc);
 				lumongoWorkPool.store(s);
 			}
@@ -194,7 +206,8 @@ public class SingleNodeTest {
 
 		String uniqueId = "bsonTestObjectId";
 		{
-			IndexedDocBuilder docBuilder = new IndexedDocBuilder(MY_TEST_INDEX);
+			IndexedDocBuilder docBuilder = new IndexedDocBuilder();
+			docBuilder.setIndexName(MY_TEST_INDEX);
 			docBuilder.addField("issn", "4321-4321");
 			docBuilder.addField("title", "Magic Java Beans");
 			docBuilder.addField("eissn", "3333-3333");
@@ -204,7 +217,7 @@ public class SingleNodeTest {
 			dbObject.put("someKey", "someValue");
 			dbObject.put("other key", "other value");
 
-			Store s = new Store(uniqueId).setResultDocument(dbObject).addIndexedDocument(indexedDoc);
+			Store s = new Store(uniqueId).setResultDocument(ResultDocBuilder.newBuilder().setDocument(dbObject)).addIndexedDocument(indexedDoc);
 			lumongoWorkPool.store(s);
 		}
 
@@ -224,7 +237,8 @@ public class SingleNodeTest {
 		String uniqueId = "id3333";
 		{
 			{
-				IndexedDocBuilder docBuilder = new IndexedDocBuilder(MY_TEST_INDEX);
+				IndexedDocBuilder docBuilder = new IndexedDocBuilder();
+				docBuilder.setIndexName(MY_TEST_INDEX);
 				docBuilder.addField("issn", "6666-6666");
 				docBuilder.addField("title", "More Magic Java Beans");
 				docBuilder.addField("eissn", 2222 - 1111);
@@ -234,7 +248,9 @@ public class SingleNodeTest {
 				dbObject.put("key1", "val1");
 				dbObject.put("key2", "val2");
 
-				AssociatedBuilder associatedBuilder = new AssociatedBuilder(uniqueId, "myfile");
+				AssociatedBuilder associatedBuilder = new AssociatedBuilder();
+				associatedBuilder.setDocumentUniqueId(uniqueId);
+				associatedBuilder.setFilename("myfile");
 				associatedBuilder.setCompressed(true);
 				associatedBuilder.setDocument("Some Text");
 				associatedBuilder.addMetaData("mydata", "myvalue");
@@ -243,7 +259,7 @@ public class SingleNodeTest {
 
 				Store s = new Store(uniqueId);
 				s.addIndexedDocument(indexedDoc);
-				s.setResultDocument(dbObject);
+				s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(dbObject));
 				s.addAssociatedDocument(ad);
 
 				lumongoWorkPool.store(s);
@@ -251,7 +267,9 @@ public class SingleNodeTest {
 			}
 			{
 
-				AssociatedBuilder associatedBuilder = new AssociatedBuilder(uniqueId, "myfile2");
+				AssociatedBuilder associatedBuilder = new AssociatedBuilder();
+				associatedBuilder.setDocumentUniqueId(uniqueId);
+				associatedBuilder.setFilename("myfile2");
 				associatedBuilder.setCompressed(false);
 				associatedBuilder.setDocument("Some Other Text");
 				associatedBuilder.addMetaData("mydata", "myvalue 2");
@@ -263,7 +281,9 @@ public class SingleNodeTest {
 				lumongoWorkPool.store(s);
 			}
 			{
-				AssociatedBuilder associatedBuilder = new AssociatedBuilder(uniqueId, "filef");
+				AssociatedBuilder associatedBuilder = new AssociatedBuilder();
+				associatedBuilder.setDocumentUniqueId(uniqueId);
+				associatedBuilder.setFilename("filef");
 				associatedBuilder.setCompressed(true);
 				associatedBuilder.setDocument("Some Other Text");
 				associatedBuilder.addMetaData("stuff", "mystuff");
@@ -279,8 +299,7 @@ public class SingleNodeTest {
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, true));
 
 				Assert.assertTrue(response.hasResultDocument(), "Fetch failed for <" + uniqueId + ">");
-				ResultDocument rd = response.getResultDocument();
-				DBObject dbObject = ResultDocHelper.dbObjectFromResultDocument(rd);
+				DBObject dbObject = response.getDocumentAsBson();;
 				Assert.assertEquals(dbObject.get("key1"), "val1", "BSON object is missing field");
 				Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 
@@ -292,8 +311,7 @@ public class SingleNodeTest {
 			{
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId));
 				Assert.assertTrue(response.hasResultDocument(), "Fetch failed for <" + uniqueId + ">");
-				ResultDocument rd = response.getResultDocument();
-				DBObject dbObject = ResultDocHelper.dbObjectFromResultDocument(rd);
+				DBObject dbObject = response.getDocumentAsBson();
 				Assert.assertEquals(dbObject.get("key1"), "val1", "BSON object is missing field");
 				// Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 
@@ -366,7 +384,8 @@ public class SingleNodeTest {
 	@Test(groups = { "last" }, dependsOnGroups = { "next" })
 	public void apiUsage() throws Exception {
 		{
-			IndexedDocBuilder docBuilder = new IndexedDocBuilder(MY_TEST_INDEX);
+			IndexedDocBuilder docBuilder = new IndexedDocBuilder();
+			docBuilder.setIndexName(MY_TEST_INDEX);
 			docBuilder.addField("issn", "4444-1111");
 			docBuilder.addField("title", "A really special title to search");
 			LMDoc indexedDoc = docBuilder.getIndexedDoc();
@@ -374,7 +393,10 @@ public class SingleNodeTest {
 			String uniqueId = "myid123";
 			Store s = new Store(uniqueId);
 			s.addIndexedDocument(indexedDoc);
-			s.setResultDocument("<sampleXML></sampleXML>", true);
+
+			String xml = "<sampleXML></sampleXML>";
+
+			s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(xml).setCompressed(true));
 
 			lumongoWorkPool.store(s);
 		}

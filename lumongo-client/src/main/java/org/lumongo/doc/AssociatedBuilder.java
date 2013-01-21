@@ -11,10 +11,22 @@ public class AssociatedBuilder {
 
     private AssociatedDocument.Builder adBuilder;
 
-    public AssociatedBuilder(String uniqueId, String filename) {
+    public static AssociatedBuilder newBuilder() {
+    	 return new AssociatedBuilder();
+    }
+
+    public AssociatedBuilder() {
         adBuilder = AssociatedDocument.newBuilder();
+    }
+
+    public AssociatedBuilder setFilename(String filename) {
         adBuilder.setFilename(filename);
-        adBuilder.setDocumentUniqueId(uniqueId);
+        return this;
+    }
+
+    public AssociatedBuilder setDocumentUniqueId(String documentUniqueId) {
+        adBuilder.setDocumentUniqueId(documentUniqueId);
+        return this;
     }
 
     public AssociatedBuilder setCompressed(boolean compressed) {
@@ -40,6 +52,16 @@ public class AssociatedBuilder {
     public AssociatedBuilder addMetaData(String key, String value) {
         adBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue(value));
         return this;
+    }
+
+    public AssociatedBuilder clearMetaData() {
+    	adBuilder.clearMetadata();
+    	return this;
+    }
+
+    public AssociatedBuilder clear() {
+    	adBuilder.clear();
+    	return this;
     }
 
     public AssociatedDocument getAssociatedDocument() {

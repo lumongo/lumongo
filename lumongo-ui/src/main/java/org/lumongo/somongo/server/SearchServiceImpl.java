@@ -1,15 +1,16 @@
 package org.lumongo.somongo.server;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.ServletException;
 
-import org.lumongo.client.LumongoClient;
-import org.lumongo.client.config.LumongoClientConfig;
-import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
-import org.lumongo.cluster.message.Lumongo.QueryResponse;
+import org.lumongo.client.command.GetIndexes;
+import org.lumongo.client.command.Query;
+import org.lumongo.client.config.LumongoPoolConfig;
+import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.result.GetIndexesResult;
+import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.somongo.client.service.SearchService;
 import org.lumongo.somongo.shared.Document;
@@ -22,55 +23,62 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 public class SearchServiceImpl extends RemoteServiceServlet implements SearchService {
 
-    private LumongoClient lumongoClient;
+	private LumongoWorkPool lumongoWorkPool;
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    @Override
-    public void init() throws ServletException {
-        // TODO make configurable
-        LumongoClientConfig lumongoClientConfig = new LumongoClientConfig();
-        lumongoClientConfig.addMember("192.168.0.1");
-        lumongoClientConfig.setDefaultRetries(4);
-        try {
-            lumongoClient = new LumongoClient(lumongoClientConfig);
-        } catch (IOException e) {
-            throw new ServletException(e);
-        }
-    }
+	@Override
+	public void init() throws ServletException {
 
-    @Override
-    public SearchResults search(SearchRequest searchRequest) throws Exception {
+		LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 
-        String query = searchRequest.getQuery();
-        int amount = searchRequest.getAmount();
-        String[] indexes = searchRequest.getIndexes();
-        QueryResponse queryResponse = lumongoClient.query(query, amount, indexes);
+		String lumongoServer = System.getenv("lumongoServer");
 
-        SearchResults searchResults = new SearchResults();
+		if (lumongoServer == null) {
+			lumongoServer = "localhost";
+			System.err.println("--Environment variable lumongoServer is not defined, using localhost as default--");
+		}
 
-        searchResults.setTotalHits(queryResponse.getTotalHits());
+		lumongoPoolConfig.addMember(lumongoServer);
+		lumongoPoolConfig.setDefaultRetries(4);
 
-        List<ScoredResult> scoredResults = queryResponse.getResultsList();
-        for (ScoredResult sr : scoredResults) {
-            Document d = new Document();
-            d.setUniqueId(sr.getUniqueId());
-            d.setDocId(sr.getDocId());
-            d.setIndexName(sr.getIndexName());
-            d.setSegment(sr.getSegment());
-            d.setScore(sr.getScore());
-            searchResults.addDocument(d);
-        }
+		lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 
-        return searchResults;
-    }
+	}
 
-    @Override
-    public List<String> getIndexes() throws Exception {
+	@Override
+	public SearchResults search(SearchRequest searchRequest) throws Exception {
 
-        GetIndexesResponse getIndexesResponse = lumongoClient.getIndexes();
+		String query = searchRequest.getQuery();
+		int amount = searchRequest.getAmount();
+		String[] indexes = searchRequest.getIndexes();
+		Query q = new Query(indexes, query, amount);
+		QueryResult queryResult = lumongoWorkPool.execute(q);
 
-        return new ArrayList<String>(getIndexesResponse.getIndexNameList());
+		SearchResults searchResults = new SearchResults();
 
-    }
+		searchResults.setTotalHits(queryResult.getTotalHits());
+
+		List<ScoredResult> scoredResults = queryResult.getResults();
+		for (ScoredResult sr : scoredResults) {
+			Document d = new Document();
+			d.setUniqueId(sr.getUniqueId());
+			d.setDocId(sr.getDocId());
+			d.setIndexName(sr.getIndexName());
+			d.setSegment(sr.getSegment());
+			d.setScore(sr.getScore());
+			searchResults.addDocument(d);
+		}
+
+		return searchResults;
+	}
+
+	@Override
+	public List<String> getIndexes() throws Exception {
+
+		GetIndexesResult getIndexesResult = lumongoWorkPool.execute(new GetIndexes());
+
+		return new ArrayList<String>(getIndexesResult.getIndexNames());
+
+	}
 }

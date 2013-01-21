@@ -7,63 +7,80 @@ import org.lumongo.util.StringUtil;
 
 public class IndexedDocBuilder {
 
-    private LMDoc.Builder indexedDocBuilder;
+	private LMDoc.Builder indexedDocBuilder;
 
-    public IndexedDocBuilder(String indexName) {
-        indexedDocBuilder = LMDoc.newBuilder();
-        indexedDocBuilder.setIndexName(indexName);
-    }
+	public static IndexedDocBuilder newBuilder() {
+		return new IndexedDocBuilder();
+	}
 
-    public String getIndexName() {
-        return indexedDocBuilder.getIndexName();
-    }
+	public IndexedDocBuilder() {
+		indexedDocBuilder = LMDoc.newBuilder();
+	}
 
-    public IndexedDocBuilder setIndexName(String indexName) {
-    	indexedDocBuilder.setIndexName(indexName);
-    	return this;
-    }
+	public String getIndexName() {
+		return indexedDocBuilder.getIndexName();
+	}
 
-    public IndexedDocBuilder addField(String fieldName, String... values) {
+	public IndexedDocBuilder setIndexName(String indexName) {
+		indexedDocBuilder.setIndexName(indexName);
+		return this;
+	}
 
-        for (String value : values) {
-            indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName(fieldName).addFieldValue(value));
-        }
+	public IndexedDocBuilder addField(String fieldName, String... values) {
 
-        return this;
-    }
+		for (String value : values) {
+			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName(fieldName).addFieldValue(value));
+		}
 
-    public IndexedDocBuilder addField(String fieldName, Integer... values) {
+		return this;
+	}
 
-        for (Integer value : values) {
-            indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName(fieldName).addIntValue(value));
-        }
+	public IndexedDocBuilder addField(String fieldName, Integer... values) {
 
-        return this;
-    }
+		for (Integer value : values) {
+			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName(fieldName).addIntValue(value));
+		}
 
-    public IndexedDocBuilder addField(String fieldName, Float... values) {
+		return this;
+	}
 
-        for (Float value : values) {
-            indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName(fieldName).addFloatValue(value));
-        }
-        return this;
-    }
+	public IndexedDocBuilder addField(String fieldName, Float... values) {
 
-    public IndexedDocBuilder addField(String fieldName, Double... values) {
+		for (Float value : values) {
+			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName(fieldName).addFloatValue(value));
+		}
+		return this;
+	}
 
-        for (Double value : values) {
-            indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName(fieldName).addDoubleValue(value));
-        }
-        return this;
-    }
+	public IndexedDocBuilder addField(String fieldName, Double... values) {
 
-    public void addFacet(String... path) {
-        indexedDocBuilder.addFacet(StringUtil.join(LumongoConstants.FACET_DELIMITER, path));
-    }
+		for (Double value : values) {
+			indexedDocBuilder.addIndexedField(LMField.newBuilder().setFieldName(fieldName).addDoubleValue(value));
+		}
+		return this;
+	}
 
-    public LMDoc getIndexedDoc() {
-        return indexedDocBuilder.build();
-    }
+	public void addFacet(String... path) {
+		indexedDocBuilder.addFacet(StringUtil.join(LumongoConstants.FACET_DELIMITER, path));
+	}
 
+	public IndexedDocBuilder clearFields() {
+		indexedDocBuilder.clearIndexedField();
+		return this;
+	}
+
+	public IndexedDocBuilder clearFacets() {
+		indexedDocBuilder.clearFacet();
+		return this;
+	}
+
+	public IndexedDocBuilder clear() {
+		indexedDocBuilder.clear();
+		return this;
+	}
+
+	public LMDoc getIndexedDoc() {
+		return indexedDocBuilder.build();
+	}
 
 }

@@ -18,7 +18,7 @@ import org.gradle.api.tasks.compile.Compile
 
 apply plugin: 'war'
 
-project.ext { gwtVersion = '2.4.0' }
+project.ext { gwtVersion = '2.5.0' }
 
 final String LIB_NAME = "lib"
 final String WAR_DIR_NAME = "war"

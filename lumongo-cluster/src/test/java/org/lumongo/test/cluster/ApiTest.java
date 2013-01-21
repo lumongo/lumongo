@@ -2,7 +2,6 @@ package org.lumongo.test.cluster;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +25,7 @@ import org.lumongo.client.command.UpdateIndex;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.result.AssociatedResult;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.CreateOrUpdateIndexResult;
 import org.lumongo.client.result.FetchResult;
@@ -44,6 +44,7 @@ import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.Term;
 import org.lumongo.doc.AssociatedBuilder;
 import org.lumongo.doc.IndexedDocBuilder;
+import org.lumongo.doc.ResultDocBuilder;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -125,7 +126,8 @@ public class ApiTest {
 
 	public void storeDocumentText(String indexName, String uniqueId) throws Exception {
 
-		IndexedDocBuilder docBuilder = new IndexedDocBuilder(indexName);
+		IndexedDocBuilder docBuilder = new IndexedDocBuilder();
+		docBuilder.setIndexName(indexName);
 		docBuilder.addField("issn", "1234-1234");
 		docBuilder.addField("title", "A really special title");
 		docBuilder.addFacet("issn", "1234-1234");
@@ -135,26 +137,32 @@ public class ApiTest {
 
 		Store s = new Store(uniqueId);
 		s.addIndexedDocument(indexedDoc);
-		s.setResultDocument(xml);
+		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
+		resultDocumentBuilder.setDocument(xml);
+		s.setResultDocument(resultDocumentBuilder);
 
 		// s.setResultDocument(xml, true); // store compressed
 
 		lumongoWorkPool.store(s);
 
-		HashMap<String, String> metadata = new HashMap<String, String>();
-		metadata.put("test1", "val1");
-		metadata.put("test2", "val2");
 
 		Store s1 = new Store(uniqueId + "-meta");
 		s1.addIndexedDocument(indexedDoc);
-		s1.setResultDocument(xml, metadata);
+
+		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
+		resultDocumentBuilder1.setDocument(xml);
+		resultDocumentBuilder1.addMetaData("test1", "val1");
+		resultDocumentBuilder1.addMetaData("test2", "val2");
+		resultDocumentBuilder1.setCompressed(true);
+		s1.setResultDocument(resultDocumentBuilder1);
 
 		lumongoWorkPool.store(s1);
 	}
 
 	public void storeDocumentBson() throws Exception {
 
-		IndexedDocBuilder docBuilder = new IndexedDocBuilder("myIndexName");
+		IndexedDocBuilder docBuilder = new IndexedDocBuilder();
+		docBuilder.setIndexName("myIndexName");
 		docBuilder.addField("title", "Magic Java Beans");
 		docBuilder.addField("issn", "4321-4321");
 		docBuilder.addFacet("issn", "4321-4321");
@@ -166,44 +174,54 @@ public class ApiTest {
 
 		Store s = new Store("myid222");
 		s.addIndexedDocument(indexedDoc);
-		s.setResultDocument(dbObject, true);
+
+		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
+		resultDocumentBuilder.setDocument(dbObject);
+		resultDocumentBuilder.setCompressed(true);
+		s.setResultDocument(resultDocumentBuilder);
 
 		lumongoWorkPool.store(s);
 
-		HashMap<String, String> metadata = new HashMap<String, String>();
-		metadata.put("test1", "val1");
-		metadata.put("test2", "val2");
-
 		Store s1 = new Store("myid2222");
 		s1.addIndexedDocument(indexedDoc);
-		s1.setResultDocument(dbObject, metadata);
+
+		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
+		resultDocumentBuilder1.setDocument(dbObject);
+		resultDocumentBuilder1.addMetaData("test1", "val1");
+		resultDocumentBuilder1.addMetaData("test2", "val2");
+
+		s1.setResultDocument(resultDocumentBuilder1);
 
 		lumongoWorkPool.store(s1);
 
 	}
 
 	public void storeDocumentBinary() throws Exception {
-		IndexedDocBuilder docBuilder = new IndexedDocBuilder("myIndexName");
+		IndexedDocBuilder docBuilder = new IndexedDocBuilder();
+		docBuilder.setIndexName("myIndexName");
 		docBuilder.addField("title", "Another great and special book");
 		docBuilder.addField("issn", "1111-1111");
 		docBuilder.addFacet("issn", "1111-1111");
 		LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
-		byte[] binary = new byte[] { 1, 2, 3 };
+		byte[] bytes = new byte[] { 1, 2, 3 };
 		Store s = new Store("myid333");
 		s.addIndexedDocument(indexedDoc);
-		s.setResultDocument(binary);
+		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
+		resultDocumentBuilder.setDocument(bytes);
 
 
 		lumongoWorkPool.store(s);
 
-		HashMap<String, String> metadata = new HashMap<String, String>();
-		metadata.put("test1", "val1");
-		metadata.put("test2", "val2");
-
 		Store s1 = new Store("myid3333");
 		s1.addIndexedDocument(indexedDoc);
-		s1.setResultDocument(binary, metadata);
+
+		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
+		resultDocumentBuilder1.setDocument(bytes);
+		resultDocumentBuilder1.addMetaData("test1", "val1");
+		resultDocumentBuilder1.addMetaData("test2", "val2");
+
+		s1.setResultDocument(resultDocumentBuilder1);
 
 		lumongoWorkPool.store(s1);
 	}
@@ -383,7 +401,9 @@ public class ApiTest {
 		String uniqueId = "myid123";
 		String filename = "myfile2";
 
-		AssociatedBuilder associatedBuilder = new AssociatedBuilder(uniqueId, filename);
+		AssociatedBuilder associatedBuilder = new AssociatedBuilder();
+		associatedBuilder.setDocumentUniqueId(uniqueId);
+		associatedBuilder.setFilename(filename);
 		associatedBuilder.setCompressed(false);
 		associatedBuilder.setDocument("Some Text3");
 		associatedBuilder.addMetaData("mydata", "myvalue2");
@@ -404,7 +424,7 @@ public class ApiTest {
 
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchAssociated);
 
-		for (AssociatedDocument ad : fetchResult.getAssociatedDocuments()) {
+		for (AssociatedResult ad : fetchResult.getAssociatedDocuments()) {
 
 		}
 

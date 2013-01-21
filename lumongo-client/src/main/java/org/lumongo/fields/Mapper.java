@@ -12,7 +12,7 @@ import org.lumongo.client.result.FetchResult;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMField;
-import org.lumongo.cluster.message.Lumongo.ResultDocument;
+import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Faceted;
@@ -21,7 +21,6 @@ import org.lumongo.fields.annotations.Saved;
 import org.lumongo.fields.annotations.Settings;
 import org.lumongo.fields.annotations.UniqueId;
 import org.lumongo.util.AnnotationUtil;
-import org.lumongo.util.ResultDocHelper;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -176,7 +175,7 @@ public class Mapper <T> {
 
     public Store createStore(String index, T object) throws Exception {
         LMDoc lmDoc = toLMDoc(index, object);
-        ResultDocument rd = toResultDocument(object);
+        ResultDocBuilder rd = toResultDocumentBuilder(object);
         Store store = new Store(rd.getUniqueId());
         store.setResultDocument(rd);
         store.addIndexedDocument(lmDoc);
@@ -212,30 +211,29 @@ public class Mapper <T> {
         return lmBuilder.build();
     }
 
-    public ResultDocument toResultDocument(T object) throws Exception {
+    public ResultDocBuilder toResultDocumentBuilder(T object) throws Exception {
         String uniqueId = uniqueIdField.build(object);
         DBObject document = new BasicDBObject();
         for (SavedFieldInfo<T> sfi : savedFields) {
             Object o = sfi.getValue(object);
             document.put(sfi.getFieldName(), o);
         }
-        return ResultDocHelper.dbObjectToResultDocument(uniqueId, document);
+        ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
+        resultDocumentBuilder.setDocument(document).setUniqueId(uniqueId);
+        return resultDocumentBuilder;
     }
 
 
-
-    public T fromResultDocument(ResultDocument rd) throws Exception {
-        T newInstance = clazz.newInstance();
-
-        DBObject savedDBObject = ResultDocHelper.dbObjectFromResultDocument(rd);
-        for (SavedFieldInfo<T> sfi : savedFields) {
+	public T fromDBObject(DBObject savedDBObject) throws Exception {
+		T newInstance = clazz.newInstance();
+		for (SavedFieldInfo<T> sfi : savedFields) {
             sfi.populate(newInstance, savedDBObject);
         }
 
         uniqueIdField.populate(newInstance, savedDBObject);
 
         return newInstance;
-    }
+	}
 
 
 

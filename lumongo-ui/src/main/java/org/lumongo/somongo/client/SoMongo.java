@@ -1,6 +1,7 @@
 package org.lumongo.somongo.client;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.lumongo.somongo.client.css.DefaultClientBundle;
@@ -42,199 +43,205 @@ import com.google.gwt.view.client.RangeChangeEvent;
 
 public class SoMongo implements EntryPoint {
 
-    private final SearchServiceAsync searchService = GWT.create(SearchService.class);
-    private ListBox indexList;
-    private CellTable<Document> docCellTable;
+	private final SearchServiceAsync searchService = GWT.create(SearchService.class);
+	private ListBox indexList;
+	private CellTable<Document> docCellTable;
 
-    private SearchRequest lastRequest;
+	private SearchRequest lastRequest;
 
-    @Override
-    public void onModuleLoad() {
-        DefaultClientBundle.INSTANCE.css().ensureInjected();
+	@Override
+	public void onModuleLoad() {
+		DefaultClientBundle.INSTANCE.css().ensureInjected();
 
-        DockLayoutPanel main = new DockLayoutPanel(Unit.PX);
+		DockLayoutPanel main = new DockLayoutPanel(Unit.PX);
 
-        main.addNorth(createHeader(), 100);
-        main.addWest(createNavigation(), 150);
-        main.addSouth(createFooter(), 30);
-        main.add(createMain());
+		main.addNorth(createHeader(), 100);
+		main.addWest(createNavigation(), 150);
+		main.addSouth(createFooter(), 30);
+		main.add(createMain());
 
-        RootLayoutPanel.get().add(main);
+		RootLayoutPanel.get().add(main);
 
-    }
-
-
-    protected Widget createHeader() {
-
-        HorizontalPanel header = new HorizontalPanel();
-        header.setWidth("100%");
-        header.setHeight("100%");
-
-        header.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
-        // header.add(new Image("images/logo.png"));
-
-        HorizontalPanel searchPanel = new HorizontalPanel();
+	}
 
 
-        final SuggestBox searchBox = new SuggestBox();
-        searchBox.addKeyDownHandler(new KeyDownHandler() {
-            @Override
-            public void onKeyDown(KeyDownEvent event) {
-                if (event.getNativeKeyCode() == KeyCodes.KEY_ENTER) {
-                    searchDocuments(searchBox.getText());
-                }
-            }
+	protected Widget createHeader() {
 
-        });
+		HorizontalPanel header = new HorizontalPanel();
+		header.setWidth("100%");
+		header.setHeight("100%");
 
-        searchBox.addSelectionHandler(new SelectionHandler<Suggestion>() {
+		header.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
+		// header.add(new Image("images/logo.png"));
 
-            @Override
-            public void onSelection(SelectionEvent<Suggestion> event) {
-                searchDocuments(event.getSelectedItem().getReplacementString());
-            }
+		HorizontalPanel searchPanel = new HorizontalPanel();
 
-        });
 
-        Button searchButton = new Button("Search");
-        searchButton.addClickHandler(new ClickHandler() {
+		final SuggestBox searchBox = new SuggestBox();
+		searchBox.addKeyDownHandler(new KeyDownHandler() {
+			@Override
+			public void onKeyDown(KeyDownEvent event) {
+				if (event.getNativeKeyCode() == KeyCodes.KEY_ENTER) {
+					searchDocuments(searchBox.getText());
+				}
+			}
 
-            @Override
-            public void onClick(ClickEvent event) {
-                searchDocuments(searchBox.getText());
-            }
-        });
-        searchPanel.setSpacing(10);
-        searchPanel.add(searchBox);
-        searchPanel.add(searchButton);
+		});
 
-        header.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
-        header.add(searchPanel);
-        return header;
-    }
+		searchBox.addSelectionHandler(new SelectionHandler<Suggestion>() {
 
-    private Widget createFooter() {
-        HorizontalPanel footer = new HorizontalPanel();
-        return footer;
-    }
+			@Override
+			public void onSelection(SelectionEvent<Suggestion> event) {
+				searchDocuments(event.getSelectedItem().getReplacementString());
+			}
 
-    protected Widget createNavigation() {
-        VerticalPanel nav = new VerticalPanel();
+		});
 
-        indexList = new ListBox(true);
-        indexList.setVisibleItemCount(5);
+		Button searchButton = new Button("Search");
+		searchButton.addClickHandler(new ClickHandler() {
 
-        searchService.getIndexes(new AsyncCallback<List<String>>() {
+			@Override
+			public void onClick(ClickEvent event) {
+				searchDocuments(searchBox.getText());
+			}
+		});
+		searchPanel.setSpacing(10);
+		searchPanel.add(searchBox);
+		searchPanel.add(searchButton);
 
-            @Override
-            public void onSuccess(List<String> result) {
-                for (String r : result) {
-                    indexList.addItem(r);
-                }
+		header.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+		header.add(searchPanel);
+		return header;
+	}
 
-            }
+	private Widget createFooter() {
+		HorizontalPanel footer = new HorizontalPanel();
+		return footer;
+	}
 
-            @Override
-            public void onFailure(Throwable caught) {
-                Window.alert("Failed: " + caught);
-            }
-        });
+	protected Widget createNavigation() {
+		VerticalPanel nav = new VerticalPanel();
 
-        nav.add(new Label("Indexes"));
-        nav.add(indexList);
-        return nav;
-    }
+		indexList = new ListBox(true);
+		indexList.setVisibleItemCount(5);
 
-    protected Widget createMain() {
-        VerticalPanel main = new VerticalPanel();
+		searchService.getIndexes(new AsyncCallback<List<String>>() {
 
-        docCellTable = new CellTable<Document>();
+			@Override
+			public void onSuccess(List<String> result) {
+				for (String r : result) {
+					indexList.addItem(r);
+				}
 
-        TextColumn<Document> uniqueIdColumn = new TextColumn<Document>() {
-            @Override
-            public String getValue(Document document) {
-                return document.getUniqueId();
-            }
-        };
+			}
 
-        // Create address column.
-        TextColumn<Document> scoreColumn = new TextColumn<Document>() {
-            @Override
-            public String getValue(Document document) {
-                return (document.getScore() + "");
-            }
-        };
+			@Override
+			public void onFailure(Throwable caught) {
+				Window.alert("Failed: " + caught);
+			}
+		});
 
-        SimplePager pager = new SimplePager();
-        pager.setDisplay(docCellTable);
+		nav.add(new Label("Indexes"));
+		nav.add(indexList);
+		return nav;
+	}
 
-        docCellTable.addColumn(uniqueIdColumn);
-        docCellTable.addColumn(scoreColumn);
+	protected Widget createMain() {
+		VerticalPanel main = new VerticalPanel();
 
-        docCellTable.addRangeChangeHandler(new RangeChangeEvent.Handler() {
+		docCellTable = new CellTable<Document>();
 
-            @Override
-            public void onRangeChange(RangeChangeEvent event) {
-                Range range = event.getNewRange();
-                final int start = range.getStart();
-                final int length = range.getLength();
-                lastRequest.setAmount(start + length);
-                searchService.search(lastRequest, new AsyncCallback<SearchResults>() {
+		TextColumn<Document> uniqueIdColumn = new TextColumn<Document>() {
+			@Override
+			public String getValue(Document document) {
+				return document.getUniqueId();
+			}
+		};
 
-                    @Override
-                    public void onFailure(Throwable caught) {
+		// Create address column.
+		TextColumn<Document> scoreColumn = new TextColumn<Document>() {
+			@Override
+			public String getValue(Document document) {
+				return (document.getScore() + "");
+			}
+		};
 
-                    }
+		SimplePager pager = new SimplePager();
+		pager.setDisplay(docCellTable);
 
-                    @Override
-                    public void onSuccess(SearchResults result) {
-                        docCellTable.setRowCount((int) result.getTotalHits());
-                        docCellTable.setRowData(start, result.getDocuments().subList(start, start + length));
-                    }
+		docCellTable.addColumn(uniqueIdColumn);
+		docCellTable.addColumn(scoreColumn);
 
-                });
-            }
+		docCellTable.addRangeChangeHandler(new RangeChangeEvent.Handler() {
 
-        });
+			@Override
+			public void onRangeChange(RangeChangeEvent event) {
+				Range range = event.getNewRange();
+				final int start = range.getStart();
+				final int length = range.getLength();
+				lastRequest.setAmount(start + length);
+				searchService.search(lastRequest, new AsyncCallback<SearchResults>() {
 
-        main.add(pager);
-        main.add(docCellTable);
-        return main;
-    }
+					@Override
+					public void onFailure(Throwable caught) {
 
-    protected void searchDocuments(String query) {
-        query = query.trim();
-        SearchRequest searchRequest = new SearchRequest();
-        searchRequest.setQuery(query);
-        searchRequest.setAmount(20);
-        searchRequest.setIndexes(getSelectedIndexes());
-        lastRequest = searchRequest;
-        searchService.search(searchRequest, new AsyncCallback<SearchResults>() {
+					}
 
-            @Override
-            public void onSuccess(SearchResults result) {
-                docCellTable.setVisibleRange(0, 20);
-                docCellTable.setRowCount((int) result.getTotalHits());
-                docCellTable.setRowData(0, result.getDocuments());
-            }
+					@Override
+					public void onSuccess(SearchResults result) {
+						docCellTable.setRowCount((int) result.getTotalHits());
+						if (result.getDocuments().isEmpty()) {
+							List<Document> emptyDocs = Collections.emptyList();
+							docCellTable.setRowData(start, emptyDocs);
+						}
+						else {
+							docCellTable.setRowData(start, result.getDocuments().subList(start, start + length));
+						}
+					}
 
-            @Override
-            public void onFailure(Throwable caught) {
-                Window.alert("Failed: " + caught);
-            }
-        });
+				});
+			}
 
-    }
+		});
 
-    protected List<String> getSelectedIndexes() {
-        List<String> selectedIndexes = new ArrayList<String>();
-        for (int i = 0; i < indexList.getItemCount(); i++) {
-            if (indexList.isItemSelected(i)) {
-                selectedIndexes.add(indexList.getItemText(i));
-            }
-        }
-        return selectedIndexes;
+		main.add(pager);
+		main.add(docCellTable);
+		return main;
+	}
 
-    }
+	protected void searchDocuments(String query) {
+		query = query.trim();
+		SearchRequest searchRequest = new SearchRequest();
+		searchRequest.setQuery(query);
+		searchRequest.setAmount(20);
+		searchRequest.setIndexes(getSelectedIndexes());
+		lastRequest = searchRequest;
+		searchService.search(searchRequest, new AsyncCallback<SearchResults>() {
+
+			@Override
+			public void onSuccess(SearchResults result) {
+				docCellTable.setVisibleRange(0, 20);
+				docCellTable.setRowCount((int) result.getTotalHits());
+				docCellTable.setRowData(0, result.getDocuments());
+			}
+
+			@Override
+			public void onFailure(Throwable caught) {
+				Window.alert("Failed: " + caught);
+			}
+		});
+
+	}
+
+	protected List<String> getSelectedIndexes() {
+		List<String> selectedIndexes = new ArrayList<String>();
+		for (int i = 0; i < indexList.getItemCount(); i++) {
+			if (indexList.isItemSelected(i)) {
+				selectedIndexes.add(indexList.getItemText(i));
+			}
+		}
+		return selectedIndexes;
+
+	}
 
 }
