@@ -3,8 +3,10 @@ package org.lumongo.test.cluster;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.CreateIndex;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.DeleteAllAssociated;
@@ -24,6 +26,7 @@ import org.lumongo.client.command.UpdateIndex;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.CreateOrUpdateIndexResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.GetFieldsResult;
@@ -36,6 +39,7 @@ import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
+import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.Term;
 import org.lumongo.doc.AssociatedBuilder;
@@ -190,6 +194,7 @@ public class ApiTest {
 		s.addIndexedDocument(indexedDoc);
 		s.setResultDocument(binary);
 
+
 		lumongoWorkPool.store(s);
 
 		HashMap<String, String> metadata = new HashMap<String, String>();
@@ -304,6 +309,25 @@ public class ApiTest {
 
 	}
 
+	public void queryWithBatchFetch() throws Exception {
+		int numberOfResults = 10;
+		String[] indexes = new String[] {"myIndexName", "myIndexName2"};
+		String normalLuceneQuery = "issn:1234-1234 AND title:special";
+		Query query = new Query(indexes, normalLuceneQuery, numberOfResults);
+
+		QueryResult queryResult = lumongoWorkPool.query(query);
+
+		List<ScoredResult> scoredResults = queryResult.getResults();
+
+		BatchFetch batchFetch = new BatchFetch();
+		batchFetch.addFetchDocumentsFromResults(scoredResults);
+
+		BatchFetchResult batchFetchResult = lumongoWorkPool.batchFetch(batchFetch);
+
+		List<FetchResult> results = batchFetchResult.getFetchResults();
+
+	}
+
 	public void pagingQuery() throws Exception {
 		int numberOfResults = 2;
 		String normalLuceneQuery = "issn:1234-1234 AND title:special";
@@ -379,14 +403,18 @@ public class ApiTest {
 
 
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchAssociated);
-		System.out.println(fetchResult.getAssociatedDocuments());
+
+		for (AssociatedDocument ad : fetchResult.getAssociatedDocuments()) {
+
+		}
+
 	}
 
 	public void storeLargeAssociated() throws Exception {
 		String uniqueId = "myid333";
 		String filename = "myfilename";
 
-		StoreLargeAssociated storeLargeAssociated = new StoreLargeAssociated(uniqueId, filename, new File("/home/mdavis/Downloads/guice-3.0.zip"));
+		StoreLargeAssociated storeLargeAssociated = new StoreLargeAssociated(uniqueId, filename, new File("/tmp/myFile"));
 
 		lumongoWorkPool.storeLargeAssociated(storeLargeAssociated);
 
@@ -396,7 +424,7 @@ public class ApiTest {
 		String uniqueId = "myid333";
 		String filename = "myfilename";
 
-		FetchLargeAssociated fetchLargeAssociated = new FetchLargeAssociated(uniqueId, filename, new File("/home/mdavis/t.zip"));
+		FetchLargeAssociated fetchLargeAssociated = new FetchLargeAssociated(uniqueId, filename, new File("/tmp/myFetchedFile"));
 		lumongoWorkPool.fetchLargeAssociated(fetchLargeAssociated);
 
 	}
@@ -446,8 +474,10 @@ public class ApiTest {
 	}
 
 	public void getMembers() throws Exception {
-		GetMembersResult getMemebersResult = lumongoWorkPool.getMembers();
-		System.out.println(getMemebersResult.getMembers());
+		GetMembersResult getMembersResult = lumongoWorkPool.getMembers();
+		for (LMMember member : getMembersResult.getMembers()) {
+			System.out.println(member);
+		}
 	}
 
 

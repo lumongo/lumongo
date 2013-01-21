@@ -17,4 +17,9 @@ public class GetMembersResult extends Result {
 		return getMembersResponse.getMemberList();
 	}
 
+	@Override
+	public String toString() {
+		return getMembersResponse.toString();
+	}
+
 }

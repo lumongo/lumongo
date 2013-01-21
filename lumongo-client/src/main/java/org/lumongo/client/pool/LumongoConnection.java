@@ -21,7 +21,6 @@ import com.googlecode.protobuf.pro.duplex.client.DuplexTcpClientBootstrap;
 
 public class LumongoConnection {
 
-    private static LumongoThreadFactory rpcFactory = new LumongoThreadFactory(LumongoConnection.class.getSimpleName() + "-Rpc");
     private static LumongoThreadFactory bossFactory = new LumongoThreadFactory(LumongoConnection.class.getSimpleName() + "-Boss");
     private static LumongoThreadFactory workerFactory = new LumongoThreadFactory(LumongoConnection.class.getSimpleName() + "-Worker");
 

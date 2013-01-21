@@ -23,4 +23,9 @@ public class GetIndexesResult extends Result {
     public int getIndexCount() {
         return getIndexesResponse.getIndexNameCount();
     }
+
+    @Override
+    public String toString() {
+    	return getIndexesResponse.toString();
+    }
 }
