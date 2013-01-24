@@ -3,6 +3,7 @@ package org.lumongo.server.indexing;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -23,7 +24,7 @@ import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.facet.index.CategoryDocumentBuilder;
+import org.apache.lucene.facet.index.FacetFields;
 import org.apache.lucene.facet.search.FacetsCollector;
 import org.apache.lucene.facet.search.params.CountFacetRequest;
 import org.apache.lucene.facet.search.params.FacetSearchParams;
@@ -206,13 +207,18 @@ public class Segment {
 			SegmentResponse.Builder builder = SegmentResponse.newBuilder();
 
 			if (indexConfig.isFaceted() && facetRequest != null && !facetRequest.getCountRequestList().isEmpty()) {
-				taxonomyReader.refresh(realTime);
-				FacetSearchParams facetSearchParams = new FacetSearchParams();
 
+
+				taxonomyReader = taxonomyReader.doOpenIfChanged(realTime);
+
+				Collection<org.apache.lucene.facet.search.params.FacetRequest> facetRequests = new ArrayList<org.apache.lucene.facet.search.params.FacetRequest>(facetRequest.getCountRequestList().size());
 				for (CountRequest count : facetRequest.getCountRequestList()) {
-					facetSearchParams.addFacetRequest(new CountFacetRequest(new CategoryPath(count.getFacet(), LumongoConstants.FACET_DELIMITER),
-							Integer.MAX_VALUE));
+					int maxFacets = Integer.MAX_VALUE; //have to fetch all facets to merge between segments correctly
+					facetRequests.add(new CountFacetRequest(new CategoryPath(count.getFacet(), LumongoConstants.FACET_DELIMITER),
+							maxFacets));
 				}
+
+				FacetSearchParams facetSearchParams = new FacetSearchParams(facetRequests.toArray(new org.apache.lucene.facet.search.params.FacetRequest[0]));
 				FacetsCollector facetsCollector = new FacetsCollector(facetSearchParams, ir, taxonomyReader);
 				is.search(q, MultiCollector.wrap(collector, facetsCollector));
 
@@ -272,7 +278,7 @@ public class Segment {
 	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i)
 			throws CorruptIndexException, IOException {
 		int docId = results[i].doc;
-		Document d = is.document(docId, fetchSet);
+		Document d = is.doc(docId, fetchSet);
 		ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
 		srBuilder.setScore(results[i].score);
 		srBuilder.setUniqueId(d.get(indexConfig.getUniqueIdField()));
@@ -452,9 +458,8 @@ public class Segment {
 			for (String facet : lmDoc.getFacetList()) {
 				categories.add(new CategoryPath(facet, LumongoConstants.FACET_DELIMITER));
 			}
-			CategoryDocumentBuilder categoryDocBuilder = new CategoryDocumentBuilder(taxonomyWriter);
-			categoryDocBuilder.setCategoryPaths(categories);
-			categoryDocBuilder.build(d);
+			FacetFields facetFields = new FacetFields(taxonomyWriter);
+			facetFields.addFields(d, categories);
 		}
 		else {
 			if (lmDoc.getFacetCount() != 0) {

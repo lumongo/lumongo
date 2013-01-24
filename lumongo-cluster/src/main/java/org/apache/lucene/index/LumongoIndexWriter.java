@@ -12,7 +12,8 @@ public class LumongoIndexWriter extends IndexWriter {
         super(d, conf.setReaderPooling(true));
     }
 
-    DirectoryReader getReader(boolean applyAllDeletes) throws IOException {
+    @Override
+	DirectoryReader getReader(boolean applyAllDeletes) throws IOException {
         return getReader(applyAllDeletes, true);
     }
 
@@ -26,7 +27,7 @@ public class LumongoIndexWriter extends IndexWriter {
 
         final DirectoryReader r;
 
-        //TODO this might not be safe enough because not inside fullFlushLock and not handling OOM error
+        //TODO this might not be safe enough because not inside fullFlushLock and it is not handling OOM error
         //might have to import more of the IndexWriter class or drop non real time functionality
         synchronized (this) {
             maybeApplyDeletes(applyAllDeletes);

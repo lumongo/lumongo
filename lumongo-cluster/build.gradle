@@ -4,9 +4,9 @@ dependencies {
     compile project(':lumongo-client') //needed for admin tools
     compile 'com.hazelcast:hazelcast:2.4'
     compile 'net.sf.jopt-simple:jopt-simple:4.3'
-    compile 'org.apache.lucene:lucene-facet:4.0.0'
-    compile 'org.apache.lucene:lucene-queryparser:4.0.0'
-    compile 'org.apache.lucene:lucene-analyzers-common:4.0.0'
+    compile 'org.apache.lucene:lucene-facet:4.1.0'
+    compile 'org.apache.lucene:lucene-queryparser:4.1.0'
+    compile 'org.apache.lucene:lucene-analyzers-common:4.1.0'
 }
 
 jar {

@@ -23,6 +23,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.log4j.Logger;
+import org.apache.lucene.facet.index.params.FacetIndexingParams;
 import org.apache.lucene.facet.search.DrillDown;
 import org.apache.lucene.facet.taxonomy.CategoryPath;
 import org.apache.lucene.index.CorruptIndexException;
@@ -733,7 +734,7 @@ public class IndexManager {
 								CategoryPath cp = new CategoryPath(drillDown, LumongoConstants.FACET_DELIMITER);
 								categoryPathList.add(cp);
 							}
-							query = DrillDown.query(query, categoryPathList.toArray(new CategoryPath[0]));
+							query = DrillDown.query(FacetIndexingParams.ALL_PARENTS, query, categoryPathList.toArray(new CategoryPath[0]));
 						}
 					}
 					else {
