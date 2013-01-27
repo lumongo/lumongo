@@ -24,4 +24,8 @@
   <source path='client'/>
   <source path='shared'/>
 
+  <!--  Tell the GWT compiler to create a single permutation which covers all locales and browsers (cuts compile time in half)-->
+  <collapse-all-properties />
+  
+  
 </module>
