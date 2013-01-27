@@ -13,6 +13,7 @@ import org.lumongo.client.command.DeleteAssociated;
 import org.lumongo.client.command.DeleteFromIndex;
 import org.lumongo.client.command.DeleteFull;
 import org.lumongo.client.command.FetchAllAssociated;
+import org.lumongo.client.command.FetchAssociated;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.command.FetchLargeAssociated;
 import org.lumongo.client.command.GetAllTerms;
@@ -37,6 +38,7 @@ import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
+import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMMember;
@@ -327,6 +329,23 @@ public class ApiTest {
 
 	}
 
+	public void simpleQueryWithSort() throws Exception {
+		int numberOfResults = 10;
+		String normalLuceneQuery = "title:special";
+		Query query = new Query("myIndexName", normalLuceneQuery, numberOfResults);
+		query.addFieldSort("issn", Direction.ASCENDING);
+
+		QueryResult queryResult = lumongoWorkPool.query(query);
+
+		long totalHits = queryResult.getTotalHits();
+
+		System.out.println("Found <" + totalHits + "> hits");
+		for (ScoredResult sr : queryResult.getResults()) {
+			System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + ">");
+		}
+
+	}
+
 	public void queryWithBatchFetch() throws Exception {
 		int numberOfResults = 10;
 		String[] indexes = new String[] {"myIndexName", "myIndexName2"};
@@ -418,6 +437,23 @@ public class ApiTest {
 
 	public void fetchAssociated() throws Exception {
 		String uniqueId = "myid123";
+		String filename = "myfile2";
+
+		FetchAssociated fetchAssociated = new FetchAssociated(uniqueId, filename);
+
+
+		FetchResult fetchResult = lumongoWorkPool.fetch(fetchAssociated);
+
+		if (fetchResult.getAssociatedDocumentCount() != 0) {
+			AssociatedResult ad = fetchResult.getAssociatedDocument(0);
+			String text = ad.getDocumentAsUtf8();
+			System.out.println(text);
+		}
+
+	}
+
+	public void fetchAllAssociated() throws Exception {
+		String uniqueId = "myid123";
 
 		FetchAllAssociated fetchAssociated = new FetchAllAssociated(uniqueId);
 
@@ -425,7 +461,8 @@ public class ApiTest {
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchAssociated);
 
 		for (AssociatedResult ad : fetchResult.getAssociatedDocuments()) {
-
+			String text = ad.getDocumentAsUtf8();
+			System.out.println(text);
 		}
 
 	}
@@ -547,7 +584,7 @@ public class ApiTest {
 			apiTest.getDocumentCount();
 			*/
 
-			apiTest.simpleQuery();
+			apiTest.simpleQueryWithSort();
 
 			apiTest.facetQuery();
 
