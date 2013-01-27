@@ -29,7 +29,7 @@ public class SavedFieldInfo<T> {
 
         Object o = field.get(object);
 
-        if (compressed) {
+        if (o != null && compressed) {
             if (String.class.equals(field.getType())) {
                 String s = (String) o;
                 o = CommonCompression.compressZlib(s.getBytes("UTF-8"), CommonCompression.CompressionLevel.NORMAL);
@@ -46,7 +46,7 @@ public class SavedFieldInfo<T> {
     public void populate(T newInstance, DBObject savedDBObject) throws Exception {
 
         Object value = savedDBObject.get(fieldName);
-        if (compressed) {
+        if (value != null && compressed) {
             if (value instanceof byte[]) {
                 byte[] b = (byte[]) value;
                 if (String.class.equals(field.getType())) {
