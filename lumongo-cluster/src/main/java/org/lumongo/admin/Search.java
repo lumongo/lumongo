@@ -12,15 +12,13 @@ import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.config.LumongoPoolConfig;
-import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.pool.LumongoBaseWorkPool;
+import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
-import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
-import org.lumongo.cluster.message.Lumongo.SortRequest;
 import org.lumongo.util.LogUtil;
 
 public class Search {
@@ -65,9 +63,6 @@ public class Search {
 
 				Query q = new Query(indexes, query, amount);
 
-				long startTime = System.currentTimeMillis();
-
-				FacetRequest.Builder fr = FacetRequest.newBuilder();
 				for (String facet : facets) {
 					q.addCountRequest(facet);
 				}
@@ -76,7 +71,6 @@ public class Search {
 					q.addDrillDown(drillDown);
 				}
 
-				SortRequest.Builder sortRequest = SortRequest.newBuilder();
 				for (String sort : sortList) {
 					q.addFieldSort(sort);
 				}
@@ -88,9 +82,7 @@ public class Search {
 
 				List<ScoredResult> srList = qr.getResults();
 
-				long endTime = System.currentTimeMillis();
-
-				System.out.println("QueryTime: " + (endTime - startTime) + "ms");
+				System.out.println("QueryTime: " + (qr.getCommandTimeMs()) + "ms");
 				System.out.println("TotalResults: " + qr.getTotalHits());
 
 				System.out.println("Results:");
