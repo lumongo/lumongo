@@ -35,7 +35,7 @@ public class LumongoDirectoryTaxonomyWriter extends DirectoryTaxonomyWriter {
 	}
 
 	public void flush() throws CorruptIndexException, IOException {
-		myIndexWriter.flush(true);
+		myIndexWriter.flush(false);
 	}
 
 	public LumongoIndexWriter getLumongoIndexWriter() {

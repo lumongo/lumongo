@@ -361,6 +361,7 @@ public class ApiTest {
 
 		BatchFetchResult batchFetchResult = lumongoWorkPool.batchFetch(batchFetch);
 
+		@SuppressWarnings("unused")
 		List<FetchResult> results = batchFetchResult.getFetchResults();
 
 	}

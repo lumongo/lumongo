@@ -454,12 +454,14 @@ public class Segment {
 		d.add(new LongField(LumongoConstants.TIMESTAMP_FIELD, lmDoc.getTimestamp(), Store.YES));
 
 		if (indexConfig.isFaceted()) {
-			List<CategoryPath> categories = new ArrayList<CategoryPath>();
-			for (String facet : lmDoc.getFacetList()) {
-				categories.add(new CategoryPath(facet, LumongoConstants.FACET_DELIMITER));
+			if (lmDoc.getFacetCount() != 0) {
+				List<CategoryPath> categories = new ArrayList<CategoryPath>();
+				for (String facet : lmDoc.getFacetList()) {
+					categories.add(new CategoryPath(facet, LumongoConstants.FACET_DELIMITER));
+				}
+				FacetFields facetFields = new FacetFields(taxonomyWriter);
+				facetFields.addFields(d, categories);
 			}
-			FacetFields facetFields = new FacetFields(taxonomyWriter);
-			facetFields.addFields(d, categories);
 		}
 		else {
 			if (lmDoc.getFacetCount() != 0) {
