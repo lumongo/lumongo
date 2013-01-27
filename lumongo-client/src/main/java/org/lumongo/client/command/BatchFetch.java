@@ -7,6 +7,7 @@ import java.util.List;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.BatchFetchResult;
+import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.GroupFetchRequest;
@@ -43,6 +44,10 @@ public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResul
             fetchList.add(f);
         }
         return this;
+    }
+
+    public BatchFetch addFetchDocumentsFromResults(QueryResult qr) {
+        return addFetchDocumentsFromResults(qr.getResults());
     }
 
     public BatchFetch addFetchDocumentsFromResults(Collection<ScoredResult> scoredResults) {

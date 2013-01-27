@@ -9,6 +9,7 @@ import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
+import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 
 import com.google.common.cache.Cache;
@@ -69,6 +70,10 @@ public class DocumentCache {
         }
 
         return fr;
+    }
+
+    public BatchFetchResult fetch(QueryResult queryResult) throws Exception {
+    	return fetch(queryResult.getResults());
     }
 
     public BatchFetchResult fetch(Collection<ScoredResult> scoredResults) throws Exception {

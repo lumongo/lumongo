@@ -1,6 +1,7 @@
 package org.lumongo.fields;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -8,6 +9,7 @@ import org.lumongo.LumongoConstants;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
+import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
@@ -180,6 +182,14 @@ public class Mapper <T> {
         store.setResultDocument(rd);
         store.addIndexedDocument(lmDoc);
         return store;
+    }
+
+    public List<T> fromBatchFetchResult(BatchFetchResult batchFetchResult) throws Exception {
+    	List<T> results = new ArrayList<T>();
+    	for (FetchResult fr : batchFetchResult.getFetchResults()) {
+    		results.add(fr.getDocument(this));
+    	}
+        return results;
     }
 
     public T fromFetchResult(FetchResult fetchResult) throws Exception {
