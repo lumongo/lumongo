@@ -1,5 +1,8 @@
 package org.lumongo.example.wikipedia;
 
+import info.bliki.wiki.filter.PlainTextConverter;
+import info.bliki.wiki.model.WikiModel;
+
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -29,7 +32,8 @@ public class IndexWikipedia {
 
     private static LumongoWorkPool lumongoWorkPool;
 
-
+    private static WikiModel wikiModel = new WikiModel("/wiki/${image}", "/wiki/${title}");
+    private static PlainTextConverter plainTextConverter = new PlainTextConverter();
 
     public static void main(String[] args) throws Exception {
 
@@ -108,7 +112,10 @@ public class IndexWikipedia {
                 RevisionType revisionType = (RevisionType) o;
 
                 TextType textType = revisionType.getText();
-                article.setText(textType.getValue());
+                String wikiText = textType.getValue();
+                //convert wiki markup to plain text for simplicity
+                String plainText = wikiModel.render(plainTextConverter, wikiText);
+                article.setText(plainText);
                 article.setRevision(revisionType.getId().longValue());
 
                 ContributorType contributorType = revisionType.getContributor();

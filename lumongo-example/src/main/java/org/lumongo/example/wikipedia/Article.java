@@ -34,8 +34,10 @@ public class Article {
     @Indexed(LMAnalyzer.NUMERIC_INT)
     private Integer namespace;
 
+
     @DefaultSearch
-    @Saved(compressed = true)
+    //@Saved(compressed = true)
+    @Saved
     @Indexed(LMAnalyzer.STANDARD)
     private String text;
 

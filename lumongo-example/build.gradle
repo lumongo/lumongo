@@ -1,4 +1,13 @@
-dependencies {	
-    compile project(':lumongo-client')	
+
+repositories {
+    mavenCentral()
+    maven {
+    	url "http://gwtwiki.googlecode.com/svn/maven-repository/"
+    }
+}
+
+dependencies {
+    compile project(':lumongo-client')
+    compile 'info.bliki.wiki:bliki-core:3.0.19'
 }
 
