@@ -36,6 +36,7 @@ public class IndexWikipedia {
     	if (args.length != 1) {
     		System.out.println("Usage: filename");
     		System.out.println(" ex. /tmp/enwiki-20120802-pages-articles-multistream.xml");
+    		System.out.println(" download from http://dumps.wikimedia.org/enwiki/20120802/enwiki-20120802-pages-articles-multistream.xml.bz2");
     		System.exit(1);
     	}
 
