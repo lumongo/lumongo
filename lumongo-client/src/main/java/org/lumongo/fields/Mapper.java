@@ -73,8 +73,14 @@ public class Mapper <T> {
                 boolean compressed = saved.compressed();
 
                 if (saved.compressed()) {
-                    if (!String.class.equals(f.getType())) {
-                        throw new RuntimeException("Compressed saved field <" + fieldName + "> must a String for class <" + clazz.getSimpleName() + ">");
+                    if (String.class.equals(f.getType())) {
+
+                    }
+                    else if (byte[].class.equals(f.getType())) {
+
+                    }
+                    else {
+                    	throw new RuntimeException("Compressed saved field <" + fieldName + "> must a String or byte[] for class <" + clazz.getSimpleName() + ">");
                     }
                 }
 
