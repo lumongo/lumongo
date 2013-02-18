@@ -1,7 +1,6 @@
 package org.lumongo.client.pool;
 
 import java.util.List;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.lumongo.client.command.base.CallableCommand;
@@ -9,6 +8,8 @@ import org.lumongo.client.command.base.Command;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.result.Result;
 import org.lumongo.cluster.message.Lumongo.LMMember;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class LumongoBaseWorkPool extends WorkPool {
 
@@ -30,7 +31,7 @@ public class LumongoBaseWorkPool extends WorkPool {
         this.lumongoPool = lumongoPool;
     }
 
-    public <R extends Result> Future<R> executeAsync(Command<R> command) {
+    public <R extends Result> ListenableFuture<R> executeAsync(Command<R> command) {
         CallableCommand<R> callableCommand = new CallableCommand<R>(lumongoPool, command);
         return executeAsync(callableCommand);
     }

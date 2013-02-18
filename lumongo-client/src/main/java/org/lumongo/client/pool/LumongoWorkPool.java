@@ -1,7 +1,5 @@
 package org.lumongo.client.pool;
 
-import java.util.concurrent.Future;
-
 import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.ClearIndex;
 import org.lumongo.client.command.CreateIndex;
@@ -42,6 +40,8 @@ import org.lumongo.client.result.StoreLargeAssociatedResult;
 import org.lumongo.client.result.StoreResult;
 import org.lumongo.client.result.UpdateIndexResult;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 public class LumongoWorkPool extends LumongoBaseWorkPool {
 
     public LumongoWorkPool(LumongoPoolConfig lumongoPoolConfig) {
@@ -52,7 +52,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(batchFetch);
     }
 
-    public Future<BatchFetchResult> batchFetchAsync(BatchFetch batchFetch) throws Exception {
+    public ListenableFuture<BatchFetchResult> batchFetchAsync(BatchFetch batchFetch) throws Exception {
         return executeAsync(batchFetch);
     }
 
@@ -60,7 +60,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(clearIndex);
     }
 
-    public Future<ClearIndexResult> clearIndexAsync(ClearIndex clearIndex) throws Exception {
+    public ListenableFuture<ClearIndexResult> clearIndexAsync(ClearIndex clearIndex) throws Exception {
         return executeAsync(clearIndex);
     }
 
@@ -76,15 +76,15 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(new CreateIndex(indexName, 16, uniqueIdField, indexConfig).setFaceted(faceted));
     }
 
-    public Future<CreateIndexResult> createIndexAsync(CreateIndex createIndex) throws Exception {
+    public ListenableFuture<CreateIndexResult> createIndexAsync(CreateIndex createIndex) throws Exception {
         return executeAsync(createIndex);
     }
 
-    public Future<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig) throws Exception {
+    public ListenableFuture<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig) throws Exception {
         return executeAsync(new CreateIndex(indexName, 16, uniqueIdField, indexConfig));
     }
 
-    public Future<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig, Boolean faceted)
+    public ListenableFuture<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig, Boolean faceted)
             throws Exception {
         return executeAsync(new CreateIndex(indexName, 16, uniqueIdField, indexConfig).setFaceted(faceted));
     }
@@ -93,7 +93,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(createOrUpdateIndex);
     }
 
-    public Future<CreateOrUpdateIndexResult> createOrUpdateIndexAsync(CreateOrUpdateIndex createOrUpdateIndex) throws Exception {
+    public ListenableFuture<CreateOrUpdateIndexResult> createOrUpdateIndexAsync(CreateOrUpdateIndex createOrUpdateIndex) throws Exception {
         return executeAsync(createOrUpdateIndex);
     }
 
@@ -101,7 +101,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(delete);
     }
 
-    public Future<DeleteResult> deleteAsync(Delete delete) throws Exception {
+    public ListenableFuture<DeleteResult> deleteAsync(Delete delete) throws Exception {
         return executeAsync(delete);
     }
 
@@ -109,15 +109,15 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(new DeleteIndex(indexName));
     }
 
-    public Future<DeleteIndexResult> deleteIndexAsync(String indexName) throws Exception {
+    public ListenableFuture<DeleteIndexResult> deleteIndexAsync(String indexName) throws Exception {
         return executeAsync(new DeleteIndex(indexName));
     }
-    
+
     public DeleteIndexResult deleteIndex(DeleteIndex deleteIndex) throws Exception {
         return execute(deleteIndex);
     }
 
-    public Future<DeleteIndexResult> deleteIndexAsync(DeleteIndex deleteIndex) throws Exception {
+    public ListenableFuture<DeleteIndexResult> deleteIndexAsync(DeleteIndex deleteIndex) throws Exception {
         return executeAsync(deleteIndex);
     }
 
@@ -125,7 +125,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(fetch);
     }
 
-    public Future<FetchResult> fetchAsync(Fetch fetch) throws Exception {
+    public ListenableFuture<FetchResult> fetchAsync(Fetch fetch) throws Exception {
         return executeAsync(fetch);
     }
 
@@ -133,7 +133,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(fetchLargeAssociated);
     }
 
-    public Future<FetchLargeAssociatedResult> fetchLargeAssociatedAsync(FetchLargeAssociated fetchLargeAssociated) throws Exception {
+    public ListenableFuture<FetchLargeAssociatedResult> fetchLargeAssociatedAsync(FetchLargeAssociated fetchLargeAssociated) throws Exception {
         return executeAsync(fetchLargeAssociated);
     }
 
@@ -141,7 +141,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(getTerms);
     }
 
-    public Future<GetTermsResult> getAllTermsAsync(GetAllTerms getTerms) throws Exception {
+    public ListenableFuture<GetTermsResult> getAllTermsAsync(GetAllTerms getTerms) throws Exception {
         return executeAsync(getTerms);
     }
 
@@ -149,7 +149,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(getFields);
     }
 
-    public Future<GetFieldsResult> getFieldsAsync(GetFields getFields) throws Exception {
+    public ListenableFuture<GetFieldsResult> getFieldsAsync(GetFields getFields) throws Exception {
         return executeAsync(getFields);
     }
 
@@ -157,7 +157,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(new GetIndexes());
     }
 
-    public Future<GetIndexesResult> getIndexesAsync() throws Exception {
+    public ListenableFuture<GetIndexesResult> getIndexesAsync() throws Exception {
         return executeAsync(new GetIndexes());
     }
 
@@ -165,7 +165,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(new GetMembers());
     }
 
-    public Future<GetMembersResult> getMembersAsync() throws Exception {
+    public ListenableFuture<GetMembersResult> getMembersAsync() throws Exception {
         return executeAsync(new GetMembers());
     }
 
@@ -177,11 +177,11 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(getNumberOfDocs);
     }
 
-    public Future<GetNumberOfDocsResult> getNumberOfDocsAsync(String indexName) throws Exception {
+    public ListenableFuture<GetNumberOfDocsResult> getNumberOfDocsAsync(String indexName) throws Exception {
         return executeAsync(new GetNumberOfDocs(indexName));
     }
 
-    public Future<GetNumberOfDocsResult> getNumberOfDocsAsync(GetNumberOfDocs getNumberOfDocs) throws Exception {
+    public ListenableFuture<GetNumberOfDocsResult> getNumberOfDocsAsync(GetNumberOfDocs getNumberOfDocs) throws Exception {
         return executeAsync(getNumberOfDocs);
     }
 
@@ -189,7 +189,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(getTerms);
     }
 
-    public Future<GetTermsResult> getTermsAsync(GetTerms getTerms) throws Exception {
+    public ListenableFuture<GetTermsResult> getTermsAsync(GetTerms getTerms) throws Exception {
         return executeAsync(getTerms);
     }
 
@@ -197,7 +197,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(optimizeIndex);
     }
 
-    public Future<OptimizeIndexResult> optimizeIndexAsync(OptimizeIndex optimizeIndex) throws Exception {
+    public ListenableFuture<OptimizeIndexResult> optimizeIndexAsync(OptimizeIndex optimizeIndex) throws Exception {
         return executeAsync(optimizeIndex);
     }
 
@@ -205,7 +205,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(query);
     }
 
-    public Future<QueryResult> queryAsync(Query query) throws Exception {
+    public ListenableFuture<QueryResult> queryAsync(Query query) throws Exception {
         return executeAsync(query);
     }
 
@@ -213,7 +213,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(store);
     }
 
-    public Future<StoreResult> storeAsync(Store store) throws Exception {
+    public ListenableFuture<StoreResult> storeAsync(Store store) throws Exception {
         return executeAsync(store);
     }
 
@@ -221,7 +221,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(storeLargeAssociated);
     }
 
-    public Future<StoreLargeAssociatedResult> storeLargeAssociatedAsync(StoreLargeAssociated storeLargeAssociated) throws Exception {
+    public ListenableFuture<StoreLargeAssociatedResult> storeLargeAssociatedAsync(StoreLargeAssociated storeLargeAssociated) throws Exception {
         return executeAsync(storeLargeAssociated);
     }
 
@@ -229,7 +229,7 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
         return execute(updateIndex);
     }
 
-    public Future<UpdateIndexResult> updateIndexAsync(UpdateIndex updateIndex) throws Exception {
+    public ListenableFuture<UpdateIndexResult> updateIndexAsync(UpdateIndex updateIndex) throws Exception {
         return executeAsync(updateIndex);
     }
 
