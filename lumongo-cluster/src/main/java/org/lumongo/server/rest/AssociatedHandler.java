@@ -11,27 +11,28 @@ import com.google.common.collect.Multimap;
 import com.sun.net.httpserver.HttpExchange;
 
 public class AssociatedHandler extends SimpleHttpHandler {
-	
+
 	@SuppressWarnings("unused")
 	private final static Logger log = Logger.getLogger(AssociatedHandler.class);
-	
+
 	private IndexManager indexManager;
-	
+
 	public AssociatedHandler(IndexManager indexManager) {
 		this.indexManager = indexManager;
 	}
-	
+
 	@Override
 	public void get(HttpExchange exchange) throws IOException {
-		
+
 		Multimap<String, String> params = this.getUrlParameters(exchange);
-		
-		if (params.containsKey(LumongoConstants.UNIQUE_ID) && params.containsKey(LumongoConstants.FILE_NAME)) {
+
+		if (params.containsKey(LumongoConstants.UNIQUE_ID) && params.containsKey(LumongoConstants.FILE_NAME) && params.containsKey(LumongoConstants.INDEX_NAME)) {
 			String uniqueId = params.get(LumongoConstants.UNIQUE_ID).iterator().next();
 			String fileName = params.get(LumongoConstants.FILE_NAME).iterator().next();
-			
-			if (uniqueId != null && fileName != null) {
-				InputStream is = indexManager.getAssociatedDocumentStream(uniqueId, fileName);
+			String indexName = params.get(LumongoConstants.INDEX_NAME).iterator().next();
+
+			if (uniqueId != null && fileName != null && indexName != null) {
+				InputStream is = indexManager.getAssociatedDocumentStream(indexName, uniqueId, fileName);
 				if (is != null) {
 					writeResponse(LumongoConstants.SUCCESS, exchange, is);
 				}
@@ -42,23 +43,24 @@ public class AssociatedHandler extends SimpleHttpHandler {
 				return;
 			}
 		}
-		
+
 		writeResponse(LumongoConstants.BAD_REQUEST, exchange, LumongoConstants.UNIQUE_ID + " and " + LumongoConstants.FILE_NAME + " are required");
-		
+
 	}
-	
+
 	@Override
 	public void post(HttpExchange exchange) throws IOException {
 		Multimap<String, String> params = this.getUrlParameters(exchange);
-		
-		if (params.containsKey(LumongoConstants.UNIQUE_ID) && params.containsKey(LumongoConstants.FILE_NAME)) {
-			
+
+		if (params.containsKey(LumongoConstants.UNIQUE_ID) && params.containsKey(LumongoConstants.FILE_NAME) && params.containsKey(LumongoConstants.INDEX_NAME)) {
+
 			String uniqueId = params.get(LumongoConstants.UNIQUE_ID).iterator().next();
 			String fileName = params.get(LumongoConstants.FILE_NAME).iterator().next();
-			
-			if (uniqueId != null && fileName != null) {
+			String indexName = params.get(LumongoConstants.INDEX_NAME).iterator().next();
+
+			if (uniqueId != null && fileName != null && indexName != null) {
 				try {
-					indexManager.storeAssociatedDocument(uniqueId, fileName, exchange.getRequestBody(), false, null);
+					indexManager.storeAssociatedDocument(indexName, uniqueId, fileName, exchange.getRequestBody(), false, null);
 					writeResponse(LumongoConstants.SUCCESS, exchange, "Stored associated document with uniqueId <" + uniqueId + "> and fileName <" + fileName
 							+ ">");
 				}
@@ -69,6 +71,6 @@ public class AssociatedHandler extends SimpleHttpHandler {
 			}
 		}
 		writeResponse(LumongoConstants.BAD_REQUEST, exchange, LumongoConstants.UNIQUE_ID + " and " + LumongoConstants.FILE_NAME + " are required");
-		
+
 	}
 }

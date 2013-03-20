@@ -8,6 +8,11 @@ repositories {
 
 dependencies {
     compile project(':lumongo-client')
+    
+    //to parse wikipedia markup
     compile 'info.bliki.wiki:bliki-core:3.0.19'
+    
+    //for solr testing
+    compile 'org.apache.solr:solr-solrj:4.1.0'
 }
 

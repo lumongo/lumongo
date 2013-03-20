@@ -179,7 +179,8 @@ message IndexDeleteResponse {
 
 message InternalIndexRequest {
     required string uniqueId = 1;
-	repeated LMDoc indexedDocument = 2;
+    required string indexName = 2;
+	required LMDoc indexedDocument = 3;
 }
 
 message InternalIndexResponse {
@@ -187,20 +188,20 @@ message InternalIndexResponse {
 
 message StoreRequest {
     required string uniqueId = 1;
-	repeated LMDoc indexedDocument = 2;
-	optional ResultDocument resultDocument = 3;
-	repeated AssociatedDocument associatedDocument = 4;
-	optional bool clearExistingAssociated = 5 [default = false];
+    required string indexName = 2;
+	optional LMDoc indexedDocument = 3;
+	optional ResultDocument resultDocument = 4;
+	repeated AssociatedDocument associatedDocument = 5;
+	optional bool clearExistingAssociated = 6 [default = false];
 }
 
 message StoreResponse {
 }
 
 message LMDoc {
-	required string indexName = 1;
-	repeated LMField indexedField = 2;
-	repeated string facet = 3;
-	optional int64 timestamp = 4;
+	repeated LMField indexedField = 1;
+	repeated string facet = 2;
+	optional int64 timestamp = 3;
 }
 
 
@@ -216,25 +217,27 @@ message LMField {
 
 message ResultDocument {
 	required string uniqueId = 1;
-	optional bytes document = 2;
+	required string indexName = 2;
+	optional bytes document = 3;
 	enum Type {
 		BSON = 0;
 		BINARY = 1;
 		TEXT = 2;
 	}
-	optional Type type = 3 [default = BINARY];
-	optional bool compressed = 4 [default = false];
-	repeated Metadata metadata = 5;
-	optional int64 timestamp = 6;
+	optional Type type = 4 [default = BINARY];
+	optional bool compressed = 5 [default = false];
+	repeated Metadata metadata = 6;
+	optional int64 timestamp = 7;
 }
 
 message AssociatedDocument {
 	required string filename = 1;
 	required string documentUniqueId = 2;
-	optional bytes document = 3;
-	optional bool compressed = 4 [default = false];
-	repeated Metadata metadata = 5;
-	optional int64 timestamp = 6;
+	required string indexName = 3;
+	optional bytes document = 4;
+	optional bool compressed = 5 [default = false];
+	repeated Metadata metadata = 6;
+	optional int64 timestamp = 7;
 }
 
 message Metadata {
@@ -335,7 +338,7 @@ message QueryResponse {
 }
 
 message InternalDeleteRequest {
-	repeated string indexes = 1;
+	required string index = 1;
     required string uniqueId = 2;
 }
 
@@ -344,7 +347,7 @@ message InternalDeleteResponse {
 }
 
 message DeleteRequest {
-	repeated string indexes = 1;
+	required string indexName = 1;
     required string uniqueId = 2;
     optional string filename = 3;
     optional bool deleteDocument = 4 [default = true];
@@ -365,14 +368,15 @@ message GroupFetchResponse {
 
 message FetchRequest {
     required string uniqueId = 1;
-    optional string fileName = 2;
+    required string indexName = 2;
+    optional string fileName = 3;
     enum FetchType {
 		FULL = 1;
 		META = 2;
 		NONE = 3;
 	}
-    optional FetchType resultFetchType = 3 [default = FULL];
-    optional FetchType associatedFetchType = 4 [default = META];
+    optional FetchType resultFetchType = 4 [default = FULL];
+    optional FetchType associatedFetchType = 5 [default = META];
 }
 
 message FetchResponse {

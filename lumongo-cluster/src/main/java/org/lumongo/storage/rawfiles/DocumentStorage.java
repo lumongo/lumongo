@@ -9,7 +9,7 @@ import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 
 public interface DocumentStorage {
-	public void storeSourceDocument(String uniqueId, ResultDocument doc) throws Exception;
+	public void storeSourceDocument(ResultDocument doc) throws Exception;
 
 	public void storeAssociatedDocument(AssociatedDocument docs) throws Exception;
 

@@ -2,7 +2,6 @@ package org.lumongo.storage.rawfiles;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,7 +27,6 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
-import com.mongodb.MongoException;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSFile;
@@ -37,7 +35,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	@SuppressWarnings("unused")
 	private final static Logger log = Logger.getLogger(MongoDocumentStorage.class);
 
-	public static final String STORAGE_DB_SUFFIX = "_storage";
+	public static final String STORAGE_DB_SUFFIX = "_rs";
 
 	private static final Charset UTF_8_CHARSET = Charset.forName("UTF-8");
 	private static final String ASSOCIATED_FILES = "associatedFiles";
@@ -54,14 +52,12 @@ public class MongoDocumentStorage implements DocumentStorage {
 
 	private MongoClient pool;
 	private String database;
+	private String indexName;
 
-	public MongoDocumentStorage(MongoClient pool, String database) {
-		this(pool, database, false);
-	}
-
-	public MongoDocumentStorage(MongoClient pool, String database, boolean sharded) {
+	public MongoDocumentStorage(MongoClient pool, String dbPrefix, String indexName, boolean sharded) {
 		this.pool = pool;
-		this.database = database;
+		this.indexName = indexName;
+		this.database = dbPrefix + "_" + indexName + "_" + STORAGE_DB_SUFFIX;
 
 		if (sharded) {
 			DB storageDb = pool.getDB(database);
@@ -82,9 +78,6 @@ public class MongoDocumentStorage implements DocumentStorage {
 		}
 	}
 
-	public MongoDocumentStorage(String mongoHost, int mongoPort, String database, boolean sharded) throws UnknownHostException, MongoException {
-		this(new MongoClient(mongoHost, mongoPort), database, sharded);
-	}
 
 	private void shardCollection(DB db, DB adminDb, String collectionName) {
 		CommandResult cr;
@@ -104,7 +97,8 @@ public class MongoDocumentStorage implements DocumentStorage {
 	}
 
 	@Override
-	public void storeSourceDocument(String uniqueId, ResultDocument doc) throws Exception {
+	public void storeSourceDocument(ResultDocument doc) throws Exception {
+		String uniqueId = doc.getUniqueId();
 		DB db = pool.getDB(database);
 		DBCollection coll = db.getCollection(RESULT_STORAGE_COLLECTION);
 		DBObject document = new BasicDBObject();
@@ -188,7 +182,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 					dBuilder.setDocument(document);
 				}
 
-
+				dBuilder.setIndexName(indexName);
 				return dBuilder.build();
 			}
 		}
@@ -336,6 +330,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 				aBuilder.setDocument(ByteString.copyFrom(bytes));
 			}
 		}
+		aBuilder.setIndexName(indexName);
 		return aBuilder.build();
 	}
 

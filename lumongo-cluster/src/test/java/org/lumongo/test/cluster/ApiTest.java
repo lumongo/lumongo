@@ -36,7 +36,6 @@ import org.lumongo.client.result.GetMembersResult;
 import org.lumongo.client.result.GetNumberOfDocsResult;
 import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.client.result.QueryResult;
-import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
@@ -55,6 +54,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
 public class ApiTest {
+	private static final String MY_INDEX_NAME = "myIndexName";
 	private LumongoWorkPool lumongoWorkPool;
 
 	public void startClient() throws Exception {
@@ -92,7 +92,7 @@ public class ApiTest {
 		indexConfig.setFieldAnalyzer("issn", LMAnalyzer.LC_KEYWORD);
 		indexConfig.setFieldAnalyzer("an", LMAnalyzer.NUMERIC_INT);
 
-		CreateIndex createIndex = new CreateIndex("myIndexName", numberOfSegments, uniqueIdField, indexConfig);
+		CreateIndex createIndex = new CreateIndex(MY_INDEX_NAME, numberOfSegments, uniqueIdField, indexConfig);
 		lumongoWorkPool.createIndex(createIndex);
 	}
 
@@ -106,7 +106,7 @@ public class ApiTest {
 		indexConfig.setFieldAnalyzer("an", LMAnalyzer.NUMERIC_INT);
 		indexConfig.setFieldAnalyzer("abstract", LMAnalyzer.STANDARD);
 
-		UpdateIndex updateIndex = new UpdateIndex("myIndexName", indexConfig);
+		UpdateIndex updateIndex = new UpdateIndex(MY_INDEX_NAME, indexConfig);
 		lumongoWorkPool.updateIndex(updateIndex);
 	}
 
@@ -132,7 +132,6 @@ public class ApiTest {
 	public void storeDocumentText(String indexName, String uniqueId) throws Exception {
 
 		IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-		docBuilder.setIndexName(indexName);
 		docBuilder.addField("issn", "1234-1234");
 		docBuilder.addField("title", "A really special title");
 		docBuilder.addFacet("issn", "1234-1234");
@@ -140,8 +139,8 @@ public class ApiTest {
 
 		String xml = "<sampleXML></sampleXML>";
 
-		Store s = new Store(uniqueId);
-		s.addIndexedDocument(indexedDoc);
+		Store s = new Store(uniqueId, indexName);
+		s.setIndexedDocument(indexedDoc);
 		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
 		resultDocumentBuilder.setDocument(xml);
 		s.setResultDocument(resultDocumentBuilder);
@@ -150,8 +149,8 @@ public class ApiTest {
 
 		lumongoWorkPool.store(s);
 
-		Store s1 = new Store(uniqueId + "-meta");
-		s1.addIndexedDocument(indexedDoc);
+		Store s1 = new Store(uniqueId + "-meta", indexName);
+		s1.setIndexedDocument(indexedDoc);
 
 		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
 		resultDocumentBuilder1.setDocument(xml);
@@ -166,7 +165,6 @@ public class ApiTest {
 	public void storeDocumentBson() throws Exception {
 
 		IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-		docBuilder.setIndexName("myIndexName");
 		docBuilder.addField("title", "Magic Java Beans");
 		docBuilder.addField("issn", "4321-4321");
 		docBuilder.addFacet("issn", "4321-4321");
@@ -176,8 +174,8 @@ public class ApiTest {
 		dbObject.put("someKey", "someValue");
 		dbObject.put("other key", "other value");
 
-		Store s = new Store("myid222");
-		s.addIndexedDocument(indexedDoc);
+		Store s = new Store("myid222", MY_INDEX_NAME);
+		s.setIndexedDocument(indexedDoc);
 
 		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
 		resultDocumentBuilder.setDocument(dbObject);
@@ -186,8 +184,8 @@ public class ApiTest {
 
 		lumongoWorkPool.store(s);
 
-		Store s1 = new Store("myid2222");
-		s1.addIndexedDocument(indexedDoc);
+		Store s1 = new Store("myid2222", MY_INDEX_NAME);
+		s1.setIndexedDocument(indexedDoc);
 
 		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
 		resultDocumentBuilder1.setDocument(dbObject);
@@ -202,22 +200,21 @@ public class ApiTest {
 
 	public void storeDocumentBinary() throws Exception {
 		IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-		docBuilder.setIndexName("myIndexName");
 		docBuilder.addField("title", "Another great and special book");
 		docBuilder.addField("issn", "1111-1111");
 		docBuilder.addFacet("issn", "1111-1111");
 		LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
 		byte[] bytes = new byte[] { 1, 2, 3 };
-		Store s = new Store("myid333");
-		s.addIndexedDocument(indexedDoc);
+		Store s = new Store("myid333", MY_INDEX_NAME);
+		s.setIndexedDocument(indexedDoc);
 		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
 		resultDocumentBuilder.setDocument(bytes);
 
 		lumongoWorkPool.store(s);
 
-		Store s1 = new Store("myid3333");
-		s1.addIndexedDocument(indexedDoc);
+		Store s1 = new Store("myid3333", MY_INDEX_NAME);
+		s1.setIndexedDocument(indexedDoc);
 
 		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
 		resultDocumentBuilder1.setDocument(bytes);
@@ -230,7 +227,7 @@ public class ApiTest {
 	}
 
 	public void fetchDocumentText() throws Exception {
-		FetchDocument fetchDocument = new FetchDocument("myid111");
+		FetchDocument fetchDocument = new FetchDocument("myid111", MY_INDEX_NAME);
 
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchDocument);
 
@@ -239,7 +236,7 @@ public class ApiTest {
 			System.out.println(text);
 		}
 
-		FetchDocument fetchDocument1 = new FetchDocument("myid1111");
+		FetchDocument fetchDocument1 = new FetchDocument("myid1111", MY_INDEX_NAME);
 
 		FetchResult fetchResult1 = lumongoWorkPool.fetch(fetchDocument1);
 
@@ -253,7 +250,7 @@ public class ApiTest {
 	}
 
 	public void fetchDocumentBson() throws Exception {
-		FetchDocument fetchDocument = new FetchDocument("myid222");
+		FetchDocument fetchDocument = new FetchDocument("myid222", MY_INDEX_NAME);
 
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchDocument);
 
@@ -262,7 +259,7 @@ public class ApiTest {
 			System.out.println(object);
 		}
 
-		FetchDocument fetchDocument1 = new FetchDocument("myid2222");
+		FetchDocument fetchDocument1 = new FetchDocument("myid2222", MY_INDEX_NAME);
 
 		FetchResult fetchResult1 = lumongoWorkPool.fetch(fetchDocument1);
 
@@ -276,7 +273,7 @@ public class ApiTest {
 	}
 
 	public void fetchDocumentBinary() throws Exception {
-		FetchDocument fetchDocument = new FetchDocument("myid333");
+		FetchDocument fetchDocument = new FetchDocument("myid333", MY_INDEX_NAME);
 
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchDocument);
 
@@ -285,7 +282,7 @@ public class ApiTest {
 			System.out.println(Arrays.toString(bytes));
 		}
 
-		FetchDocument fetchDocument1 = new FetchDocument("myid3333");
+		FetchDocument fetchDocument1 = new FetchDocument("myid3333", MY_INDEX_NAME);
 
 		FetchResult fetchResult1 = lumongoWorkPool.fetch(fetchDocument1);
 
@@ -299,7 +296,7 @@ public class ApiTest {
 	}
 
 	public void fetchDocumentMeta() throws Exception {
-		FetchDocument fetchDocument = new FetchDocument("myid123");
+		FetchDocument fetchDocument = new FetchDocument("myid123", MY_INDEX_NAME);
 
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchDocument);
 
@@ -315,7 +312,7 @@ public class ApiTest {
 
 	public void simpleQuery() throws Exception {
 		int numberOfResults = 10;
-		String[] indexes = new String[] { "myIndexName", "myIndexName2" };
+		String[] indexes = new String[] { MY_INDEX_NAME, "myIndexName2" };
 		String normalLuceneQuery = "issn:1234-1234 AND title:special";
 		Query query = new Query(indexes, normalLuceneQuery, numberOfResults);
 		query.setRealTime(false);
@@ -332,7 +329,7 @@ public class ApiTest {
 
 	public void simpleQueryAsync() throws Exception {
 
-		Query query = new Query("myIndexName", "issn:1234-1234 AND title:special", 10);
+		Query query = new Query(MY_INDEX_NAME, "issn:1234-1234 AND title:special", 10);
 
 		ListenableFuture<QueryResult> resultFuture = lumongoWorkPool.queryAsync(query);
 
@@ -353,7 +350,7 @@ public class ApiTest {
 	public void simpleQueryWithSort() throws Exception {
 		int numberOfResults = 10;
 		String normalLuceneQuery = "title:special";
-		Query query = new Query("myIndexName", normalLuceneQuery, numberOfResults);
+		Query query = new Query(MY_INDEX_NAME, normalLuceneQuery, numberOfResults);
 		query.addFieldSort("issn", Direction.ASCENDING);
 
 		QueryResult queryResult = lumongoWorkPool.query(query);
@@ -369,7 +366,7 @@ public class ApiTest {
 
 	public void queryWithBatchFetch() throws Exception {
 		int numberOfResults = 10;
-		String[] indexes = new String[] { "myIndexName", "myIndexName2" };
+		String[] indexes = new String[] { MY_INDEX_NAME, "myIndexName2" };
 		String normalLuceneQuery = "issn:1234-1234 AND title:special";
 		Query query = new Query(indexes, normalLuceneQuery, numberOfResults);
 
@@ -391,7 +388,7 @@ public class ApiTest {
 		int numberOfResults = 2;
 		String normalLuceneQuery = "issn:1234-1234 AND title:special";
 
-		String[] indexes = new String[] { "myIndexName", "myIndexName2" };
+		String[] indexes = new String[] { MY_INDEX_NAME, "myIndexName2" };
 		Query query = new Query(indexes, normalLuceneQuery, numberOfResults);
 
 		QueryResult firstResult = lumongoWorkPool.query(query);
@@ -409,7 +406,7 @@ public class ApiTest {
 	public void facetQuery() throws Exception {
 		// Can set number of documents to return to 0 unless you want the documents
 		// at the same time
-		String[] indexes = new String[] { "myIndexName", "myIndexName2" };
+		String[] indexes = new String[] { MY_INDEX_NAME, "myIndexName2" };
 
 		Query query = new Query(indexes, "title:special", 0);
 		int maxFacets = 30;
@@ -423,7 +420,7 @@ public class ApiTest {
 	}
 
 	public void drillDownQuery() throws Exception {
-		Query query = new Query("myIndexName", "title:special", 0);
+		Query query = new Query(MY_INDEX_NAME, "title:special", 0);
 		query.addDrillDown("issn", "1111-1111");
 		QueryResult queryResult = lumongoWorkPool.query(query);
 		for (FacetCount fc : queryResult.getFacetCounts()) {
@@ -432,25 +429,24 @@ public class ApiTest {
 	}
 
 	public void getCount() throws Exception {
-		GetNumberOfDocsResult result = lumongoWorkPool.getNumberOfDocs("myIndexName");
+		GetNumberOfDocsResult result = lumongoWorkPool.getNumberOfDocs(MY_INDEX_NAME);
 		System.out.println(result.getNumberOfDocs());
 	}
 
 	public void storeAssociated() throws Exception {
 		String uniqueId = "myid123";
+		String indexName = MY_INDEX_NAME;
 		String filename = "myfile2";
 
 		AssociatedBuilder associatedBuilder = new AssociatedBuilder();
-		associatedBuilder.setDocumentUniqueId(uniqueId);
 		associatedBuilder.setFilename(filename);
 		associatedBuilder.setCompressed(false);
 		associatedBuilder.setDocument("Some Text3");
 		associatedBuilder.addMetaData("mydata", "myvalue2");
 		associatedBuilder.addMetaData("sometypeinfo", "text file2");
-		AssociatedDocument ad = associatedBuilder.getAssociatedDocument();
 
-		Store s = new Store(uniqueId);
-		s.addAssociatedDocument(ad);
+		Store s = new Store(uniqueId, indexName);
+		s.addAssociatedDocument(associatedBuilder);
 
 		lumongoWorkPool.store(s);
 	}
@@ -459,7 +455,7 @@ public class ApiTest {
 		String uniqueId = "myid123";
 		String filename = "myfile2";
 
-		FetchAssociated fetchAssociated = new FetchAssociated(uniqueId, filename);
+		FetchAssociated fetchAssociated = new FetchAssociated(uniqueId, MY_INDEX_NAME, filename);
 
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchAssociated);
 
@@ -474,7 +470,7 @@ public class ApiTest {
 	public void fetchAllAssociated() throws Exception {
 		String uniqueId = "myid123";
 
-		FetchAllAssociated fetchAssociated = new FetchAllAssociated(uniqueId);
+		FetchAllAssociated fetchAssociated = new FetchAllAssociated(uniqueId, MY_INDEX_NAME);
 
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchAssociated);
 
@@ -505,32 +501,32 @@ public class ApiTest {
 	}
 
 	public void deleteFromIndex() throws Exception {
-		DeleteFromIndex deleteFromIndex = new DeleteFromIndex("myid111", "myIndexName");
+		DeleteFromIndex deleteFromIndex = new DeleteFromIndex("myid111", MY_INDEX_NAME);
 		lumongoWorkPool.delete(deleteFromIndex);
 	}
 
 	public void deleteFull() throws Exception {
-		DeleteFull deleteFull = new DeleteFull("myid123");
+		DeleteFull deleteFull = new DeleteFull("myid123", MY_INDEX_NAME);
 		lumongoWorkPool.delete(deleteFull);
 	}
 
 	public void deleteSingleAssociated() throws Exception {
-		DeleteAssociated deleteAssociated = new DeleteAssociated("myid123", "myfile2");
+		DeleteAssociated deleteAssociated = new DeleteAssociated("myid123", MY_INDEX_NAME, "myfile2");
 		lumongoWorkPool.delete(deleteAssociated);
 	}
 
 	public void deleteAllAssociated() throws Exception {
-		DeleteAllAssociated deleteAllAssociated = new DeleteAllAssociated("myid123");
+		DeleteAllAssociated deleteAllAssociated = new DeleteAllAssociated("myid123", MY_INDEX_NAME);
 		lumongoWorkPool.delete(deleteAllAssociated);
 	}
 
 	public void getFields() throws Exception {
-		GetFieldsResult result = lumongoWorkPool.getFields(new GetFields("myIndexName"));
+		GetFieldsResult result = lumongoWorkPool.getFields(new GetFields(MY_INDEX_NAME));
 		System.out.println(result.getFieldNames());
 	}
 
 	public void getTerms() throws Exception {
-		GetTermsResult getTermsResult = lumongoWorkPool.getAllTerms(new GetAllTerms("myIndexName", "title"));
+		GetTermsResult getTermsResult = lumongoWorkPool.getAllTerms(new GetAllTerms(MY_INDEX_NAME, "title"));
 		for (Term term : getTermsResult.getTerms()) {
 			System.out.println(term.getValue() + ": " + term.getDocFreq());
 		}
@@ -544,7 +540,7 @@ public class ApiTest {
 	}
 
 	public void getDocumentCount() throws Exception {
-		GetNumberOfDocsResult getNumberOfDocsResult = lumongoWorkPool.getNumberOfDocs(new GetNumberOfDocs("myIndexName"));
+		GetNumberOfDocsResult getNumberOfDocsResult = lumongoWorkPool.getNumberOfDocs(new GetNumberOfDocs(MY_INDEX_NAME));
 		System.out.println(getNumberOfDocsResult.getNumberOfDocs());
 	}
 
@@ -563,15 +559,15 @@ public class ApiTest {
 
 			//apiTest.getMembers();
 
-			apiTest.deleteIndex("myIndexName");
+			apiTest.deleteIndex(MY_INDEX_NAME);
 			apiTest.deleteIndex("myIndexName2");
 			//apiTest.createIndex();
 			//apiTest.updateIndex();
 
-			apiTest.createOrUpdateIndex("myIndexName");
+			apiTest.createOrUpdateIndex(MY_INDEX_NAME);
 			apiTest.createOrUpdateIndex("myIndexName2");
 
-			apiTest.storeDocumentText("myIndexName", "myid555");
+			apiTest.storeDocumentText(MY_INDEX_NAME, "myid555");
 			apiTest.storeDocumentText("myIndexName2", "myid666");
 
 			/*
@@ -598,7 +594,7 @@ public class ApiTest {
 
 			apiTest.getIndexes();
 			apiTest.getDocumentCount();
-			*/
+			 */
 
 			apiTest.simpleQueryWithSort();
 

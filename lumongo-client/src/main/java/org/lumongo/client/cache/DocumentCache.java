@@ -21,109 +21,109 @@ import com.google.common.cache.CacheBuilder;
  *
  */
 public class DocumentCache {
-    private LumongoWorkPool lumongoWorkPool;
+	private LumongoWorkPool lumongoWorkPool;
 
-    private static Cache<String, FetchResult> documentCache;
+	private static Cache<DocId, FetchResult> documentCache;
 
-    public DocumentCache(LumongoWorkPool lumongoWorkPool, int maxSize) {
-        this.lumongoWorkPool = lumongoWorkPool;
-        documentCache = CacheBuilder.newBuilder().concurrencyLevel(16).maximumSize(maxSize).build();
-    }
+	public DocumentCache(LumongoWorkPool lumongoWorkPool, int maxSize) {
+		this.lumongoWorkPool = lumongoWorkPool;
+		documentCache = CacheBuilder.newBuilder().concurrencyLevel(16).maximumSize(maxSize).build();
+	}
 
-    /**
-     * Returns the last cached version of the result document or fetches if the result document is not in the cache
-     * @param uniqueId - uniqueId to fetch
-     * @return
-     * @throws Exception
-     */
-    public FetchResult fetch(String uniqueId) throws Exception {
-        return fetch(uniqueId, null);
-    }
+	/**
+	 * Returns the last cached version of the result document or fetches if the result document is not in the cache
+	 * @param uniqueId - uniqueId to fetch
+	 * @return
+	 * @throws Exception
+	 */
+	public FetchResult fetch(String uniqueId, String indexName) throws Exception {
+		return fetch(uniqueId, indexName, null);
+	}
 
-    /**
-     * Returns the last cached version of the result document if timestamp matches, fetches if the document is not in the cache or if the timestamp do not match
-     * @param scoredResult - scored result returned from a search
-     * @return
-     * @throws Exception
-     */
-    public FetchResult fetch(ScoredResult scoredResult) throws Exception {
-        return fetch(scoredResult.getUniqueId(), scoredResult.getTimestamp());
-    }
+	/**
+	 * Returns the last cached version of the result document if timestamp matches, fetches if the document is not in the cache or if the timestamp do not match
+	 * @param scoredResult - scored result returned from a search
+	 * @return
+	 * @throws Exception
+	 */
+	public FetchResult fetch(ScoredResult scoredResult) throws Exception {
+		return fetch(scoredResult.getUniqueId(), scoredResult.getIndexName(), scoredResult.getTimestamp());
+	}
 
-    /**
-     * Returns the last cached version of the result document if timestamp matches, fetches if the document is not in the cache or if the timestamp do not match
-     * @param uniqueId - uniqueId to fetch
-     * @param timestamp - timestamp to check against
-     * @return
-     * @throws Exception
-     */
-    public FetchResult fetch(String uniqueId, Long timestamp) throws Exception {
-        FetchResult fr = documentCache.getIfPresent(uniqueId);
+	/**
+	 * Returns the last cached version of the result document if timestamp matches, fetches if the document is not in the cache or if the timestamp do not match
+	 * @param uniqueId - uniqueId to fetch
+	 * @param timestamp - timestamp to check against
+	 * @return
+	 * @throws Exception
+	 */
+	public FetchResult fetch(String uniqueId, String indexName, Long timestamp) throws Exception {
+		FetchResult fr = documentCache.getIfPresent(uniqueId);
 
-        boolean fetch = fetchNeeded(fr, timestamp);
+		boolean fetch = fetchNeeded(fr, timestamp);
 
-        if (fetch) {
-            fr = lumongoWorkPool.fetch(new FetchDocument(uniqueId));
-            if (fr.hasResultDocument()) {
-                documentCache.put(uniqueId, fr);
-            }
-        }
+		if (fetch) {
+			fr = lumongoWorkPool.fetch(new FetchDocument(uniqueId, indexName));
+			if (fr.hasResultDocument()) {
+				documentCache.put(new DocId(uniqueId, indexName), fr);
+			}
+		}
 
-        return fr;
-    }
+		return fr;
+	}
 
-    public BatchFetchResult fetch(QueryResult queryResult) throws Exception {
-    	return fetch(queryResult.getResults());
-    }
+	public BatchFetchResult fetch(QueryResult queryResult) throws Exception {
+		return fetch(queryResult.getResults());
+	}
 
-    public BatchFetchResult fetch(Collection<ScoredResult> scoredResults) throws Exception {
+	public BatchFetchResult fetch(Collection<ScoredResult> scoredResults) throws Exception {
 
-        List<FetchResult> resultsFromCache = new ArrayList<FetchResult>();
-        List<FetchDocument> fetchDocumentList = new ArrayList<FetchDocument>();
+		List<FetchResult> resultsFromCache = new ArrayList<FetchResult>();
+		List<FetchDocument> fetchDocumentList = new ArrayList<FetchDocument>();
 
-        for (ScoredResult sr : scoredResults) {
-            FetchResult fetchResult = documentCache.getIfPresent(sr.getUniqueId());
-            boolean fetch = fetchNeeded(fetchResult, sr.getTimestamp());
+		for (ScoredResult sr : scoredResults) {
+			FetchResult fetchResult = documentCache.getIfPresent(sr.getUniqueId());
+			boolean fetch = fetchNeeded(fetchResult, sr.getTimestamp());
 
-            if (fetch) {
-                fetchDocumentList.add(new FetchDocument(sr.getUniqueId()));
-            }
-            else {
-                resultsFromCache.add(fetchResult);
-            }
-        }
+			if (fetch) {
+				fetchDocumentList.add(new FetchDocument(sr.getUniqueId(), sr.getIndexName()));
+			}
+			else {
+				resultsFromCache.add(fetchResult);
+			}
+		}
 
-        if (!fetchDocumentList.isEmpty()) {
-            BatchFetchResult bfr = lumongoWorkPool.batchFetch(new BatchFetch().addFetches(fetchDocumentList));
-            for (FetchResult fr : bfr.getFetchResults()) {
-                if (fr.hasResultDocument()) {
-                    documentCache.put(fr.getUniqueId(), fr);
-                }
-            }
+		if (!fetchDocumentList.isEmpty()) {
+			BatchFetchResult bfr = lumongoWorkPool.batchFetch(new BatchFetch().addFetches(fetchDocumentList));
+			for (FetchResult fr : bfr.getFetchResults()) {
+				if (fr.hasResultDocument()) {
+					documentCache.put(new DocId(fr.getUniqueId(), fr.getIndexName()), fr);
+				}
+			}
 
-            bfr.getFetchResults().addAll(resultsFromCache);
-            return bfr;
-        }
-        else {
-            return new BatchFetchResult(resultsFromCache);
-        }
+			bfr.getFetchResults().addAll(resultsFromCache);
+			return bfr;
+		}
+		else {
+			return new BatchFetchResult(resultsFromCache);
+		}
 
-    }
+	}
 
-    private boolean fetchNeeded(FetchResult fr, Long timestamp) {
-        boolean fetch = false;
+	private boolean fetchNeeded(FetchResult fr, Long timestamp) {
+		boolean fetch = false;
 
-        if (fr == null) { //no result in cache - fetch regardless of passed time stamp
-            fetch = true;
-        }
-        else if (timestamp != null) { //asking for a specific version and found a version in cache
-            if (fr.getDocumentTimestamp() == null) { //no document in cache and asking for document with a timestamp
-                fetch = true;
-            }
-            else if (Long.compare(fr.getDocumentTimestamp(), timestamp) != 0) { //outdated document in cache
-                fetch = true;
-            }
-        }
-        return fetch;
-    }
+		if (fr == null) { //no result in cache - fetch regardless of passed time stamp
+			fetch = true;
+		}
+		else if (timestamp != null) { //asking for a specific version and found a version in cache
+			if (fr.getDocumentTimestamp() == null) { //no document in cache and asking for document with a timestamp
+				fetch = true;
+			}
+			else if (Long.compare(fr.getDocumentTimestamp(), timestamp) != 0) { //outdated document in cache
+				fetch = true;
+			}
+		}
+		return fetch;
+	}
 }

@@ -27,7 +27,7 @@ public class LumongoBaseWorkPool extends WorkPool {
     }
 
     public LumongoBaseWorkPool(LumongoPool lumongoPool, String poolName) {
-        super(lumongoPool.getMaxConnections(), lumongoPool.getMaxConnections() * 2, poolName);
+        super(lumongoPool.getMaxConnections(), lumongoPool.getMaxConnections() * 10, poolName);
         this.lumongoPool = lumongoPool;
     }
 

@@ -1,18 +1,25 @@
 package org.lumongo.server.connection;
 
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+
 import java.util.UUID;
-import java.util.concurrent.Executors;
 
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.log4j.Logger;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.lumongo.cluster.message.Lumongo.InternalService;
+import org.lumongo.cluster.message.Lumongo.InternalService.BlockingInterface;
 
+import com.googlecode.protobuf.pro.duplex.CleanShutdownHandler;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
 import com.googlecode.protobuf.pro.duplex.RpcClient;
-import com.googlecode.protobuf.pro.duplex.client.DuplexTcpClientBootstrap;
+import com.googlecode.protobuf.pro.duplex.client.DuplexTcpClientPipelineFactory;
 
 public class InternalRpcConnectionFactory extends BasePoolableObjectFactory<InternalRpcConnection> {
+	private static CleanShutdownHandler shutdownHandler = new CleanShutdownHandler();
+
 	private final static Logger log = Logger.getLogger(InternalRpcConnectionFactory.class);
 
 	private String memberAddress;
@@ -31,17 +38,27 @@ public class InternalRpcConnectionFactory extends BasePoolableObjectFactory<Inte
 
 		log.info("Connecting from <" + client + "> to <" + server + ">");
 
-		DuplexTcpClientBootstrap bootstrap = new DuplexTcpClientBootstrap(client, new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-		        Executors.newCachedThreadPool()));
-		bootstrap.setRpcLogger(null);
-		bootstrap.setOption("connectTimeoutMillis", 10000);
-		bootstrap.setOption("connectResponseTimeoutMillis", 10000);
-		bootstrap.setOption("receiveBufferSize", 1048576);
-		bootstrap.setOption("tcpNoDelay", false);
 
-		RpcClient rpcClient = bootstrap.peerWith(server);
+		DuplexTcpClientPipelineFactory clientFactory = new DuplexTcpClientPipelineFactory(client);
+		clientFactory.setCompression(false);
+		clientFactory.setRpcLogger(null);
 
-		InternalService.BlockingInterface service = InternalService.newBlockingStub(rpcClient);
+		Bootstrap bootstrap = new Bootstrap();
+		bootstrap.group(new NioEventLoopGroup());
+		bootstrap.handler(clientFactory);
+		bootstrap.channel(NioSocketChannel.class);
+
+		//TODO check this options
+		bootstrap.option(ChannelOption.TCP_NODELAY, true);
+		bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,10000);
+		bootstrap.option(ChannelOption.SO_SNDBUF, 1048576);
+		bootstrap.option(ChannelOption.SO_RCVBUF, 1048576);
+
+		shutdownHandler.addResource(bootstrap);
+
+		RpcClient rpcClient = clientFactory.peerWith(server, bootstrap);
+
+		BlockingInterface service = InternalService.newBlockingStub(rpcClient);
 
 		return new InternalRpcConnection(service, rpcClient, bootstrap);
 	}

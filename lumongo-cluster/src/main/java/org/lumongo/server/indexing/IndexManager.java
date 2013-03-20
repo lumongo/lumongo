@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -86,14 +85,11 @@ import org.lumongo.server.hazelcast.HazelcastManager;
 import org.lumongo.server.hazelcast.ReloadIndexSettingsTask;
 import org.lumongo.server.hazelcast.UnloadIndexTask;
 import org.lumongo.server.searching.QueryCombiner;
-import org.lumongo.storage.constants.MongoConstants;
-import org.lumongo.storage.rawfiles.MongoDocumentStorage;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LumongoThreadFactory;
 
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
-import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
@@ -101,8 +97,6 @@ import com.mongodb.MongoException;
 public class IndexManager {
 	private final static Logger log = Logger.getLogger(IndexManager.class);
 
-	private MongoClient mongo;
-	private MongoDocumentStorage documentStorage;
 
 	private final ReadWriteLock globalLock;
 
@@ -116,7 +110,10 @@ public class IndexManager {
 	private MongoConfig mongoConfig;
 	private ClusterConfig clusterConfig;
 
-	public IndexManager(MongoConfig mongoConfig, ClusterConfig clusterConfig) {
+
+	private MongoClient mongo;
+
+	public IndexManager(MongoConfig mongoConfig, ClusterConfig clusterConfig) throws UnknownHostException {
 		this.globalLock = new ReentrantReadWriteLock(true);
 
 		this.mongoConfig = mongoConfig;
@@ -124,6 +121,8 @@ public class IndexManager {
 
 		this.indexMap = new ConcurrentHashMap<String, Index>();
 		this.internalClient = new InternalClient(mongoConfig, clusterConfig);
+
+		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
 
 		this.pool = Executors.newCachedThreadPool(new LumongoThreadFactory("manager"));
 
@@ -133,20 +132,6 @@ public class IndexManager {
 		globalLock.writeLock().lock();
 		try {
 			this.hazelcastManager = hazelcastManager;
-
-			String databaseName = mongoConfig.getDatabaseName();
-			String mongoHost = mongoConfig.getMongoHost();
-			int mongoPort = mongoConfig.getMongoPort();
-			boolean sharded = clusterConfig.isSharded();
-
-			this.mongo = new MongoClient(mongoHost, mongoPort);
-
-			if (sharded) {
-				DB db = mongo.getDB(MongoConstants.StandardDBs.ADMIN);
-				db.command(new BasicDBObject(MongoConstants.Commands.ENABLE_SHARDING, databaseName));
-			}
-
-			this.documentStorage = new MongoDocumentStorage(mongoHost, mongoPort, databaseName + MongoDocumentStorage.STORAGE_DB_SUFFIX, sharded);
 		}
 		finally {
 			globalLock.writeLock().unlock();
@@ -243,7 +228,7 @@ public class IndexManager {
 			if (indexMap.containsKey(indexName)) {
 				throw new Exception("Index <" + indexName + "> already exist");
 			}
-			Index i = Index.createIndex(hazelcastManager, mongoConfig, clusterConfig, mongo, indexConfig);
+			Index i = Index.createIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
 			indexMap.put(indexConfig.getIndexName(), i);
 			i.loadAllSegments();
 			i.forceBalance(hazelcastManager.getMembers());
@@ -260,7 +245,7 @@ public class IndexManager {
 	public void loadIndex(String indexName, boolean loadAllSegments) throws Exception {
 		globalLock.writeLock().lock();
 		try {
-			Index i = Index.loadIndex(hazelcastManager, mongoConfig, clusterConfig, mongo, indexName);
+			Index i = Index.loadIndex(hazelcastManager, mongoConfig, mongo, clusterConfig, indexName);
 			if (loadAllSegments) {
 				i.loadAllSegments();
 			}
@@ -350,7 +335,7 @@ public class IndexManager {
 			}
 
 			log.info("Deleting index <" + indexName + ">");
-			i.deleteIndex(mongo);
+			i.deleteIndex();
 			indexMap.remove(indexName);
 
 			return IndexDeleteResponse.newBuilder().build();
@@ -492,17 +477,17 @@ public class IndexManager {
 		}
 	}
 
-	public InternalDeleteResponse internalDeleteFromIndex(String uniqueId, Collection<String> indexNames) throws IndexDoesNotExist, CorruptIndexException,
+	public InternalDeleteResponse internalDeleteFromIndex(String uniqueId, String indexName) throws IndexDoesNotExist, CorruptIndexException,
 	SegmentDoesNotExist, IOException {
 		globalLock.readLock().lock();
 		try {
-			for (String indexName : indexNames) {
-				Index i = indexMap.get(indexName);
-				if (i == null) {
-					throw new IndexDoesNotExist(indexName);
-				}
-				i.deleteFromIndex(uniqueId);
+
+			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
 			}
+			i.deleteFromIndex(uniqueId);
+
 			return InternalDeleteResponse.newBuilder().build();
 		}
 		finally {
@@ -510,38 +495,31 @@ public class IndexManager {
 		}
 	}
 
-	private void deleteFromIndex(String uniqueId, Collection<String> indexes) throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist,
+	private void deleteFromIndex(String uniqueId, String indexName) throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist,
 	IOException, Exception {
 		globalLock.readLock().lock();
 		try {
-			HashMap<Member, Set<String>> deleteForMember = new HashMap<Member, Set<String>>();
-			for (String indexName : indexes) {
-				Index i = indexMap.get(indexName);
-				if (i == null) {
-					throw new IndexDoesNotExist(indexName);
-				}
 
-				Member m = i.findMember(uniqueId);
-				if (!deleteForMember.containsKey(m)) {
-					deleteForMember.put(m, new HashSet<String>());
-				}
-				deleteForMember.get(m).add(indexName);
+			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
 			}
+
+			Member m = i.findMember(uniqueId);
 
 			Member self = hazelcastManager.getSelf();
 
-			for (Member m : deleteForMember.keySet()) {
 
-				if (!self.equals(m)) {
-					InternalDeleteRequest.Builder idr = InternalDeleteRequest.newBuilder();
-					idr.addAllIndexes(deleteForMember.get(m));
-					idr.setUniqueId(uniqueId);
-					internalClient.executeDelete(m, idr.build());
-				}
-				else {
-					internalDeleteFromIndex(uniqueId, deleteForMember.get(m));
-				}
+			if (!self.equals(m)) {
+				InternalDeleteRequest.Builder idr = InternalDeleteRequest.newBuilder();
+				idr.setIndex(indexName);
+				idr.setUniqueId(uniqueId);
+				internalClient.executeDelete(m, idr.build());
 			}
+			else {
+				internalDeleteFromIndex(uniqueId, indexName);
+			}
+
 		}
 		finally {
 			globalLock.readLock().unlock();
@@ -553,22 +531,24 @@ public class IndexManager {
 		try {
 
 			String uniqueId = deleteRequest.getUniqueId();
+			String indexName = deleteRequest.getIndexName();
+
+			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
 
 			if (deleteRequest.getDeleteDocument()) {
-				// TODO: only delete from indexes document is in?
-				deleteFromIndex(uniqueId, indexMap.keySet());
-				documentStorage.deleteSourceDocument(uniqueId);
-			}
-			else if (deleteRequest.getIndexesCount() != 0) {
-				deleteFromIndex(uniqueId, deleteRequest.getIndexesList());
+				deleteFromIndex(uniqueId, deleteRequest.getIndexName());
+				i.deleteSourceDocument(uniqueId);
 			}
 
 			if (deleteRequest.getDeleteAllAssociated()) {
-				documentStorage.deleteAssociatedDocuments(uniqueId);
+				i.deleteAssociatedDocuments(uniqueId);
 			}
 			else if (deleteRequest.hasFilename()) {
 				String fileName = deleteRequest.getFilename();
-				documentStorage.deleteAssociatedDocument(uniqueId, fileName);
+				i.deleteAssociatedDocument(uniqueId, fileName);
 			}
 
 			return DeleteResponse.newBuilder().build();
@@ -578,17 +558,16 @@ public class IndexManager {
 		}
 	}
 
-	public InternalIndexResponse internalIndex(String uniqueId, List<LMDoc> indexedDocuments) throws Exception {
+	public InternalIndexResponse internalIndex(String uniqueId, String indexName, LMDoc indexedDocument) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			for (LMDoc indexedDocument : indexedDocuments) {
-				String indexName = indexedDocument.getIndexName();
-				Index i = indexMap.get(indexName);
-				if (i == null) {
-					throw new IndexDoesNotExist(indexName);
-				}
-				i.storeInternal(uniqueId, indexedDocument);
+
+			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
 			}
+			i.storeInternal(uniqueId, indexedDocument);
+
 
 			return InternalIndexResponse.newBuilder().build();
 		}
@@ -602,72 +581,47 @@ public class IndexManager {
 		try {
 			long timestamp = hazelcastManager.getClusterTime();
 			String uniqueId = storeRequest.getUniqueId();
-			if (storeRequest.getIndexedDocumentCount() > 0) {
-				Set<String> indexNames = new HashSet<String>();
-				HashMap<Member, List<LMDoc>> indexForMember = new HashMap<Member, List<LMDoc>>();
-				for (LMDoc lmDoc : storeRequest.getIndexedDocumentList()) {
-					lmDoc = LMDoc.newBuilder(lmDoc).setTimestamp(timestamp).build();
-					String indexName = lmDoc.getIndexName();
-					if (indexNames.contains(indexName)) {
-						throw new Exception("Can not store a document for twice for index <" + indexName + ">");
-					}
-					indexNames.add(indexName);
+			String indexName = storeRequest.getIndexName();
 
-					Index i = indexMap.get(indexName);
-					if (i == null) {
-						throw new IndexDoesNotExist(indexName);
-					}
-					Member m = i.findMember(uniqueId);
+			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
 
-					if (!indexForMember.containsKey(m)) {
-						indexForMember.put(m, new ArrayList<LMDoc>());
-					}
-					indexForMember.get(m).add(lmDoc);
-				}
+			if (storeRequest.hasIndexedDocument()) {
 
-				// TODO: only delete from indexes document is in? configurable?
-				{
-					Set<String> deleteIndexNames = new HashSet<String>();
-					for (String indexName : indexMap.keySet()) {
-						if (!indexNames.contains(indexName)) {
-							deleteIndexNames.add(indexName);
-						}
-					}
+				LMDoc lmDoc =  storeRequest.getIndexedDocument();
+				lmDoc = LMDoc.newBuilder(lmDoc).setTimestamp(timestamp).build();
 
-					if (!deleteIndexNames.isEmpty()) {
-						deleteFromIndex(uniqueId, deleteIndexNames);
-					}
-
-				}
+				Member m = i.findMember(uniqueId);
 
 				Member self = hazelcastManager.getSelf();
 
-				for (Member m : indexForMember.keySet()) {
-
-					if (!self.equals(m)) {
-						InternalIndexRequest.Builder iir = InternalIndexRequest.newBuilder();
-						iir.setUniqueId(uniqueId);
-						iir.addAllIndexedDocument(indexForMember.get(m));
-						internalClient.executeIndex(m, iir.build());
-					}
-					else {
-						internalIndex(uniqueId, indexForMember.get(m));
-					}
+				if (!self.equals(m)) {
+					InternalIndexRequest.Builder iir = InternalIndexRequest.newBuilder();
+					iir.setUniqueId(uniqueId);
+					iir.setIndexName(indexName);
+					iir.setIndexedDocument(lmDoc);
+					internalClient.executeIndex(m, iir.build());
 				}
+				else {
+					internalIndex(uniqueId, indexName, lmDoc);
+				}
+
 			}
 
 			if (storeRequest.getClearExistingAssociated()) {
-				documentStorage.deleteAssociatedDocuments(uniqueId);
+				i.deleteAssociatedDocuments(uniqueId);
 			}
 
 			if (storeRequest.hasResultDocument()) {
 				ResultDocument rd = ResultDocument.newBuilder(storeRequest.getResultDocument()).setTimestamp(timestamp).build();
-				documentStorage.storeSourceDocument(uniqueId, rd);
+				i.storeSourceDocument(rd);
 			}
 
 			for (AssociatedDocument ad : storeRequest.getAssociatedDocumentList()) {
 				ad = AssociatedDocument.newBuilder(ad).setTimestamp(timestamp).build();
-				documentStorage.storeAssociatedDocument(ad);
+				i.storeAssociatedDocument(ad);
 			}
 
 			return StoreResponse.newBuilder().build();
@@ -682,24 +636,31 @@ public class IndexManager {
 		globalLock.readLock().lock();
 		try {
 
+			String indexName = request.getIndexName();
+
+			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
+
 			FetchResponse.Builder frBuilder = FetchResponse.newBuilder();
 
 			if (!FetchType.NONE.equals(request.getResultFetchType())) {
-				ResultDocument resultDoc = documentStorage.getSourceDocument(request.getUniqueId(), request.getResultFetchType());
+				ResultDocument resultDoc = i.getSourceDocument(request.getUniqueId(), request.getResultFetchType());
 				if (null != resultDoc) {
 					frBuilder.setResultDocument(resultDoc);
 				}
 			}
 			if (!FetchType.NONE.equals(request.getAssociatedFetchType())) {
 				if (request.hasFileName()) {
-					AssociatedDocument ad = documentStorage.getAssociatedDocument(request.getUniqueId(), request.getFileName(),
+					AssociatedDocument ad = i.getAssociatedDocument(request.getUniqueId(), request.getFileName(),
 							request.getAssociatedFetchType());
 					if (ad != null) {
 						frBuilder.addAssociatedDocument(ad);
 					}
 				}
 				else {
-					for (AssociatedDocument ad : documentStorage.getAssociatedDocuments(request.getUniqueId(), request.getAssociatedFetchType())) {
+					for (AssociatedDocument ad : i.getAssociatedDocuments(request.getUniqueId(), request.getAssociatedFetchType())) {
 						frBuilder.addAssociatedDocument(ad);
 					}
 				}
@@ -1156,21 +1117,34 @@ public class IndexManager {
 		}
 	}
 
-	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, HashMap<String, String> metadataMap)
+	public void storeAssociatedDocument(String indexName, String uniqueId, String fileName, InputStream is, boolean compress, HashMap<String, String> metadataMap)
 			throws Exception {
 		globalLock.readLock().lock();
 		try {
-			documentStorage.storeAssociatedDocument(uniqueId, fileName, is, compress, hazelcastManager.getClusterTime(), metadataMap);
+			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
+
+			i.storeAssociateDocument(uniqueId, fileName, is, compress, hazelcastManager.getClusterTime(), metadataMap);
+
+
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
 
-	public InputStream getAssociatedDocumentStream(String uniqueId, String fileName) {
+	public InputStream getAssociatedDocumentStream(String indexName, String uniqueId, String fileName) throws IOException {
 		globalLock.readLock().lock();
 		try {
-			return documentStorage.getAssociatedDocumentStream(uniqueId, fileName);
+			Index i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
+
+			return i.getAssociatedDocumentStream(uniqueId, fileName);
+
 		}
 		finally {
 			globalLock.readLock().unlock();

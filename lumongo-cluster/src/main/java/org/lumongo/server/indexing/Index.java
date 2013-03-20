@@ -1,6 +1,8 @@
 package org.lumongo.server.indexing;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,6 +45,8 @@ import org.lumongo.LuceneConstants;
 import org.lumongo.LumongoConstants;
 import org.lumongo.analyzer.LowercaseKeywordAnalyzer;
 import org.lumongo.analyzer.LowercaseWhitespaceAnalyzer;
+import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
+import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
@@ -56,6 +60,7 @@ import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LastIndexResult;
 import org.lumongo.cluster.message.Lumongo.LastResult;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
+import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
@@ -71,6 +76,7 @@ import org.lumongo.server.hazelcast.UpdateSegmentsTask;
 import org.lumongo.storage.constants.MongoConstants;
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
+import org.lumongo.storage.rawfiles.MongoDocumentStorage;
 import org.lumongo.util.LumongoThreadFactory;
 
 import com.hazelcast.core.DistributedTask;
@@ -82,6 +88,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoException;
 
 public class Index {
 	private static final String FACETS_SUFFIX = "facets";
@@ -115,16 +122,23 @@ public class Index {
 
 	private final HazelcastManager hazelcastManager;
 
-	private Index(HazelcastManager hazelcastManger, MongoConfig mongoConfig, ClusterConfig clusterConfig, MongoClient mongo, IndexConfig indexConfig) {
+	private final MongoDocumentStorage documentStorage;
+
+	private Index(HazelcastManager hazelcastManger, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig) throws UnknownHostException, MongoException {
 		this.hazelcastManager = hazelcastManger;
 
 		this.mongoConfig = mongoConfig;
 		this.clusterConfig = clusterConfig;
 
-		this.mongo = mongo;
 		this.indexConfig = indexConfig;
 		this.indexName = indexConfig.getIndexName();
 		this.numberOfSegments = indexConfig.getNumberOfSegments();
+
+		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
+
+
+		MongoClient storageMongoClient = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
+		this.documentStorage = new MongoDocumentStorage(storageMongoClient, mongoConfig.getDatabaseName(), indexName, clusterConfig.isSharded());
 
 		this.segmentPool = Executors.newCachedThreadPool(new LumongoThreadFactory(indexName + "-segments"));
 
@@ -405,7 +419,7 @@ public class Index {
 				hzLock.lock();
 				log.info("Obtained lock for index <" + indexName + "> segment <" + segmentNumber + ">");
 
-				MongoDirectory mongoDirectory = new MongoDirectory(mongo, mongoConfig.getDatabaseName(), indexName + "_" + segmentNumber,
+				MongoDirectory mongoDirectory = new MongoDirectory(mongo, mongoConfig.getDatabaseName() + "_" + segmentNumber , indexName + "_" + segmentNumber,
 						clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
 				DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 
@@ -419,7 +433,7 @@ public class Index {
 				LumongoDirectoryTaxonomyWriter taxonomyWriter = null;
 
 				if (indexConfig.isFaceted()) {
-					MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, mongoConfig.getDatabaseName(), indexName + "_" + segmentNumber + "_"
+					MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, mongoConfig.getDatabaseName() + "_" + segmentNumber, indexName + "_" + segmentNumber + "_"
 							+ FACETS_SUFFIX, clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
 					DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
 					taxonomyWriter = new LumongoDirectoryTaxonomyWriter(ddFacet);
@@ -702,7 +716,7 @@ public class Index {
 		return segmentNumber;
 	}
 
-	public void deleteIndex(MongoClient mongo) throws Exception {
+	public void deleteIndex() throws Exception {
 
 		DB db = mongo.getDB(mongoConfig.getDatabaseName());
 
@@ -1143,23 +1157,124 @@ public class Index {
 		return indexConfig;
 	}
 
-	public static Index loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, MongoClient mongo, String indexName)
-			throws InvalidIndexConfig {
+	public static Index loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, Mongo mongo, ClusterConfig clusterConfig, String indexName)
+			throws InvalidIndexConfig, UnknownHostException, MongoException {
 		IndexConfig indexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
 		log.info("Loading index <" + indexName + ">");
 
-		Index i = new Index(hazelcastManager, mongoConfig, clusterConfig, mongo, indexConfig);
+		Index i = new Index(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
 		return i;
 
 	}
 
-	public static Index createIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, MongoClient mongo,
-			IndexConfig indexConfig) {
+	public static Index createIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig) throws UnknownHostException, MongoException {
 		log.info("Creating index <" + indexConfig.getIndexName() + ">: " + indexConfig);
-		Index i = new Index(hazelcastManager, mongoConfig, clusterConfig, mongo, indexConfig);
+		Index i = new Index(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
 		i.storeIndexSettings();
 		return i;
 
 	}
+
+	public void storeAssociateDocument(String uniqueId, String fileName, InputStream is, boolean compress, long clusterTime, HashMap<String, String> metadataMap) throws Exception {
+		indexLock.readLock().lock();
+		try {
+			documentStorage.storeAssociatedDocument(uniqueId, fileName, is, compress, hazelcastManager.getClusterTime(), metadataMap);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+	public InputStream getAssociatedDocumentStream(String uniqueId, String fileName) {
+		indexLock.readLock().lock();
+		try {
+			return documentStorage.getAssociatedDocumentStream(uniqueId, fileName);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+	public void deleteAssociatedDocuments(String uniqueId) {
+		indexLock.readLock().lock();
+		try {
+			documentStorage.deleteAssociatedDocuments(uniqueId);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+	public void deleteSourceDocument(String uniqueId) throws Exception {
+		indexLock.readLock().lock();
+		try {
+			documentStorage.deleteSourceDocument(uniqueId);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+	public void deleteAssociatedDocument(String uniqueId, String fileName) {
+		indexLock.readLock().lock();
+		try {
+			documentStorage.deleteAssociatedDocument(uniqueId, fileName);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+	public void storeSourceDocument(ResultDocument rd) throws Exception {
+		indexLock.readLock().lock();
+		try {
+			documentStorage.storeSourceDocument(rd);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+	public void storeAssociatedDocument(AssociatedDocument ad) throws Exception {
+		indexLock.readLock().lock();
+		try {
+			documentStorage.storeAssociatedDocument(ad);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+	public ResultDocument getSourceDocument(String uniqueId, FetchType resultFetchType) throws Exception {
+		indexLock.readLock().lock();
+		try {
+			return documentStorage.getSourceDocument(uniqueId, resultFetchType);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+	public AssociatedDocument getAssociatedDocument(String uniqueId, String fileName, FetchType associatedFetchType) throws Exception {
+		indexLock.readLock().lock();
+		try {
+			return documentStorage.getAssociatedDocument(uniqueId, fileName, associatedFetchType);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+	public List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType associatedFetchType) throws Exception {
+		indexLock.readLock().lock();
+		try {
+			return documentStorage.getAssociatedDocuments(uniqueId, associatedFetchType);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+
 
 }

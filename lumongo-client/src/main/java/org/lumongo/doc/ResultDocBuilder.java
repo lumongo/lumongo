@@ -39,8 +39,8 @@ public class ResultDocBuilder {
 
 	public ResultDocBuilder setDocument(String utf8Text) {
 		resultDocumentBuilder.setDocument(ByteString.copyFromUtf8(utf8Text));
-        resultDocumentBuilder.setType(ResultDocument.Type.TEXT);
-        return this;
+		resultDocumentBuilder.setType(ResultDocument.Type.TEXT);
+		return this;
 	}
 
 	public ResultDocBuilder setDocument(DBObject document) {
@@ -61,6 +61,11 @@ public class ResultDocBuilder {
 
 	public ResultDocBuilder setUniqueId(String uniqueId) {
 		resultDocumentBuilder.setUniqueId(uniqueId);
+		return this;
+	}
+
+	public ResultDocBuilder setIndexName(String indexName) {
+		resultDocumentBuilder.setIndexName(indexName);
 		return this;
 	}
 

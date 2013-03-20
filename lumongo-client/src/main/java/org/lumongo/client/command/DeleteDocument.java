@@ -2,10 +2,10 @@ package org.lumongo.client.command;
 
 public class DeleteDocument extends Delete {
 
-    public DeleteDocument(String uniqueId) {
-        super(uniqueId);
-        setDeleteDocument(true);
-        setDeleteAllAssociated(false);
-    }
+	public DeleteDocument(String uniqueId, String indexName) {
+		super(uniqueId, indexName);
+		setDeleteDocument(true);
+		setDeleteAllAssociated(false);
+	}
 
 }

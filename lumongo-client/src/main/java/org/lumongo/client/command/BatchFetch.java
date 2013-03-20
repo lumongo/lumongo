@@ -24,61 +24,61 @@ import com.google.protobuf.ServiceException;
  */
 public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResult> {
 
-    private List<Fetch> fetchList;
+	private List<Fetch> fetchList;
 
-    public BatchFetch() {
-        this.fetchList = new ArrayList<Fetch>();
-    }
+	public BatchFetch() {
+		this.fetchList = new ArrayList<Fetch>();
+	}
 
-    public BatchFetch addFetches(Collection<? extends Fetch> fetches) {
-        this.fetchList.addAll(fetches);
-        return this;
-    }
+	public BatchFetch addFetches(Collection<? extends Fetch> fetches) {
+		this.fetchList.addAll(fetches);
+		return this;
+	}
 
-    public BatchFetch addFetchDocumentsFromUniqueIds(Collection<String> uniqueIds) {
+	public BatchFetch addFetchDocumentsFromUniqueIds(Collection<String> uniqueIds, String indexName) {
 
-        for (String uniqueId : uniqueIds) {
-            Fetch f = new Fetch(uniqueId);
-            f.setResultFetchType(FetchType.FULL);
-            f.setAssociatedFetchType(FetchType.NONE);
-            fetchList.add(f);
-        }
-        return this;
-    }
+		for (String uniqueId : uniqueIds) {
+			Fetch f = new Fetch(uniqueId, indexName);
+			f.setResultFetchType(FetchType.FULL);
+			f.setAssociatedFetchType(FetchType.NONE);
+			fetchList.add(f);
+		}
+		return this;
+	}
 
-    public BatchFetch addFetchDocumentsFromResults(QueryResult qr) {
-        return addFetchDocumentsFromResults(qr.getResults());
-    }
+	public BatchFetch addFetchDocumentsFromResults(QueryResult qr) {
+		return addFetchDocumentsFromResults(qr.getResults());
+	}
 
-    public BatchFetch addFetchDocumentsFromResults(Collection<ScoredResult> scoredResults) {
+	public BatchFetch addFetchDocumentsFromResults(Collection<ScoredResult> scoredResults) {
 
-        for (ScoredResult scoredResult : scoredResults) {
-            Fetch f = new Fetch(scoredResult.getUniqueId());
-            f.setResultFetchType(FetchType.FULL);
-            f.setAssociatedFetchType(FetchType.NONE);
-            fetchList.add(f);
-        }
-        return this;
-    }
+		for (ScoredResult scoredResult : scoredResults) {
+			Fetch f = new Fetch(scoredResult.getUniqueId(), scoredResult.getIndexName());
+			f.setResultFetchType(FetchType.FULL);
+			f.setAssociatedFetchType(FetchType.NONE);
+			fetchList.add(f);
+		}
+		return this;
+	}
 
 
-    @Override
-    public GroupFetchRequest getRequest() {
-        GroupFetchRequest.Builder groupFetchRequestBuilder = GroupFetchRequest.newBuilder();
-        for (Fetch f : fetchList) {
-            groupFetchRequestBuilder.addFetchRequest(f.getRequest());
-        }
-        return groupFetchRequestBuilder.build();
-    }
+	@Override
+	public GroupFetchRequest getRequest() {
+		GroupFetchRequest.Builder groupFetchRequestBuilder = GroupFetchRequest.newBuilder();
+		for (Fetch f : fetchList) {
+			groupFetchRequestBuilder.addFetchRequest(f.getRequest());
+		}
+		return groupFetchRequestBuilder.build();
+	}
 
-    @Override
-    public BatchFetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
-        RpcController controller = lumongoConnection.getController();
+	@Override
+	public BatchFetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+		ExternalService.BlockingInterface service = lumongoConnection.getService();
+		RpcController controller = lumongoConnection.getController();
 
-        GroupFetchResponse groupFetchResponse = service.groupFetch(controller, getRequest());
+		GroupFetchResponse groupFetchResponse = service.groupFetch(controller, getRequest());
 
-        return new BatchFetchResult(groupFetchResponse);
-    }
+		return new BatchFetchResult(groupFetchResponse);
+	}
 
 }

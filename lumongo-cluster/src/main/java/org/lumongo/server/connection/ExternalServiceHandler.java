@@ -1,12 +1,14 @@
 package org.lumongo.server.connection;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+
 import java.net.UnknownHostException;
 import java.util.concurrent.Executors;
 
 import org.apache.log4j.Logger;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelException;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
@@ -41,60 +43,64 @@ import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.indexing.IndexManager;
-import org.lumongo.util.LumongoThreadFactory;
 
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
 import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
 import com.googlecode.protobuf.pro.duplex.execute.ThreadPoolCallExecutor;
-import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerBootstrap;
+import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerPipelineFactory;
+import com.googlecode.protobuf.pro.duplex.util.RenamingThreadFactoryProxy;
 
 public class ExternalServiceHandler extends ExternalService {
 	private final static Logger log = Logger.getLogger(ExternalServiceHandler.class);
-
-	private final LumongoThreadFactory externalRpcFactory;
-	private final LumongoThreadFactory externalBossFactory;
-	private final LumongoThreadFactory externalWorkerFactory;
 
 	private final IndexManager indexManger;
 	private final ClusterConfig clusterConfig;
 	private final LocalNodeConfig localNodeConfig;
 
-	private DuplexTcpServerBootstrap externalBootstrap;
+	private ServerBootstrap bootstrap;
 
 	public ExternalServiceHandler(ClusterConfig clusterConfig, LocalNodeConfig localNodeConfig, IndexManager indexManger) throws UnknownHostException {
 		this.clusterConfig = clusterConfig;
 		this.localNodeConfig = localNodeConfig;
 		this.indexManger = indexManger;
-		externalRpcFactory = new LumongoThreadFactory(ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc");
-		externalBossFactory = new LumongoThreadFactory(ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Boss");
-		externalWorkerFactory = new LumongoThreadFactory(ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Worker");
+
 	}
 
-	public void start() throws ChannelException {
+	public void start() {
 		int externalServicePort = localNodeConfig.getExternalServicePort();
 		PeerInfo externalServerInfo = new PeerInfo(ConnectionHelper.getHostName(), externalServicePort);
 
 		int externalWorkers = clusterConfig.getExternalWorkers();
 
-		RpcServerCallExecutor rpcExecutor = new ThreadPoolCallExecutor(externalWorkers, externalWorkers, externalRpcFactory);
-		NioServerSocketChannelFactory nioServerSocketChannelFactory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(externalBossFactory),
-				Executors.newCachedThreadPool(externalWorkerFactory));
-		externalBootstrap = new DuplexTcpServerBootstrap(externalServerInfo, nioServerSocketChannelFactory);
-		externalBootstrap.setLogger(null);
-		externalBootstrap.setRpcServerCallExecutor(rpcExecutor);
-		externalBootstrap.setOption("sendBufferSize", 1048576);
-		externalBootstrap.setOption("receiveBufferSize", 1048576);
-		externalBootstrap.setOption("child.receiveBufferSize", 1048576);
-		externalBootstrap.setOption("child.sendBufferSize", 1048576);
-		externalBootstrap.setOption("tcpNoDelay", false);
+		RpcServerCallExecutor executor = new ThreadPoolCallExecutor(externalWorkers, externalWorkers, new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc", Executors.defaultThreadFactory()));
 
-		externalBootstrap.registerConnectionEventListener(new StandardConnectionNotifier(log));
-		externalBootstrap.getRpcServiceRegistry().registerService(this);
+		DuplexTcpServerPipelineFactory serverFactory = new DuplexTcpServerPipelineFactory(externalServerInfo);
+		serverFactory.setRpcServerCallExecutor(executor);
 
-		@SuppressWarnings("unused")
-		Channel serverChannel = externalBootstrap.bind();
+		bootstrap = new ServerBootstrap();
+		bootstrap.group(new NioEventLoopGroup(0,new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Boss", Executors.defaultThreadFactory())),
+				new NioEventLoopGroup(0,new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Worker", Executors.defaultThreadFactory()))
+				);
+		bootstrap.channel(NioServerSocketChannel.class);
+		bootstrap.childHandler(serverFactory);
+
+		//TODO think about these options
+		bootstrap.option(ChannelOption.SO_SNDBUF, 1048576);
+		bootstrap.option(ChannelOption.SO_RCVBUF, 1048576);
+		bootstrap.childOption(ChannelOption.SO_RCVBUF, 1048576);
+		bootstrap.childOption(ChannelOption.SO_SNDBUF, 1048576);
+		bootstrap.option(ChannelOption.TCP_NODELAY, true);
+
+		bootstrap.localAddress(externalServicePort);
+
+		serverFactory.setLogger(null);
+		serverFactory.registerConnectionEventListener(new StandardConnectionNotifier(log));
+
+		serverFactory.getRpcServiceRegistry().registerService(this);
+
+		bootstrap.bind();
 
 	}
 
@@ -106,7 +112,7 @@ public class ExternalServiceHandler extends ExternalService {
 			@Override
 			public void run() {
 				log.info("Stopping external service");
-				externalBootstrap.releaseExternalResources();
+				bootstrap.shutdown();
 			}
 		};
 		externalShutdown.start();

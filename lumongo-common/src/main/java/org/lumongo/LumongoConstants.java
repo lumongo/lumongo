@@ -24,6 +24,7 @@ public class LumongoConstants {
 
 	public static final String UNIQUE_ID = "uniqueId";
 	public static final String FILE_NAME = "fileName";
+	public static final String INDEX_NAME = "indexName";
 
 	//General
 	public static final String UTF8 = "UTF-8";

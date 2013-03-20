@@ -27,6 +27,7 @@ public class Fetch {
 		OptionSpec<Integer> portArg = parser.accepts(AdminConstants.PORT).withRequiredArg().ofType(Integer.class)
 				.defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT).describedAs("Lumongo external port");
 		OptionSpec<String> uniqueIdArg = parser.accepts(AdminConstants.UNIQUE_ID).withRequiredArg().required().describedAs("Unique Id to fetch");
+		OptionSpec<String> indexArg = parser.accepts(AdminConstants.INDEX).withRequiredArg().required().describedAs("Index to fetch from");
 
 		try {
 			OptionSet options = parser.parse(args);
@@ -34,6 +35,7 @@ public class Fetch {
 			String address = options.valueOf(addressArg);
 			int port = options.valueOf(portArg);
 			String uniqueId = options.valueOf(uniqueIdArg);
+			String indexName = options.valueOf(indexArg);
 
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 			lumongoPoolConfig.addMember(address, port);
@@ -41,7 +43,7 @@ public class Fetch {
 
 			try {
 
-				FetchResult fr = lumongoWorkPool.execute(new FetchDocument(uniqueId));
+				FetchResult fr = lumongoWorkPool.execute(new FetchDocument(uniqueId, indexName));
 				if (fr.hasResultDocument()) {
 					if (fr.isDocumentBson()) {
 						DBObject dbObject = fr.getDocumentAsBson();

@@ -47,6 +47,13 @@ public class FetchResult extends Result {
         }
         return null;
     }
+    
+    public String getIndexName() {
+    	if (fetchResponse.hasResultDocument()) {
+    		return fetchResponse.getResultDocument().getIndexName();
+    	}
+    	return null;
+    }
 
     public ResultDocument.Type getDocumentType() {
         if (fetchResponse.hasResultDocument()) {

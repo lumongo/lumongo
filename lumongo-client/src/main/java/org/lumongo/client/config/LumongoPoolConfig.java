@@ -20,8 +20,8 @@ public class LumongoPoolConfig {
 
     public LumongoPoolConfig() {
         this.members = new ArrayList<LMMember>();
-        this.maxConnections = 8;
-        this.maxIdle = 8;
+        this.maxConnections = 16;
+        this.maxIdle = 16;
         this.defaultRetries = DEFAULT_DEFAULT_RETRIES;
         this.poolName = null;
         this.compressedConnection = false;

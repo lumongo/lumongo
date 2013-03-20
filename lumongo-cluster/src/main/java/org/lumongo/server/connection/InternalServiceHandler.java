@@ -1,10 +1,13 @@
 package org.lumongo.server.connection;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+
 import java.util.concurrent.Executors;
 
 import org.apache.log4j.Logger;
-import org.jboss.netty.channel.ChannelException;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesRequest;
@@ -25,65 +28,66 @@ import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.indexing.IndexManager;
-import org.lumongo.util.LumongoThreadFactory;
 
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
 import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
 import com.googlecode.protobuf.pro.duplex.execute.ThreadPoolCallExecutor;
-import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerBootstrap;
+import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerPipelineFactory;
+import com.googlecode.protobuf.pro.duplex.util.RenamingThreadFactoryProxy;
 
 public class InternalServiceHandler extends InternalService {
 
 	private final static Logger log = Logger.getLogger(InternalServiceHandler.class);
 
-	private LumongoThreadFactory internalRpcFactory;
-	private LumongoThreadFactory internalBossFactory;
-	private LumongoThreadFactory internalWorkerFactory;
-
 	private final IndexManager indexManager;
 	private final ClusterConfig clusterConfig;
 	private final LocalNodeConfig localNodeConfig;
 
-	private DuplexTcpServerBootstrap internalBootstrap;
+	private ServerBootstrap bootstrap;
 
 	public InternalServiceHandler(ClusterConfig clusterConfig, LocalNodeConfig localNodeConfig, IndexManager indexManager) {
 		this.clusterConfig = clusterConfig;
 		this.localNodeConfig = localNodeConfig;
 		this.indexManager = indexManager;
 
-		internalRpcFactory = new LumongoThreadFactory(InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc");
-		internalBossFactory = new LumongoThreadFactory(InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Boss");
-		internalWorkerFactory = new LumongoThreadFactory(InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Worker");
 	}
 
-	public void start() throws ChannelException {
+	public void start() {
 		int internalServicePort = localNodeConfig.getInternalServicePort();
 
 		PeerInfo internalServerInfo = new PeerInfo(ConnectionHelper.getHostName(), internalServicePort);
-
 		int coreInternalWorkers = clusterConfig.getInternalWorkers();
 		int maxInternalWorkers = 1024; // TODO fix this
 
-		RpcServerCallExecutor rpcExecutor = new ThreadPoolCallExecutor(
-				coreInternalWorkers, maxInternalWorkers, internalRpcFactory);
-		NioServerSocketChannelFactory nioServerSocketChannelFactory = new NioServerSocketChannelFactory(
-				Executors.newCachedThreadPool(internalBossFactory), Executors.newCachedThreadPool(internalWorkerFactory));
-		internalBootstrap = new DuplexTcpServerBootstrap(internalServerInfo, nioServerSocketChannelFactory);
-		internalBootstrap.setLogger(null);
-		internalBootstrap.setRpcServerCallExecutor(rpcExecutor);
-		internalBootstrap.setOption("sendBufferSize", 1048576);
-		internalBootstrap.setOption("receiveBufferSize", 1048576);
-		internalBootstrap.setOption("child.receiveBufferSize", 1048576);
-		internalBootstrap.setOption("child.sendBufferSize", 1048576);
-		internalBootstrap.setOption("tcpNoDelay", false);
+		RpcServerCallExecutor executor = new ThreadPoolCallExecutor(coreInternalWorkers, maxInternalWorkers, new RenamingThreadFactoryProxy(InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc", Executors.defaultThreadFactory()));
 
-		internalBootstrap.registerConnectionEventListener(new StandardConnectionNotifier(log));
+		DuplexTcpServerPipelineFactory serverFactory = new DuplexTcpServerPipelineFactory(internalServerInfo);
+		serverFactory.setRpcServerCallExecutor(executor);
 
-		internalBootstrap.getRpcServiceRegistry().registerService(this);
+		bootstrap = new ServerBootstrap();
+		bootstrap.group(new NioEventLoopGroup(0,new RenamingThreadFactoryProxy(InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Boss", Executors.defaultThreadFactory())),
+				new NioEventLoopGroup(0,new RenamingThreadFactoryProxy(InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Worker", Executors.defaultThreadFactory()))
+				);
+		bootstrap.channel(NioServerSocketChannel.class);
+		bootstrap.childHandler(serverFactory);
 
-		internalBootstrap.bind();
+		//TODO think about these options
+		bootstrap.option(ChannelOption.SO_SNDBUF, 1048576);
+		bootstrap.option(ChannelOption.SO_RCVBUF, 1048576);
+		bootstrap.childOption(ChannelOption.SO_RCVBUF, 1048576);
+		bootstrap.childOption(ChannelOption.SO_SNDBUF, 1048576);
+		bootstrap.option(ChannelOption.TCP_NODELAY, true);
+
+		bootstrap.localAddress(internalServicePort);
+
+		serverFactory.setLogger(null);
+		serverFactory.registerConnectionEventListener(new StandardConnectionNotifier(log));
+
+		serverFactory.getRpcServiceRegistry().registerService(this);
+
+		bootstrap.bind();
 	}
 
 	public void shutdown() {
@@ -94,7 +98,7 @@ public class InternalServiceHandler extends InternalService {
 			@Override
 			public void run() {
 				log.info("Stopping internal service");
-				internalBootstrap.releaseExternalResources();
+				bootstrap.shutdown();
 			}
 		};
 		internalShutdown.start();
@@ -127,7 +131,7 @@ public class InternalServiceHandler extends InternalService {
 	@Override
 	public void indexInternal(RpcController controller, InternalIndexRequest request, RpcCallback<InternalIndexResponse> done) {
 		try {
-			InternalIndexResponse r = indexManager.internalIndex(request.getUniqueId(), request.getIndexedDocumentList());
+			InternalIndexResponse r = indexManager.internalIndex(request.getUniqueId(), request.getIndexName(), request.getIndexedDocument());
 			done.run(r);
 		}
 		catch (Exception e) {
@@ -140,7 +144,7 @@ public class InternalServiceHandler extends InternalService {
 	@Override
 	public void deleteInternal(RpcController controller, InternalDeleteRequest request, RpcCallback<InternalDeleteResponse> done) {
 		try {
-			InternalDeleteResponse r = indexManager.internalDeleteFromIndex(request.getUniqueId(), request.getIndexesList());
+			InternalDeleteResponse r = indexManager.internalDeleteFromIndex(request.getUniqueId(), request.getIndex());
 			done.run(r);
 		}
 		catch (Exception e) {

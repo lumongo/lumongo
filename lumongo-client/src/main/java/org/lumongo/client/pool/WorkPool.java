@@ -20,7 +20,7 @@ public class WorkPool {
     private final static AtomicInteger threadNumber = new AtomicInteger(1);
 
     public WorkPool(int threads) {
-        this(threads, threads * 2);
+        this(threads, threads * 10);
     }
 
     public WorkPool(int threads, int maxQueued) {

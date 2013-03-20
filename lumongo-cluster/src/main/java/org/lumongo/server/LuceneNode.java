@@ -3,7 +3,6 @@ package org.lumongo.server;
 import java.io.IOException;
 
 import org.apache.log4j.Logger;
-import org.jboss.netty.channel.ChannelException;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
@@ -66,7 +65,7 @@ public class LuceneNode {
 
 	}
 
-	public void start() throws ChannelException, MongoException, IOException {
+	public void start() throws MongoException, IOException {
 
 		internalServiceHandler.start();
 		externalServiceHandler.start();
