@@ -35,7 +35,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	@SuppressWarnings("unused")
 	private final static Logger log = Logger.getLogger(MongoDocumentStorage.class);
 
-	public static final String STORAGE_DB_SUFFIX = "_rs";
+
 
 	private static final Charset UTF_8_CHARSET = Charset.forName("UTF-8");
 	private static final String ASSOCIATED_FILES = "associatedFiles";
@@ -46,18 +46,22 @@ public class MongoDocumentStorage implements DocumentStorage {
 	private static final String TYPE = "type";
 	private static final String COMPRESSED = "compressed";
 	private static final String METADATA = "metadata";
-	private static final String RESULT_STORAGE_COLLECTION = "resultStorage";
 	private static final String UNIQUE_ID_KEY = "unique_id";
 	private static final String CHUNKS = "chunks";
+
+
 
 	private MongoClient pool;
 	private String database;
 	private String indexName;
 
-	public MongoDocumentStorage(MongoClient pool, String dbPrefix, String indexName, boolean sharded) {
+	private String rawCollectionName;
+
+	public MongoDocumentStorage(MongoClient pool, String indexName, String dbName, String rawCollectionName, boolean sharded) {
 		this.pool = pool;
 		this.indexName = indexName;
-		this.database = dbPrefix + "_" + indexName + "_" + STORAGE_DB_SUFFIX;
+		this.database = dbName;
+		this.rawCollectionName = rawCollectionName;
 
 		if (sharded) {
 			DB storageDb = pool.getDB(database);
@@ -73,7 +77,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 				System.err.println("Failed to enable sharding on the database <" + database + "> because <" + cr.getErrorMessage() + ">");
 			}
 
-			shardCollection(storageDb, adminDb, RESULT_STORAGE_COLLECTION);
+			shardCollection(storageDb, adminDb, rawCollectionName);
 			shardCollection(storageDb, adminDb, ASSOCIATED_FILES + "." + CHUNKS);
 		}
 	}
@@ -100,7 +104,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	public void storeSourceDocument(ResultDocument doc) throws Exception {
 		String uniqueId = doc.getUniqueId();
 		DB db = pool.getDB(database);
-		DBCollection coll = db.getCollection(RESULT_STORAGE_COLLECTION);
+		DBCollection coll = db.getCollection(rawCollectionName);
 		DBObject document = new BasicDBObject();
 		if (!doc.getCompressed() && doc.getType().equals(ResultDocument.Type.BSON)) {
 			document.putAll(BSON.decode(doc.getDocument().toByteArray()));
@@ -135,7 +139,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	public ResultDocument getSourceDocument(String uniqueId, FetchType fetchType) throws Exception {
 		if (!FetchType.NONE.equals(fetchType)) {
 			DB db = pool.getDB(database);
-			DBCollection coll = db.getCollection(RESULT_STORAGE_COLLECTION);
+			DBCollection coll = db.getCollection(rawCollectionName);
 			DBObject search = new BasicDBObject(MongoConstants.StandardFields._ID, uniqueId);
 			DBObject result = coll.findOne(search);
 			if (null != result) {
@@ -192,7 +196,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	@Override
 	public void deleteSourceDocument(String uniqueId) throws Exception {
 		DB db = pool.getDB(database);
-		DBCollection coll = db.getCollection(RESULT_STORAGE_COLLECTION);
+		DBCollection coll = db.getCollection(rawCollectionName);
 		DBObject search = new BasicDBObject(MongoConstants.StandardFields._ID, uniqueId);
 		coll.remove(search);
 	}

@@ -32,23 +32,23 @@ import com.hazelcast.core.Member;
 
 public class InternalClient {
 	private final static Logger log = Logger.getLogger(InternalClient.class);
-	
+
 	private ConcurrentHashMap<Member, InternalRpcConnectionPool> internalConnectionPoolMap;
 	private ConcurrentHashMap<Member, ReadWriteLock> internalConnectionLockMap;
-	
+
 	private ClusterConfig clusterConfig;
 	private MongoConfig mongoConfig;
-	
+
 	public InternalClient(MongoConfig mongoConfig, ClusterConfig clusterConfig) {
 		this.clusterConfig = clusterConfig;
 		this.mongoConfig = mongoConfig;
 		this.internalConnectionPoolMap = new ConcurrentHashMap<Member, InternalRpcConnectionPool>();
 		this.internalConnectionLockMap = new ConcurrentHashMap<Member, ReadWriteLock>();
-		
+
 	}
-	
+
 	public void close() {
-		
+
 		for (Member m : internalConnectionPoolMap.keySet()) {
 			try {
 				internalConnectionPoolMap.get(m).close();
@@ -56,26 +56,26 @@ public class InternalClient {
 			catch (Exception e) {
 				log.info(e.getClass().getSimpleName() + ": ", e);
 			}
-			
+
 		}
 	}
-	
+
 	public void addMember(Member m) throws Exception {
 		ReadWriteLock lock = getLockForMember(m);
 		lock.writeLock().lock();
 		try {
-			
+
 			if (!internalConnectionPoolMap.containsKey(m)) {
 				Nodes nodes = ClusterHelper.getNodes(mongoConfig);
-				
+
 				LocalNodeConfig localNodeConfig = nodes.find(m);
-				
+
 				int internalServicePort = localNodeConfig.getInternalServicePort();
-				
+
 				log.info("Adding connection pool for member <" + m + "> using port <" + internalServicePort + ">");
-				
+
 				int maxConnections = clusterConfig.getMaxInternalClientConnections();
-				
+
 				internalConnectionPoolMap.put(m, new InternalRpcConnectionPool(m.getInetSocketAddress().getHostName(), internalServicePort, maxConnections));
 			}
 			else {
@@ -86,9 +86,9 @@ public class InternalClient {
 			lock.writeLock().unlock();
 		}
 	}
-	
+
 	public void removeMember(Member m) {
-		
+
 		ReadWriteLock lock = getLockForMember(m);
 		lock.writeLock().lock();
 		try {
@@ -104,11 +104,11 @@ public class InternalClient {
 		finally {
 			lock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	private ReadWriteLock getLockForMember(Member m) {
-		
+
 		ReadWriteLock lock = internalConnectionLockMap.get(m);
 		if (lock == null) {
 			internalConnectionLockMap.putIfAbsent(m, new ReentrantReadWriteLock());
@@ -116,16 +116,16 @@ public class InternalClient {
 		}
 		return lock;
 	}
-	
+
 	private InternalRpcConnection getInternalRpcConnection(Member m) throws Exception {
 		InternalRpcConnectionPool connectionPool = internalConnectionPoolMap.get(m);
 		if (connectionPool != null) {
 			return connectionPool.borrowObject();
 		}
 		throw new Exception("Cannot get connection: Member <" + m + "> not loaded");
-		
+
 	}
-	
+
 	private void returnInternalBlockingConnection(Member m, InternalRpcConnection rpcConnection, boolean valid) {
 		InternalRpcConnectionPool connectionPool = internalConnectionPoolMap.get(m);
 		if (connectionPool != null) {
@@ -149,12 +149,12 @@ public class InternalClient {
 			}
 		}
 	}
-	
+
 	public InternalQueryResponse executeQuery(Member m, QueryRequest request) throws Exception {
-		
+
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
-		
+
 		InternalRpcConnection rpcConnection = null;
 		try {
 			rpcConnection = getInternalRpcConnection(m);
@@ -163,7 +163,7 @@ public class InternalClient {
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
-			
+
 			returnInternalBlockingConnection(m, rpcConnection, true);
 			return response;
 		}
@@ -174,14 +174,14 @@ public class InternalClient {
 		finally {
 			lock.readLock().unlock();
 		}
-		
+
 	}
-	
+
 	public InternalIndexResponse executeIndex(Member m, InternalIndexRequest request) throws Exception {
-		
+
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
-		
+
 		InternalRpcConnection rpcConnection = null;
 		try {
 			rpcConnection = getInternalRpcConnection(m);
@@ -190,9 +190,9 @@ public class InternalClient {
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
-			
+
 			returnInternalBlockingConnection(m, rpcConnection, true);
-			
+
 			return response;
 		}
 		catch (Exception e) {
@@ -202,14 +202,14 @@ public class InternalClient {
 		finally {
 			lock.readLock().unlock();
 		}
-		
+
 	}
-	
+
 	public InternalDeleteResponse executeDelete(Member m, InternalDeleteRequest request) throws Exception {
-		
+
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
-		
+
 		InternalRpcConnection rpcConnection = null;
 		try {
 			rpcConnection = getInternalRpcConnection(m);
@@ -218,9 +218,9 @@ public class InternalClient {
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
-			
+
 			returnInternalBlockingConnection(m, rpcConnection, true);
-			
+
 			return response;
 		}
 		catch (Exception e) {
@@ -230,13 +230,13 @@ public class InternalClient {
 		finally {
 			lock.readLock().unlock();
 		}
-		
+
 	}
-	
+
 	public GetNumberOfDocsResponse getNumberOfDocs(Member m, GetNumberOfDocsRequest request) throws Exception {
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
-		
+
 		InternalRpcConnection rpcConnection = null;
 		try {
 			rpcConnection = getInternalRpcConnection(m);
@@ -245,9 +245,9 @@ public class InternalClient {
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
-			
+
 			returnInternalBlockingConnection(m, rpcConnection, true);
-			
+
 			return response;
 		}
 		catch (Exception e) {
@@ -258,11 +258,11 @@ public class InternalClient {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 	public OptimizeResponse optimize(Member m, OptimizeRequest request) throws Exception {
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
-		
+
 		InternalRpcConnection rpcConnection = null;
 		try {
 			rpcConnection = getInternalRpcConnection(m);
@@ -271,9 +271,9 @@ public class InternalClient {
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
-			
+
 			returnInternalBlockingConnection(m, rpcConnection, true);
-			
+
 			return response;
 		}
 		catch (Exception e) {
@@ -284,11 +284,11 @@ public class InternalClient {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 	public GetFieldNamesResponse getFieldNames(Member m, GetFieldNamesRequest request) throws Exception {
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
-		
+
 		InternalRpcConnection rpcConnection = null;
 		try {
 			rpcConnection = getInternalRpcConnection(m);
@@ -297,9 +297,9 @@ public class InternalClient {
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
-			
+
 			returnInternalBlockingConnection(m, rpcConnection, true);
-			
+
 			return response;
 		}
 		catch (Exception e) {
@@ -310,11 +310,11 @@ public class InternalClient {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 	public ClearResponse clear(Member m, ClearRequest request) throws Exception {
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
-		
+
 		InternalRpcConnection rpcConnection = null;
 		try {
 			rpcConnection = getInternalRpcConnection(m);
@@ -323,9 +323,9 @@ public class InternalClient {
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
-			
+
 			returnInternalBlockingConnection(m, rpcConnection, true);
-			
+
 			return response;
 		}
 		catch (Exception e) {
@@ -336,11 +336,11 @@ public class InternalClient {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 	public GetTermsResponse getTerms(Member m, GetTermsRequest request) throws Exception {
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
-		
+
 		InternalRpcConnection rpcConnection = null;
 		try {
 			rpcConnection = getInternalRpcConnection(m);
@@ -349,9 +349,9 @@ public class InternalClient {
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
-			
+
 			returnInternalBlockingConnection(m, rpcConnection, true);
-			
+
 			return response;
 		}
 		catch (Exception e) {
@@ -362,5 +362,5 @@ public class InternalClient {
 			lock.readLock().unlock();
 		}
 	}
-	
+
 }

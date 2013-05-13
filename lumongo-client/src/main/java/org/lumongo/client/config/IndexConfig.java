@@ -8,221 +8,241 @@ import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 
 public class IndexConfig {
 
-    private String defaultSearchField;
-    private Boolean applyUncommitedDeletes;
-    private Double requestFactor;
-    private Integer minSegmentRequest;
-    private Integer numberOfSegments;
-    private String indexName;
-    private String uniqueIdField;
-    private Integer idleTimeWithoutCommit;
-    private Integer segmentFlushInterval;
-    private Integer segmentCommitInterval;
-    private Boolean blockCompression;
-    private Double segmentTolerance;
-    private LMAnalyzer defaultAnalyzer;
-    private TreeMap<String, LMAnalyzer> analyzerMap;
+	private String defaultSearchField;
+	private Boolean applyUncommitedDeletes;
+	private Double requestFactor;
+	private Integer minSegmentRequest;
+	private Integer numberOfSegments;
+	private String indexName;
+	private String uniqueIdField;
+	private Integer idleTimeWithoutCommit;
+	private Integer segmentFlushInterval;
+	private Integer segmentCommitInterval;
+	private Boolean blockCompression;
+	private Double segmentTolerance;
+	private LMAnalyzer defaultAnalyzer;
+	private boolean databasePerIndexSegment;
+	private boolean databasePerRawDocumentSegment;
 
-    protected IndexConfig() {
+	private TreeMap<String, LMAnalyzer> analyzerMap;
 
-    }
+	protected IndexConfig() {
 
-    public IndexConfig(String defaultSearchField) {
-        this.defaultSearchField = defaultSearchField;
-        this.analyzerMap = new TreeMap<String, LMAnalyzer>();
-    }
+	}
 
-    public String getDefaultSearchField() {
-        return defaultSearchField;
-    }
+	public IndexConfig(String defaultSearchField) {
+		this.defaultSearchField = defaultSearchField;
+		this.analyzerMap = new TreeMap<String, LMAnalyzer>();
+	}
 
-    public IndexConfig setDefaultSearchField(String defaultSearchField) {
-        this.defaultSearchField = defaultSearchField;
-        return this;
-    }
 
-    public boolean isApplyUncommitedDeletes() {
-        return applyUncommitedDeletes;
-    }
+	public boolean isDatabasePerIndexSegment() {
+		return databasePerIndexSegment;
+	}
 
-    public IndexConfig setApplyUncommitedDeletes(boolean applyUncommitedDeletes) {
-        this.applyUncommitedDeletes = applyUncommitedDeletes;
-        return this;
-    }
+	public void setDatabasePerIndexSegment(boolean databasePerIndexSegment) {
+		this.databasePerIndexSegment = databasePerIndexSegment;
+	}
 
-    public double getRequestFactor() {
-        return requestFactor;
-    }
+	public boolean isDatabasePerRawDocumentSegment() {
+		return databasePerRawDocumentSegment;
+	}
 
-    public IndexConfig setRequestFactor(double requestFactor) {
-        this.requestFactor = requestFactor;
-        return this;
-    }
+	public void setDatabasePerRawDocumentSegment(boolean databasePerRawDocumentSegment) {
+		this.databasePerRawDocumentSegment = databasePerRawDocumentSegment;
+	}
 
-    public int getMinSegmentRequest() {
-        return minSegmentRequest;
-    }
+	public String getDefaultSearchField() {
+		return defaultSearchField;
+	}
 
-    public IndexConfig setMinSegmentRequest(int minSegmentRequest) {
-        this.minSegmentRequest = minSegmentRequest;
-        return this;
-    }
+	public IndexConfig setDefaultSearchField(String defaultSearchField) {
+		this.defaultSearchField = defaultSearchField;
+		return this;
+	}
 
-    public int getNumberOfSegments() {
-        return numberOfSegments;
-    }
+	public boolean isApplyUncommitedDeletes() {
+		return applyUncommitedDeletes;
+	}
 
-    public IndexConfig setNumberOfSegments(int numberOfSegments) {
-        this.numberOfSegments = numberOfSegments;
-        return this;
-    }
+	public IndexConfig setApplyUncommitedDeletes(boolean applyUncommitedDeletes) {
+		this.applyUncommitedDeletes = applyUncommitedDeletes;
+		return this;
+	}
 
-    public String getIndexName() {
-        return indexName;
-    }
+	public double getRequestFactor() {
+		return requestFactor;
+	}
 
-    public IndexConfig setIndexName(String indexName) {
-        this.indexName = indexName;
-        return this;
-    }
+	public IndexConfig setRequestFactor(double requestFactor) {
+		this.requestFactor = requestFactor;
+		return this;
+	}
 
-    public String getUniqueIdField() {
-        return uniqueIdField;
-    }
+	public int getMinSegmentRequest() {
+		return minSegmentRequest;
+	}
 
-    public IndexConfig setUniqueIdField(String uniqueIdField) {
-        this.uniqueIdField = uniqueIdField;
-        return this;
-    }
+	public IndexConfig setMinSegmentRequest(int minSegmentRequest) {
+		this.minSegmentRequest = minSegmentRequest;
+		return this;
+	}
 
-    public int getIdleTimeWithoutCommit() {
-        return idleTimeWithoutCommit;
-    }
+	public int getNumberOfSegments() {
+		return numberOfSegments;
+	}
 
-    public IndexConfig setIdleTimeWithoutCommit(int idleTimeWithoutCommit) {
-        this.idleTimeWithoutCommit = idleTimeWithoutCommit;
-        return this;
-    }
+	public IndexConfig setNumberOfSegments(int numberOfSegments) {
+		this.numberOfSegments = numberOfSegments;
+		return this;
+	}
 
-    public int getSegmentFlushInterval() {
-        return segmentFlushInterval;
-    }
+	public String getIndexName() {
+		return indexName;
+	}
 
-    public IndexConfig setSegmentFlushInterval(int segmentFlushInterval) {
-        this.segmentFlushInterval = segmentFlushInterval;
-        return this;
-    }
+	public IndexConfig setIndexName(String indexName) {
+		this.indexName = indexName;
+		return this;
+	}
 
-    public int getSegmentCommitInterval() {
-        return segmentCommitInterval;
-    }
+	public String getUniqueIdField() {
+		return uniqueIdField;
+	}
 
-    public IndexConfig setSegmentCommitInterval(int segmentCommitInterval) {
-        this.segmentCommitInterval = segmentCommitInterval;
-        return this;
-    }
+	public IndexConfig setUniqueIdField(String uniqueIdField) {
+		this.uniqueIdField = uniqueIdField;
+		return this;
+	}
 
-    public boolean isBlockCompression() {
-        return blockCompression;
-    }
+	public int getIdleTimeWithoutCommit() {
+		return idleTimeWithoutCommit;
+	}
 
-    public IndexConfig setBlockCompression(boolean blockCompression) {
-        this.blockCompression = blockCompression;
-        return this;
-    }
+	public IndexConfig setIdleTimeWithoutCommit(int idleTimeWithoutCommit) {
+		this.idleTimeWithoutCommit = idleTimeWithoutCommit;
+		return this;
+	}
 
-    public double getSegmentTolerance() {
-        return segmentTolerance;
-    }
+	public int getSegmentFlushInterval() {
+		return segmentFlushInterval;
+	}
 
-    public IndexConfig setSegmentTolerance(double segmentTolerance) {
-        this.segmentTolerance = segmentTolerance;
-        return this;
-    }
+	public IndexConfig setSegmentFlushInterval(int segmentFlushInterval) {
+		this.segmentFlushInterval = segmentFlushInterval;
+		return this;
+	}
 
-    public LMAnalyzer getDefaultAnalyzer() {
-        return defaultAnalyzer;
-    }
+	public int getSegmentCommitInterval() {
+		return segmentCommitInterval;
+	}
 
-    public IndexConfig setDefaultAnalyzer(LMAnalyzer defaultAnalyzer) {
-        this.defaultAnalyzer = defaultAnalyzer;
-        return this;
-    }
+	public IndexConfig setSegmentCommitInterval(int segmentCommitInterval) {
+		this.segmentCommitInterval = segmentCommitInterval;
+		return this;
+	}
 
-    public void setFieldAnalyzer(String fieldName, LMAnalyzer lmAnalyzer) {
-        this.analyzerMap.put(fieldName, lmAnalyzer);
-    }
+	public boolean isBlockCompression() {
+		return blockCompression;
+	}
 
-    public LMAnalyzer getFieldAnalyzer(String fieldName) {
-        return this.analyzerMap.get(fieldName);
-    }
+	public IndexConfig setBlockCompression(boolean blockCompression) {
+		this.blockCompression = blockCompression;
+		return this;
+	}
 
-    public IndexSettings getIndexSettings() {
-        IndexSettings.Builder isb = IndexSettings.newBuilder();
-        if (defaultSearchField != null) {
-            isb.setDefaultSearchField(defaultSearchField);
-        }
-        if (applyUncommitedDeletes != null) {
-            isb.setApplyUncommitedDeletes(applyUncommitedDeletes);
-        }
-        if (requestFactor != null) {
-            isb.setRequestFactor(requestFactor);
-        }
-        if (minSegmentRequest != null) {
-            isb.setMinSegmentRequest(minSegmentRequest);
-        }
-        if (blockCompression != null) {
-            isb.setBlockCompression(blockCompression);
-        }
-        if (segmentCommitInterval != null) {
-            isb.setSegmentCommitInterval(segmentCommitInterval);
-        }
-        if (idleTimeWithoutCommit != null) {
-            isb.setIdleTimeWithoutCommit(idleTimeWithoutCommit);
-        }
-        if (segmentTolerance != null) {
-            isb.setSegmentTolerance(segmentTolerance);
-        }
-        if (defaultAnalyzer != null) {
-            isb.setDefaultAnalyzer(defaultAnalyzer);
-        }
-        if (segmentFlushInterval != null) {
-            isb.setSegmentFlushInterval(segmentFlushInterval);
-        }
+	public double getSegmentTolerance() {
+		return segmentTolerance;
+	}
 
-        for (String fieldName : analyzerMap.keySet()) {
-            LMAnalyzer fieldAnalyzer = analyzerMap.get(fieldName);
-            isb.addFieldConfig(FieldConfig.newBuilder().setFieldName(fieldName).setAnalyzer(fieldAnalyzer));
-        }
+	public IndexConfig setSegmentTolerance(double segmentTolerance) {
+		this.segmentTolerance = segmentTolerance;
+		return this;
+	}
 
-        return isb.build();
-    }
+	public LMAnalyzer getDefaultAnalyzer() {
+		return defaultAnalyzer;
+	}
 
-    protected void configure(IndexSettings indexSettings) {
-        this.defaultSearchField = indexSettings.getDefaultSearchField();
-        this.applyUncommitedDeletes = indexSettings.getApplyUncommitedDeletes();
-        this.requestFactor = indexSettings.getRequestFactor();
-        this.minSegmentRequest = indexSettings.getMinSegmentRequest();
-        this.blockCompression = indexSettings.getBlockCompression();
-        this.segmentCommitInterval = indexSettings.getSegmentCommitInterval();
-        this.segmentFlushInterval = indexSettings.getSegmentFlushInterval();
-        this.idleTimeWithoutCommit = indexSettings.getIdleTimeWithoutCommit();
-        this.segmentTolerance = indexSettings.getSegmentTolerance();
-        this.defaultAnalyzer = indexSettings.getDefaultAnalyzer();
+	public IndexConfig setDefaultAnalyzer(LMAnalyzer defaultAnalyzer) {
+		this.defaultAnalyzer = defaultAnalyzer;
+		return this;
+	}
 
-        this.analyzerMap = new TreeMap<String, LMAnalyzer>();
+	public void setFieldAnalyzer(String fieldName, LMAnalyzer lmAnalyzer) {
+		this.analyzerMap.put(fieldName, lmAnalyzer);
+	}
 
-        for (FieldConfig fc : indexSettings.getFieldConfigList()) {
-            analyzerMap.put(fc.getFieldName(), fc.getAnalyzer());
-        }
+	public LMAnalyzer getFieldAnalyzer(String fieldName) {
+		return this.analyzerMap.get(fieldName);
+	}
 
-    }
+	public IndexSettings getIndexSettings() {
+		IndexSettings.Builder isb = IndexSettings.newBuilder();
+		if (defaultSearchField != null) {
+			isb.setDefaultSearchField(defaultSearchField);
+		}
+		if (applyUncommitedDeletes != null) {
+			isb.setApplyUncommitedDeletes(applyUncommitedDeletes);
+		}
+		if (requestFactor != null) {
+			isb.setRequestFactor(requestFactor);
+		}
+		if (minSegmentRequest != null) {
+			isb.setMinSegmentRequest(minSegmentRequest);
+		}
+		if (blockCompression != null) {
+			isb.setBlockCompression(blockCompression);
+		}
+		if (segmentCommitInterval != null) {
+			isb.setSegmentCommitInterval(segmentCommitInterval);
+		}
+		if (idleTimeWithoutCommit != null) {
+			isb.setIdleTimeWithoutCommit(idleTimeWithoutCommit);
+		}
+		if (segmentTolerance != null) {
+			isb.setSegmentTolerance(segmentTolerance);
+		}
+		if (defaultAnalyzer != null) {
+			isb.setDefaultAnalyzer(defaultAnalyzer);
+		}
+		if (segmentFlushInterval != null) {
+			isb.setSegmentFlushInterval(segmentFlushInterval);
+		}
 
-    public static IndexConfig fromIndexSettings(IndexSettings indexSettings) {
-        IndexConfig ic = new IndexConfig();
-        ic.configure(indexSettings);
-        return ic;
-    }
+		for (String fieldName : analyzerMap.keySet()) {
+			LMAnalyzer fieldAnalyzer = analyzerMap.get(fieldName);
+			isb.addFieldConfig(FieldConfig.newBuilder().setFieldName(fieldName).setAnalyzer(fieldAnalyzer));
+		}
+
+		return isb.build();
+	}
+
+	protected void configure(IndexSettings indexSettings) {
+		this.defaultSearchField = indexSettings.getDefaultSearchField();
+		this.applyUncommitedDeletes = indexSettings.getApplyUncommitedDeletes();
+		this.requestFactor = indexSettings.getRequestFactor();
+		this.minSegmentRequest = indexSettings.getMinSegmentRequest();
+		this.blockCompression = indexSettings.getBlockCompression();
+		this.segmentCommitInterval = indexSettings.getSegmentCommitInterval();
+		this.segmentFlushInterval = indexSettings.getSegmentFlushInterval();
+		this.idleTimeWithoutCommit = indexSettings.getIdleTimeWithoutCommit();
+		this.segmentTolerance = indexSettings.getSegmentTolerance();
+		this.defaultAnalyzer = indexSettings.getDefaultAnalyzer();
+
+		this.analyzerMap = new TreeMap<String, LMAnalyzer>();
+
+		for (FieldConfig fc : indexSettings.getFieldConfigList()) {
+			analyzerMap.put(fc.getFieldName(), fc.getAnalyzer());
+		}
+
+	}
+
+	public static IndexConfig fromIndexSettings(IndexSettings indexSettings) {
+		IndexConfig ic = new IndexConfig();
+		ic.configure(indexSettings);
+		return ic;
+	}
 
 
 }

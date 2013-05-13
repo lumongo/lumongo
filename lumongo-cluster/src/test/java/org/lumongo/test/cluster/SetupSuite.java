@@ -11,7 +11,7 @@ import org.lumongo.server.LuceneNode;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
-import org.lumongo.storage.rawfiles.MongoDocumentStorage;
+import org.lumongo.server.indexing.Index;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LogUtil;
 import org.lumongo.util.ServerNameHelper;
@@ -43,7 +43,7 @@ public class SetupSuite {
 
 		Mongo mongo = TestHelper.getMongo();
 		mongo.getDB(TestHelper.TEST_DATABASE_NAME).dropDatabase();
-		mongo.getDB(TestHelper.TEST_DATABASE_NAME + MongoDocumentStorage.STORAGE_DB_SUFFIX).dropDatabase();
+		mongo.getDB(TestHelper.TEST_DATABASE_NAME + Index.STORAGE_DB_SUFFIX).dropDatabase();
 
 		startServer();
 	}

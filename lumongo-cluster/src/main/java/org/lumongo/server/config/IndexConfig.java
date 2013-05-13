@@ -15,6 +15,7 @@ import com.mongodb.DBObject;
 
 public class IndexConfig {
 
+
 	public static final String DEFAULT_SEARCH_FIELD = "defaultSearchField";
 	public static final String APPLY_UNCOMMITED_DELETES = "applyUncommitedDeletes";
 	public static final String BLOCK_COMPRESSION = "blockCompression";
@@ -32,6 +33,9 @@ public class IndexConfig {
 	public static final String FIELD_NAME = "fieldName";
 	public static final String ANALYZER = "analyzer";
 	public static final String FACETED = "faceted";
+	public static final String DATABASE_PER_RAW_DOCUMENT_SEGMENT = "databasePerRawDocumentSegment";
+	public static final String COLLECTION_PER_RAW_DOCUMENT_SEGMENT = "collectionPerRawDocumentSegment";
+	public static final String DATABASE_PER_INDEX_SEGMENT = "databasePerIndexSegment";
 
 	private String defaultSearchField;
 	private boolean applyUncommitedDeletes;
@@ -49,6 +53,9 @@ public class IndexConfig {
 	private TreeMap<String, FieldConfig> fieldConfigMap;
 	private boolean faceted;
 
+	private boolean databasePerIndexSegment;
+	private boolean collectionPerRawDocumentSegment;
+	private boolean databasePerRawDocumentSegment;
 
 	protected IndexConfig() {
 
@@ -61,6 +68,10 @@ public class IndexConfig {
 		numberOfSegments = request.getNumberOfSegments();
 		uniqueIdField = request.getUniqueIdField();
 		faceted = request.getFaceted();
+		databasePerIndexSegment = request.getDatabasePerIndexSegment();
+		collectionPerRawDocumentSegment = request.getCollectionPerRawDocumentSegment();
+		databasePerRawDocumentSegment = request.getDatabasePerRawDocumentSegment();
+
 		configure(request.getIndexSettings());
 	}
 
@@ -188,6 +199,30 @@ public class IndexConfig {
 		return faceted;
 	}
 
+	public boolean isDatabasePerIndexSegment() {
+		return databasePerIndexSegment;
+	}
+
+	public void setDatabasePerIndexSegment(boolean databasePerIndexSegment) {
+		this.databasePerIndexSegment = databasePerIndexSegment;
+	}
+
+	public boolean isCollectionPerRawDocumentSegment() {
+		return collectionPerRawDocumentSegment;
+	}
+
+	public void setCollectionPerRawDocumentSegment(boolean collectionPerRawDocumentSegment) {
+		this.collectionPerRawDocumentSegment = collectionPerRawDocumentSegment;
+	}
+
+	public boolean isDatabasePerRawDocumentSegment() {
+		return databasePerRawDocumentSegment;
+	}
+
+	public void setDatabasePerRawDocumentSegment(boolean databasePerRawDocumentSegment) {
+		this.databasePerRawDocumentSegment = databasePerRawDocumentSegment;
+	}
+
 	public DBObject toDBObject() {
 		DBObject dbObject = new BasicDBObject();
 		dbObject.put(DEFAULT_SEARCH_FIELD, defaultSearchField);
@@ -204,6 +239,9 @@ public class IndexConfig {
 		dbObject.put(DEFAULT_ANALYZER, defaultAnalyzer.toString());
 		dbObject.put(SEGMENT_FLUSH_INTERVAL, segmentFlushInterval);
 		dbObject.put(FACETED, faceted);
+		dbObject.put(DATABASE_PER_INDEX_SEGMENT, databasePerIndexSegment);
+		dbObject.put(COLLECTION_PER_RAW_DOCUMENT_SEGMENT, collectionPerRawDocumentSegment);
+		dbObject.put(DATABASE_PER_RAW_DOCUMENT_SEGMENT, databasePerRawDocumentSegment);
 
 		List<DBObject> fieldConfigs = new ArrayList<DBObject>();
 		for (FieldConfig fc : fieldConfigMap.values()) {
@@ -241,6 +279,17 @@ public class IndexConfig {
 			indexConfig.faceted = (boolean) settings.get(FACETED);
 		}
 
+		if (settings.containsField(DATABASE_PER_INDEX_SEGMENT)) {
+			indexConfig.databasePerIndexSegment = (boolean) settings.get(DATABASE_PER_INDEX_SEGMENT);
+		}
+		if (settings.containsField(COLLECTION_PER_RAW_DOCUMENT_SEGMENT)) {
+			indexConfig.collectionPerRawDocumentSegment = (boolean) settings.get(COLLECTION_PER_RAW_DOCUMENT_SEGMENT);
+		}
+		if (settings.containsField(DATABASE_PER_RAW_DOCUMENT_SEGMENT)) {
+			indexConfig.databasePerRawDocumentSegment = (boolean) settings.get(DATABASE_PER_RAW_DOCUMENT_SEGMENT);
+		}
+
+
 		if (settings.containsField(SEGMENT_FLUSH_INTERVAL)) {
 			indexConfig.segmentFlushInterval = (int) settings.get(SEGMENT_FLUSH_INTERVAL);
 		}
@@ -265,7 +314,10 @@ public class IndexConfig {
 				+ requestFactor + ", minSegmentRequest=" + minSegmentRequest + ", numberOfSegments=" + numberOfSegments + ", indexName=" + indexName
 				+ ", uniqueIdField=" + uniqueIdField + ", idleTimeWithoutCommit=" + idleTimeWithoutCommit + ", segmentFlushInterval=" + segmentFlushInterval
 				+ ", segmentCommitInterval=" + segmentCommitInterval + ", blockCompression=" + blockCompression + ", segmentTolerance=" + segmentTolerance
-				+ ", defaultAnalyzer=" + defaultAnalyzer + ", fieldConfigMap=" + fieldConfigMap + ", faceted=" + faceted + "]";
+				+ ", defaultAnalyzer=" + defaultAnalyzer + ", fieldConfigMap=" + fieldConfigMap + ", faceted=" + faceted + ", databasePerIndexSegment="
+				+ databasePerIndexSegment + ", collectionPerRawDocumentSegment=" + collectionPerRawDocumentSegment + ", databasePerRawDocumentSegment="
+				+ databasePerRawDocumentSegment + "]";
 	}
+
 
 }

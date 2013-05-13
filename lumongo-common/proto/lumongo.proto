@@ -121,6 +121,9 @@ message IndexCreateRequest {
 	required uint32 numberOfSegments = 3;
 	required IndexSettings indexSettings = 4;
 	optional bool faceted = 5 [default = false];
+	optional bool databasePerIndexSegment = 6 [default = false];
+	optional bool collectionPerRawDocumentSegment = 7 [default = false];
+	optional bool databasePerRawDocumentSegment = 8 [default = false];
 }
 
 message IndexCreateResponse {
