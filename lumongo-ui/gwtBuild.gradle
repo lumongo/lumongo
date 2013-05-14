@@ -42,12 +42,12 @@ final String WAR_WEB_INF_LIB_DIR_NAME = WAR_WEB_INF_DIR_NAME + File.separator + 
 
 
 ConfigurationContainer configurations = project.configurations
-configurations.add(GWT_CONFIGURATION_NAME).
+configurations.create(GWT_CONFIGURATION_NAME).
 		setVisible(false).
 		extendsFrom(configurations.getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME)).
 		setDescription("GWT libraries to be used to compile this GWT project.")
 
-configurations.add(ECLIPSE_EXCLUDE_CONFIGURATION_NAME).
+configurations.create(ECLIPSE_EXCLUDE_CONFIGURATION_NAME).
 		setVisible(false).
 		setDescription("GWT jars to exclude from eclipse project because they are part of the GWT container already")
 
