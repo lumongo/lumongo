@@ -129,10 +129,12 @@ public class Index {
 
 	private final HazelcastManager hazelcastManager;
 
-
+	private final MongoDocumentStorage[] mongoDocumentStorageArray;
 
 	private Index(HazelcastManager hazelcastManger, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig) throws UnknownHostException,
 	MongoException {
+
+
 		this.hazelcastManager = hazelcastManger;
 
 		this.mongoConfig = mongoConfig;
@@ -145,6 +147,12 @@ public class Index {
 		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
 
 		this.storageMongoClient = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
+
+		this.mongoDocumentStorageArray = new MongoDocumentStorage[numberOfSegments];
+
+		for (int i = 0; i < numberOfSegments; i++) {
+			mongoDocumentStorageArray[i] = createMongoDocumentStorage(i);
+		}
 
 		this.segmentPool = Executors.newCachedThreadPool(new LumongoThreadFactory(indexName + "-segments"));
 
@@ -426,22 +434,7 @@ public class Index {
 				hzLock.lock();
 				log.info("Obtained lock for index <" + indexName + "> segment <" + segmentNumber + ">");
 
-				String rawStorageDb;
-				String rawStorageCollection;
-				if (indexConfig.isDatabasePerRawDocumentSegment()) {
-					rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + "_" + segmentNumber + STORAGE_DB_SUFFIX;
-				}
-				else {
-					rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + STORAGE_DB_SUFFIX;
-				}
-				if (indexConfig.isCollectionPerRawDocumentSegment()) {
-					rawStorageCollection = RESULT_STORAGE_COLLECTION + "_" + segmentNumber;
-				}
-				else {
-					rawStorageCollection = RESULT_STORAGE_COLLECTION;
-				}
-
-				MongoDocumentStorage documentStorage = new MongoDocumentStorage(storageMongoClient, indexName, rawStorageDb, rawStorageCollection, clusterConfig.isSharded());
+				MongoDocumentStorage documentStorage = mongoDocumentStorageArray[segmentNumber];
 
 				String indexSegmentDbName;
 				if (indexConfig.isDatabasePerIndexSegment()) {
@@ -484,6 +477,29 @@ public class Index {
 		finally {
 			indexLock.writeLock().unlock();
 		}
+	}
+
+	protected MongoDocumentStorage createMongoDocumentStorage(int segmentNumber) {
+
+		String rawStorageDb;
+		String rawStorageCollection;
+		if (indexConfig.isDatabasePerRawDocumentSegment()) {
+			rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + "_" + segmentNumber + STORAGE_DB_SUFFIX;
+		}
+		else {
+			rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + STORAGE_DB_SUFFIX;
+		}
+
+		if (indexConfig.isCollectionPerRawDocumentSegment()) {
+			rawStorageCollection = RESULT_STORAGE_COLLECTION + "_" + segmentNumber;
+		}
+		else {
+			rawStorageCollection = RESULT_STORAGE_COLLECTION;
+		}
+
+		MongoDocumentStorage documentStorage = new MongoDocumentStorage(storageMongoClient, indexName, rawStorageDb, rawStorageCollection, clusterConfig.isSharded());
+		return documentStorage;
+
 	}
 
 	public void unloadSegment(int segmentNumber) throws CorruptIndexException, IOException {
@@ -1221,8 +1237,8 @@ public class Index {
 			throws Exception {
 		indexLock.readLock().lock();
 		try {
-			Segment s = findSegmentFromUniqueId(uniqueId);
-			s.storeAssociatedDocument(uniqueId, fileName, is, compress, clusterTime, metadataMap);
+			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
+			mongoDocumentStorageArray[segmentNumber].storeAssociatedDocument(uniqueId, fileName, is, compress, clusterTime, metadataMap);
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -1232,8 +1248,8 @@ public class Index {
 	public InputStream getAssociatedDocumentStream(String uniqueId, String fileName) throws IOException {
 		indexLock.readLock().lock();
 		try {
-			Segment s = findSegmentFromUniqueId(uniqueId);
-			return s.getAssociatedDocumentStream(uniqueId, fileName);
+			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
+			return mongoDocumentStorageArray[segmentNumber].getAssociatedDocumentStream(uniqueId, fileName);
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -1244,8 +1260,8 @@ public class Index {
 	public ResultDocument getSourceDocument(String uniqueId, FetchType resultFetchType) throws Exception {
 		indexLock.readLock().lock();
 		try {
-			Segment s = findSegmentFromUniqueId(uniqueId);
-			return s.getSourceDocument(uniqueId, resultFetchType);
+			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
+			return mongoDocumentStorageArray[segmentNumber].getSourceDocument(uniqueId, resultFetchType);
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -1255,8 +1271,8 @@ public class Index {
 	public AssociatedDocument getAssociatedDocument(String uniqueId, String fileName, FetchType associatedFetchType) throws Exception {
 		indexLock.readLock().lock();
 		try {
-			Segment s = findSegmentFromUniqueId(uniqueId);
-			return s.getAssociatedDocument(uniqueId, fileName, associatedFetchType);
+			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
+			return mongoDocumentStorageArray[segmentNumber].getAssociatedDocument(uniqueId, fileName, associatedFetchType);
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -1266,8 +1282,8 @@ public class Index {
 	public List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType associatedFetchType) throws Exception {
 		indexLock.readLock().lock();
 		try {
-			Segment s = findSegmentFromUniqueId(uniqueId);
-			return s.getAssociatedDocuments(uniqueId, associatedFetchType);
+			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
+			return mongoDocumentStorageArray[segmentNumber].getAssociatedDocuments(uniqueId, associatedFetchType);
 		}
 		finally {
 			indexLock.readLock().unlock();
