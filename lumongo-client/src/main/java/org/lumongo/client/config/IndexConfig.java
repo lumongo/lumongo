@@ -21,8 +21,7 @@ public class IndexConfig {
 	private Boolean blockCompression;
 	private Double segmentTolerance;
 	private LMAnalyzer defaultAnalyzer;
-	private boolean databasePerIndexSegment;
-	private boolean databasePerRawDocumentSegment;
+
 
 	private TreeMap<String, LMAnalyzer> analyzerMap;
 
@@ -35,22 +34,6 @@ public class IndexConfig {
 		this.analyzerMap = new TreeMap<String, LMAnalyzer>();
 	}
 
-
-	public boolean isDatabasePerIndexSegment() {
-		return databasePerIndexSegment;
-	}
-
-	public void setDatabasePerIndexSegment(boolean databasePerIndexSegment) {
-		this.databasePerIndexSegment = databasePerIndexSegment;
-	}
-
-	public boolean isDatabasePerRawDocumentSegment() {
-		return databasePerRawDocumentSegment;
-	}
-
-	public void setDatabasePerRawDocumentSegment(boolean databasePerRawDocumentSegment) {
-		this.databasePerRawDocumentSegment = databasePerRawDocumentSegment;
-	}
 
 	public String getDefaultSearchField() {
 		return defaultSearchField;

@@ -2,8 +2,8 @@ dependencies {
     //compile project(':lumongo-common') //pulled in by client
     compile project(':lumongo-storage')	
     compile project(':lumongo-client') //needed for admin tools
-    compile 'com.hazelcast:hazelcast:2.5'
-    compile 'net.sf.jopt-simple:jopt-simple:4.3'
+    compile 'com.hazelcast:hazelcast:2.5.1'
+    compile 'net.sf.jopt-simple:jopt-simple:4.4'
     compile 'org.apache.lucene:lucene-facet:4.2.1'
     compile 'org.apache.lucene:lucene-queryparser:4.2.1'
     compile 'org.apache.lucene:lucene-analyzers-common:4.2.1'

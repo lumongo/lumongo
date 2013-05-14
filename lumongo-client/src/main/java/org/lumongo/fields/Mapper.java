@@ -160,8 +160,13 @@ public class Mapper <T> {
 		indexConfig.setSegmentTolerance(settings.segmentTolerance());
 		indexConfig.setSegmentFlushInterval(settings.segmentFlushInterval());
 
+
 		CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(settings.indexName(), settings.numberOfSegments(), uniqueIdField.getFieldName(),
 				indexConfig);
+		createOrUpdateIndex.setDatabasePerIndexSegment(settings.databasePerIndexSegment());
+		createOrUpdateIndex.setDatabasePerRawDocumentSegment(settings.databasePerRawDocumentSegment());
+		createOrUpdateIndex.setCollectionPerRawDocumentSegment(settings.collectionPerRawDocumentSegment());
+
 		// TODO consider this
 		// indexCreateRequestBuilder.setFaceted(!facetedFields.isEmpty());
 		createOrUpdateIndex.setFaceted(true);
