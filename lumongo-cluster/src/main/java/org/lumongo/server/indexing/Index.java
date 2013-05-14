@@ -436,14 +436,8 @@ public class Index {
 
 				MongoDocumentStorage documentStorage = mongoDocumentStorageArray[segmentNumber];
 
-				String indexSegmentDbName;
-				if (indexConfig.isDatabasePerIndexSegment()) {
-					indexSegmentDbName = mongoConfig.getDatabaseName() + "_" + segmentNumber;
-				}
-				else {
-					indexSegmentDbName = mongoConfig.getDatabaseName();
-				}
-				String indexSegmentCollectionName = indexName + "_" + segmentNumber;
+				String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
+				String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
 
 				MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName,
 						clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
@@ -459,8 +453,7 @@ public class Index {
 				LumongoDirectoryTaxonomyWriter taxonomyWriter = null;
 
 				if (indexConfig.isFaceted()) {
-					MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, mongoConfig.getDatabaseName() + "_" + segmentNumber, indexName + "_"
-							+ segmentNumber + "_" + FACETS_SUFFIX, clusterConfig.isSharded(), indexConfig.isBlockCompression(),
+					MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName + "_" + FACETS_SUFFIX, clusterConfig.isSharded(), indexConfig.isBlockCompression(),
 							clusterConfig.getIndexBlockSize());
 					DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
 					taxonomyWriter = new LumongoDirectoryTaxonomyWriter(ddFacet);
@@ -477,6 +470,22 @@ public class Index {
 		finally {
 			indexLock.writeLock().unlock();
 		}
+	}
+
+	private String getIndexSegmentCollectionName(int segmentNumber) {
+		String indexSegmentCollectionName = indexName + "_" + segmentNumber;
+		return indexSegmentCollectionName;
+	}
+
+	private String getIndexSegmentDbName(int segmentNumber) {
+		String indexSegmentDbName;
+		if (indexConfig.isDatabasePerIndexSegment()) {
+			indexSegmentDbName = mongoConfig.getDatabaseName() + "_" + indexName + "_" + segmentNumber;
+		}
+		else {
+			indexSegmentDbName = mongoConfig.getDatabaseName() + "_" + indexName;
+		}
+		return indexSegmentDbName;
 	}
 
 	protected MongoDocumentStorage createMongoDocumentStorage(int segmentNumber) {
@@ -774,11 +783,15 @@ public class Index {
 		dbCollection.drop();
 
 		for (int i = 0; i < numberOfSegments; i++) {
-			String indexSegment = indexName + "_" + i;
-			MongoDirectory.dropIndex(mongo, mongoConfig.getDatabaseName(), indexSegment);
+
+			String dbName = getIndexSegmentDbName(i);
+			String collectionName = getIndexSegmentCollectionName(i);
+			MongoDirectory.dropIndex(mongo, dbName, collectionName);
 			if (indexConfig.isFaceted()) {
-				MongoDirectory.dropIndex(mongo, mongoConfig.getDatabaseName(), indexSegment + "_" + FACETS_SUFFIX);
+				MongoDirectory.dropIndex(mongo, dbName, collectionName + "_" + FACETS_SUFFIX);
 			}
+
+			mongoDocumentStorageArray[i].drop();
 		}
 
 	}

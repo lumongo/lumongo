@@ -63,11 +63,12 @@ public class MongoDocumentStorage implements DocumentStorage {
 		this.database = dbName;
 		this.rawCollectionName = rawCollectionName;
 
-		if (sharded) {
-			DB storageDb = pool.getDB(database);
+		DB storageDb = pool.getDB(database);
+		DBCollection coll = storageDb.getCollection(ASSOCIATED_FILES + "." + FILES);
+		coll.ensureIndex(METADATA + "." + UNIQUE_ID_KEY);
 
-			DBCollection coll = storageDb.getCollection(ASSOCIATED_FILES + "." + FILES);
-			coll.ensureIndex(METADATA + "." + UNIQUE_ID_KEY);
+		if (sharded) {
+
 
 			DB adminDb = pool.getDB(MongoConstants.StandardDBs.ADMIN);
 			DBObject enableCommand = new BasicDBObject();
@@ -209,6 +210,19 @@ public class MongoDocumentStorage implements DocumentStorage {
 		DB db = pool.getDB(database);
 		DBCollection coll = db.getCollection(rawCollectionName);
 		coll.remove(new BasicDBObject());
+	}
+
+	public void drop() {
+		DB db = pool.getDB(database);
+		DBCollection raw = db.getCollection(rawCollectionName);
+		raw.drop();
+
+		DBCollection files = db.getCollection(ASSOCIATED_FILES + "." + FILES);
+		files.drop();
+
+		DBCollection chunks = db.getCollection(ASSOCIATED_FILES + "." + CHUNKS);
+		chunks.drop();
+
 	}
 
 	@Override
@@ -371,6 +385,9 @@ public class MongoDocumentStorage implements DocumentStorage {
 		GridFS gridFS = createGridFSConnection();
 		gridFS.remove(new BasicDBObject(METADATA + "." + UNIQUE_ID_KEY, uniqueId));
 	}
+
+
+
 
 
 }
