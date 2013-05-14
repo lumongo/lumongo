@@ -10,14 +10,16 @@ import org.apache.lucene.facet.collections.LRUHashMap;
 import org.apache.lucene.facet.taxonomy.CategoryPath;
 import org.apache.lucene.facet.taxonomy.ParallelTaxonomyArrays;
 import org.apache.lucene.facet.taxonomy.TaxonomyReader;
+import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.DocsEnum;
-import org.apache.lucene.index.LumongoIndexWriter;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.IOUtils;
+// javadocs
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -45,19 +47,16 @@ import org.apache.lucene.util.IOUtils;
  * results, while other methods prefetch all the data into memory and then
  * provide answers directly from in-memory tables. See the documentation of
  * individual methods for comments on their performance.
- *
- *
- * modifed for lumongo to allow a realtime reader to be used without forcing a flush
- *
+ * 
  * @lucene.experimental
  */
-public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
+public class NewDirectoryTaxonomyReader extends TaxonomyReader {
 
 	private static final Logger logger = Logger.getLogger(NewDirectoryTaxonomyReader.class.getName());
 
 	private static final int DEFAULT_CACHE_VALUE = 4000;
 
-	private final LumongoDirectoryTaxonomyWriter taxoWriter;
+	private final DirectoryTaxonomyWriter taxoWriter;
 	private final long taxoEpoch; // used in doOpenIfChanged
 	private final DirectoryReader indexReader;
 
@@ -74,31 +73,53 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	 * recreated, you should pass {@code null} as the caches and parent/children
 	 * arrays.
 	 */
-	LumongoDirectoryTaxonomyReader(DirectoryReader indexReader, LumongoDirectoryTaxonomyWriter taxoWriter, LRUHashMap<CategoryPath, Integer> ordinalCache,
-			LRUHashMap<Integer, CategoryPath> categoryCache, TaxonomyIndexArrays taxoArrays) throws IOException {
+	NewDirectoryTaxonomyReader(DirectoryReader indexReader, DirectoryTaxonomyWriter taxoWriter,
+			LRUHashMap<CategoryPath,Integer> ordinalCache, LRUHashMap<Integer,CategoryPath> categoryCache,
+			TaxonomyIndexArrays taxoArrays) throws IOException {
 		this.indexReader = indexReader;
 		this.taxoWriter = taxoWriter;
 		this.taxoEpoch = taxoWriter == null ? -1 : taxoWriter.getTaxonomyEpoch();
 
 		// use the same instance of the cache, note the protective code in getOrdinal and getPath
-		this.ordinalCache = ordinalCache == null ? new LRUHashMap<CategoryPath, Integer>(DEFAULT_CACHE_VALUE) : ordinalCache;
-		this.categoryCache = categoryCache == null ? new LRUHashMap<Integer, CategoryPath>(DEFAULT_CACHE_VALUE) : categoryCache;
+		this.ordinalCache = ordinalCache == null ? new LRUHashMap<CategoryPath,Integer>(DEFAULT_CACHE_VALUE) : ordinalCache;
+		this.categoryCache = categoryCache == null ? new LRUHashMap<Integer,CategoryPath>(DEFAULT_CACHE_VALUE) : categoryCache;
 
 		this.taxoArrays = taxoArrays != null ? new TaxonomyIndexArrays(indexReader, taxoArrays) : null;
-		}
+	}
+
+	/**
+	 * Open for reading a taxonomy stored in a given {@link Directory}.
+	 * 
+	 * @param directory
+	 *          The {@link Directory} in which the taxonomy resides.
+	 * @throws CorruptIndexException
+	 *           if the Taxonomy is corrupt.
+	 * @throws IOException
+	 *           if another error occurred.
+	 */
+	public NewDirectoryTaxonomyReader(Directory directory) throws IOException {
+		indexReader = openIndexReader(directory);
+		taxoWriter = null;
+		taxoEpoch = -1;
+
+		// These are the default cache sizes; they can be configured after
+		// construction with the cache's setMaxSize() method
+		ordinalCache = new LRUHashMap<CategoryPath, Integer>(DEFAULT_CACHE_VALUE);
+		categoryCache = new LRUHashMap<Integer, CategoryPath>(DEFAULT_CACHE_VALUE);
+	}
 
 	/**
 	 * Opens a {@link NewDirectoryTaxonomyReader} over the given
 	 * {@link DirectoryTaxonomyWriter} (for NRT).
-	 *
+	 * 
 	 * @param taxoWriter
 	 *          The {@link DirectoryTaxonomyWriter} from which to obtain newly
 	 *          added categories, in real-time.
 	 */
-	public LumongoDirectoryTaxonomyReader(LumongoDirectoryTaxonomyWriter taxoWriter) throws IOException {
+	public NewDirectoryTaxonomyReader(DirectoryTaxonomyWriter taxoWriter) throws IOException {
 		this.taxoWriter = taxoWriter;
 		taxoEpoch = taxoWriter.getTaxonomyEpoch();
-		indexReader = openIndexReader(taxoWriter.getLumongoIndexWriter());
+		indexReader = openIndexReader(taxoWriter.getInternalIndexWriter());
 
 		// These are the default cache sizes; they can be configured after
 		// construction with the cache's setMaxSize() method
@@ -128,7 +149,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	/**
 	 * Implements the opening of a new {@link NewDirectoryTaxonomyReader} instance if
 	 * the taxonomy has changed.
-	 *
+	 * 
 	 * <p>
 	 * <b>NOTE:</b> the returned {@link NewDirectoryTaxonomyReader} shares the
 	 * ordinal and category caches with this reader. This is not expected to cause
@@ -138,43 +159,63 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	 * through {@link #setCacheSize(int)}, it will affect both reader instances.
 	 */
 	@Override
-	protected LumongoDirectoryTaxonomyReader doOpenIfChanged() throws IOException {
-		return doOpenIfChanged(true);
-	}
-
-	public LumongoDirectoryTaxonomyReader doOpenIfChanged(boolean realTime) throws IOException {
+	protected NewDirectoryTaxonomyReader doOpenIfChanged() throws IOException {
 		ensureOpen();
 
-		final DirectoryReader r2 = taxoWriter.getLumongoIndexWriter().getReader(false, realTime);
+		// This works for both NRT and non-NRT readers (i.e. an NRT reader remains NRT).
+		final DirectoryReader r2 = DirectoryReader.openIfChanged(indexReader);
+		if (r2 == null) {
+			return null; // no changes, nothing to do
+		}
 
 		// check if the taxonomy was recreated
 		boolean success = false;
 		try {
-			// NRT, compare current taxoWriter.epoch() vs the one that was given at construction
-			boolean recreated = (taxoEpoch != taxoWriter.getTaxonomyEpoch());
+			boolean recreated = false;
+			if (taxoWriter == null) {
+				// not NRT, check epoch from commit data
+				String t1 = indexReader.getIndexCommit().getUserData().get(DirectoryTaxonomyWriter.INDEX_EPOCH);
+				String t2 = r2.getIndexCommit().getUserData().get(DirectoryTaxonomyWriter.INDEX_EPOCH);
+				if (t1 == null) {
+					if (t2 != null) {
+						recreated = true;
+					}
+				} else if (!t1.equals(t2)) {
+					// t1 != null and t2 cannot be null b/c DirTaxoWriter always puts the commit data.
+					// it's ok to use String.equals because we require the two epoch values to be the same.
+					recreated = true;
+				}
+			} else {
+				// NRT, compare current taxoWriter.epoch() vs the one that was given at construction
+				if (taxoEpoch != taxoWriter.getTaxonomyEpoch()) {
+					recreated = true;
+				}
+			}
 
-			final LumongoDirectoryTaxonomyReader newtr;
+			final NewDirectoryTaxonomyReader newtr;
 			if (recreated) {
 				// if recreated, do not reuse anything from this instace. the information
 				// will be lazily computed by the new instance when needed.
-				newtr = new LumongoDirectoryTaxonomyReader(r2, taxoWriter, null, null, null);
-			}
-			else {
-				newtr = new LumongoDirectoryTaxonomyReader(r2, taxoWriter, ordinalCache, categoryCache, taxoArrays);
+				newtr = new NewDirectoryTaxonomyReader(r2, taxoWriter, null, null, null);
+			} else {
+				newtr = new NewDirectoryTaxonomyReader(r2, taxoWriter, ordinalCache, categoryCache, taxoArrays);
 			}
 
 			success = true;
 			return newtr;
-		}
-		finally {
+		} finally {
 			if (!success) {
 				IOUtils.closeWhileHandlingException(r2);
 			}
 		}
 	}
 
-	protected DirectoryReader openIndexReader(LumongoIndexWriter writer) throws IOException {
-		return writer.getReader(false, true);
+	protected DirectoryReader openIndexReader(Directory directory) throws IOException {
+		return DirectoryReader.open(directory);
+	}
+
+	protected DirectoryReader openIndexReader(IndexWriter writer) throws IOException {
+		return DirectoryReader.open(writer, false);
 	}
 
 	/**
@@ -217,8 +258,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 					// doOpenIfChanged, we need to ensure that the ordinal is one that
 					// this DTR instance recognizes.
 					return res.intValue();
-				}
-				else {
+				} else {
 					// if we get here, it means that the category was found in the cache,
 					// but is not recognized by this TR instance. Therefore there's no
 					// need to continue search for the path on disk, because we won't find
@@ -334,9 +374,8 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 					sb.append(i + ": EMPTY STRING!! \n");
 					continue;
 				}
-				sb.append(i + ": " + category.toString() + "\n");
-			}
-			catch (IOException e) {
+				sb.append(i +": "+category.toString()+"\n");
+			} catch (IOException e) {
 				if (logger.isLoggable(Level.FINEST)) {
 					logger.log(Level.FINEST, e.getMessage(), e);
 				}
