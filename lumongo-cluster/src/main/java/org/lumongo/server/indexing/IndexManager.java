@@ -55,12 +55,7 @@ import org.lumongo.cluster.message.Lumongo.IndexDeleteResponse;
 import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.IndexSettingsResponse;
-import org.lumongo.cluster.message.Lumongo.InternalDeleteRequest;
-import org.lumongo.cluster.message.Lumongo.InternalDeleteResponse;
-import org.lumongo.cluster.message.Lumongo.InternalIndexRequest;
-import org.lumongo.cluster.message.Lumongo.InternalIndexResponse;
 import org.lumongo.cluster.message.Lumongo.InternalQueryResponse;
-import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.OptimizeRequest;
 import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
@@ -475,28 +470,30 @@ public class IndexManager {
 		}
 	}
 
-	public InternalDeleteResponse internalDeleteFromIndex(String uniqueId, String indexName) throws IndexDoesNotExist, CorruptIndexException,
-	SegmentDoesNotExist, IOException {
+	public DeleteResponse internalDeleteDocument(DeleteRequest deleteRequest) throws Exception {
 		globalLock.readLock().lock();
 		try {
 
-			Index i = indexMap.get(indexName);
+			Index i = indexMap.get(deleteRequest.getIndexName());
 			if (i == null) {
-				throw new IndexDoesNotExist(indexName);
+				throw new IndexDoesNotExist(deleteRequest.getIndexName());
 			}
-			i.deleteFromIndex(uniqueId);
+			i.deleteDocument(deleteRequest);
 
-			return InternalDeleteResponse.newBuilder().build();
+			return DeleteResponse.newBuilder().build();
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
 
-	private void deleteFromIndex(String uniqueId, String indexName) throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist, IOException,
+	public DeleteResponse deleteDocument(DeleteRequest deleteRequest) throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist, IOException,
 	Exception {
 		globalLock.readLock().lock();
 		try {
+
+			String indexName = deleteRequest.getIndexName();
+			String uniqueId = deleteRequest.getUniqueId();
 
 			Index i = indexMap.get(indexName);
 			if (i == null) {
@@ -508,13 +505,10 @@ public class IndexManager {
 			Member self = hazelcastManager.getSelf();
 
 			if (!self.equals(m)) {
-				InternalDeleteRequest.Builder idr = InternalDeleteRequest.newBuilder();
-				idr.setIndex(indexName);
-				idr.setUniqueId(uniqueId);
-				internalClient.executeDelete(m, idr.build());
+				return internalClient.executeDelete(m, deleteRequest);
 			}
 			else {
-				internalDeleteFromIndex(uniqueId, indexName);
+				return internalDeleteDocument(deleteRequest);
 			}
 
 		}
@@ -523,49 +517,19 @@ public class IndexManager {
 		}
 	}
 
-	public DeleteResponse deleteDocument(DeleteRequest deleteRequest) throws Exception {
+	public StoreResponse storeInternal(StoreRequest storeRequest) throws Exception {
 		globalLock.readLock().lock();
 		try {
-
-			String uniqueId = deleteRequest.getUniqueId();
-			String indexName = deleteRequest.getIndexName();
-
+			String indexName = storeRequest.getIndexName();
 			Index i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
 
-			if (deleteRequest.getDeleteDocument()) {
-				deleteFromIndex(uniqueId, deleteRequest.getIndexName());
-				i.deleteSourceDocument(uniqueId);
-			}
+			i.storeInternal(storeRequest);
 
-			if (deleteRequest.getDeleteAllAssociated()) {
-				i.deleteAssociatedDocuments(uniqueId);
-			}
-			else if (deleteRequest.hasFilename()) {
-				String fileName = deleteRequest.getFilename();
-				i.deleteAssociatedDocument(uniqueId, fileName);
-			}
 
-			return DeleteResponse.newBuilder().build();
-		}
-		finally {
-			globalLock.readLock().unlock();
-		}
-	}
-
-	public InternalIndexResponse internalIndex(String uniqueId, String indexName, LMDoc indexedDocument) throws Exception {
-		globalLock.readLock().lock();
-		try {
-
-			Index i = indexMap.get(indexName);
-			if (i == null) {
-				throw new IndexDoesNotExist(indexName);
-			}
-			i.storeInternal(uniqueId, indexedDocument);
-
-			return InternalIndexResponse.newBuilder().build();
+			return StoreResponse.newBuilder().build();
 		}
 		finally {
 			globalLock.readLock().unlock();
@@ -575,7 +539,7 @@ public class IndexManager {
 	public StoreResponse storeDocument(StoreRequest storeRequest) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			long timestamp = hazelcastManager.getClusterTime();
+
 			String uniqueId = storeRequest.getUniqueId();
 			String indexName = storeRequest.getIndexName();
 
@@ -584,43 +548,17 @@ public class IndexManager {
 				throw new IndexDoesNotExist(indexName);
 			}
 
-			if (storeRequest.hasIndexedDocument()) {
+			Member m = i.findMember(uniqueId);
 
-				LMDoc lmDoc = storeRequest.getIndexedDocument();
-				lmDoc = LMDoc.newBuilder(lmDoc).setTimestamp(timestamp).build();
+			Member self = hazelcastManager.getSelf();
 
-				Member m = i.findMember(uniqueId);
-
-				Member self = hazelcastManager.getSelf();
-
-				if (!self.equals(m)) {
-					InternalIndexRequest.Builder iir = InternalIndexRequest.newBuilder();
-					iir.setUniqueId(uniqueId);
-					iir.setIndexName(indexName);
-					iir.setIndexedDocument(lmDoc);
-					internalClient.executeIndex(m, iir.build());
-				}
-				else {
-					internalIndex(uniqueId, indexName, lmDoc);
-				}
-
+			if (!self.equals(m)) {
+				return internalClient.executeStore(m, storeRequest);
+			}
+			else {
+				return storeInternal(storeRequest);
 			}
 
-			if (storeRequest.getClearExistingAssociated()) {
-				i.deleteAssociatedDocuments(uniqueId);
-			}
-
-			if (storeRequest.hasResultDocument()) {
-				ResultDocument rd = ResultDocument.newBuilder(storeRequest.getResultDocument()).setTimestamp(timestamp).build();
-				i.storeSourceDocument(rd);
-			}
-
-			for (AssociatedDocument ad : storeRequest.getAssociatedDocumentList()) {
-				ad = AssociatedDocument.newBuilder(ad).setTimestamp(timestamp).build();
-				i.storeAssociatedDocument(ad);
-			}
-
-			return StoreResponse.newBuilder().build();
 		}
 		finally {
 			globalLock.readLock().unlock();
@@ -1114,6 +1052,7 @@ public class IndexManager {
 		}
 	}
 
+	//rest
 	public void storeAssociatedDocument(String indexName, String uniqueId, String fileName, InputStream is, boolean compress,
 			HashMap<String, String> metadataMap) throws Exception {
 		globalLock.readLock().lock();
@@ -1123,7 +1062,7 @@ public class IndexManager {
 				throw new IndexDoesNotExist(indexName);
 			}
 
-			i.storeAssociateDocument(uniqueId, fileName, is, compress, hazelcastManager.getClusterTime(), metadataMap);
+			i.storeAssociatedDocument(uniqueId, fileName, is, compress, hazelcastManager.getClusterTime(), metadataMap);
 
 		}
 		finally {
@@ -1131,6 +1070,7 @@ public class IndexManager {
 		}
 	}
 
+	//rest
 	public InputStream getAssociatedDocumentStream(String indexName, String uniqueId, String fileName) throws IOException {
 		globalLock.readLock().lock();
 		try {

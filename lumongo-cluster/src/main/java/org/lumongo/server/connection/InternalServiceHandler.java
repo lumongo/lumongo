@@ -10,21 +10,21 @@ import java.util.concurrent.Executors;
 import org.apache.log4j.Logger;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
+import org.lumongo.cluster.message.Lumongo.DeleteRequest;
+import org.lumongo.cluster.message.Lumongo.DeleteResponse;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesRequest;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsRequest;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
-import org.lumongo.cluster.message.Lumongo.InternalDeleteRequest;
-import org.lumongo.cluster.message.Lumongo.InternalDeleteResponse;
-import org.lumongo.cluster.message.Lumongo.InternalIndexRequest;
-import org.lumongo.cluster.message.Lumongo.InternalIndexResponse;
 import org.lumongo.cluster.message.Lumongo.InternalQueryResponse;
 import org.lumongo.cluster.message.Lumongo.InternalService;
 import org.lumongo.cluster.message.Lumongo.OptimizeRequest;
 import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
+import org.lumongo.cluster.message.Lumongo.StoreRequest;
+import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.indexing.IndexManager;
@@ -116,7 +116,7 @@ public class InternalServiceHandler extends InternalService {
 	}
 
 	@Override
-	public void queryInternal(RpcController controller, QueryRequest request, RpcCallback<InternalQueryResponse> done) {
+	public void query(RpcController controller, QueryRequest request, RpcCallback<InternalQueryResponse> done) {
 		try {
 			InternalQueryResponse r = indexManager.internalQuery(request);
 			done.run(r);
@@ -129,9 +129,9 @@ public class InternalServiceHandler extends InternalService {
 	}
 
 	@Override
-	public void indexInternal(RpcController controller, InternalIndexRequest request, RpcCallback<InternalIndexResponse> done) {
+	public void store(RpcController controller, StoreRequest request, RpcCallback<StoreResponse> done) {
 		try {
-			InternalIndexResponse r = indexManager.internalIndex(request.getUniqueId(), request.getIndexName(), request.getIndexedDocument());
+			StoreResponse r = indexManager.storeInternal(request);
 			done.run(r);
 		}
 		catch (Exception e) {
@@ -142,9 +142,9 @@ public class InternalServiceHandler extends InternalService {
 	}
 
 	@Override
-	public void deleteInternal(RpcController controller, InternalDeleteRequest request, RpcCallback<InternalDeleteResponse> done) {
+	public void delete(RpcController controller, DeleteRequest request, RpcCallback<DeleteResponse> done) {
 		try {
-			InternalDeleteResponse r = indexManager.internalDeleteFromIndex(request.getUniqueId(), request.getIndex());
+			DeleteResponse r = indexManager.internalDeleteDocument(request);
 			done.run(r);
 		}
 		catch (Exception e) {
@@ -155,7 +155,7 @@ public class InternalServiceHandler extends InternalService {
 	}
 
 	@Override
-	public void getNumberOfDocsInternal(RpcController controller, GetNumberOfDocsRequest request, RpcCallback<GetNumberOfDocsResponse> done) {
+	public void getNumberOfDocs(RpcController controller, GetNumberOfDocsRequest request, RpcCallback<GetNumberOfDocsResponse> done) {
 		try {
 			GetNumberOfDocsResponse r = indexManager.getNumberOfDocsInternal(request);
 			done.run(r);

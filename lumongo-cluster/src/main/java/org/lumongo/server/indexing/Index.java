@@ -46,6 +46,7 @@ import org.lumongo.LumongoConstants;
 import org.lumongo.analyzer.LowercaseKeywordAnalyzer;
 import org.lumongo.analyzer.LowercaseWhitespaceAnalyzer;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
+import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
@@ -56,7 +57,6 @@ import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
-import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LastIndexResult;
 import org.lumongo.cluster.message.Lumongo.LastResult;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
@@ -65,6 +65,7 @@ import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
+import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.Term;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
@@ -766,26 +767,33 @@ public class Index {
 
 	}
 
-	public void storeInternal(String uniqueId, LMDoc lmDoc) throws Exception {
+	public void storeInternal(StoreRequest storeRequest) throws Exception {
 		indexLock.readLock().lock();
 
 		try {
+			String uniqueId = storeRequest.getUniqueId();
 			Segment s = findSegmentFromUniqueId(uniqueId);
-			s.index(uniqueId, lmDoc);
+
+			long timestamp = hazelcastManager.getClusterTime();
+			s.store(storeRequest, timestamp);
+
+
+
+
 		}
 		finally {
 			indexLock.readLock().unlock();
 		}
 	}
 
-	public void deleteFromIndex(String uniqueId) throws SegmentDoesNotExist, CorruptIndexException, IOException {
+	public void deleteDocument(DeleteRequest deleteRequest) throws Exception {
 
 		indexLock.readLock().lock();
 
 		try {
 
-			Segment s = findSegmentFromUniqueId(uniqueId);
-			s.delete(uniqueId);
+			Segment s = findSegmentFromUniqueId(deleteRequest.getUniqueId());
+			s.deleteDocument(deleteRequest);
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -1209,12 +1217,12 @@ public class Index {
 
 	}
 
-	public void storeAssociateDocument(String uniqueId, String fileName, InputStream is, boolean compress, long clusterTime, HashMap<String, String> metadataMap)
+	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long clusterTime, HashMap<String, String> metadataMap)
 			throws Exception {
 		indexLock.readLock().lock();
 		try {
 			Segment s = findSegmentFromUniqueId(uniqueId);
-			s.storeAssociatedDocument(uniqueId, fileName, is, compress, hazelcastManager.getClusterTime(), metadataMap);
+			s.storeAssociatedDocument(uniqueId, fileName, is, compress, clusterTime, metadataMap);
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -1232,60 +1240,6 @@ public class Index {
 		}
 	}
 
-	public void deleteAssociatedDocuments(String uniqueId) throws Exception {
-		indexLock.readLock().lock();
-		try {
-			Segment s = findSegmentFromUniqueId(uniqueId);
-			s.deleteAssociatedDocuments(uniqueId);
-		}
-		finally {
-			indexLock.readLock().unlock();
-		}
-	}
-
-	public void deleteSourceDocument(String uniqueId) throws Exception {
-		indexLock.readLock().lock();
-		try {
-			Segment s = findSegmentFromUniqueId(uniqueId);
-			s.deleteSourceDocument(uniqueId);
-		}
-		finally {
-			indexLock.readLock().unlock();
-		}
-	}
-
-	public void deleteAssociatedDocument(String uniqueId, String fileName) throws Exception {
-		indexLock.readLock().lock();
-		try {
-			Segment s = findSegmentFromUniqueId(uniqueId);
-			s.deleteAssociatedDocument(uniqueId, fileName);
-		}
-		finally {
-			indexLock.readLock().unlock();
-		}
-	}
-
-	public void storeSourceDocument(ResultDocument rd) throws Exception {
-		indexLock.readLock().lock();
-		try {
-			Segment s = findSegmentFromUniqueId(rd.getUniqueId());
-			s.storeSourceDocument(rd);
-		}
-		finally {
-			indexLock.readLock().unlock();
-		}
-	}
-
-	public void storeAssociatedDocument(AssociatedDocument ad) throws Exception {
-		indexLock.readLock().lock();
-		try {
-			Segment s = findSegmentFromUniqueId(ad.getDocumentUniqueId());
-			s.storeAssociatedDocument(ad);
-		}
-		finally {
-			indexLock.readLock().unlock();
-		}
-	}
 
 	public ResultDocument getSourceDocument(String uniqueId, FetchType resultFetchType) throws Exception {
 		indexLock.readLock().lock();

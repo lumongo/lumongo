@@ -21,10 +21,10 @@ service ExternalService {
 }
 
 service InternalService {
-	rpc QueryInternal (QueryRequest) returns (InternalQueryResponse);
-	rpc IndexInternal (InternalIndexRequest) returns (InternalIndexResponse);
-	rpc DeleteInternal (InternalDeleteRequest) returns (InternalDeleteResponse);
-	rpc GetNumberOfDocsInternal (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
+	rpc Query (QueryRequest) returns (InternalQueryResponse);
+	rpc Store (StoreRequest) returns (StoreResponse);
+	rpc Delete (DeleteRequest) returns (DeleteResponse);
+	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
 	rpc Clear (ClearRequest) returns (ClearResponse);
 	rpc Optimize (OptimizeRequest) returns (OptimizeResponse);
 	rpc GetFieldNames (GetFieldNamesRequest) returns (GetFieldNamesResponse);
@@ -180,15 +180,6 @@ message IndexDeleteResponse {
 
 }
 
-message InternalIndexRequest {
-    required string uniqueId = 1;
-    required string indexName = 2;
-	required LMDoc indexedDocument = 3;
-}
-
-message InternalIndexResponse {
-}
-
 message StoreRequest {
     required string uniqueId = 1;
     required string indexName = 2;
@@ -338,15 +329,6 @@ message QueryResponse {
 	repeated ScoredResult results = 2;
 	required LastResult lastResult = 3;
 	repeated FacetCount facetCount = 4;
-}
-
-message InternalDeleteRequest {
-	required string index = 1;
-    required string uniqueId = 2;
-}
-
-message InternalDeleteResponse {
-
 }
 
 message DeleteRequest {

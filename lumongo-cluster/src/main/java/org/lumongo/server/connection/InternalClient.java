@@ -7,20 +7,20 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.log4j.Logger;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
+import org.lumongo.cluster.message.Lumongo.DeleteRequest;
+import org.lumongo.cluster.message.Lumongo.DeleteResponse;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesRequest;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsRequest;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
-import org.lumongo.cluster.message.Lumongo.InternalDeleteRequest;
-import org.lumongo.cluster.message.Lumongo.InternalDeleteResponse;
-import org.lumongo.cluster.message.Lumongo.InternalIndexRequest;
-import org.lumongo.cluster.message.Lumongo.InternalIndexResponse;
 import org.lumongo.cluster.message.Lumongo.InternalQueryResponse;
 import org.lumongo.cluster.message.Lumongo.OptimizeRequest;
 import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
+import org.lumongo.cluster.message.Lumongo.StoreRequest;
+import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
@@ -159,7 +159,7 @@ public class InternalClient {
 		try {
 			rpcConnection = getInternalRpcConnection(m);
 			RpcController controller = rpcConnection.getClientRPCController();
-			InternalQueryResponse response = rpcConnection.getService().queryInternal(controller, request);
+			InternalQueryResponse response = rpcConnection.getService().query(controller, request);
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
@@ -177,7 +177,7 @@ public class InternalClient {
 
 	}
 
-	public InternalIndexResponse executeIndex(Member m, InternalIndexRequest request) throws Exception {
+	public StoreResponse executeStore(Member m, StoreRequest request) throws Exception {
 
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
@@ -186,7 +186,7 @@ public class InternalClient {
 		try {
 			rpcConnection = getInternalRpcConnection(m);
 			RpcController controller = rpcConnection.getClientRPCController();
-			InternalIndexResponse response = rpcConnection.getService().indexInternal(controller, request);
+			StoreResponse response = rpcConnection.getService().store(controller, request);
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
@@ -205,7 +205,7 @@ public class InternalClient {
 
 	}
 
-	public InternalDeleteResponse executeDelete(Member m, InternalDeleteRequest request) throws Exception {
+	public DeleteResponse executeDelete(Member m, DeleteRequest request) throws Exception {
 
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
@@ -214,7 +214,7 @@ public class InternalClient {
 		try {
 			rpcConnection = getInternalRpcConnection(m);
 			RpcController controller = rpcConnection.getClientRPCController();
-			InternalDeleteResponse response = rpcConnection.getService().deleteInternal(controller, request);
+			DeleteResponse response = rpcConnection.getService().delete(controller, request);
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
@@ -241,7 +241,7 @@ public class InternalClient {
 		try {
 			rpcConnection = getInternalRpcConnection(m);
 			RpcController controller = rpcConnection.getClientRPCController();
-			GetNumberOfDocsResponse response = rpcConnection.getService().getNumberOfDocsInternal(controller, request);
+			GetNumberOfDocsResponse response = rpcConnection.getService().getNumberOfDocs(controller, request);
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}

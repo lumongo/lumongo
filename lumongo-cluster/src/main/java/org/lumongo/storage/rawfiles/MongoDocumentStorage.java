@@ -201,6 +201,16 @@ public class MongoDocumentStorage implements DocumentStorage {
 		coll.remove(search);
 	}
 
+
+	public void deleteAllDocuments() {
+		GridFS gridFS = createGridFSConnection();
+		gridFS.remove(new BasicDBObject());
+
+		DB db = pool.getDB(database);
+		DBCollection coll = db.getCollection(rawCollectionName);
+		coll.remove(new BasicDBObject());
+	}
+
 	@Override
 	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long timestamp, HashMap<String, String> metadataMap)
 			throws Exception {
@@ -361,4 +371,6 @@ public class MongoDocumentStorage implements DocumentStorage {
 		GridFS gridFS = createGridFSConnection();
 		gridFS.remove(new BasicDBObject(METADATA + "." + UNIQUE_ID_KEY, uniqueId));
 	}
+
+
 }

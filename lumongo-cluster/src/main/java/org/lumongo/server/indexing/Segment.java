@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
@@ -63,6 +64,7 @@ import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
+import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
@@ -79,8 +81,10 @@ import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
+import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.storage.rawfiles.MongoDocumentStorage;
+import org.lumongo.util.LockHandler;
 
 public class Segment {
 
@@ -109,8 +113,13 @@ public class Segment {
 
 	private MongoDocumentStorage documentStorage;
 
+	private LockHandler lockHandler;
+
 	public Segment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter, IndexConfig indexConfig, Analyzer analyzer)
 			throws IOException {
+
+		this.lockHandler = new LockHandler();
+
 		this.segmentNumber = segmentNumber;
 		this.documentStorage = documentStorage;
 		this.indexWriter = indexWriter;
@@ -405,7 +414,7 @@ public class Segment {
 		indexWriter.close();
 	}
 
-	public void index(String uniqueId, LMDoc lmDoc) throws CorruptIndexException, IOException {
+	private void index(String uniqueId, LMDoc lmDoc, long timestamp) throws CorruptIndexException, IOException {
 		Document d = new Document();
 
 		for (LMField indexedField : lmDoc.getIndexedFieldList()) {
@@ -455,7 +464,7 @@ public class Segment {
 		//make sure the update works because it is searching on a term
 		d.add(new StringField(indexConfig.getUniqueIdField(), uniqueId, Store.YES));
 
-		d.add(new LongField(LumongoConstants.TIMESTAMP_FIELD, lmDoc.getTimestamp(), Store.YES));
+		d.add(new LongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
 
 		if (indexConfig.isFaceted()) {
 			if (lmDoc.getFacetCount() != 0) {
@@ -479,10 +488,34 @@ public class Segment {
 		possibleCommit();
 	}
 
-	public void delete(String uniqueId) throws CorruptIndexException, IOException {
-		Term term = new Term(uniqueIdField, uniqueId);
-		indexWriter.deleteDocuments(term);
-		possibleCommit();
+	public void deleteDocument(DeleteRequest deleteRequest) throws Exception {
+		String uniqueId = deleteRequest.getUniqueId();
+
+		ReadWriteLock lock = lockHandler.getLock(uniqueId);
+
+		try {
+			lock.writeLock().lock();
+
+			if (deleteRequest.getDeleteDocument()) {
+				Term term = new Term(uniqueIdField, uniqueId);
+				indexWriter.deleteDocuments(term);
+				possibleCommit();
+				documentStorage.deleteSourceDocument(uniqueId);
+			}
+
+			if (deleteRequest.getDeleteAllAssociated()) {
+				documentStorage.deleteAssociatedDocuments(uniqueId);
+			}
+			else if (deleteRequest.hasFilename()) {
+				String fileName = deleteRequest.getFilename();
+				documentStorage.deleteAssociatedDocument(uniqueId, fileName);
+			}
+		}
+		finally {
+			lock.writeLock().unlock();
+		}
+
+
 	}
 
 	public void optimize() throws CorruptIndexException, IOException {
@@ -514,7 +547,9 @@ public class Segment {
 	}
 
 	public void clear() throws IOException {
+		//index has write lock so none needed here
 		indexWriter.deleteAll();
+		documentStorage.deleteAllDocuments();
 		forceCommit();
 
 	}
@@ -622,26 +657,6 @@ public class Segment {
 		return documentStorage.getSourceDocument(uniqueId, resultFetchType);
 	}
 
-	public void storeAssociatedDocument(AssociatedDocument ad) throws Exception {
-		documentStorage.storeAssociatedDocument(ad);
-	}
-
-	public void storeSourceDocument(ResultDocument rd) throws Exception {
-		documentStorage.storeSourceDocument(rd);
-	}
-
-	public void deleteAssociatedDocument(String uniqueId, String fileName) throws Exception {
-		documentStorage.deleteAssociatedDocument(uniqueId, fileName);
-	}
-
-	public void deleteSourceDocument(String uniqueId) throws Exception {
-		documentStorage.deleteSourceDocument(uniqueId);
-	}
-
-	public void deleteAssociatedDocuments(String uniqueId) throws Exception {
-		documentStorage.deleteAssociatedDocuments(uniqueId);
-	}
-
 	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long clusterTime,
 			HashMap<String, String> metadataMap) throws Exception {
 		documentStorage.storeAssociatedDocument(uniqueId, fileName, is, compress, clusterTime, metadataMap);
@@ -649,6 +664,38 @@ public class Segment {
 
 	public InputStream getAssociatedDocumentStream(String uniqueId, String fileName) throws IOException {
 		return documentStorage.getAssociatedDocumentStream(uniqueId, fileName);
+	}
+
+	public void store(StoreRequest storeRequest, long timestamp) throws Exception {
+
+
+		String uniqueId = storeRequest.getUniqueId();
+		ReadWriteLock lock = lockHandler.getLock(uniqueId);
+
+		try {
+			lock.writeLock().lock();
+
+			if (storeRequest.hasIndexedDocument()) {
+				LMDoc lmDoc = storeRequest.getIndexedDocument();
+				this.index(uniqueId, lmDoc, timestamp);
+			}
+			if (storeRequest.hasResultDocument()) {
+				ResultDocument rd = ResultDocument.newBuilder(storeRequest.getResultDocument()).setTimestamp(timestamp).build();
+				documentStorage.storeSourceDocument(rd);
+			}
+
+			if (storeRequest.getClearExistingAssociated()) {
+				documentStorage.deleteAssociatedDocuments(uniqueId);
+			}
+
+			for (AssociatedDocument ad : storeRequest.getAssociatedDocumentList()) {
+				ad = AssociatedDocument.newBuilder(ad).setTimestamp(timestamp).build();
+				documentStorage.storeAssociatedDocument(ad);
+			}
+		}
+		finally {
+			lock.writeLock().unlock();
+		}
 	}
 
 }
