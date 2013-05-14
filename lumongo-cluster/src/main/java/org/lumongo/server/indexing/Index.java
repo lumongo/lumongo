@@ -777,11 +777,11 @@ public class Index {
 
 	public void deleteIndex() throws Exception {
 
-		DB db = mongo.getDB(mongoConfig.getDatabaseName());
-
-		DBCollection dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
-		dbCollection.drop();
-
+		{
+			DB db = mongo.getDB(mongoConfig.getDatabaseName());
+			DBCollection dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
+			dbCollection.drop();
+		}
 		for (int i = 0; i < numberOfSegments; i++) {
 
 			String dbName = getIndexSegmentDbName(i);
