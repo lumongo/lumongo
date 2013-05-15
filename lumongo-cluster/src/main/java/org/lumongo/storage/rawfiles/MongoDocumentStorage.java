@@ -214,15 +214,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 
 	public void drop() {
 		DB db = pool.getDB(database);
-		DBCollection raw = db.getCollection(rawCollectionName);
-		raw.drop();
-
-		DBCollection files = db.getCollection(ASSOCIATED_FILES + "." + FILES);
-		files.drop();
-
-		DBCollection chunks = db.getCollection(ASSOCIATED_FILES + "." + CHUNKS);
-		chunks.drop();
-
+		db.dropDatabase();
 	}
 
 	@Override

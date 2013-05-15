@@ -794,6 +794,12 @@ public class Index {
 			mongoDocumentStorageArray[i].drop();
 		}
 
+		for (int i = 0; i < numberOfSegments; i++) {
+			String dbName = getIndexSegmentDbName(i);
+			DB db = mongo.getDB(dbName);
+			db.dropDatabase();
+		}
+
 	}
 
 	public void storeInternal(StoreRequest storeRequest) throws Exception {
