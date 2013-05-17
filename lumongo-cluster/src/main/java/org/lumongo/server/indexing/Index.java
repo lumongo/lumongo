@@ -79,6 +79,7 @@ import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.storage.rawfiles.MongoDocumentStorage;
 import org.lumongo.util.LumongoThreadFactory;
+import org.lumongo.util.SegmentUtil;
 
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.ILock;
@@ -770,9 +771,13 @@ public class Index {
 		}
 	}
 
+	public Map<Integer, Member> getSegmentToMemberMap() {
+		return new HashMap<Integer, Member>(segmentToMemberMap);
+	}
+
 	private int getSegmentNumberForUniqueId(String uniqueId) {
-		int segmentNumber = Math.abs(uniqueId.hashCode()) % indexConfig.getNumberOfSegments();
-		return segmentNumber;
+		int numSegments = indexConfig.getNumberOfSegments();
+		return SegmentUtil.findSegmentForUniqueId(uniqueId, numSegments);
 	}
 
 	public void deleteIndex() throws Exception {

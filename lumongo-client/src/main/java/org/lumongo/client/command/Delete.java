@@ -1,5 +1,6 @@
 package org.lumongo.client.command;
 
+import org.lumongo.client.command.base.RoutableCommand;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.DeleteResult;
@@ -10,7 +11,7 @@ import org.lumongo.cluster.message.Lumongo.ExternalService;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public abstract class Delete extends SimpleCommand<DeleteRequest, DeleteResult> {
+public abstract class Delete extends SimpleCommand<DeleteRequest, DeleteResult>  implements RoutableCommand {
 	private String indexName;
 	private String uniqueId;
 	private String fileName;
@@ -22,11 +23,17 @@ public abstract class Delete extends SimpleCommand<DeleteRequest, DeleteResult> 
 		this.indexName = indexName;
 	}
 
+	@Override
+	public String getUniqueId() {
+		return uniqueId;
+	}
+
 	protected void setIndexName(String indexName) {
 		this.indexName = indexName;
 	}
 
-	protected String getIndexName() {
+	@Override
+	public String getIndexName() {
 		return indexName;
 	}
 

@@ -42,7 +42,12 @@ public class SearchServiceImpl extends RemoteServiceServlet implements SearchSer
 		lumongoPoolConfig.addMember(lumongoServer);
 		lumongoPoolConfig.setDefaultRetries(4);
 
-		lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
+		try {
+			lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 
 	}
 

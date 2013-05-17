@@ -45,8 +45,19 @@ message LMMember {
 
 message GetMembersResponse {
 	repeated LMMember member = 1;
+	repeated IndexMapping indexMapping = 2;
 }
 
+message IndexMapping {
+	required string indexName = 1;
+	required uint32 numberOfSegments = 2;
+	repeated SegmentMapping segmentMapping = 3;
+}
+
+message SegmentMapping {
+	required uint32 segmentNumber = 1;
+	required LMMember member = 2;
+}
 
 message GetTermsRequest {
 	required string indexName = 1;

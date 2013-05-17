@@ -52,6 +52,7 @@ import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
 import org.lumongo.cluster.message.Lumongo.IndexCreateResponse;
 import org.lumongo.cluster.message.Lumongo.IndexDeleteRequest;
 import org.lumongo.cluster.message.Lumongo.IndexDeleteResponse;
+import org.lumongo.cluster.message.Lumongo.IndexMapping;
 import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.IndexSettingsResponse;
@@ -63,6 +64,7 @@ import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
+import org.lumongo.cluster.message.Lumongo.SegmentMapping;
 import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.cluster.message.Lumongo.Term;
@@ -1095,6 +1097,8 @@ public class IndexManager {
 
 			Nodes nodes = ClusterHelper.getNodes(mongoConfig);
 
+			HashMap<Member, LMMember> memberMap = new HashMap<Member, LMMember>();
+
 			for (Member m : members) {
 				LocalNodeConfig localNodeConfig = nodes.find(m);
 
@@ -1108,9 +1112,28 @@ public class IndexManager {
 				lmMemberBuilder.setInternalPort(localNodeConfig.getInternalServicePort());
 				lmMemberBuilder.setHazelcastPort(localNodeConfig.getHazelcastPort());
 				lmMemberBuilder.setRestPort(localNodeConfig.getRestPort());
-				responseBuilder.addMember(lmMemberBuilder.build());
-
+				LMMember lmMember = lmMemberBuilder.build();
+				responseBuilder.addMember(lmMember);
+				memberMap.put(m, lmMember);
 			}
+
+			for (String indexName : indexMap.keySet()) {
+				Index i = indexMap.get(indexName);
+
+				IndexMapping.Builder indexMappingBuilder = IndexMapping.newBuilder();
+				indexMappingBuilder.setIndexName(indexName);
+				indexMappingBuilder.setNumberOfSegments(i.getNumberOfSegments());
+
+				Map<Integer, Member> segmentToMemberMap = i.getSegmentToMemberMap();
+				for (Integer segmentNumber : segmentToMemberMap.keySet()) {
+					Member m = segmentToMemberMap.get(segmentNumber);
+					LMMember lmMember = memberMap.get(m);
+					SegmentMapping segmentMapping = SegmentMapping.newBuilder().setSegmentNumber(segmentNumber).setMember(lmMember).build();
+					indexMappingBuilder.addSegmentMapping(segmentMapping);
+				}
+				responseBuilder.addIndexMapping(indexMappingBuilder);
+			}
+
 
 			return responseBuilder.build();
 		}

@@ -3,6 +3,7 @@ package org.lumongo.client.result;
 import java.util.List;
 
 import org.lumongo.cluster.message.Lumongo.GetMembersResponse;
+import org.lumongo.cluster.message.Lumongo.IndexMapping;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 
 public class GetMembersResult extends Result {
@@ -15,6 +16,10 @@ public class GetMembersResult extends Result {
 
 	public List<LMMember> getMembers() {
 		return getMembersResponse.getMemberList();
+	}
+
+	public List<IndexMapping> getIndexMappings() {
+		return getMembersResponse.getIndexMappingList();
 	}
 
 	@Override

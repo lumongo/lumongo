@@ -3,6 +3,7 @@ package org.lumongo.client.command;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.lumongo.client.command.base.RoutableCommand;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.StoreResult;
@@ -18,7 +19,7 @@ import org.lumongo.doc.ResultDocBuilder;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 
-public class Store extends SimpleCommand<StoreRequest, StoreResult> {
+public class Store extends SimpleCommand<StoreRequest, StoreResult> implements RoutableCommand {
 	private String uniqueId;
 	private String indexName;
 	private ResultDocument resultDocument;
@@ -32,8 +33,14 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> {
 		this.associatedDocuments = new ArrayList<AssociatedDocument>();
 	}
 
+	@Override
 	public String getUniqueId() {
 		return uniqueId;
+	}
+
+	@Override
+	public String getIndexName() {
+		return indexName;
 	}
 
 	public Store setUniqueId(String uniqueId) {
