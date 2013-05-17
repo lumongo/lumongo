@@ -16,8 +16,11 @@ public class LumongoPoolConfig {
 	private String poolName;
 	private boolean compressedConnection;
 	private boolean routingEnabled;
+	private boolean memberUpdateEnabled;
+	private int memberUpdateInterval;
 
 	public final static int DEFAULT_DEFAULT_RETRIES = 0;
+	public final static int DEFAULT_MEMBER_UPDATE_INTERVAL = 10000;
 
 	public LumongoPoolConfig() {
 		this.members = new ArrayList<LMMember>();
@@ -27,6 +30,8 @@ public class LumongoPoolConfig {
 		this.poolName = null;
 		this.compressedConnection = false;
 		this.routingEnabled = true;
+		this.memberUpdateEnabled = true;
+		this.memberUpdateInterval = DEFAULT_MEMBER_UPDATE_INTERVAL;
 	}
 
 	public LumongoPoolConfig addMember(String serverAddress) {
@@ -113,6 +118,22 @@ public class LumongoPoolConfig {
 
 	public void setRoutingEnabled(boolean routingEnabled) {
 		this.routingEnabled = routingEnabled;
+	}
+
+	public boolean isMemberUpdateEnabled() {
+		return memberUpdateEnabled;
+	}
+
+	public void setMemberUpdateEnabled(boolean memberUpdateEnabled) {
+		this.memberUpdateEnabled = memberUpdateEnabled;
+	}
+
+	public int getMemberUpdateInterval() {
+		return memberUpdateInterval;
+	}
+
+	public void setMemberUpdateInterval(int memberUpdateInterval) {
+		this.memberUpdateInterval = memberUpdateInterval;
 	}
 
 }

@@ -2,6 +2,8 @@ package org.lumongo.client.pool;
 
 import java.util.List;
 
+import javax.activity.InvalidActivityException;
+
 import org.apache.commons.pool.KeyedPoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericKeyedObjectPool;
 import org.lumongo.client.command.GetMembers;
@@ -14,14 +16,44 @@ import org.lumongo.cluster.message.Lumongo.IndexMapping;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 
 public class LumongoPool {
+
+	protected class MembershipUpdateThread extends Thread {
+
+		MembershipUpdateThread() {
+			setDaemon(true);
+			setName("LMMemberUpdateThread" + hashCode());
+		}
+
+		@Override
+		public void run() {
+			while (!isClosed) {
+				try {
+					try {
+						Thread.sleep(memberUpdateInterval);
+					} catch (InterruptedException e) {
+
+					}
+					updateMembers();
+
+				} catch (Throwable t) {
+					// thread must never die
+				}
+			}
+		}
+	}
+
+
 	private List<LMMember> members;
 	private int retries;
 	private int maxIdle;
 	private int maxConnections;
 	private boolean routingEnabled;
+	private boolean isClosed;
+	private int memberUpdateInterval;
 
 	private GenericKeyedObjectPool<LMMember, LumongoConnection> connectionPool;
 	private IndexRouting indexRouting;
+
 
 	public LumongoPool(final LumongoPoolConfig lumongoPoolConfig) throws Exception {
 		members = lumongoPoolConfig.getMembers();
@@ -29,6 +61,11 @@ public class LumongoPool {
 		maxIdle = lumongoPoolConfig.getMaxIdle();
 		maxConnections = lumongoPoolConfig.getMaxConnections();
 		routingEnabled = lumongoPoolConfig.isRoutingEnabled();
+		memberUpdateInterval = lumongoPoolConfig.getMemberUpdateInterval();
+		if (memberUpdateInterval < 100) {
+			//TODO think about cleaner ways to handle this
+			throw new InvalidActivityException("Member update interval is less than the minimum of 100");
+		}
 
 		KeyedPoolableObjectFactory<LMMember, LumongoConnection> factory = new KeyedPoolableObjectFactory<LMMember, LumongoConnection>() {
 
@@ -69,8 +106,9 @@ public class LumongoPool {
 
 		connectionPool = new GenericKeyedObjectPool<LMMember, LumongoConnection>(factory, poolConfig);
 
-		if (routingEnabled) {
-			updateMembers();
+		if (lumongoPoolConfig.isMemberUpdateEnabled()) {
+			MembershipUpdateThread mut = new MembershipUpdateThread();
+			mut.start();
 		}
 	}
 
@@ -142,6 +180,7 @@ public class LumongoPool {
 
 	public void close() throws Exception {
 		connectionPool.close();
+		isClosed = true;
 	}
 
 }
