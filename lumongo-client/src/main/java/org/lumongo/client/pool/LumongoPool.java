@@ -34,10 +34,9 @@ public class LumongoPool {
 
 					}
 					updateMembers();
-					System.out.println("updating members");
 
 				} catch (Throwable t) {
-					t.printStackTrace();
+
 				}
 			}
 		}
@@ -145,7 +144,6 @@ public class LumongoPool {
 				if (shouldRoute) {
 					RoutableCommand rc = (RoutableCommand) command;
 					selectedMember = indexRouting.getMember(rc.getIndexName(), rc.getUniqueId());
-					System.out.println("Selected <" + selectedMember + ">");
 				}
 
 				if (selectedMember == null) {
