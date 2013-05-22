@@ -35,6 +35,8 @@ public class IndexWikipedia {
 	private static WikiModel wikiModel = new WikiModel("/wiki/${image}", "/wiki/${title}");
 	private static PlainTextConverter plainTextConverter = new PlainTextConverter();
 
+	private final static boolean stripMarkup = false;
+
 	public static void main(String[] args) throws Exception {
 
 		if (args.length != 2) {
@@ -118,15 +120,22 @@ public class IndexWikipedia {
 
 		List<Object> revUploadList = page.getRevisionOrUpload();
 
+
+
 		for (Object o : revUploadList) {
 			if (o instanceof RevisionType) {
 				RevisionType revisionType = (RevisionType) o;
 
 				TextType textType = revisionType.getText();
 				String wikiText = textType.getValue();
-				//convert wiki markup to plain text for simplicity
-				String plainText = wikiModel.render(plainTextConverter, wikiText);
-				article.setText(plainText);
+
+				if (stripMarkup) {
+					String plainText = wikiModel.render(plainTextConverter, wikiText);
+					article.setText(plainText);
+				}
+				else {
+					article.setText(wikiText);
+				}
 				article.setRevision(revisionType.getId().longValue());
 
 				ContributorType contributorType = revisionType.getContributor();
