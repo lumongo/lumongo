@@ -38,6 +38,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private List<CountRequest> countRequests;
 	private List<DrillDown> drillDowns;
 	private List<FieldSort> fieldSorts;
+	private Boolean drillSideways;
 
 	public Query(String index, String query, int amount) {
 		this(new String[] { index }, query, amount);
@@ -90,6 +91,14 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 	public Boolean getRealTime() {
 		return realTime;
+	}
+
+	public Boolean getDrillSideways() {
+		return drillSideways;
+	}
+
+	public void setDrillSideways(Boolean drillSideways) {
+		this.drillSideways = drillSideways;
 	}
 
 	public Query setLastResult(QueryResult lastResult) {
@@ -164,6 +173,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 		if (!drillDowns.isEmpty() || !countRequests.isEmpty()) {
 			FacetRequest.Builder facetRequestBuilder = FacetRequest.newBuilder();
+
+			if (drillSideways != null) {
+				facetRequestBuilder.setDrillSideways(drillSideways);
+			}
 
 			facetRequestBuilder.addAllDrillDown(drillDowns);
 

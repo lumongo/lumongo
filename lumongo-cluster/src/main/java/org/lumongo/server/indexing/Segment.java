@@ -29,6 +29,9 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.index.FacetFields;
 import org.apache.lucene.facet.params.FacetSearchParams;
 import org.apache.lucene.facet.search.CountFacetRequest;
+import org.apache.lucene.facet.search.DrillDownQuery;
+import org.apache.lucene.facet.search.DrillSideways;
+import org.apache.lucene.facet.search.DrillSideways.DrillSidewaysResult;
 import org.apache.lucene.facet.search.FacetResult;
 import org.apache.lucene.facet.search.FacetResultNode;
 import org.apache.lucene.facet.search.FacetsCollector;
@@ -233,12 +236,21 @@ public class Segment {
 					facetRequests.add(new CountFacetRequest(new CategoryPath(count.getFacet(), LumongoConstants.FACET_DELIMITER), maxFacets));
 				}
 
+
 				FacetSearchParams facetSearchParams = new FacetSearchParams(facetRequests);
 
-				FacetsCollector facetsCollector = FacetsCollector.create(facetSearchParams, ir, taxonomyReader);
-				is.search(q, MultiCollector.wrap(collector, facetsCollector));
 
-				List<FacetResult> facetResults = facetsCollector.getFacetResults();
+				List<FacetResult> facetResults;
+				if (facetRequest.getDrillSideways()) 	{
+					DrillSideways ds = new DrillSideways(is, taxonomyReader);
+					DrillSidewaysResult ddsr = ds.search((DrillDownQuery)q, collector, facetSearchParams);
+					facetResults = ddsr.facetResults;
+				}
+				else {
+					FacetsCollector facetsCollector = FacetsCollector.create(facetSearchParams, ir, taxonomyReader);
+					is.search(q, MultiCollector.wrap(collector, facetsCollector));
+					facetResults = facetsCollector.getFacetResults();
+				}
 
 				for (FacetResult fc : facetResults) {
 					for (FacetResultNode subResult : fc.getFacetResultNode().subResults) {
