@@ -97,8 +97,9 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return drillSideways;
 	}
 
-	public void setDrillSideways(Boolean drillSideways) {
+	public Query setDrillSideways(Boolean drillSideways) {
 		this.drillSideways = drillSideways;
+		return this;
 	}
 
 	public Query setLastResult(QueryResult lastResult) {
