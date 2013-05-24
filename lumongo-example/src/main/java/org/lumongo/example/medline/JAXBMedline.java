@@ -5,6 +5,8 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormatSymbols;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -42,6 +44,8 @@ public class JAXBMedline {
 
 	private static LumongoWorkPool lumongoWorkPool;
 	private static Mapper<Document> mapper;
+
+	private static List<String> shortMonths = Arrays.asList(new DateFormatSymbols().getShortMonths());
 
 	public static void main(String[] args) throws Exception {
 
@@ -255,7 +259,7 @@ public class JAXBMedline {
 					DateTime dateTime = new DateTime().withYear(Integer.parseInt(year));
 
 					if (month != null) {
-						dateTime.withMonthOfYear(Integer.parseInt(month));
+						dateTime.withMonthOfYear(shortMonths.indexOf(month) + 1);
 					}
 					else {
 						dateTime.withMonthOfYear(1);
