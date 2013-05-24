@@ -67,23 +67,31 @@ public class SingleNodeTest {
 		{
 			for (String issn : issns) {
 				for (int i = 0; i < COUNT_PER_ISSN; i++) {
+					boolean half = (i % 2 == 0);
+
 					id++;
+
 					String uniqueId = uniqueIdPrefix + id;
 
 					IndexedDocBuilder docBuilder = new IndexedDocBuilder();
 					docBuilder.addField("issn", issn);
 					docBuilder.addField("title", "Facet Userguide");
 					docBuilder.addFacet("issn", issn);
-					LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
-					boolean compressed = (i % 2 == 0);
+					if (half) {
+						docBuilder.addFacet("country", "US");
+					}
+					else {
+						docBuilder.addFacet("country", "France");
+					}
+
+
+					LMDoc indexedDoc = docBuilder.getIndexedDoc();
 
 					String xml = "<sampleXML>" + i + "</sampleXML>";
 
-
-
 					Store s = new Store(uniqueId, FACET_TEST_INDEX);
-					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(xml).setCompressed(compressed));
+					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(xml).setCompressed(half));
 					s.setIndexedDocument(indexedDoc);
 
 					lumongoWorkPool.store(s);
@@ -109,7 +117,25 @@ public class SingleNodeTest {
 			QueryResult qr = lumongoWorkPool.query(q);
 
 			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN, "Total record count after drill down not " + COUNT_PER_ISSN);
+
+
 		}
+		{
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDownOr("issn/1234-1234", "issn/3333-1234");
+
+			QueryResult qr = lumongoWorkPool.query(q);
+
+			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN*2, "Total record count after drill down not " + (COUNT_PER_ISSN*2));
+		}
+		{
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("issn/1234-1234").addDrillDown("country/France");
+
+			QueryResult qr = lumongoWorkPool.query(q);
+
+			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN/2, "Total record count after drill down not " + (COUNT_PER_ISSN/2));
+		}
+
+
 	}
 
 	@Test(groups = { "first" }, dependsOnGroups = { "init" })
