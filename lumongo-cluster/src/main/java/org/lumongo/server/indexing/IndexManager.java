@@ -34,6 +34,7 @@ import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.DeleteResponse;
+import org.lumongo.cluster.message.Lumongo.DrillDown;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
@@ -623,15 +624,21 @@ public class IndexManager {
 				if (queryRequest.hasFacetRequest()) {
 					if (i.isFaceted()) {
 						FacetRequest facetRequest = queryRequest.getFacetRequest();
-						List<CategoryPath> categoryPathList = new ArrayList<CategoryPath>();
-						List<String> drillDownList = facetRequest.getDrillDownList();
+
+						List<DrillDown> drillDownList = facetRequest.getDrillDownList();
 						if (!drillDownList.isEmpty()) {
-							for (String drillDown : drillDownList) {
-								CategoryPath cp = new CategoryPath(drillDown, LumongoConstants.FACET_DELIMITER);
-								categoryPathList.add(cp);
-							}
 							DrillDownQuery ddQuery = new DrillDownQuery(FacetIndexingParams.DEFAULT, query);
-							ddQuery.add(categoryPathList.toArray(new CategoryPath[0]));
+
+							for (DrillDown drillDown : drillDownList) {
+								List<CategoryPath> categoryPathList = new ArrayList<CategoryPath>();
+								for (String or : drillDown.getOrList()) {
+									CategoryPath cp = new CategoryPath(or, LumongoConstants.FACET_DELIMITER);
+									categoryPathList.add(cp);
+								}
+
+								ddQuery.add(categoryPathList.toArray(new CategoryPath[0]));
+							}
+
 							query = ddQuery;
 						}
 					}

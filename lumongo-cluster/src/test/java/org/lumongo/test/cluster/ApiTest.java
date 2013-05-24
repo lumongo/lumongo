@@ -421,7 +421,7 @@ public class ApiTest {
 
 	public void drillDownQuery() throws Exception {
 		Query query = new Query(MY_INDEX_NAME, "title:special", 0);
-		query.addDrillDown("issn", "1111-1111");
+		query.addDrillDown(Query.drillDownfromParts("issn", "1111-1111"));
 		QueryResult queryResult = lumongoWorkPool.query(query);
 		for (FacetCount fc : queryResult.getFacetCounts()) {
 			System.out.println("Facet <" + fc.getFacet() + "> with count <" + fc.getCount() + ">");
