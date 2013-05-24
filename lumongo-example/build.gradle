@@ -7,17 +7,20 @@ repositories {
 }
 
 dependencies {
-    compile project(':lumongo-client')
+	compile project(':lumongo-client')
     
-    //to parse wikipedia markup
-    compile 'info.bliki.wiki:bliki-core:3.0.19'
+	//to parse wikipedia markup
+	compile 'info.bliki.wiki:bliki-core:3.0.19'
     
-    //for solr testing
-    compile 'org.apache.solr:solr-solrj:4.1.0'
+	//for solr testing
+	compile 'org.apache.solr:solr-solrj:4.1.0'
 	
 	//for common crawl
 	compile 'net.java.dev.jets3t:jets3t:0.9.0'
 	compile 'org.jwat:jwat-arc:0.8.0'
 	compile 'org.jsoup:jsoup:1.6.2'
+
+	//for medline
+	compile 'joda-time:joda-time:2.1'
 }
 

@@ -13,14 +13,14 @@ import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.CreateOrUpdateIndexResult;
 import org.lumongo.client.result.StoreResult;
+import org.lumongo.example.wikipedia.schema.ContributorType;
+import org.lumongo.example.wikipedia.schema.PageType;
+import org.lumongo.example.wikipedia.schema.RedirectType;
+import org.lumongo.example.wikipedia.schema.RevisionType;
+import org.lumongo.example.wikipedia.schema.TextType;
 import org.lumongo.fields.Mapper;
 import org.lumongo.util.LogUtil;
 import org.lumongo.xml.StaxJAXBReader;
-import org.wikipedia.schema.ContributorType;
-import org.wikipedia.schema.PageType;
-import org.wikipedia.schema.RedirectType;
-import org.wikipedia.schema.RevisionType;
-import org.wikipedia.schema.TextType;
 
 
 public class IndexWikipedia {
