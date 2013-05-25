@@ -133,6 +133,23 @@ public class SingleNodeTest {
 			QueryResult qr = lumongoWorkPool.query(q);
 
 			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN/2, "Total record count after drill down not " + (COUNT_PER_ISSN/2));
+			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN/2, "Total record count after drill down not " + (COUNT_PER_ISSN/2));
+		}
+
+		{
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10);
+			q.addDrillDown("issn/1234-1234").addDrillDown("country/France");
+			q.addCountRequest("issn");
+			q.setDrillSideways(true);
+
+			QueryResult qr = lumongoWorkPool.query(q);
+
+			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN/2, "Total record count after drill down not " + (COUNT_PER_ISSN/2));
+			Assert.assertEquals(qr.getFacetCounts().size(), issns.length, "Number of issn facets not equal " + issns.length);
+
+			q.setDrillSideways(false);
+			qr = lumongoWorkPool.query(q);
+			Assert.assertEquals(qr.getFacetCounts().size(), 1, "Number of issn facets not equal " + 1);
 		}
 
 
