@@ -41,6 +41,30 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
 		return faceted;
 	}
 
+	public Boolean getDatabasePerIndexSegment() {
+		return databasePerIndexSegment;
+	}
+
+	public void setDatabasePerIndexSegment(Boolean databasePerIndexSegment) {
+		this.databasePerIndexSegment = databasePerIndexSegment;
+	}
+
+	public Boolean getCollectionPerRawDocumentSegment() {
+		return collectionPerRawDocumentSegment;
+	}
+
+	public void setCollectionPerRawDocumentSegment(Boolean collectionPerRawDocumentSegment) {
+		this.collectionPerRawDocumentSegment = collectionPerRawDocumentSegment;
+	}
+
+	public Boolean getDatabasePerRawDocumentSegment() {
+		return databasePerRawDocumentSegment;
+	}
+
+	public void setDatabasePerRawDocumentSegment(Boolean databasePerRawDocumentSegment) {
+		this.databasePerRawDocumentSegment = databasePerRawDocumentSegment;
+	}
+
 	@Override
 	public CreateOrUpdateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
 		CreateOrUpdateIndexResult result = new CreateOrUpdateIndexResult();
@@ -68,17 +92,7 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
 
 
 
-	public void setDatabasePerIndexSegment(Boolean databasePerIndexSegment) {
-		this.databasePerIndexSegment = databasePerIndexSegment;
-	}
 
-	public void setCollectionPerRawDocumentSegment(Boolean collectionPerRawDocumentSegment) {
-		this.collectionPerRawDocumentSegment = collectionPerRawDocumentSegment;
-	}
-
-	public void setDatabasePerRawDocumentSegment(Boolean databasePerRawDocumentSegment) {
-		this.databasePerRawDocumentSegment = databasePerRawDocumentSegment;
-	}
 
 
 
