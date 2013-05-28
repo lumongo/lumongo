@@ -2,8 +2,8 @@ package org.lumongo.client.command;
 
 
 /**
- * Deletes a document from the LuMongo index(es) specified without
- * removing the stored document or associated documents
+ * Deletes a document from the LuMongo index specified without
+ * removing associated documents
  * @author mdavis
  *
  */
@@ -11,7 +11,7 @@ public class DeleteFromIndex extends Delete {
 
 	public DeleteFromIndex(String uniqueId, String indexName) {
 		super(uniqueId, indexName);
-		setDeleteDocument(false);
+		setDeleteDocument(true);
 		setDeleteAllAssociated(false);
 	}
 

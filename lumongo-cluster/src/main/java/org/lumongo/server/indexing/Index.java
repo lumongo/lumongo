@@ -1257,6 +1257,7 @@ public class Index {
 
 	}
 
+	//handle forwarding, and locking here like other store requests
 	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long clusterTime, HashMap<String, String> metadataMap)
 			throws Exception {
 		indexLock.readLock().lock();

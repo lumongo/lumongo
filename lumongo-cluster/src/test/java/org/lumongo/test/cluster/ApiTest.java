@@ -65,6 +65,9 @@ public class ApiTest {
 		lumongoPoolConfig.setMaxIdle(8);
 		lumongoPoolConfig.setCompressedConnection(false);
 		lumongoPoolConfig.setPoolName(null);
+		lumongoPoolConfig.setMemberUpdateEnabled(true);
+		lumongoPoolConfig.setMemberUpdateInterval(10000);
+		lumongoPoolConfig.setRoutingEnabled(true);
 		lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 
 	}
@@ -484,8 +487,9 @@ public class ApiTest {
 	public void storeLargeAssociated() throws Exception {
 		String uniqueId = "myid333";
 		String filename = "myfilename";
+		String indexName = "myIndexName";
 
-		StoreLargeAssociated storeLargeAssociated = new StoreLargeAssociated(uniqueId, filename, new File("/tmp/myFile"));
+		StoreLargeAssociated storeLargeAssociated = new StoreLargeAssociated(uniqueId, indexName, filename, new File("/tmp/myFile"));
 
 		lumongoWorkPool.storeLargeAssociated(storeLargeAssociated);
 
@@ -494,8 +498,9 @@ public class ApiTest {
 	public void fetchLargeAssociated() throws Exception {
 		String uniqueId = "myid333";
 		String filename = "myfilename";
+		String indexName = "myIndexName";
 
-		FetchLargeAssociated fetchLargeAssociated = new FetchLargeAssociated(uniqueId, filename, new File("/tmp/myFetchedFile"));
+		FetchLargeAssociated fetchLargeAssociated = new FetchLargeAssociated(uniqueId, indexName, filename, new File("/tmp/myFetchedFile"));
 		lumongoWorkPool.fetchLargeAssociated(fetchLargeAssociated);
 
 	}
@@ -557,10 +562,10 @@ public class ApiTest {
 		try {
 			apiTest.updateMembers();
 
-			//apiTest.getMembers();
+			apiTest.getMembers();
 
-			apiTest.deleteIndex(MY_INDEX_NAME);
-			apiTest.deleteIndex("myIndexName2");
+			//apiTest.deleteIndex(MY_INDEX_NAME);
+			//apiTest.deleteIndex("myIndexName2");
 			//apiTest.createIndex();
 			//apiTest.updateIndex();
 
@@ -570,7 +575,7 @@ public class ApiTest {
 			apiTest.storeDocumentText(MY_INDEX_NAME, "myid555");
 			apiTest.storeDocumentText("myIndexName2", "myid666");
 
-			/*
+
 			apiTest.storeDocumentBson();
 			apiTest.storeDocumentBinary();
 
@@ -594,7 +599,7 @@ public class ApiTest {
 
 			apiTest.getIndexes();
 			apiTest.getDocumentCount();
-			 */
+
 
 			apiTest.simpleQueryWithSort();
 
