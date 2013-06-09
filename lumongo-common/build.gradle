@@ -1,3 +1,4 @@
+apply from: '../maven.gradle'
 
 defaultTasks 'compileProto', 'build'
 
@@ -38,12 +39,6 @@ task compileProto << {
 	}
 	else {
 		println("Error: " + protoDir.getAbsolutePath() + " does not exist or is not a directory")
-	}
-}
-
-uploadArchives {
-	repositories {
-		mavenDeployer { pom.artifactId = 'lumongo-common' }
 	}
 }
 

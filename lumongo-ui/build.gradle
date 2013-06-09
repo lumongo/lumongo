@@ -1,4 +1,4 @@
-apply from: 'gwtBuild.gradle'
+apply from: '../gwtBuild.gradle'
 
 compileGwt.modules = ['org.lumongo.somongo.SoMongo']
 

@@ -1,3 +1,4 @@
+apply from: '../maven.gradle'
 
 dependencies {
 	compile 'org.mongodb:mongo-java-driver:2.11.1'

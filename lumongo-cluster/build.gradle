@@ -1,3 +1,5 @@
+apply from: '../maven.gradle'
+
 dependencies {	
     //compile project(':lumongo-common') //pulled in by client
     compile project(':lumongo-storage')	

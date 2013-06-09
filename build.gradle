@@ -4,19 +4,18 @@ defaultTasks 'eclipse', 'compileProto', 'createDeploy'
 subprojects {
 	apply plugin: 'java'
 	apply plugin: 'eclipse'
-	apply plugin: 'maven'
-	
 	
 	sourceCompatibility = 1.7
 	targetCompatibility = 1.7
 	
-	version = '0.25'
+	version = '0.25-SNAPSHOT'
+	ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 	group = 'org.lumongo'
 	
-	configurations { deployerJars }
-	
-	repositories { mavenCentral() }
+	repositories {
+		mavenCentral()
+	}
 	
 	test {
 		useTestNG()
@@ -43,50 +42,38 @@ subprojects {
 	
 	dependencies {
 		testCompile 'org.testng:testng:5.10:jdk15'
-		deployerJars 'org.apache.maven.wagon:wagon-ssh:1.0-beta-2'
+	}
+
+	javadoc {
+		options.addStringOption("sourcepath", "src/main/java")
 	}
 	
 	sourceSets {
-		main { resources { srcDir 'src/main/java' } }
-		test { resources { srcDir 'src/test/java' }			 }
+		main {
+			resources {
+				srcDir 'src/main/java'
+			}
+		}
+		test {
+			resources {
+				srcDir 'src/test/java'
+			} 
+		}
 	}
-	
+
 	task sourcesJar(type: Jar, dependsOn:classes) {
 		classifier = 'sources'
 		from sourceSets.main.allSource
 	}
 	
-	artifacts { archives sourcesJar }
+	artifacts {
+		archives jar
+		archives sourcesJar
+	}
 	
-	//artifacts { 
-	//	runtime (sourcesJar) {
-	//		type = 'sources'
-	//	}
-	//}
-
 	compileJava {
 		options.debug = true
 		options.debugOptions.debugLevel = "source,lines,vars"
 	}
-	
-	uploadArchives {
-		repositories {
-			mavenDeployer {
-				configuration = configurations.deployerJars
-				repository(url: "scp://lumongo.org/maven")
-				pom.groupId = 'org.lumongo'
-				pom.project {
-					licenses {
-						license {
-							name 'The Apache Software License, Version 2.0'
-							url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-							distribution 'repo'
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	
+
 }

@@ -1,3 +1,5 @@
+apply from: '../maven.gradle'
+
 dependencies {	
     compile project(':lumongo-common')	
 }
