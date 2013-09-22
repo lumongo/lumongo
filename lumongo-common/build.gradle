@@ -3,7 +3,7 @@ apply from: '../maven.gradle'
 defaultTasks 'compileProto', 'build'
 
 dependencies {
-    compile 'org.mongodb:mongo-java-driver:2.11.1'
+    compile 'org.mongodb:mongo-java-driver:2.11.3'
     compile 'com.google.guava:guava:14.0.1'
     compile 'com.google.protobuf:protobuf-java:2.5.0'
     compile 'com.googlecode.protobuf-rpc-pro:protobuf-rpc-pro-duplex:3.0.4'
