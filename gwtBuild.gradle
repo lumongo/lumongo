@@ -200,6 +200,8 @@ task compileGwt(type: CompileGwt, dependsOn: org.gradle.api.plugins.JavaPlugin.C
 
 war {
 	dependsOn 'compileGwt'
+	duplicatesStrategy = 'exclude'
+	
 	from project.fileTree(gwtWarDir)
 
 	//don't pull in eclipse compile of gwt
