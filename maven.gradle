@@ -66,3 +66,6 @@ if (hasProperty('sonatypeUsername')) {
 		}
 	}
 }
+else {
+	println("No username given.  To specify run gradle with -PsonatypeUsername=username -PsonatypePassword=password")
+}

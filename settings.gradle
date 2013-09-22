@@ -1,1 +1,1 @@
-include 'lumongo-common', 'lumongo-storage', 'lumongo-client', 'lumongo-cluster', 'lumongo-ui', 'lumongo-example'
+include 'lumongo-common', 'lumongo-storage', 'lumongo-client', 'lumongo-cluster', 'lumongo-example'

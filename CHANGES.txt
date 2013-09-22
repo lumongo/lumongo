@@ -1,3 +1,7 @@
+0.25
+Update to Lucene 4.4
+...
+
 0.13.2
 Launch Script handles quoted arguements correctly
 Correctly support numeric types as default analyzers
