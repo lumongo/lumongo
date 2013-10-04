@@ -23,5 +23,5 @@ public @interface Indexed {
 	 * Sets the analyzer to use to index the field
 	 * 
 	 */
-	LMAnalyzer value();
+	LMAnalyzer value() default LMAnalyzer.DEFAULT;
 }
