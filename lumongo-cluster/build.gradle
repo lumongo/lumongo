@@ -5,10 +5,10 @@ dependencies {
     compile project(':lumongo-storage')	
     compile project(':lumongo-client') //needed for admin tools
     compile 'com.hazelcast:hazelcast:2.5.1'
-    compile 'net.sf.jopt-simple:jopt-simple:4.4'
-    compile 'org.apache.lucene:lucene-facet:4.4.0'
-    compile 'org.apache.lucene:lucene-queryparser:4.4.0'
-    compile 'org.apache.lucene:lucene-analyzers-common:4.4.0'
+    compile 'net.sf.jopt-simple:jopt-simple:4.5'
+    compile 'org.apache.lucene:lucene-facet:4.5.0'
+    compile 'org.apache.lucene:lucene-queryparser:4.5.0'
+    compile 'org.apache.lucene:lucene-analyzers-common:4.5.0'
     compile 'org.slf4j:slf4j-log4j12:1.7.2'
 }
 

@@ -2,11 +2,11 @@ apply from: '../maven.gradle'
 
 dependencies {
 	compile 'org.mongodb:mongo-java-driver:2.11.3'
-	compile 'com.google.guava:guava:14.0.1'
+    compile 'com.google.guava:guava:15.0'
 	compile 'log4j:log4j:1.2.16'
-	compile 'org.apache.lucene:lucene-core:4.4.0'
-	testCompile 'org.apache.lucene:lucene-queryparser:4.4.0'
-	testCompile 'org.apache.lucene:lucene-analyzers-common:4.4.0'
+	compile 'org.apache.lucene:lucene-core:4.5.0'
+	testCompile 'org.apache.lucene:lucene-queryparser:4.5.0'
+	testCompile 'org.apache.lucene:lucene-analyzers-common:4.5.0'
 }
 
 
