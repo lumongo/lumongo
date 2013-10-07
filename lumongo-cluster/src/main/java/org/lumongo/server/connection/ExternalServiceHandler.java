@@ -7,6 +7,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.net.UnknownHostException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
@@ -54,82 +55,72 @@ import com.googlecode.protobuf.pro.duplex.util.RenamingThreadFactoryProxy;
 
 public class ExternalServiceHandler extends ExternalService {
 	private final static Logger log = Logger.getLogger(ExternalServiceHandler.class);
-
+	
 	private final IndexManager indexManger;
 	private final ClusterConfig clusterConfig;
 	private final LocalNodeConfig localNodeConfig;
-
+	
 	private ServerBootstrap bootstrap;
-
+	
 	public ExternalServiceHandler(ClusterConfig clusterConfig, LocalNodeConfig localNodeConfig, IndexManager indexManger) throws UnknownHostException {
 		this.clusterConfig = clusterConfig;
 		this.localNodeConfig = localNodeConfig;
 		this.indexManger = indexManger;
-
+		
 	}
-
+	
 	public void start() {
 		int externalServicePort = localNodeConfig.getExternalServicePort();
 		PeerInfo externalServerInfo = new PeerInfo(ConnectionHelper.getHostName(), externalServicePort);
-
+		
 		int externalWorkers = clusterConfig.getExternalWorkers();
-
-		RpcServerCallExecutor executor = new ThreadPoolCallExecutor(externalWorkers, externalWorkers, new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc", Executors.defaultThreadFactory()));
-
+		
+		RpcServerCallExecutor executor = new ThreadPoolCallExecutor(externalWorkers, externalWorkers, new RenamingThreadFactoryProxy(
+						ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc", Executors.defaultThreadFactory()));
+		
 		DuplexTcpServerPipelineFactory serverFactory = new DuplexTcpServerPipelineFactory(externalServerInfo);
 		serverFactory.setRpcServerCallExecutor(executor);
-
+		
 		bootstrap = new ServerBootstrap();
-		bootstrap.group(new NioEventLoopGroup(0,new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Boss", Executors.defaultThreadFactory())),
-				new NioEventLoopGroup(0,new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Worker", Executors.defaultThreadFactory()))
-				);
+		bootstrap.group(new NioEventLoopGroup(0, new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-"
+						+ localNodeConfig.getHazelcastPort() + "-Boss", Executors.defaultThreadFactory())),
+						new NioEventLoopGroup(0, new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-"
+										+ localNodeConfig.getHazelcastPort() + "-Worker", Executors.defaultThreadFactory())));
 		bootstrap.channel(NioServerSocketChannel.class);
 		bootstrap.childHandler(serverFactory);
-
+		
 		//TODO think about these options
 		bootstrap.option(ChannelOption.SO_SNDBUF, 1048576);
 		bootstrap.option(ChannelOption.SO_RCVBUF, 1048576);
 		bootstrap.childOption(ChannelOption.SO_RCVBUF, 1048576);
 		bootstrap.childOption(ChannelOption.SO_SNDBUF, 1048576);
 		bootstrap.option(ChannelOption.TCP_NODELAY, true);
-
+		
 		bootstrap.localAddress(externalServicePort);
-
+		
 		serverFactory.setLogger(null);
 		serverFactory.registerConnectionEventListener(new StandardConnectionNotifier(log));
-
+		
 		serverFactory.getRpcServiceRegistry().registerService(this);
-
+		
 		bootstrap.bind();
-
+		
 	}
-
+	
 	public void shutdown() {
-
-		int externalShutdownTimeout = clusterConfig.getExternalShutdownTimeout() * 1000;
-
-		Thread externalShutdown = new Thread("ExternalServiceShutdown-" + localNodeConfig.getHazelcastPort()) {
-			@Override
-			public void run() {
-				log.info("Stopping external service");
-				bootstrap.shutdown();
-			}
-		};
-		externalShutdown.start();
-
+		
+		//TODO quiet period 5?
+		bootstrap.group().shutdownGracefully(5, clusterConfig.getExternalShutdownTimeout(), TimeUnit.SECONDS);
+		
 		try {
-			externalShutdown.join(externalShutdownTimeout);
+			bootstrap.group().terminationFuture().sync();
 		}
 		catch (Exception e) {
-
+			log.info("Failed to stop external service within " + clusterConfig.getExternalShutdownTimeout() + "ms" + e);
 		}
-
-		if (externalShutdown.isAlive()) {
-			log.info("Failed to stop external service within " + externalShutdownTimeout + "ms");
-		}
-
+		
 	}
-
+	
 	@Override
 	public void query(RpcController controller, QueryRequest request, RpcCallback<QueryResponse> done) {
 		try {
@@ -142,7 +133,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void store(RpcController controller, StoreRequest request, RpcCallback<StoreResponse> done) {
 		try {
@@ -155,7 +146,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void delete(RpcController controller, DeleteRequest request, RpcCallback<DeleteResponse> done) {
 		try {
@@ -168,7 +159,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void fetch(RpcController controller, FetchRequest request, RpcCallback<FetchResponse> done) {
 		try {
@@ -181,7 +172,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void createIndex(RpcController controller, IndexCreateRequest request, RpcCallback<IndexCreateResponse> done) {
 		try {
@@ -193,9 +184,9 @@ public class ExternalServiceHandler extends ExternalService {
 			controller.setFailed(e.getMessage());
 			done.run(null);
 		}
-
+		
 	}
-
+	
 	@Override
 	public void changeIndex(RpcController controller, IndexSettingsRequest request, RpcCallback<IndexSettingsResponse> done) {
 		try {
@@ -207,9 +198,9 @@ public class ExternalServiceHandler extends ExternalService {
 			controller.setFailed(e.getMessage());
 			done.run(null);
 		}
-
+		
 	}
-
+	
 	@Override
 	public void deleteIndex(RpcController controller, IndexDeleteRequest request, RpcCallback<IndexDeleteResponse> done) {
 		try {
@@ -222,7 +213,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void getIndexes(RpcController controller, GetIndexesRequest request, RpcCallback<GetIndexesResponse> done) {
 		try {
@@ -235,7 +226,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void getNumberOfDocs(RpcController controller, GetNumberOfDocsRequest request, RpcCallback<GetNumberOfDocsResponse> done) {
 		try {
@@ -248,7 +239,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void clear(RpcController controller, ClearRequest request, RpcCallback<ClearResponse> done) {
 		try {
@@ -261,7 +252,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void optimize(RpcController controller, OptimizeRequest request, RpcCallback<OptimizeResponse> done) {
 		try {
@@ -274,7 +265,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void getFieldNames(RpcController controller, GetFieldNamesRequest request, RpcCallback<GetFieldNamesResponse> done) {
 		try {
@@ -287,7 +278,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void getTerms(RpcController controller, GetTermsRequest request, RpcCallback<GetTermsResponse> done) {
 		try {
@@ -300,7 +291,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void getMembers(RpcController controller, GetMembersRequest request, RpcCallback<GetMembersResponse> done) {
 		try {
@@ -313,7 +304,7 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 	@Override
 	public void groupFetch(RpcController controller, GroupFetchRequest request, RpcCallback<GroupFetchResponse> done) {
 		try {
@@ -330,5 +321,5 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-
+	
 }
