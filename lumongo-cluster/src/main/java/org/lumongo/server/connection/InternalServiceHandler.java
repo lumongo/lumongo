@@ -95,8 +95,7 @@ public class InternalServiceHandler extends InternalService {
 	
 	public void shutdown() {
 		
-		//TODO quiet period 5?
-		bootstrap.group().shutdownGracefully(5, clusterConfig.getInternalShutdownTimeout(), TimeUnit.SECONDS);
+		bootstrap.group().shutdownGracefully(1, clusterConfig.getInternalShutdownTimeout(), TimeUnit.SECONDS);
 		
 		try {
 			bootstrap.group().terminationFuture().sync();

@@ -109,8 +109,7 @@ public class ExternalServiceHandler extends ExternalService {
 	
 	public void shutdown() {
 		
-		//TODO quiet period 5?
-		bootstrap.group().shutdownGracefully(5, clusterConfig.getExternalShutdownTimeout(), TimeUnit.SECONDS);
+		bootstrap.group().shutdownGracefully(1, clusterConfig.getExternalShutdownTimeout(), TimeUnit.SECONDS);
 		
 		try {
 			bootstrap.group().terminationFuture().sync();

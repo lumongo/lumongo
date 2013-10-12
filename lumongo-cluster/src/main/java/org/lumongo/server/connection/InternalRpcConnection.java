@@ -61,7 +61,7 @@ public class InternalRpcConnection {
 		rpcClient = null;
 		try {
 			if (bootstrap != null) {
-				bootstrap.group().shutdownGracefully(5, 30, TimeUnit.SECONDS);
+				bootstrap.group().shutdownGracefully(0, 15, TimeUnit.SECONDS);
 			}
 		}
 		catch (Exception e) {
