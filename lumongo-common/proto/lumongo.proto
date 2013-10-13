@@ -280,6 +280,11 @@ message FieldSort {
 	optional Direction direction = 2 [default = ASCENDING];
 }
 
+message FacetGroup {
+	required string fieldName = 1;
+	repeated FacetCount facetCount = 2;
+}
+
 message FacetCount {
 	required string facet = 1;
 	required uint64 count = 2;
@@ -307,7 +312,7 @@ message SegmentResponse {
     required uint32 totalHits = 3;
     repeated ScoredResult scoredResult = 4;
     optional ScoredResult next = 5;
-    repeated FacetCount facetCount = 6;
+    repeated FacetGroup facetGroup = 6;
 }
 
 
@@ -345,7 +350,7 @@ message QueryResponse {
 	required uint64 totalHits = 1;
 	repeated ScoredResult results = 2;
 	required LastResult lastResult = 3;
-	repeated FacetCount facetCount = 4;
+	repeated FacetGroup facetGroup = 4;
 }
 
 message DeleteRequest {
