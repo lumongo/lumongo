@@ -171,6 +171,7 @@ public class QueryCombiner {
 		
 		for (String fieldName : totalFacetCounts.keySet()) {
 			FacetGroup.Builder fg = FacetGroup.newBuilder();
+			fg.setFieldName(fieldName);
 			Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(fieldName);
 			SortedSet<FacetCountResult> sortedFacetResuls = new TreeSet<FacetCountResult>();
 			for (String facet : fieldCounts.keySet()) {
