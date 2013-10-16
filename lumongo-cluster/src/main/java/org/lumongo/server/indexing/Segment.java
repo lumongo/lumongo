@@ -89,7 +89,6 @@ import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.storage.rawfiles.MongoDocumentStorage;
 import org.lumongo.util.LockHandler;
-import org.lumongo.util.StringUtil;
 
 public class Segment {
 	
@@ -253,7 +252,7 @@ public class Segment {
 				}
 				
 				for (FacetResult fc : facetResults) {
-					String fullPath = StringUtil.join(LumongoConstants.FACET_DELIMITER, fc.getFacetRequest().categoryPath.components);
+					String fullPath = fc.getFacetRequest().categoryPath.toString(LumongoConstants.FACET_DELIMITER);
 					FacetGroup.Builder fg = FacetGroup.newBuilder();
 					fg.setFieldName(fullPath);
 					for (FacetResultNode subResult : fc.getFacetResultNode().subResults) {
@@ -261,7 +260,8 @@ public class Segment {
 						CategoryPath cp = subResult.label;
 						long count = (long) subResult.value;
 						facetCountBuilder.setCount(count);
-						facetCountBuilder.setFacet(cp.toString(LumongoConstants.FACET_DELIMITER));
+						String endNode = cp.components[cp.components.length - 1];
+						facetCountBuilder.setFacet(endNode);
 						fg.addFacetCount(facetCountBuilder);
 					}
 					builder.addFacetGroup(fg);
