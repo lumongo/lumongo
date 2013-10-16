@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.search.SortField;
+import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetGroup;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
@@ -48,6 +49,7 @@ public class QueryCombiner {
 	private int resultsSize;
 	
 	private SortRequest sortRequest;
+	private final Map<String, Integer> countMap;
 	
 	private String query;
 	
@@ -59,6 +61,14 @@ public class QueryCombiner {
 		this.segmentResponses = new ArrayList<SegmentResponse>();
 		this.lastResult = request.getLastResult();
 		this.sortRequest = request.getSortRequest();
+		this.countMap = new HashMap<String, Integer>();
+		
+		if (request.hasFacetRequest()) {
+			for (CountRequest countRequest : request.getFacetRequest().getCountRequestList()) {
+				countMap.put(countRequest.getFacet(), countRequest.getMaxFacets());
+			}
+		}
+		
 		this.query = request.getQuery();
 		this.isShort = false;
 		this.results = Collections.emptyList();
@@ -178,8 +188,15 @@ public class QueryCombiner {
 				sortedFacetResuls.add(new FacetCountResult(facet, fieldCounts.get(facet).get()));
 			}
 			
+			Integer maxCount = countMap.get(fieldName);
+			
+			int count = 0;
 			for (FacetCountResult facet : sortedFacetResuls) {
 				fg.addFacetCount(FacetCount.newBuilder().setFacet(facet.getFacet()).setCount(facet.getCount()));
+				count++;
+				if (maxCount > 0 && count >= maxCount) {
+					break;
+				}
 			}
 			builder.addFacetGroup(fg);
 		}
