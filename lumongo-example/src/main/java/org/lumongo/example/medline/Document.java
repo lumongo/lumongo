@@ -12,128 +12,133 @@ import org.lumongo.fields.annotations.Saved;
 import org.lumongo.fields.annotations.Settings;
 import org.lumongo.fields.annotations.UniqueId;
 
-@Settings(indexName = "medline", numberOfSegments = 8, segmentFlushInterval = 6000, segmentCommitInterval = 24000)
+@Settings(
+	indexName = "medline",
+	numberOfSegments = 8,
+	segmentFlushInterval = 6000,
+	segmentCommitInterval = 24000)
 public class Document {
-
+	
 	@DefaultSearch
 	@Saved
 	@Indexed(LMAnalyzer.STANDARD)
 	private String title;
-
+	
 	@Saved
 	@Indexed(LMAnalyzer.STANDARD)
 	private String journalTitle;
-
+	
 	@Saved
 	@Indexed(LMAnalyzer.STANDARD)
 	private String abstractText;
-
+	
 	@Saved
+	@Faceted
 	@Indexed(LMAnalyzer.NUMERIC_LONG)
 	private Date publicationDate;
-
+	
 	@Saved
 	@Indexed(LMAnalyzer.LC_KEYWORD)
 	private String journalVolume;
-
+	
 	@Saved
 	@Indexed(LMAnalyzer.LC_KEYWORD)
 	private String journalIssue;
-
+	
 	@Saved
 	@Faceted
 	@Indexed(LMAnalyzer.LC_KEYWORD)
 	private String journalCountry;
-
+	
 	@Saved
 	@Faceted
 	@Indexed(LMAnalyzer.LC_KEYWORD)
 	private String issn;
-
+	
 	@Saved
 	@Indexed(LMAnalyzer.STANDARD)
 	private List<String> authors;
-
+	
 	@Saved
 	@Faceted
 	@Indexed(LMAnalyzer.LC_KEYWORD)
 	private List<String> authorsExact;
-
+	
 	@UniqueId
 	private String pmid;
-
+	
 	public String getPmid() {
 		return pmid;
 	}
-
+	
 	public void setPmid(String pmid) {
 		this.pmid = pmid;
 	}
-
+	
 	public String getTitle() {
 		return title;
 	}
-
+	
 	public void setTitle(String title) {
 		this.title = title;
 	}
-
+	
 	public String getAbstractText() {
 		return abstractText;
 	}
-
+	
 	public void setAbstractText(String abstractText) {
 		this.abstractText = abstractText;
 	}
-
+	
 	public String getIssn() {
 		return issn;
 	}
-
+	
 	public void setIssn(String issn) {
 		this.issn = issn;
 	}
-
+	
 	public String getJournalTitle() {
 		return journalTitle;
 	}
-
+	
 	public void setJournalTitle(String journalTitle) {
 		this.journalTitle = journalTitle;
 	}
-
+	
 	public Date getPublicationDate() {
 		return publicationDate;
 	}
-
+	
 	public void setPublicationDate(Date publicationDate) {
 		this.publicationDate = publicationDate;
 	}
-
+	
 	public String getJournalVolume() {
 		return journalVolume;
 	}
-
+	
 	public void setJournalVolume(String journalVolume) {
 		this.journalVolume = journalVolume;
 	}
-
+	
 	public String getJournalIssue() {
 		return journalIssue;
 	}
-
+	
 	public void setJournalIssue(String journalIssue) {
 		this.journalIssue = journalIssue;
 	}
-
+	
 	public String getJournalCountry() {
 		return journalCountry;
 	}
-
+	
 	public void setJournalCountry(String journalCountry) {
 		this.journalCountry = journalCountry;
 	}
-
+	
 	public void addAuthor(String author) {
 		if (this.authors == null) {
 			this.authors = new ArrayList<String>();
@@ -141,17 +146,17 @@ public class Document {
 		if (this.authorsExact == null) {
 			this.authorsExact = new ArrayList<String>();
 		}
-
+		
 		this.authors.add(author);
 		this.authorsExact.add(author);
-
+		
 	}
-
+	
 	@Override
 	public String toString() {
 		return "Document [title=" + title + ", journalTitle=" + journalTitle + ", abstractText=" + abstractText + ", publicationDate=" + publicationDate
-				+ ", journalVolume=" + journalVolume + ", journalIssue=" + journalIssue + ", journalCountry=" + journalCountry + ", issn=" + issn
-				+ ", authors=" + authors + ", authorsExact=" + authorsExact + ", pmid=" + pmid + "]\n";
+						+ ", journalVolume=" + journalVolume + ", journalIssue=" + journalIssue + ", journalCountry=" + journalCountry + ", issn=" + issn
+						+ ", authors=" + authors + ", authorsExact=" + authorsExact + ", pmid=" + pmid + "]\n";
 	}
-
+	
 }
