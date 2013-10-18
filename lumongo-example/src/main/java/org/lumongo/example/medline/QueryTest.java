@@ -86,6 +86,60 @@ public class QueryTest {
 			}
 			
 			{
+				//using facet count
+				Query query = new Query("medline", "title:cancer AND issn:*", 10);
+				query.addCountRequest("issn", 4);
+				QueryResult queryResult = lumongoWorkPool.query(query);
+				
+				long totalHits = queryResult.getTotalHits();
+				
+				System.out.println("Found <" + totalHits + "> hits");
+				for (ScoredResult sr : queryResult.getResults()) {
+					
+					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
+					
+					Document d = fr.getDocument(mapper);
+					
+					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
+				}
+				
+				System.out.println("Facets:");
+				for (FacetCount fc : queryResult.getFacetCounts("issn")) {
+					System.out.println(fc.getFacet() + ":" + fc.getCount());
+				}
+			}
+			
+			{
+				//using two facets
+				Query query = new Query("medline", "title:cancer AND issn:*", 10);
+				query.addCountRequest("journalCountry", 4);
+				query.addCountRequest("issn", 4);
+				QueryResult queryResult = lumongoWorkPool.query(query);
+				
+				long totalHits = queryResult.getTotalHits();
+				
+				System.out.println("Found <" + totalHits + "> hits");
+				for (ScoredResult sr : queryResult.getResults()) {
+					
+					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
+					
+					Document d = fr.getDocument(mapper);
+					
+					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
+				}
+				
+				System.out.println("Journal Country Facets:");
+				for (FacetCount fc : queryResult.getFacetCounts("journalCountry")) {
+					System.out.println(fc.getFacet() + ":" + fc.getCount());
+				}
+				
+				System.out.println("ISSN Facets:");
+				for (FacetCount fc : queryResult.getFacetCounts("issn")) {
+					System.out.println(fc.getFacet() + ":" + fc.getCount());
+				}
+			}
+			
+			{
 				//client side document cache
 				int maxSize = 20000;
 				DocumentCache documentCache = new DocumentCache(lumongoWorkPool, maxSize);

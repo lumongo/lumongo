@@ -5,7 +5,6 @@ import java.util.Date;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMField;
-import org.lumongo.util.StringUtil;
 
 public class IndexedDocBuilder {
 	
@@ -71,7 +70,7 @@ public class IndexedDocBuilder {
 	}
 	
 	public void addFacet(String... path) {
-		indexedDocBuilder.addFacet(StringUtil.join(LumongoConstants.FACET_DELIMITER, path));
+		indexedDocBuilder.addFacet(LumongoConstants.FACET_JOINER.join(path));
 	}
 	
 	public IndexedDocBuilder clearFields() {
