@@ -45,10 +45,12 @@ public class FactedFieldInfo<T> {
 					Date d = (Date) o;
 					Calendar cal = Calendar.getInstance();
 					cal.setTime(d);
+					
 					//TODO configurable
 					int year = cal.get(Calendar.YEAR);
 					int month = cal.get(Calendar.MONTH) + 1;
-					int day = cal.get(Calendar.DAY_OF_MONTH) + 1;
+					int day = cal.get(Calendar.DAY_OF_MONTH);
+					
 					list.add(LumongoConstants.FACET_JOINER.join(year, month, day));
 				}
 				else {
