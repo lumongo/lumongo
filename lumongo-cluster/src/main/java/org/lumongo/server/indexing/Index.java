@@ -943,6 +943,12 @@ public class Index {
 					builder.addSegmentReponse(rs);
 				}
 				catch (ExecutionException e) {
+					Throwable t = e.getCause();
+					
+					if (t instanceof OutOfMemoryError) {
+						throw (OutOfMemoryError) t;
+					}
+					
 					throw ((Exception) e.getCause());
 				}
 			}
