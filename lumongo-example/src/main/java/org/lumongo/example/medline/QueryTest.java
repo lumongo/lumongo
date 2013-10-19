@@ -2,6 +2,7 @@ package org.lumongo.example.medline;
 
 import java.util.List;
 
+import org.lumongo.LumongoConstants;
 import org.lumongo.client.cache.DocumentCache;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.command.Query;
@@ -137,6 +138,59 @@ public class QueryTest {
 				for (FacetCount fc : queryResult.getFacetCounts("issn")) {
 					System.out.println(fc.getFacet() + ":" + fc.getCount());
 				}
+			}
+			
+			{
+				//using date facet
+				Query query = new Query("medline", "title:asthma", 10);
+				query.addCountRequest("publicationDate", 15);
+				
+				QueryResult queryResult = lumongoWorkPool.query(query);
+				
+				long totalHits = queryResult.getTotalHits();
+				
+				System.out.println("Found <" + totalHits + "> hits");
+				for (ScoredResult sr : queryResult.getResults()) {
+					
+					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
+					
+					Document d = fr.getDocument(mapper);
+					
+					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
+				}
+				
+				System.out.println("Pub Date Facets:");
+				for (FacetCount fc : queryResult.getFacetCounts("publicationDate")) {
+					System.out.println(fc.getFacet() + ":" + fc.getCount());
+				}
+				
+			}
+			
+			{
+				//using date facet
+				Query query = new Query("medline", "title:asthma", 10);
+				query.addCountRequest("publicationDate" + LumongoConstants.FACET_DELIMITER + "2005", 15);
+				//query.addDrillDown("2005");
+				
+				QueryResult queryResult = lumongoWorkPool.query(query);
+				
+				long totalHits = queryResult.getTotalHits();
+				
+				System.out.println("Found <" + totalHits + "> hits");
+				for (ScoredResult sr : queryResult.getResults()) {
+					
+					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
+					
+					Document d = fr.getDocument(mapper);
+					
+					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
+				}
+				
+				System.out.println("Pub Date Facets:");
+				for (FacetCount fc : queryResult.getFacetCounts("publicationDate" + LumongoConstants.FACET_DELIMITER + "2005")) {
+					System.out.println(fc.getFacet() + ":" + fc.getCount());
+				}
+				
 			}
 			
 			{
