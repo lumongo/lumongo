@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.lucene.store.BaseDirectory;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.IOContext;
@@ -24,7 +25,7 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.SingleInstanceLockFactory;
 
-public class DistributedDirectory extends Directory {
+public class DistributedDirectory extends BaseDirectory {
 	
 	protected NosqlDirectory nosqlDirectory;
 	
@@ -33,36 +34,34 @@ public class DistributedDirectory extends Directory {
 		this.setLockFactory(new SingleInstanceLockFactory());
 	}
 	
+	/**
+	 * ignore IOContext
+	 */
+	@Override
+	public IndexOutput createOutput(String name, IOContext context) throws IOException {
+		ensureOpen();
+		NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name, true);
+		return new DistributedIndexOutput(nosqlFile);
+	}
 	
-    /**
-     * ignore IOContext
-     */
-    @Override
-    public IndexOutput createOutput(String name, IOContext context) throws IOException {
-        ensureOpen();
-        NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name, true);
-        return new DistributedIndexOutput(nosqlFile);
-    }
-
-    @Override
-    public void sync(Collection<String> names) throws IOException {
-        for (String name : names) {
-            NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name, true);
-            nosqlFile.flush();            
-        }
-        
-        
-    }
-
-    /**
-     * ignore IOContext
-     */
-    @Override
-    public IndexInput openInput(String name, IOContext context) throws IOException {        
-        ensureOpen();
-        NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name);
-        return new DistributedIndexInput(nosqlFile);
-    }
+	@Override
+	public void sync(Collection<String> names) throws IOException {
+		for (String name : names) {
+			NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name, true);
+			nosqlFile.flush();
+		}
+		
+	}
+	
+	/**
+	 * ignore IOContext
+	 */
+	@Override
+	public IndexInput openInput(String name, IOContext context) throws IOException {
+		ensureOpen();
+		NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name);
+		return new DistributedIndexInput(nosqlFile);
+	}
 	
 	@Override
 	public String[] listAll() throws IOException {
@@ -119,10 +118,10 @@ public class DistributedDirectory extends Directory {
 		copyToDirectory(FSDirectory.open(path));
 	}
 	
-	public void copyToDirectory(Directory directory) throws IOException {		
-	    for (String file : this.listAll()) {	    
-	        this.copy(directory, file, file, IOContext.DEFAULT);	     
-	    }
+	public void copyToDirectory(Directory directory) throws IOException {
+		for (String file : this.listAll()) {
+			this.copy(directory, file, file, IOContext.DEFAULT);
+		}
 	}
 	
 	@Override
@@ -134,6 +133,5 @@ public class DistributedDirectory extends Directory {
 	public String toString() {
 		return nosqlDirectory.toString();
 	}
-
-
+	
 }
