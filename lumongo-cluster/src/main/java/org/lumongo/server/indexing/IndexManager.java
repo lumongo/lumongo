@@ -623,7 +623,7 @@ public class IndexManager {
 						
 						List<LMFacet> drillDownList = facetRequest.getDrillDownList();
 						if (!drillDownList.isEmpty()) {
-							FacetsConfig facetsConfig = new FacetsConfig();
+							FacetsConfig facetsConfig = i.getFacetsConfig();
 							DrillDownQuery ddQuery = new DrillDownQuery(facetsConfig, query);
 							
 							for (LMFacet or : drillDownList) {

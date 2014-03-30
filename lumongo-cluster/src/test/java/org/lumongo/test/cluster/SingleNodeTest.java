@@ -62,12 +62,16 @@ public class SingleNodeTest {
 	public void facetTest() throws Exception {
 		final int COUNT_PER_ISSN = 100;
 		final String uniqueIdPrefix = "myId-";
+		
 		final String[] issns = new String[] { "1234-1234", "3333-1234", "1234-5555", "1234-4444", "2222-2222" };
+		int totalRecords = COUNT_PER_ISSN * issns.length;
+		
 		int id = 0;
 		{
 			for (String issn : issns) {
 				for (int i = 0; i < COUNT_PER_ISSN; i++) {
 					boolean half = (i % 2 == 0);
+					boolean tenth = (i % 10 == 0);
 					
 					id++;
 					
@@ -78,11 +82,21 @@ public class SingleNodeTest {
 					docBuilder.addField("title", "Facet Userguide");
 					docBuilder.addFacet("issn", issn);
 					
-					if (half) {
+					if (half) { // 1/2 of input
 						docBuilder.addFacet("country", "US");
 					}
-					else {
+					else { // 1/2 of input
 						docBuilder.addFacet("country", "France");
+					}
+					
+					if (tenth) { // 1/10 of input
+						docBuilder.addFacet("date", "2014", "10", "4");
+					}
+					else if (half) { // 2/5 of input
+						docBuilder.addFacet("date", "2013", "9", "4");
+					}
+					else { // 1/2 of input
+						docBuilder.addFacet("date", "2013", "8", "4");
 					}
 					
 					LMDoc indexedDoc = docBuilder.getIndexedDoc();
@@ -101,12 +115,39 @@ public class SingleNodeTest {
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest("issn", 30);
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN * issns.length, "Total record count not " + COUNT_PER_ISSN * issns.length);
+			Assert.assertEquals(qr.getTotalHits(), totalRecords, "Total record count not " + totalRecords);
 			
 			Assert.assertEquals(qr.getFacetCounts("issn").size(), issns.length, "Total facets not " + issns.length);
 			for (FacetCount fc : qr.getFacetCounts("issn")) {
 				Assert.assertEquals(fc.getCount(), COUNT_PER_ISSN, "Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">");
 			}
+			
+		}
+		
+		{
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2014");
+			
+			QueryResult qr = lumongoWorkPool.query(q);
+			
+			Assert.assertEquals(qr.getTotalHits(), totalRecords / 10, "Total record count after drill down not " + totalRecords / 10);
+			
+		}
+		
+		{
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013", "9");
+			
+			QueryResult qr = lumongoWorkPool.query(q);
+			
+			Assert.assertEquals(qr.getTotalHits(), (totalRecords * 2) / 5, "Total record count after drill down not " + (totalRecords * 2) / 5);
+			
+		}
+		
+		{
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013", "8");
+			
+			QueryResult qr = lumongoWorkPool.query(q);
+			
+			Assert.assertEquals(qr.getTotalHits(), totalRecords / 2, "Total record count after drill down not " + totalRecords / 2);
 			
 		}
 		
@@ -118,6 +159,7 @@ public class SingleNodeTest {
 			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN, "Total record count after drill down not " + COUNT_PER_ISSN);
 			
 		}
+		
 		{
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("issn", "1234-1234").addDrillDown("issn", "3333-1234");
 			

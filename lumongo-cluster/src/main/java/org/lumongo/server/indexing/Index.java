@@ -423,6 +423,13 @@ public class Index {
 		}
 	}
 	
+	public FacetsConfig getFacetsConfig() {
+		//only need to be done once but no harm
+		FacetsConfig.DEFAULT_DIM_CONFIG.hierarchical = true;
+		FacetsConfig.DEFAULT_DIM_CONFIG.multiValued = true;
+		return new FacetsConfig();
+	}
+	
 	private void loadSegment(int segmentNumber) throws Exception {
 		indexLock.writeLock().lock();
 		try {
@@ -458,7 +465,7 @@ public class Index {
 									clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
 					DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
 					taxonomyWriter = new LumongoDirectoryTaxonomyWriter(ddFacet);
-					facetsConfig = new FacetsConfig();
+					facetsConfig = getFacetsConfig();
 				}
 				
 				Segment s = new Segment(segmentNumber, documentStorage, indexWriter, taxonomyWriter, indexConfig, facetsConfig, getAnalyzer());
