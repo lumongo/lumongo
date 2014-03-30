@@ -1,7 +1,5 @@
 package org.lumongo;
 
-import com.google.common.base.Joiner;
-
 public class LumongoConstants {
 	
 	public final static int DEFAULT_HAZELCAST_PORT = 5701;
@@ -31,9 +29,7 @@ public class LumongoConstants {
 	//General
 	public static final String UTF8 = "UTF-8";
 	
-	public static final char FACET_DELIMITER = '/';
-	
-	public static final Joiner FACET_JOINER = Joiner.on(FACET_DELIMITER);
+	public static final String FACET_DELIMITER = "/";
 	
 	public static final String TIMESTAMP_FIELD = "lmtsf";
 	public static final String LUCENE_FACET_FIELD = "$facets";

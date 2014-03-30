@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.lumongo.LumongoConstants;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
@@ -13,6 +12,7 @@ import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
+import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.LMField;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.annotations.AsField;
@@ -141,7 +141,7 @@ public class Mapper<T> {
 	public CreateOrUpdateIndex createOrUpdateIndex() {
 		
 		if (settings == null) {
-			throw new RuntimeException("No Settings annonation for class <" + clazz.getSimpleName() + ">");
+			throw new RuntimeException("No Settings annotation for class <" + clazz.getSimpleName() + ">");
 		}
 		
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField.getFieldName());
@@ -217,11 +217,10 @@ public class Mapper<T> {
 		}
 		
 		for (FactedFieldInfo<T> ffi : facetedFields) {
-			List<String> values = ffi.build(object);
+			List<LMFacet> values = ffi.build(object);
 			
-			for (String value : values) {
-				lmBuilder.addFacet(LumongoConstants.FACET_JOINER.join(ffi.getFacetPrefix(), value));
-				
+			for (LMFacet value : values) {
+				lmBuilder.addFacet(value);
 			}
 			
 		}

@@ -5,8 +5,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-import java.util.UUID;
-
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.log4j.Logger;
 import org.lumongo.cluster.message.Lumongo.InternalService;
@@ -34,11 +32,9 @@ public class InternalRpcConnectionFactory extends BasePoolableObjectFactory<Inte
 	public InternalRpcConnection makeObject() throws Exception {
 		PeerInfo server = new PeerInfo(memberAddress, internalServicePort);
 		
-		PeerInfo client = new PeerInfo(ConnectionHelper.getHostName() + "-" + UUID.randomUUID().toString(), 4321);
+		log.info("Connecting to <" + server + ">");
 		
-		log.info("Connecting from <" + client + "> to <" + server + ">");
-		
-		DuplexTcpClientPipelineFactory clientFactory = new DuplexTcpClientPipelineFactory(client);
+		DuplexTcpClientPipelineFactory clientFactory = new DuplexTcpClientPipelineFactory();
 		clientFactory.setCompression(false);
 		clientFactory.setRpcLogger(null);
 		

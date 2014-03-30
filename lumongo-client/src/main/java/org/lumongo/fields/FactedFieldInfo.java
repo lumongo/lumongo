@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import org.lumongo.LumongoConstants;
+import org.lumongo.cluster.message.Lumongo.LMFacet;
 
 public class FactedFieldInfo<T> {
 	private final String facetPrefix;
@@ -23,22 +23,27 @@ public class FactedFieldInfo<T> {
 		return facetPrefix;
 	}
 	
-	public List<String> build(T object) throws IllegalArgumentException, IllegalAccessException {
+	public List<LMFacet> build(T object) throws IllegalArgumentException, IllegalAccessException {
 		if (object != null) {
-			ArrayList<String> list = new ArrayList<String>();
+			ArrayList<LMFacet> list = new ArrayList<LMFacet>();
 			Object o = field.get(object);
 			
 			if (o != null) {
+				
 				if (o instanceof Collection<?>) {
 					Collection<?> l = (Collection<?>) o;
 					for (Object s : l) {
-						list.add(s.toString());
+						LMFacet.Builder lmFacetBuilder = LMFacet.newBuilder().setLabel(facetPrefix);
+						lmFacetBuilder.addPath(s.toString());
+						list.add(lmFacetBuilder.build());
 					}
 				}
 				else if (o.getClass().isArray()) {
 					Object[] l = (Object[]) o;
 					for (Object s : l) {
-						list.add(s.toString());
+						LMFacet.Builder lmFacetBuilder = LMFacet.newBuilder().setLabel(facetPrefix);
+						lmFacetBuilder.addPath(s.toString());
+						list.add(lmFacetBuilder.build());
 					}
 				}
 				else if (o instanceof Date) {
@@ -51,10 +56,16 @@ public class FactedFieldInfo<T> {
 					int month = cal.get(Calendar.MONTH) + 1;
 					int day = cal.get(Calendar.DAY_OF_MONTH);
 					
-					list.add(LumongoConstants.FACET_JOINER.join(year, month, day));
+					LMFacet.Builder lmFacetBuilder = LMFacet.newBuilder().setLabel(facetPrefix);
+					lmFacetBuilder.addPath(year + "");
+					lmFacetBuilder.addPath(month + "");
+					lmFacetBuilder.addPath(day + "");
+					list.add(lmFacetBuilder.build());
 				}
 				else {
-					list.add(o.toString());
+					LMFacet.Builder lmFacetBuilder = LMFacet.newBuilder().setLabel(facetPrefix);
+					lmFacetBuilder.addPath(o.toString());
+					list.add(lmFacetBuilder.build());
 				}
 				
 				return list;

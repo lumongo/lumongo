@@ -6,8 +6,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.lumongo.client.LumongoRestClient;
@@ -27,22 +25,20 @@ public class LumongoConnection {
 	private LMMember member;
 	private ExternalService.BlockingInterface service;
 	private RpcClient rpcClient;
-	private final String myHostName;
 	private Bootstrap bootstrap;
 	
 	public LumongoConnection(LMMember member) throws IOException {
-		this.myHostName = InetAddress.getLocalHost().getCanonicalHostName();
 		this.member = member;
 	}
 	
 	public void open(boolean compressedConnection) throws IOException {
 		
 		PeerInfo server = new PeerInfo(member.getServerAddress(), member.getExternalPort());
-		PeerInfo client = new PeerInfo(myHostName + "-" + UUID.randomUUID().toString(), 1234);
+		//PeerInfo client = new PeerInfo(myHostName + "-" + UUID.randomUUID().toString(), 1234);
 		
-		System.err.println("INFO: Connecting from <" + client + "> to <" + server + ">");
+		System.err.println("INFO: Connecting to <" + server + ">");
 		
-		DuplexTcpClientPipelineFactory clientFactory = new DuplexTcpClientPipelineFactory(client);
+		DuplexTcpClientPipelineFactory clientFactory = new DuplexTcpClientPipelineFactory();
 		clientFactory.setCompression(compressedConnection);
 		clientFactory.setRpcLogger(null);
 		

@@ -23,19 +23,16 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.log4j.Logger;
-import org.apache.lucene.facet.params.FacetIndexingParams;
-import org.apache.lucene.facet.search.DrillDownQuery;
-import org.apache.lucene.facet.taxonomy.CategoryPath;
+import org.apache.lucene.facet.DrillDownQuery;
+import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.search.Query;
-import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.DeleteResponse;
-import org.lumongo.cluster.message.Lumongo.DrillDown;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
@@ -59,6 +56,7 @@ import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.IndexSettingsResponse;
 import org.lumongo.cluster.message.Lumongo.InternalQueryResponse;
+import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.OptimizeRequest;
 import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
@@ -623,18 +621,13 @@ public class IndexManager {
 					if (i.isFaceted()) {
 						FacetRequest facetRequest = queryRequest.getFacetRequest();
 						
-						List<DrillDown> drillDownList = facetRequest.getDrillDownList();
+						List<LMFacet> drillDownList = facetRequest.getDrillDownList();
 						if (!drillDownList.isEmpty()) {
-							DrillDownQuery ddQuery = new DrillDownQuery(FacetIndexingParams.DEFAULT, query);
+							FacetsConfig facetsConfig = new FacetsConfig();
+							DrillDownQuery ddQuery = new DrillDownQuery(facetsConfig, query);
 							
-							for (DrillDown drillDown : drillDownList) {
-								List<CategoryPath> categoryPathList = new ArrayList<CategoryPath>();
-								for (String or : drillDown.getOrList()) {
-									CategoryPath cp = new CategoryPath(or, LumongoConstants.FACET_DELIMITER);
-									categoryPathList.add(cp);
-								}
-								
-								ddQuery.add(categoryPathList.toArray(new CategoryPath[0]));
+							for (LMFacet or : drillDownList) {
+								ddQuery.add(or.getLabel(), or.getPathList().toArray(new String[0]));
 							}
 							
 							query = ddQuery;

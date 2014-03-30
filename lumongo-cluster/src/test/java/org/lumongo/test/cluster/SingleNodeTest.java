@@ -111,7 +111,7 @@ public class SingleNodeTest {
 		}
 		
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("issn/1234-1234");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("issn", "1234-1234");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
@@ -119,14 +119,14 @@ public class SingleNodeTest {
 			
 		}
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDownOr("issn/1234-1234", "issn/3333-1234");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("issn", "1234-1234").addDrillDown("issn", "3333-1234");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
 			Assert.assertEquals(qr.getTotalHits(), COUNT_PER_ISSN * 2, "Total record count after drill down not " + (COUNT_PER_ISSN * 2));
 		}
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("issn/1234-1234").addDrillDown("country/France");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("issn", "1234-1234").addDrillDown("country", "France");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
@@ -136,7 +136,7 @@ public class SingleNodeTest {
 		
 		{
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10);
-			q.addDrillDown("issn/1234-1234").addDrillDown("country/France");
+			q.addDrillDown("issn", "1234-1234").addDrillDown("country", "France");
 			q.addCountRequest("issn");
 			q.setDrillSideways(true);
 			

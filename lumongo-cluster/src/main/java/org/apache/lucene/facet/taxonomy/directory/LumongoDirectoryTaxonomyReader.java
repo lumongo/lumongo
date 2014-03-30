@@ -6,12 +6,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.facet.collections.LRUHashMap;
-import org.apache.lucene.facet.taxonomy.CategoryPath;
+import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.taxonomy.FacetLabel;
+import org.apache.lucene.facet.taxonomy.LRUHashMap;
 import org.apache.lucene.facet.taxonomy.ParallelTaxonomyArrays;
 import org.apache.lucene.facet.taxonomy.TaxonomyReader;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.DocsEnum;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.search.DocIdSetIterator;
@@ -52,41 +54,39 @@ import org.apache.lucene.util.IOUtils;
  * @lucene.experimental
  */
 public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
-
-	private static final Logger logger = Logger.getLogger(NewDirectoryTaxonomyReader.class.getName());
-
+	
+	private static final Logger logger = Logger.getLogger(LumongoDirectoryTaxonomyReader.class.getName());
+	
 	private static final int DEFAULT_CACHE_VALUE = 4000;
-
+	
 	private final LumongoDirectoryTaxonomyWriter taxoWriter;
-	private final long taxoEpoch; // used in doOpenIfChanged
+	private final long taxoEpoch; // used in doOpenIfChanged 
 	private final DirectoryReader indexReader;
-
+	
 	// TODO: test DoubleBarrelLRUCache and consider using it instead
-	private LRUHashMap<CategoryPath, Integer> ordinalCache;
-	private LRUHashMap<Integer, CategoryPath> categoryCache;
-
+	private LRUHashMap<FacetLabel, Integer> ordinalCache;
+	private LRUHashMap<Integer, FacetLabel> categoryCache;
+	
 	private volatile TaxonomyIndexArrays taxoArrays;
-
-	private char delimiter = Consts.DEFAULT_DELIMITER;
-
+	
 	/**
 	 * Called only from {@link #doOpenIfChanged()}. If the taxonomy has been
 	 * recreated, you should pass {@code null} as the caches and parent/children
 	 * arrays.
 	 */
-	LumongoDirectoryTaxonomyReader(DirectoryReader indexReader, LumongoDirectoryTaxonomyWriter taxoWriter, LRUHashMap<CategoryPath, Integer> ordinalCache,
-			LRUHashMap<Integer, CategoryPath> categoryCache, TaxonomyIndexArrays taxoArrays) throws IOException {
+	LumongoDirectoryTaxonomyReader(DirectoryReader indexReader, LumongoDirectoryTaxonomyWriter taxoWriter, LRUHashMap<FacetLabel, Integer> ordinalCache,
+					LRUHashMap<Integer, FacetLabel> categoryCache, TaxonomyIndexArrays taxoArrays) throws IOException {
 		this.indexReader = indexReader;
 		this.taxoWriter = taxoWriter;
 		this.taxoEpoch = taxoWriter == null ? -1 : taxoWriter.getTaxonomyEpoch();
-
+		
 		// use the same instance of the cache, note the protective code in getOrdinal and getPath
-		this.ordinalCache = ordinalCache == null ? new LRUHashMap<CategoryPath, Integer>(DEFAULT_CACHE_VALUE) : ordinalCache;
-		this.categoryCache = categoryCache == null ? new LRUHashMap<Integer, CategoryPath>(DEFAULT_CACHE_VALUE) : categoryCache;
-
+		this.ordinalCache = ordinalCache == null ? new LRUHashMap<FacetLabel, Integer>(DEFAULT_CACHE_VALUE) : ordinalCache;
+		this.categoryCache = categoryCache == null ? new LRUHashMap<Integer, FacetLabel>(DEFAULT_CACHE_VALUE) : categoryCache;
+		
 		this.taxoArrays = taxoArrays != null ? new TaxonomyIndexArrays(indexReader, taxoArrays) : null;
-		}
-
+	}
+	
 	/**
 	 * Opens a {@link NewDirectoryTaxonomyReader} over the given
 	 * {@link DirectoryTaxonomyWriter} (for NRT).
@@ -99,13 +99,13 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		this.taxoWriter = taxoWriter;
 		taxoEpoch = taxoWriter.getTaxonomyEpoch();
 		indexReader = openIndexReader(taxoWriter.getLumongoIndexWriter());
-
+		
 		// These are the default cache sizes; they can be configured after
 		// construction with the cache's setMaxSize() method
-		ordinalCache = new LRUHashMap<CategoryPath, Integer>(DEFAULT_CACHE_VALUE);
-		categoryCache = new LRUHashMap<Integer, CategoryPath>(DEFAULT_CACHE_VALUE);
+		ordinalCache = new LRUHashMap<FacetLabel, Integer>(DEFAULT_CACHE_VALUE);
+		categoryCache = new LRUHashMap<Integer, FacetLabel>(DEFAULT_CACHE_VALUE);
 	}
-
+	
 	private synchronized void initTaxoArrays() throws IOException {
 		if (taxoArrays == null) {
 			// according to Java Concurrency in Practice, this might perform better on
@@ -115,7 +115,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 			taxoArrays = tmpArrays;
 		}
 	}
-
+	
 	@Override
 	protected void doClose() throws IOException {
 		indexReader.close();
@@ -124,7 +124,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		ordinalCache = null;
 		categoryCache = null;
 	}
-
+	
 	/**
 	 * Implements the opening of a new {@link NewDirectoryTaxonomyReader} instance if
 	 * the taxonomy has changed.
@@ -141,18 +141,18 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	protected LumongoDirectoryTaxonomyReader doOpenIfChanged() throws IOException {
 		return doOpenIfChanged(true);
 	}
-
+	
 	public LumongoDirectoryTaxonomyReader doOpenIfChanged(boolean realTime) throws IOException {
 		ensureOpen();
-
+		
 		final DirectoryReader r2 = taxoWriter.getLumongoIndexWriter().getReader(false, realTime);
-
+		
 		// check if the taxonomy was recreated
 		boolean success = false;
 		try {
 			// NRT, compare current taxoWriter.epoch() vs the one that was given at construction
 			boolean recreated = (taxoEpoch != taxoWriter.getTaxonomyEpoch());
-
+			
 			final LumongoDirectoryTaxonomyReader newtr;
 			if (recreated) {
 				// if recreated, do not reuse anything from this instace. the information
@@ -162,7 +162,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 			else {
 				newtr = new LumongoDirectoryTaxonomyReader(r2, taxoWriter, ordinalCache, categoryCache, taxoArrays);
 			}
-
+			
 			success = true;
 			return newtr;
 		}
@@ -172,11 +172,19 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 			}
 		}
 	}
-
+	
+	/** Open the {@link DirectoryReader} from this {@link
+	 *  Directory}. */
+	protected DirectoryReader openIndexReader(Directory directory) throws IOException {
+		return DirectoryReader.open(directory);
+	}
+	
+	/** Open the {@link DirectoryReader} from this {@link
+	 *  IndexWriter}. */
 	protected DirectoryReader openIndexReader(LumongoIndexWriter writer) throws IOException {
 		return writer.getReader(false, true);
 	}
-
+	
 	/**
 	 * Expert: returns the underlying {@link DirectoryReader} instance that is
 	 * used by this {@link TaxonomyReader}.
@@ -185,7 +193,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		ensureOpen();
 		return indexReader;
 	}
-
+	
 	@Override
 	public ParallelTaxonomyArrays getParallelTaxonomyArrays() throws IOException {
 		ensureOpen();
@@ -194,20 +202,20 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		}
 		return taxoArrays;
 	}
-
+	
 	@Override
 	public Map<String, String> getCommitUserData() throws IOException {
 		ensureOpen();
 		return indexReader.getIndexCommit().getUserData();
 	}
-
+	
 	@Override
-	public int getOrdinal(CategoryPath cp) throws IOException {
+	public int getOrdinal(FacetLabel cp) throws IOException {
 		ensureOpen();
 		if (cp.length == 0) {
 			return ROOT_ORDINAL;
 		}
-
+		
 		// First try to find the answer in the LRU cache:
 		synchronized (ordinalCache) {
 			Integer res = ordinalCache.get(cp);
@@ -227,14 +235,14 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 				}
 			}
 		}
-
+		
 		// If we're still here, we have a cache miss. We need to fetch the
 		// value from disk, and then also put it in the cache:
 		int ret = TaxonomyReader.INVALID_ORDINAL;
-		DocsEnum docs = MultiFields.getTermDocsEnum(indexReader, null, Consts.FULL, new BytesRef(cp.toString(delimiter)), 0);
+		DocsEnum docs = MultiFields.getTermDocsEnum(indexReader, null, Consts.FULL, new BytesRef(FacetsConfig.pathToString(cp.components, cp.length)), 0);
 		if (docs != null && docs.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
 			ret = docs.docID();
-
+			
 			// we only store the fact that a category exists, not its inexistence.
 			// This is required because the caches are shared with new DTR instances
 			// that are allocated from doOpenIfChanged. Therefore, if we only store
@@ -244,14 +252,14 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 				ordinalCache.put(cp, Integer.valueOf(ret));
 			}
 		}
-
+		
 		return ret;
 	}
-
+	
 	@Override
-	public CategoryPath getPath(int ordinal) throws IOException {
+	public FacetLabel getPath(int ordinal) throws IOException {
 		ensureOpen();
-
+		
 		// Since the cache is shared with DTR instances allocated from
 		// doOpenIfChanged, we need to ensure that the ordinal is one that this DTR
 		// instance recognizes. Therefore we do this check up front, before we hit
@@ -259,35 +267,35 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		if (ordinal < 0 || ordinal >= indexReader.maxDoc()) {
 			return null;
 		}
-
+		
 		// TODO: can we use an int-based hash impl, such as IntToObjectMap,
 		// wrapped as LRU?
 		Integer catIDInteger = Integer.valueOf(ordinal);
 		synchronized (categoryCache) {
-			CategoryPath res = categoryCache.get(catIDInteger);
+			FacetLabel res = categoryCache.get(catIDInteger);
 			if (res != null) {
 				return res;
 			}
 		}
-
+		
 		Document doc = indexReader.document(ordinal);
-		CategoryPath ret = new CategoryPath(doc.get(Consts.FULL), delimiter);
+		FacetLabel ret = new FacetLabel(FacetsConfig.stringToPath(doc.get(Consts.FULL)));
 		synchronized (categoryCache) {
 			categoryCache.put(catIDInteger, ret);
 		}
-
+		
 		return ret;
 	}
-
+	
 	@Override
 	public int getSize() {
 		ensureOpen();
 		return indexReader.numDocs();
 	}
-
+	
 	/**
 	 * setCacheSize controls the maximum allowed size of each of the caches
-	 * used by {@link #getPath(int)} and {@link #getOrdinal(CategoryPath)}.
+	 * used by {@link #getPath(int)} and {@link #getOrdinal(FacetLabel)}.
 	 * <P>
 	 * Currently, if the given size is smaller than the current size of
 	 * a cache, it will not shrink, and rather we be limited to its current
@@ -303,29 +311,17 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 			ordinalCache.setMaxSize(size);
 		}
 	}
-
-	/**
-	 * setDelimiter changes the character that the taxonomy uses in its
-	 * internal storage as a delimiter between category components. Do not
-	 * use this method unless you really know what you are doing.
-	 * <P>
-	 * If you do use this method, make sure you call it before any other
-	 * methods that actually queries the taxonomy. Moreover, make sure you
-	 * always pass the same delimiter for all LuceneTaxonomyWriter and
-	 * LuceneTaxonomyReader objects you create.
-	 */
-	public void setDelimiter(char delimiter) {
-		ensureOpen();
-		this.delimiter = delimiter;
-	}
-
+	
+	/** Returns ordinal -> label mapping, up to the provided
+	 *  max ordinal or number of ordinals, whichever is
+	 *  smaller. */
 	public String toString(int max) {
 		ensureOpen();
 		StringBuilder sb = new StringBuilder();
 		int upperl = Math.min(max, indexReader.maxDoc());
 		for (int i = 0; i < upperl; i++) {
 			try {
-				CategoryPath category = this.getPath(i);
+				FacetLabel category = this.getPath(i);
 				if (category == null) {
 					sb.append(i + ": NULL!! \n");
 					continue;
@@ -344,5 +340,5 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		}
 		return sb.toString();
 	}
-
+	
 }

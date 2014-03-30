@@ -5,16 +5,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.lumongo.LumongoConstants;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
-import org.lumongo.cluster.message.Lumongo.DrillDown;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
+import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
@@ -35,7 +34,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private Boolean realTime;
 	private QueryResult lastResult;
 	private List<CountRequest> countRequests;
-	private List<DrillDown> drillDowns;
+	private List<LMFacet> drillDowns;
 	private List<FieldSort> fieldSorts;
 	private Boolean drillSideways;
 	
@@ -52,7 +51,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		this.query = query;
 		this.amount = amount;
 		this.countRequests = new ArrayList<CountRequest>();
-		this.drillDowns = new ArrayList<DrillDown>();
+		this.drillDowns = new ArrayList<LMFacet>();
 		this.fieldSorts = new ArrayList<FieldSort>();
 	}
 	
@@ -110,23 +109,12 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return lastResult;
 	}
 	
-	public static String drillDownfromParts(String... drillDownParts) {
-		return LumongoConstants.FACET_JOINER.join(LumongoConstants.FACET_DELIMITER, drillDownParts);
-	}
-	
-	public Query addDrillDownOr(String... drillDownOr) {
-		DrillDown.Builder builder = DrillDown.newBuilder();
-		builder.addAllOr(Arrays.asList(drillDownOr));
-		drillDowns.add(builder.build());
+	public Query addDrillDown(String label, String... path) {
+		drillDowns.add(LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build());
 		return this;
 	}
 	
-	public Query addDrillDown(String drillDown) {
-		drillDowns.add(DrillDown.newBuilder().addOr(drillDown).build());
-		return this;
-	}
-	
-	public List<DrillDown> getDrillDowns() {
+	public List<LMFacet> getDrillDowns() {
 		return drillDowns;
 	}
 	

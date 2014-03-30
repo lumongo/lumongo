@@ -1,9 +1,10 @@
 package org.lumongo.doc;
 
+import java.util.Arrays;
 import java.util.Date;
 
-import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
+import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.LMField;
 
 public class IndexedDocBuilder {
@@ -69,8 +70,12 @@ public class IndexedDocBuilder {
 		return this;
 	}
 	
-	public void addFacet(String... path) {
-		indexedDocBuilder.addFacet(LumongoConstants.FACET_JOINER.join(path));
+	public void addFacet(String label, String... path) {
+		indexedDocBuilder.addFacet(LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build());
+	}
+	
+	public void addFacet(String label, Iterable<String> path) {
+		indexedDocBuilder.addFacet(LMFacet.newBuilder().setLabel(label).addAllPath(path).build());
 	}
 	
 	public IndexedDocBuilder clearFields() {

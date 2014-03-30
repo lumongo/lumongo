@@ -206,8 +206,13 @@ message StoreResponse {
 
 message LMDoc {
 	repeated LMField indexedField = 1;
-	repeated string facet = 2;
+	repeated LMFacet facet = 2;
 	optional int64 timestamp = 3;
+}
+
+message LMFacet {
+	required string label = 1;
+	repeated string path = 2;
 }
 
 
@@ -282,7 +287,8 @@ message FieldSort {
 
 message FacetGroup {
 	required string fieldName = 1;
-	repeated FacetCount facetCount = 2;
+	repeated string path = 2;
+	repeated FacetCount facetCount = 3;
 }
 
 message FacetCount {
@@ -292,13 +298,11 @@ message FacetCount {
 
 message FacetRequest {
 	repeated CountRequest countRequest = 1;
-	repeated DrillDown drillDown = 2;
+	repeated LMFacet drillDown = 2;
 	optional bool drillSideways = 3 [default = false];
 }
 
-message DrillDown {
-	repeated string or = 1;
-}
+
 
 message CountRequest {
 	required string facet = 1;

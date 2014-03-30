@@ -32,6 +32,7 @@ import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -450,15 +451,17 @@ public class Index {
 				LumongoIndexWriter indexWriter = new LumongoIndexWriter(dd, config);
 				
 				LumongoDirectoryTaxonomyWriter taxonomyWriter = null;
+				FacetsConfig facetsConfig = null;
 				
 				if (indexConfig.isFaceted()) {
 					MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName + "_" + FACETS_SUFFIX,
 									clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
 					DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
 					taxonomyWriter = new LumongoDirectoryTaxonomyWriter(ddFacet);
+					facetsConfig = new FacetsConfig();
 				}
 				
-				Segment s = new Segment(segmentNumber, documentStorage, indexWriter, taxonomyWriter, indexConfig, getAnalyzer());
+				Segment s = new Segment(segmentNumber, documentStorage, indexWriter, taxonomyWriter, indexConfig, facetsConfig, getAnalyzer());
 				segmentMap.put(segmentNumber, s);
 				
 				log.info("Loaded segment <" + segmentNumber + "> for index <" + indexName + ">");

@@ -26,16 +26,16 @@ import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.facet.index.FacetFields;
-import org.apache.lucene.facet.params.FacetSearchParams;
-import org.apache.lucene.facet.search.CountFacetRequest;
-import org.apache.lucene.facet.search.DrillDownQuery;
-import org.apache.lucene.facet.search.DrillSideways;
-import org.apache.lucene.facet.search.DrillSideways.DrillSidewaysResult;
-import org.apache.lucene.facet.search.FacetResult;
-import org.apache.lucene.facet.search.FacetResultNode;
-import org.apache.lucene.facet.search.FacetsCollector;
-import org.apache.lucene.facet.taxonomy.CategoryPath;
+import org.apache.lucene.facet.DrillDownQuery;
+import org.apache.lucene.facet.DrillSideways;
+import org.apache.lucene.facet.DrillSideways.DrillSidewaysResult;
+import org.apache.lucene.facet.FacetField;
+import org.apache.lucene.facet.FacetResult;
+import org.apache.lucene.facet.Facets;
+import org.apache.lucene.facet.FacetsCollector;
+import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.LabelAndValue;
+import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
 import org.apache.lucene.index.AtomicReaderContext;
@@ -79,6 +79,7 @@ import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMDoc;
+import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.LMField;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
@@ -101,6 +102,7 @@ public class Segment {
 	private LumongoDirectoryTaxonomyReader taxonomyReader;
 	
 	private final IndexConfig indexConfig;
+	private final FacetsConfig facetsConfig;
 	
 	private final String uniqueIdField;
 	
@@ -120,7 +122,7 @@ public class Segment {
 	private LockHandler lockHandler;
 	
 	public Segment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter,
-					IndexConfig indexConfig, Analyzer analyzer) throws IOException {
+					IndexConfig indexConfig, FacetsConfig facetsConfig, Analyzer analyzer) throws IOException {
 		
 		this.lockHandler = new LockHandler();
 		
@@ -134,6 +136,7 @@ public class Segment {
 		}
 		
 		this.indexConfig = indexConfig;
+		this.facetsConfig = facetsConfig;
 		this.analyzer = analyzer;
 		
 		this.uniqueIdField = indexConfig.getUniqueIdField();
@@ -230,38 +233,43 @@ public class Segment {
 				
 				taxonomyReader = taxonomyReader.doOpenIfChanged(realTime);
 				
-				List<org.apache.lucene.facet.search.FacetRequest> facetRequests = new ArrayList<org.apache.lucene.facet.search.FacetRequest>(facetRequest
-								.getCountRequestList().size());
-				for (CountRequest count : facetRequest.getCountRequestList()) {
-					int maxFacets = Integer.MAX_VALUE; //have to fetch all facets to merge between segments correctly
-					facetRequests.add(new CountFacetRequest(new CategoryPath(count.getFacet(), LumongoConstants.FACET_DELIMITER), maxFacets));
-				}
+				int maxFacets = Integer.MAX_VALUE; //have to fetch all facets to merge between segments correctly
 				
-				FacetSearchParams facetSearchParams = new FacetSearchParams(facetRequests);
-				
-				List<FacetResult> facetResults;
+				List<FacetResult> facetResults = new ArrayList<FacetResult>();
 				if (facetRequest.getDrillSideways()) {
-					DrillSideways ds = new DrillSideways(is, taxonomyReader);
-					DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector, facetSearchParams);
-					facetResults = ddsr.facetResults;
+					DrillSideways ds = new DrillSideways(is, facetsConfig, taxonomyReader);
+					DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
+					for (CountRequest count : facetRequest.getCountRequestList()) {
+						FacetResult fs = ddsr.facets.getTopChildren(maxFacets, count.getFacet());
+						if (fs != null) {
+							facetResults.add(fs);
+						}
+						else {
+							//TODO debug this
+							log.warn("Request for <" + count + "> is null");
+						}
+					}
+					
 				}
 				else {
-					FacetsCollector facetsCollector = FacetsCollector.create(facetSearchParams, ir, taxonomyReader);
-					is.search(q, MultiCollector.wrap(collector, facetsCollector));
-					facetResults = facetsCollector.getFacetResults();
+					FacetsCollector fc = new FacetsCollector();
+					is.search(q, MultiCollector.wrap(collector, fc));
+					Facets facets = new FastTaxonomyFacetCounts(taxonomyReader, facetsConfig, fc);
+					for (CountRequest count : facetRequest.getCountRequestList()) {
+						facetResults.add(facets.getTopChildren(maxFacets, count.getFacet()));
+					}
 				}
 				
 				for (FacetResult fc : facetResults) {
-					String fullPath = fc.getFacetRequest().categoryPath.toString(LumongoConstants.FACET_DELIMITER);
 					FacetGroup.Builder fg = FacetGroup.newBuilder();
-					fg.setFieldName(fullPath);
-					for (FacetResultNode subResult : fc.getFacetResultNode().subResults) {
+					fg.setFieldName(fc.dim);
+					if (fc.path != null) {
+						fg.addAllPath(Arrays.asList(fc.path));
+					}
+					for (LabelAndValue subResult : fc.labelValues) {
 						FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
-						CategoryPath cp = subResult.label;
-						long count = (long) subResult.value;
-						facetCountBuilder.setCount(count);
-						String endNode = cp.components[cp.components.length - 1];
-						facetCountBuilder.setFacet(endNode);
+						facetCountBuilder.setCount(subResult.value.longValue());
+						facetCountBuilder.setFacet(subResult.label);
 						fg.addFacetCount(facetCountBuilder);
 					}
 					builder.addFacetGroup(fg);
@@ -484,12 +492,12 @@ public class Segment {
 		
 		if (indexConfig.isFaceted()) {
 			if (lmDoc.getFacetCount() != 0) {
-				List<CategoryPath> categories = new ArrayList<CategoryPath>();
-				for (String facet : lmDoc.getFacetList()) {
-					categories.add(new CategoryPath(facet, LumongoConstants.FACET_DELIMITER));
+				for (LMFacet facet : lmDoc.getFacetList()) {
+					d.add(new FacetField(facet.getLabel(), facet.getPathList().toArray(new String[0])));
+					
 				}
-				FacetFields facetFields = new FacetFields(taxonomyWriter);
-				facetFields.addFields(d, categories);
+				
+				d = facetsConfig.build(taxonomyWriter, d);
 			}
 		}
 		else {
