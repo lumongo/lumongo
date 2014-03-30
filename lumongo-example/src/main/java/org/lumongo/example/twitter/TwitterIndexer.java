@@ -21,6 +21,7 @@ public class TwitterIndexer {
 			Mapper<Tweet> mapper = new Mapper<Tweet>(Tweet.class);
 			lumongoWorkPool.createOrUpdateIndex(mapper.createOrUpdateIndex());
 			
+			//sample tweet, lovely isnt it?
 			Tweet tweet = new Tweet();
 			tweet.setId("426145287804293120");
 			tweet.setCreatedDate(new Date());
