@@ -118,14 +118,16 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return drillDowns;
 	}
 	
-	public Query addCountRequest(String facet) {
-		CountRequest countRequest = CountRequest.newBuilder().setFacet(facet).build();
+	public Query addCountRequest(String label, String... path) {
+		LMFacet facet = LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build();
+		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).build();
 		countRequests.add(countRequest);
 		return this;
 	}
 	
-	public Query addCountRequest(String facet, int maxFacets) {
-		CountRequest countRequest = CountRequest.newBuilder().setFacet(facet).setMaxFacets(maxFacets).build();
+	public Query addCountRequest(int maxFacets, String label, String... path) {
+		LMFacet facet = LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build();
+		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).setMaxFacets(maxFacets).build();
 		countRequests.add(countRequest);
 		return this;
 	}

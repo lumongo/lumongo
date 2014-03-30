@@ -112,7 +112,7 @@ public class SingleNodeTest {
 			}
 		}
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest("issn", 30);
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "issn");
 			QueryResult qr = lumongoWorkPool.query(q);
 			
 			Assert.assertEquals(qr.getTotalHits(), totalRecords, "Total record count not " + totalRecords);
@@ -120,6 +120,33 @@ public class SingleNodeTest {
 			Assert.assertEquals(qr.getFacetCounts("issn").size(), issns.length, "Total facets not " + issns.length);
 			for (FacetCount fc : qr.getFacetCounts("issn")) {
 				Assert.assertEquals(fc.getCount(), COUNT_PER_ISSN, "Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">");
+			}
+			
+		}
+		
+		{
+			System.out.println("-------------------------");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "date");
+			QueryResult qr = lumongoWorkPool.query(q);
+			
+			Assert.assertEquals(qr.getTotalHits(), totalRecords, "Total record count not " + totalRecords);
+			
+			Assert.assertEquals(qr.getFacetCounts("date").size(), 2, "Total facets not " + 2);
+			for (FacetCount fc : qr.getFacetCounts("date")) {
+				System.out.println(fc);
+			}
+			
+		}
+		
+		{
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "date", "2013");
+			QueryResult qr = lumongoWorkPool.query(q);
+			
+			Assert.assertEquals(qr.getTotalHits(), totalRecords, "Total record count not " + totalRecords);
+			
+			Assert.assertEquals(qr.getFacetCounts("date").size(), 2, "Total facets not " + 2);
+			for (FacetCount fc : qr.getFacetCounts("date")) {
+				System.out.println(fc);
 			}
 			
 		}
@@ -521,7 +548,7 @@ public class SingleNodeTest {
 			}
 		}
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest("issn", 30);
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "issn");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
@@ -531,7 +558,7 @@ public class SingleNodeTest {
 		}
 		
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("issn/1234-1234");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("issn", "1234-1234");
 			
 			@SuppressWarnings("unused")
 			QueryResult qr = lumongoWorkPool.query(q);

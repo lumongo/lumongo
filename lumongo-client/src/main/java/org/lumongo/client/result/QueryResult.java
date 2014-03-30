@@ -37,7 +37,7 @@ public class QueryResult extends Result {
 	
 	public List<FacetCount> getFacetCounts(String fieldName) {
 		for (FacetGroup fg : queryResponse.getFacetGroupList()) {
-			if (fieldName.equals(fg.getFieldName())) {
+			if (fieldName.equals(fg.getCountRequest().getFacetField().getLabel())) {
 				return fg.getFacetCountList();
 			}
 		}

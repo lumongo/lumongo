@@ -286,9 +286,8 @@ message FieldSort {
 }
 
 message FacetGroup {
-	required string fieldName = 1;
-	repeated string path = 2;
-	repeated FacetCount facetCount = 3;
+	required CountRequest countRequest = 1;
+	repeated FacetCount facetCount = 2;
 }
 
 message FacetCount {
@@ -305,7 +304,7 @@ message FacetRequest {
 
 
 message CountRequest {
-	required string facet = 1;
+	required LMFacet facetField = 1;
 	optional uint32 maxFacets = 2 [default = 10];
 }
 

@@ -49,7 +49,6 @@ public class QueryCombiner {
 	private int resultsSize;
 	
 	private SortRequest sortRequest;
-	private final Map<String, Integer> countMap;
 	
 	private String query;
 	
@@ -61,13 +60,6 @@ public class QueryCombiner {
 		this.segmentResponses = new ArrayList<SegmentResponse>();
 		this.lastResult = request.getLastResult();
 		this.sortRequest = request.getSortRequest();
-		this.countMap = new HashMap<String, Integer>();
-		
-		if (request.hasFacetRequest()) {
-			for (CountRequest countRequest : request.getFacetRequest().getCountRequestList()) {
-				countMap.put(countRequest.getFacet(), countRequest.getMaxFacets());
-			}
-		}
 		
 		this.query = request.getQuery();
 		this.isShort = false;
@@ -155,15 +147,15 @@ public class QueryCombiner {
 			}
 		}
 		
-		Map<String, Map<String, AtomicLong>> totalFacetCounts = new HashMap<String, Map<String, AtomicLong>>();
+		Map<CountRequest, Map<String, AtomicLong>> totalFacetCounts = new HashMap<CountRequest, Map<String, AtomicLong>>();
 		for (SegmentResponse sr : segmentResponses) {
 			for (FacetGroup fg : sr.getFacetGroupList()) {
 				
-				Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(fg.getFieldName());
+				Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(fg.getCountRequest());
 				
 				if (fieldCounts == null) {
 					fieldCounts = new HashMap<String, AtomicLong>();
-					totalFacetCounts.put(fg.getFieldName(), fieldCounts);
+					totalFacetCounts.put(fg.getCountRequest(), fieldCounts);
 				}
 				
 				for (FacetCount fc : fg.getFacetCountList()) {
@@ -179,16 +171,16 @@ public class QueryCombiner {
 			}
 		}
 		
-		for (String fieldName : totalFacetCounts.keySet()) {
+		for (CountRequest countRequest : totalFacetCounts.keySet()) {
 			FacetGroup.Builder fg = FacetGroup.newBuilder();
-			fg.setFieldName(fieldName);
-			Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(fieldName);
+			fg.setCountRequest(countRequest);
+			Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(countRequest);
 			SortedSet<FacetCountResult> sortedFacetResuls = new TreeSet<FacetCountResult>();
 			for (String facet : fieldCounts.keySet()) {
 				sortedFacetResuls.add(new FacetCountResult(facet, fieldCounts.get(facet).get()));
 			}
 			
-			Integer maxCount = countMap.get(fieldName);
+			Integer maxCount = countRequest.getMaxFacets();
 			
 			int count = 0;
 			for (FacetCountResult facet : sortedFacetResuls) {

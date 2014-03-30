@@ -235,18 +235,18 @@ public class Segment {
 				
 				int maxFacets = Integer.MAX_VALUE; //have to fetch all facets to merge between segments correctly
 				
-				List<FacetResult> facetResults = new ArrayList<FacetResult>();
 				if (facetRequest.getDrillSideways()) {
 					DrillSideways ds = new DrillSideways(is, facetsConfig, taxonomyReader);
 					DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
-					for (CountRequest count : facetRequest.getCountRequestList()) {
-						FacetResult fs = ddsr.facets.getTopChildren(maxFacets, count.getFacet());
-						if (fs != null) {
-							facetResults.add(fs);
+					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
+						FacetResult facetResult = ddsr.facets.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(), countRequest.getFacetField()
+										.getPathList().toArray(new String[0]));
+						if (facetResult != null) {
+							handleFacetResult(builder, facetResult, countRequest);
 						}
 						else {
 							//TODO debug this
-							log.warn("Request for <" + count + "> is null");
+							log.warn("Request for <" + countRequest + "> is null");
 						}
 					}
 					
@@ -255,25 +255,13 @@ public class Segment {
 					FacetsCollector fc = new FacetsCollector();
 					is.search(q, MultiCollector.wrap(collector, fc));
 					Facets facets = new FastTaxonomyFacetCounts(taxonomyReader, facetsConfig, fc);
-					for (CountRequest count : facetRequest.getCountRequestList()) {
-						facetResults.add(facets.getTopChildren(maxFacets, count.getFacet()));
+					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
+						FacetResult facetResult = facets.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(), countRequest.getFacetField()
+										.getPathList().toArray(new String[0]));
+						handleFacetResult(builder, facetResult, countRequest);
 					}
 				}
 				
-				for (FacetResult fc : facetResults) {
-					FacetGroup.Builder fg = FacetGroup.newBuilder();
-					fg.setFieldName(fc.dim);
-					if (fc.path != null) {
-						fg.addAllPath(Arrays.asList(fc.path));
-					}
-					for (LabelAndValue subResult : fc.labelValues) {
-						FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
-						facetCountBuilder.setCount(subResult.value.longValue());
-						facetCountBuilder.setFacet(subResult.label);
-						fg.addFacetCount(facetCountBuilder);
-					}
-					builder.addFacetGroup(fg);
-				}
 			}
 			else {
 				is.search(q, collector);
@@ -312,6 +300,19 @@ public class Segment {
 			
 		}
 		
+	}
+	
+	public void handleFacetResult(SegmentResponse.Builder builder, FacetResult fc, CountRequest countRequest) {
+		FacetGroup.Builder fg = FacetGroup.newBuilder();
+		fg.setCountRequest(countRequest);
+		
+		for (LabelAndValue subResult : fc.labelValues) {
+			FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
+			facetCountBuilder.setCount(subResult.value.longValue());
+			facetCountBuilder.setFacet(subResult.label);
+			fg.addFacetCount(facetCountBuilder);
+		}
+		builder.addFacetGroup(fg);
 	}
 	
 	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i)

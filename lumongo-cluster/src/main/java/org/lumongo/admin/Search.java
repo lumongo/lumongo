@@ -159,7 +159,7 @@ public class Search {
 					System.out.println("Facets:");
 					for (FacetGroup fg : qr.getFacetGroups()) {
 						System.out.println();
-						System.out.println("--Facet on " + fg.getFieldName() + "--");
+						System.out.println("--Facet on " + fg.getCountRequest().getFacetField().getLabel() + "--");
 						for (FacetCount fc : fg.getFacetCountList()) {
 							System.out.print(fc.getFacet());
 							System.out.print("\t");

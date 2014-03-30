@@ -413,7 +413,7 @@ public class ApiTest {
 		
 		Query query = new Query(indexes, "title:special", 0);
 		int maxFacets = 30;
-		query.addCountRequest("issn", maxFacets);
+		query.addCountRequest(maxFacets, "issn");
 		
 		QueryResult queryResult = lumongoWorkPool.query(query);
 		for (FacetCount fc : queryResult.getFacetCounts("issn")) {
