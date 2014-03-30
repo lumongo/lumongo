@@ -23,5 +23,9 @@ dependencies {
 
 	//for medline
 	compile 'joda-time:joda-time:2.1'
+	
+	//for twitter
+	compile 'org.twitter4j:twitter4j-core:[3.0,)'
+	compile 'org.twitter4j:twitter4j-stream:[3.0,)'
 }
 
