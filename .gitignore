@@ -1,0 +1,7 @@
+build
+bin
+.project
+.classpath
+.settings
+/.gradle
+gen-src
