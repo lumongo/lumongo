@@ -585,7 +585,7 @@ public class Index {
 			for (Member m : currentMembers) {
 				
 				try {
-					UpdateSegmentsTask ust = new UpdateSegmentsTask(m.getInetSocketAddress().getPort(), indexName, memberToSegmentMap);
+					UpdateSegmentsTask ust = new UpdateSegmentsTask(m.getSocketAddress().getPort(), indexName, memberToSegmentMap);
 					if (!m.localMember()) {
 						Future<Void> dt = executorService.submitToMember(ust, m);
 						results.add(dt);

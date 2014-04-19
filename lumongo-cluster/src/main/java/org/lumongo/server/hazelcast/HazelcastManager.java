@@ -24,6 +24,7 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperties;
@@ -157,6 +158,11 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		boolean master = self.equals(firstMember);
 		
 		indexManager.handleServerRemoved(members, memberRemoved, master);
+		
+	}
+	
+	@Override
+	public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
 		
 	}
 	

@@ -77,12 +77,12 @@ public class Nodes {
 	}
 	
 	public LocalNodeConfig find(Member member) throws Exception {
-		InetAddress inetAddress = member.getInetSocketAddress().getAddress();
+		InetAddress inetAddress = member.getSocketAddress().getAddress();
 		
 		String memberIp = inetAddress.getHostAddress();
 		String fullHostName = inetAddress.getCanonicalHostName();
 		
-		int hazelcastPort = member.getInetSocketAddress().getPort();
+		int hazelcastPort = member.getSocketAddress().getPort();
 		
 		Set<HazelcastNode> matches = new HashSet<HazelcastNode>();
 		matches.add(new HazelcastNode(memberIp, hazelcastPort));
@@ -97,7 +97,7 @@ public class Nodes {
 		}
 		
 		throw new Exception("Member with memberIp <" + memberIp + "> and fullHostName <" + fullHostName + "> and hazelcast port <" + hazelcastPort
-				+ "> not found in cluster membership.  Correctly register the machine with server address or ip that all machines can resolve");
+						+ "> not found in cluster membership.  Correctly register the machine with server address or ip that all machines can resolve");
 		
 	}
 	

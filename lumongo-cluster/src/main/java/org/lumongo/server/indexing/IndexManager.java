@@ -313,7 +313,7 @@ public class IndexManager {
 			log.info("Unload index <" + indexName + "> for delete");
 			for (Member m : currentMembers) {
 				try {
-					UnloadIndexTask uit = new UnloadIndexTask(m.getInetSocketAddress().getPort(), indexName);
+					UnloadIndexTask uit = new UnloadIndexTask(m.getSocketAddress().getPort(), indexName);
 					if (!self.equals(m)) {
 						Future<Void> dt = executorService.submitToMember(uit, m);
 						dt.get();
@@ -431,7 +431,7 @@ public class IndexManager {
 			
 			for (Member m : currentMembers) {
 				try {
-					ReloadIndexSettingsTask rist = new ReloadIndexSettingsTask(m.getInetSocketAddress().getPort(), indexName);
+					ReloadIndexSettingsTask rist = new ReloadIndexSettingsTask(m.getSocketAddress().getPort(), indexName);
 					if (!self.equals(m)) {
 						Future<Void> dt = executorService.submitToMember(rist, m);
 						dt.get();
@@ -1100,7 +1100,7 @@ public class IndexManager {
 			for (Member m : members) {
 				LocalNodeConfig localNodeConfig = nodes.find(m);
 				
-				InetAddress inetAddress = m.getInetSocketAddress().getAddress();
+				InetAddress inetAddress = m.getSocketAddress().getAddress();
 				
 				String fullHostName = inetAddress.getCanonicalHostName();
 				
