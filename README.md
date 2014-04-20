@@ -17,4 +17,4 @@ LuMongo is a real-time distributed search and storage system. LuMongo is designe
 * Searching multiple indexes with a single query
 * Storing associated documents with the documents
 
-To learn more read [[overview|Overview]], [[cluster|Cluster]], [[Command Line Tools|Command Line Tools]], [[Distributed Directory|Distributed Directory]].
+To learn more see the wiki.
