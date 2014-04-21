@@ -22,4 +22,5 @@ To learn more see the [wiki](https://github.com/lumongo/lumongo/wiki):
 * [Cluster](https://github.com/lumongo/lumongo/wiki/Cluster)
 * [Command Line Tools](https://github.com/lumongo/lumongo/wiki/Command-Line-Tools)
 * [Distributed Directory](https://github.com/lumongo/lumongo/wiki/Distributed-Directory)
-* [Java Client](https://github.com/lumongo/lumongo/wiki/Java-Client) 
+* [Java Client](https://github.com/lumongo/lumongo/wiki/Java-Client)
+* [Maven/Gradle](https://github.com/lumongo/lumongo/wiki/Maven) 
