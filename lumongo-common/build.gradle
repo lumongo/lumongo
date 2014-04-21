@@ -22,6 +22,11 @@ task compileProto << {
 	File outputDir = project.file("gen-src")
 	File protoDir = project.file("proto")
 	String protocCommand = "protoc"
+
+	if (!outputDir.exists()) {
+		outputDir.mkdir();
+	}
+
 	if (protoDir.isDirectory() && protoDir.exists()) {
 		
 		String[] protos = protoDir.list()
