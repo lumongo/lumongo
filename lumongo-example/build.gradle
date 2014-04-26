@@ -1,11 +1,6 @@
 apply from: '../maven.gradle'
 
-repositories {
-    mavenCentral()
-    maven {
-    	url "http://gwtwiki.googlecode.com/svn/maven-repository/"
-    }
-}
+description 'Lumongo Examples'
 
 dependencies {
 	compile project(':lumongo-client')

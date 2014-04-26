@@ -2,6 +2,8 @@ apply from: '../maven.gradle'
 
 defaultTasks 'compileProto', 'build'
 
+description 'Lumongo Common'
+
 dependencies {
     compile 'org.mongodb:mongo-java-driver:2.11.3'
     compile 'com.google.guava:guava:16.0.1'

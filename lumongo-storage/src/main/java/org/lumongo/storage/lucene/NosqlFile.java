@@ -47,4 +47,6 @@ public interface NosqlFile {
 	
 	public boolean isCompressed();
 	
+	public long getChecksum();
+	
 }

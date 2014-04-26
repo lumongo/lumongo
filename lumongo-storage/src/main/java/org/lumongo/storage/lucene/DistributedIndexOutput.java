@@ -78,4 +78,10 @@ public class DistributedIndexOutput extends IndexOutput {
 		nosqlFile.setFileLength(length);
 	}
 	
+	@Override
+	public long getChecksum() throws IOException {
+		flush();
+		return nosqlFile.getChecksum();
+	}
+	
 }

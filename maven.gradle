@@ -1,6 +1,7 @@
 
 if (hasProperty('sonatypeUsername')) {
 	apply plugin: 'maven'
+	apply plugin: 'maven-publish'
 	apply plugin: 'signing'
 
 	task javadocJar(type: Jar, dependsOn: javadoc) {
@@ -28,7 +29,7 @@ if (hasProperty('sonatypeUsername')) {
 				}
 
 				if (project.ext.isReleaseVersion) {
-					repository(url: "--https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+					repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
 						authentication(userName: sonatypeUsername, password: sonatypePassword)
 					}
 				}
@@ -39,7 +40,7 @@ if (hasProperty('sonatypeUsername')) {
 				}
 		
 				pom.project {
-					url 'http://lumongo.org/'
+					url 'http://lumongo.org'
 
 					licenses {
 						license {
@@ -57,10 +58,14 @@ if (hasProperty('sonatypeUsername')) {
 					}
 
 					scm {
-						url 'http://lumongo.org/svn/lumongo/'
-						connection 'http://lumongo.org/svn/lumongo/'
-						developerConnection 'http://lumongo.org/svn/lumongo/'
+						url 'https://github.com/lumongo/lumongo.git'
+						connection 'https://github.com/lumongo/lumongo.git'
+						developerConnection 'https://github.com/lumongo/lumongo.git'
 					}
+
+					name "$project.name"
+					description '$project.description'
+
 				}
 			}
 		}
