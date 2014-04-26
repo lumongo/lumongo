@@ -4,5 +4,6 @@ bin
 .classpath
 .settings
 deploy
+archives
 /.gradle
 /lumongo-common/gen-src/*

@@ -1,14 +1,16 @@
 apply from: '../maven.gradle'
 
+description 'LuMongo Cluster'
+
 dependencies {	
     //compile project(':lumongo-common') //pulled in by client
     compile project(':lumongo-storage')	
     compile project(':lumongo-client') //needed for admin tools
     compile 'com.hazelcast:hazelcast:3.2'
     compile 'net.sf.jopt-simple:jopt-simple:4.6'
-    compile 'org.apache.lucene:lucene-facet:4.7.2'
-    compile 'org.apache.lucene:lucene-queryparser:4.7.2'
-    compile 'org.apache.lucene:lucene-analyzers-common:4.7.2'
+    compile 'org.apache.lucene:lucene-facet:4.8.0'
+    compile 'org.apache.lucene:lucene-queryparser:4.8.0'
+    compile 'org.apache.lucene:lucene-analyzers-common:4.8.0'
 }
 
 jar {
@@ -45,3 +47,4 @@ task createDeploy(dependsOn: jar, type: Copy) {
     }
 }
 						
+

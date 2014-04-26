@@ -1,5 +1,7 @@
 apply from: '../maven.gradle'
 
+description 'LuMongo Client'
+
 dependencies {	
     compile project(':lumongo-common')	
 }
