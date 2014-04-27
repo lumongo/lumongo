@@ -50,6 +50,7 @@ task compileProto << {
 	}
 }
 
+compileJava.dependsOn compileProto
 eclipseProject.dependsOn compileProto
 
 
