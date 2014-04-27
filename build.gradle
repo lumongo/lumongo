@@ -1,6 +1,8 @@
 
 defaultTasks 'eclipse', 'compileProto', 'createDeploy'
 
+apply plugin: 'java'
+
 subprojects {
 	apply plugin: 'java'
 	apply plugin: 'eclipse'
@@ -80,3 +82,12 @@ subprojects {
 	}
 
 }
+
+task testReport(type: TestReport) {
+    destinationDir = file("shippable" + File.separator + "testresults")
+    // Include the results from the `test` task in all subprojects
+    reportOn subprojects*.test
+}
+
+test.finalizedBy testReport
+ 
