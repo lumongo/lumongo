@@ -23,7 +23,7 @@ sourceSets {
 task compileProto << {
 	File outputDir = project.file("gen-src")
 	File protoDir = project.file("proto")
-	String protocCommand = "protoc"
+	String protocCommand = rootProject.file("util" + File.separator +  "protoc").toString();
 
 	if (!outputDir.exists()) {
 		outputDir.mkdir();
