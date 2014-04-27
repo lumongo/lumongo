@@ -241,13 +241,9 @@ public class Segment {
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 						FacetResult facetResult = ddsr.facets.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(), countRequest.getFacetField()
 										.getPathList().toArray(new String[0]));
-						if (facetResult != null) {
-							handleFacetResult(builder, facetResult, countRequest);
-						}
-						else {
-							//TODO debug this
-							log.warn("Request for <" + countRequest + "> is null");
-						}
+						
+						handleFacetResult(builder, facetResult, countRequest);
+						
 					}
 					
 				}
@@ -306,11 +302,14 @@ public class Segment {
 		FacetGroup.Builder fg = FacetGroup.newBuilder();
 		fg.setCountRequest(countRequest);
 		
-		for (LabelAndValue subResult : fc.labelValues) {
-			FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
-			facetCountBuilder.setCount(subResult.value.longValue());
-			facetCountBuilder.setFacet(subResult.label);
-			fg.addFacetCount(facetCountBuilder);
+		if (fc != null) {
+			
+			for (LabelAndValue subResult : fc.labelValues) {
+				FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
+				facetCountBuilder.setCount(subResult.value.longValue());
+				facetCountBuilder.setFacet(subResult.label);
+				fg.addFacetCount(facetCountBuilder);
+			}
 		}
 		builder.addFacetGroup(fg);
 	}

@@ -54,7 +54,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
 public class ApiTest {
-	private static final String MY_INDEX_NAME = "myIndexName";
+	public static final String MY_INDEX_NAME = SingleNodeTest.MY_TEST_INDEX;
 	private LumongoWorkPool lumongoWorkPool;
 	
 	public void startClient() throws Exception {

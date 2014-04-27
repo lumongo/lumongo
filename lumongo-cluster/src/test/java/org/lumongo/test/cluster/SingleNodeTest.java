@@ -28,9 +28,9 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
 public class SingleNodeTest {
-	private static final String MY_TEST_INDEX = "myTestIndex";
+	public static final String MY_TEST_INDEX = "myTestIndex";
 	
-	private static final String FACET_TEST_INDEX = "facetTestIndex";
+	public static final String FACET_TEST_INDEX = "facetTestIndex";
 	
 	@SuppressWarnings("unused")
 	private static Logger log = Logger.getLogger(SingleNodeTest.class);
