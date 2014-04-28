@@ -17,9 +17,6 @@ subprojects {
 	
 	repositories {
 		mavenCentral()
-		maven {
-			url 'http://people.apache.org/~uschindler/staging_area/lucene-solr-4.8.0-RC2-rev1589874/lucene/maven/'
-		}
 	}
 	
 	test {
