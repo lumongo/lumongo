@@ -5,7 +5,7 @@ defaultTasks 'compileProto', 'build'
 description 'Lumongo Common'
 
 dependencies {
-    compile 'org.mongodb:mongo-java-driver:2.11.3'
+    compile 'org.mongodb:mongo-java-driver:2.12.0'
     compile 'com.google.guava:guava:16.0.1'
     compile 'com.google.protobuf:protobuf-java:2.5.0'
     compile 'com.googlecode.protobuf-rpc-pro:protobuf-rpc-pro-duplex:3.2.2'
