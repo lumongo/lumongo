@@ -49,4 +49,6 @@ public interface NosqlFile {
 	
 	public long getChecksum();
 	
+	public void resetChecksum();
+	
 }
