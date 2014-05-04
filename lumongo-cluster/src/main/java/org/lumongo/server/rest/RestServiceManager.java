@@ -3,6 +3,7 @@ package org.lumongo.server.rest;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+import org.apache.log4j.Logger;
 import org.lumongo.LumongoConstants;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.indexing.IndexManager;
@@ -10,6 +11,8 @@ import org.lumongo.server.indexing.IndexManager;
 import com.sun.net.httpserver.HttpServer;
 
 public class RestServiceManager {
+	
+	private final static Logger log = Logger.getLogger(RestServiceManager.class);
 	
 	private final int restPort;
 	private HttpServer httpServer;
@@ -30,7 +33,8 @@ public class RestServiceManager {
 	}
 	
 	public void shutdown() {
+		log.info("Starting rest service shutdown");
 		//TODO configure
-		httpServer.stop(10);
+		httpServer.stop(1);
 	}
 }

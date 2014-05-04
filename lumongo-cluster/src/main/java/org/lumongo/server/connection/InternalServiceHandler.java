@@ -95,6 +95,7 @@ public class InternalServiceHandler extends InternalService {
 	
 	public void shutdown() {
 		
+		log.info("Starting internal service shutdown");
 		bootstrap.group().shutdownGracefully(1, clusterConfig.getInternalShutdownTimeout(), TimeUnit.SECONDS);
 		
 		try {
