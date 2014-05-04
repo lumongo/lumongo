@@ -109,13 +109,14 @@ public class ExternalServiceHandler extends ExternalService {
 	
 	public void shutdown() {
 		
+		log.info("Starting external service shutdown");
 		bootstrap.group().shutdownGracefully(1, clusterConfig.getExternalShutdownTimeout(), TimeUnit.SECONDS);
 		
 		try {
 			bootstrap.group().terminationFuture().sync();
 		}
 		catch (Exception e) {
-			log.info("Failed to stop external service within " + clusterConfig.getExternalShutdownTimeout() + "ms" + e);
+			log.info("Failed to stop external service within " + clusterConfig.getExternalShutdownTimeout() + "s" + e);
 		}
 		
 	}

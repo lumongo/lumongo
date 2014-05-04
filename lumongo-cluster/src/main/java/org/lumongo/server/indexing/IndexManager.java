@@ -357,6 +357,8 @@ public class IndexManager {
 	
 	public void shutdown() {
 		
+		log.info("Starting index manager shutdown");
+		
 		//TODO configure or force a lock acquire
 		int waitSeconds = 10;
 		
