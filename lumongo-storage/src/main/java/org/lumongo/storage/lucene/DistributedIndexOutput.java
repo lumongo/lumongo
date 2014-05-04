@@ -30,6 +30,7 @@ public class DistributedIndexOutput extends IndexOutput {
 	
 	public DistributedIndexOutput(NosqlFile nosqlFile) throws IOException {
 		this.nosqlFile = nosqlFile;
+		nosqlFile.resetChecksum();
 		this.isOpen = true;
 	}
 	
