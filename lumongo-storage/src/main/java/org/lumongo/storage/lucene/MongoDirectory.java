@@ -1,5 +1,6 @@
 package org.lumongo.storage.lucene;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -232,7 +233,7 @@ public class MongoDirectory implements NosqlDirectory {
 			return createFile(filename);
 		}
 		
-		throw new IOException("File not found: " + filename);
+		throw new FileNotFoundException(filename);
 		
 	}
 	
