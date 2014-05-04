@@ -33,4 +33,6 @@ public interface NosqlDirectory {
 	
 	public void deleteFile(NosqlFile nosqlFile) throws IOException;
 	
+	public void close();
+	
 }
