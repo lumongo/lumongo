@@ -64,7 +64,6 @@ public class MongoDirectory implements NosqlDirectory {
 	public static final int DEFAULT_BLOCK_MAX = 12500;
 	
 	private ConcurrentHashMap<String, MongoFile> nameToFileMap;
-	
 	private static Cache<MongoBlock, MongoBlock> blockCache;
 	
 	/**
@@ -322,6 +321,11 @@ public class MongoDirectory implements NosqlDirectory {
 		DBCollection b = getBlocksCollection();
 		b.remove(query);
 		nameToFileMap.remove(nosqlFile.getFileName());
+	}
+	
+	@Override
+	public void close() {
+		nameToFileMap.clear();
 	}
 	
 	@Override
