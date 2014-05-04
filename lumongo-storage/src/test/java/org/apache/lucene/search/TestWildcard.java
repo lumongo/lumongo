@@ -29,7 +29,7 @@ import org.apache.lucene.index.RandomIndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.store.Directory;
-import org.lumongo.test.storage.LumongoTestCase;
+import org.apache.lucene.util.LumongoTestCase;
 
 /**
  * TestWildcard tests the '*' and '?' wildcard characters.
