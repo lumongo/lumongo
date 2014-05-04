@@ -24,7 +24,7 @@ import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.RandomIndexWriter;
 import org.apache.lucene.store.Directory;
-import org.lumongo.test.storage.LumongoTestCase;
+import org.apache.lucene.util.LumongoTestCase;
 
 public class TestTopDocsCollector extends LumongoTestCase {
 	

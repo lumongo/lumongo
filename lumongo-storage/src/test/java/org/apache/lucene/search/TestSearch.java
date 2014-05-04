@@ -34,7 +34,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.MergePolicy;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.store.Directory;
-import org.lumongo.test.storage.LumongoTestCase;
+import org.apache.lucene.util.LumongoTestCase;
 
 /** JUnit adaptation of an older test case SearchTest. */
 public class TestSearch extends LumongoTestCase {
