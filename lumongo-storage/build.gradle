@@ -12,6 +12,8 @@ dependencies {
 	compile 'org.apache.lucene:lucene-core:4.8.0'
 	testCompile 'org.apache.lucene:lucene-queryparser:4.8.0'
 	testCompile 'org.apache.lucene:lucene-analyzers-common:4.8.0'
+	
+	testCompile 'org.apache.lucene:lucene-test-framework:4.8.0'
 	luceneTestFramework 'org.apache.lucene:lucene-test-framework:4.8.0'
 }
 
