@@ -20,7 +20,6 @@ subprojects {
 	}
 	
 	test {
-		useTestNG()
 		
 		systemProperty 'mongoServer', 'localhost'
 		systemProperty 'mongoPort', '27017'
@@ -42,8 +41,34 @@ subprojects {
 		workingDir = 'build/'
 	}
 	
+	task testNG(type: Test) {
+		useTestNG()
+		systemProperty 'mongoServer', 'localhost'
+                systemProperty 'mongoPort', '27017'
+
+                //tweaking memory settings for the forked vm that runs tests
+                jvmArgs '-Xmx512m'
+
+                beforeTest { descriptor ->
+                        logger.lifecycle("\n\nRunning test: " + descriptor)
+                }
+
+                afterTest { descriptor ->
+                        logger.lifecycle("\nFinished test: " + descriptor + "\n\n")
+                }
+
+                onOutput { descriptor, event ->
+                        logger.lifecycle(event.message.trim())
+                }
+                workingDir = 'build/'
+	}
+	test.dependsOn testNG
+	testNG.testReportDir = file("$buildDir/reports/testng")
+
+
 	dependencies {
-		testCompile 'org.testng:testng:5.10:jdk15'
+		testCompile 'junit:junit:[4.8,)'
+		testCompile 'org.testng:testng:6.5.1+'
 	}
 
 	javadoc {
