@@ -87,26 +87,6 @@ public class DistributedDirectory extends BaseDirectory {
 		return nosqlFile.getFileLength();
 	}
 	
-	//TODO not needed anymore?
-	public long fileModified(String filename) throws IOException {
-		ensureOpen();
-		NosqlFile nosqlFile = nosqlDirectory.getFileHandle(filename);
-		return nosqlFile.getLastModified();
-	}
-	
-	//TODO not needed anymore?
-	public void touchFile(String fileName) throws IOException {
-		ensureOpen();
-		try {
-			NosqlFile nosqlFile = nosqlDirectory.getFileHandle(fileName);
-			nosqlFile.setLastModified(System.currentTimeMillis());
-			nosqlDirectory.updateFileMetadata(nosqlFile);
-		}
-		catch (Exception e) {
-			throw new IOException("Could not touch file " + fileName, e);
-		}
-	}
-	
 	@Override
 	public void deleteFile(String fileName) throws IOException {
 		ensureOpen();
@@ -127,6 +107,7 @@ public class DistributedDirectory extends BaseDirectory {
 	@Override
 	public void close() throws IOException {
 		isOpen = false;
+		nosqlDirectory.close();
 	}
 	
 	@Override
