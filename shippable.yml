@@ -1,7 +1,0 @@
-language: java
-jdk:
-   - oraclejdk7
-   - openjdk7
-   - oraclejdk8
-services:
-   - mongodb
