@@ -74,6 +74,7 @@ public class LumongoTestCase extends LuceneTestCase {
 				if (LuceneTestCase.VERBOSE) {
 					System.out.println("LuceneTestCase: will rate limit output IndexOutput to " + maxMBPerSec + " MB/sec");
 				}
+				@SuppressWarnings("resource")
 				final RateLimitedDirectoryWrapper rateLimitedDirectoryWrapper = new RateLimitedDirectoryWrapper(directory);
 				switch (random.nextInt(10)) {
 					case 3: // sometimes rate limit on flush

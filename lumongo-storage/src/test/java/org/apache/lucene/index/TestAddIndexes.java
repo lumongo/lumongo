@@ -389,6 +389,7 @@ public class TestAddIndexes extends LumongoTestCase {
 		
 		IndexWriterConfig dontMergeConfig = new IndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random()))
 						.setMergePolicy(NoMergePolicy.COMPOUND_FILES);
+		@SuppressWarnings("resource")
 		IndexWriter writer = new IndexWriter(aux, dontMergeConfig);
 		for (int i = 0; i < 20; i++) {
 			writer.deleteDocuments(new Term("id", "" + i));

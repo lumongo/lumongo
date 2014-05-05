@@ -1136,8 +1136,9 @@ public class TestIndexWriter extends LumongoTestCase {
 					// on!!  This test doesn't repro easily so when
 					// Jenkins hits a fail we need to study where the
 					// interrupts struck!
-					System.out.println("TEST: got interrupt");
-					re.printStackTrace(System.out);
+					//for Lumongo I am disabling this noise
+					//System.out.println("TEST: got interrupt");
+					//re.printStackTrace(System.out);
 					Throwable e = re.getCause();
 					assertTrue(e instanceof InterruptedException);
 					if (finish) {

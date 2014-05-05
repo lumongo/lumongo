@@ -34,9 +34,7 @@ import com.mongodb.gridfs.GridFSFile;
 public class MongoDocumentStorage implements DocumentStorage {
 	@SuppressWarnings("unused")
 	private final static Logger log = Logger.getLogger(MongoDocumentStorage.class);
-
-
-
+	
 	private static final Charset UTF_8_CHARSET = Charset.forName("UTF-8");
 	private static final String ASSOCIATED_FILES = "associatedFiles";
 	private static final String FILES = "files";
@@ -48,28 +46,25 @@ public class MongoDocumentStorage implements DocumentStorage {
 	private static final String METADATA = "metadata";
 	private static final String UNIQUE_ID_KEY = "unique_id";
 	private static final String CHUNKS = "chunks";
-
-
-
+	
 	private MongoClient pool;
 	private String database;
 	private String indexName;
-
+	
 	private String rawCollectionName;
-
+	
 	public MongoDocumentStorage(MongoClient pool, String indexName, String dbName, String rawCollectionName, boolean sharded) {
 		this.pool = pool;
 		this.indexName = indexName;
 		this.database = dbName;
 		this.rawCollectionName = rawCollectionName;
-
+		
 		DB storageDb = pool.getDB(database);
 		DBCollection coll = storageDb.getCollection(ASSOCIATED_FILES + "." + FILES);
-		coll.ensureIndex(METADATA + "." + UNIQUE_ID_KEY);
-
+		coll.createIndex(new BasicDBObject(METADATA + "." + UNIQUE_ID_KEY, 1));
+		
 		if (sharded) {
-
-
+			
 			DB adminDb = pool.getDB(MongoConstants.StandardDBs.ADMIN);
 			DBObject enableCommand = new BasicDBObject();
 			enableCommand.put(MongoConstants.Commands.ENABLE_SHARDING, database);
@@ -77,13 +72,12 @@ public class MongoDocumentStorage implements DocumentStorage {
 			if (cr.getErrorMessage() != null) {
 				System.err.println("Failed to enable sharding on the database <" + database + "> because <" + cr.getErrorMessage() + ">");
 			}
-
+			
 			shardCollection(storageDb, adminDb, rawCollectionName);
 			shardCollection(storageDb, adminDb, ASSOCIATED_FILES + "." + CHUNKS);
 		}
 	}
-
-
+	
 	private void shardCollection(DB db, DB adminDb, String collectionName) {
 		CommandResult cr;
 		DBObject shardCommand = new BasicDBObject();
@@ -95,12 +89,12 @@ public class MongoDocumentStorage implements DocumentStorage {
 			System.err.println("Failed to shard the collection <" + collectionName + "> because <" + cr.getErrorMessage() + ">");
 		}
 	}
-
+	
 	private GridFS createGridFSConnection() {
 		DB db = pool.getDB(database);
 		return new GridFS(db, ASSOCIATED_FILES);
 	}
-
+	
 	@Override
 	public void storeSourceDocument(ResultDocument doc) throws Exception {
 		String uniqueId = doc.getUniqueId();
@@ -120,7 +114,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 			}
 			document.put(DOC, bytes);
 		}
-
+		
 		if (doc.getMetadataCount() > 0) {
 			DBObject metadata = new BasicDBObject();
 			for (Metadata meta : doc.getMetadataList()) {
@@ -128,14 +122,14 @@ public class MongoDocumentStorage implements DocumentStorage {
 			}
 			document.put(METADATA, metadata);
 		}
-
+		
 		document.put(TIMESTAMP, doc.getTimestamp());
 		document.put(COMPRESSED, doc.getCompressed());
 		document.put(TYPE, doc.getType().toString());
 		document.put(MongoConstants.StandardFields._ID, uniqueId);
 		coll.save(document);
 	}
-
+	
 	@Override
 	public ResultDocument getSourceDocument(String uniqueId, FetchType fetchType) throws Exception {
 		if (!FetchType.NONE.equals(fetchType)) {
@@ -145,23 +139,23 @@ public class MongoDocumentStorage implements DocumentStorage {
 			DBObject result = coll.findOne(search);
 			if (null != result) {
 				boolean compressed = (boolean) result.removeField(COMPRESSED);
-
+				
 				long timestamp = (long) result.removeField(TIMESTAMP);
-
+				
 				ResultDocument.Type type = ResultDocument.Type.valueOf((String) result.removeField(TYPE));
 				ResultDocument.Builder dBuilder = ResultDocument.newBuilder();
 				dBuilder.setType(type);
 				dBuilder.setCompressed(compressed);
 				dBuilder.setUniqueId(uniqueId);
 				dBuilder.setTimestamp(timestamp);
-
+				
 				if (result.containsField(METADATA)) {
 					DBObject metadata = (DBObject) result.removeField(METADATA);
 					for (String key : metadata.keySet()) {
 						dBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue((String) metadata.get(key)));
 					}
 				}
-
+				
 				if (FetchType.FULL.equals(fetchType)) {
 					ByteString document = null;
 					if (!compressed && type.equals(ResultDocument.Type.BSON)) {
@@ -186,14 +180,14 @@ public class MongoDocumentStorage implements DocumentStorage {
 					}
 					dBuilder.setDocument(document);
 				}
-
+				
 				dBuilder.setIndexName(indexName);
 				return dBuilder.build();
 			}
 		}
 		return null;
 	}
-
+	
 	@Override
 	public void deleteSourceDocument(String uniqueId) throws Exception {
 		DB db = pool.getDB(database);
@@ -201,36 +195,35 @@ public class MongoDocumentStorage implements DocumentStorage {
 		DBObject search = new BasicDBObject(MongoConstants.StandardFields._ID, uniqueId);
 		coll.remove(search);
 	}
-
-
+	
 	public void deleteAllDocuments() {
 		GridFS gridFS = createGridFSConnection();
 		gridFS.remove(new BasicDBObject());
-
+		
 		DB db = pool.getDB(database);
 		DBCollection coll = db.getCollection(rawCollectionName);
 		coll.remove(new BasicDBObject());
 	}
-
+	
 	public void drop() {
 		DB db = pool.getDB(database);
 		db.dropDatabase();
 	}
-
+	
 	@Override
 	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long timestamp, HashMap<String, String> metadataMap)
-			throws Exception {
+					throws Exception {
 		GridFS gridFS = createGridFSConnection();
-
+		
 		if (compress) {
 			is = new DeflaterInputStream(is);
 		}
-
+		
 		deleteAssociatedDocument(uniqueId, fileName);
 		GridFSFile gFile = gridFS.createFile(is);
 		gFile.put(MongoConstants.StandardFields._ID, getGridFsId(uniqueId, fileName));
 		gFile.put(FILENAME, fileName);
-
+		
 		DBObject metadata = new BasicDBObject();
 		if (metadataMap != null) {
 			for (String key : metadataMap.keySet()) {
@@ -243,16 +236,16 @@ public class MongoDocumentStorage implements DocumentStorage {
 		gFile.setMetaData(metadata);
 		gFile.save();
 	}
-
+	
 	@Override
 	public void storeAssociatedDocument(AssociatedDocument doc) throws Exception {
 		GridFS gridFS = createGridFSConnection();
-
+		
 		byte[] bytes = doc.getDocument().toByteArray();
 		if (doc.getCompressed()) {
 			bytes = CommonCompression.compressZlib(bytes, CompressionLevel.FASTEST);
 		}
-
+		
 		deleteAssociatedDocument(doc.getDocumentUniqueId(), doc.getFilename());
 		GridFSFile gFile = gridFS.createFile(bytes);
 		gFile.put(MongoConstants.StandardFields._ID, getGridFsId(doc.getDocumentUniqueId(), doc.getFilename()));
@@ -267,7 +260,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		gFile.setMetaData(metadata);
 		gFile.save();
 	}
-
+	
 	@Override
 	public List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType fetchType) throws Exception {
 		GridFS gridFS = createGridFSConnection();
@@ -278,26 +271,26 @@ public class MongoDocumentStorage implements DocumentStorage {
 				AssociatedDocument ad = loadGridFSToAssociatedDocument(file, fetchType);
 				assocDocs.add(ad);
 			}
-
+			
 		}
 		return assocDocs;
 	}
-
+	
 	private String getGridFsId(String uniqueId, String filename) {
 		return uniqueId + "-" + filename;
 	}
-
+	
 	@Override
 	public InputStream getAssociatedDocumentStream(String uniqueId, String fileName) {
 		GridFS gridFS = createGridFSConnection();
 		GridFSDBFile file = gridFS.findOne(new BasicDBObject(MongoConstants.StandardFields._ID, getGridFsId(uniqueId, fileName)));
-
+		
 		if (file == null) {
 			return null;
 		}
-
+		
 		InputStream is = file.getInputStream();
-
+		
 		DBObject metadata = file.getMetaData();
 		if (metadata.containsField(COMPRESSED)) {
 			boolean compressed = (boolean) metadata.removeField(COMPRESSED);
@@ -305,10 +298,10 @@ public class MongoDocumentStorage implements DocumentStorage {
 				is = new InflaterInputStream(is);
 			}
 		}
-
+		
 		return is;
 	}
-
+	
 	@Override
 	public AssociatedDocument getAssociatedDocument(String uniqueId, String fileName, FetchType fetchType) throws Exception {
 		GridFS gridFS = createGridFSConnection();
@@ -320,27 +313,27 @@ public class MongoDocumentStorage implements DocumentStorage {
 		}
 		return null;
 	}
-
+	
 	private AssociatedDocument loadGridFSToAssociatedDocument(GridFSDBFile file, FetchType fetchType) throws IOException {
 		AssociatedDocument.Builder aBuilder = AssociatedDocument.newBuilder();
 		aBuilder.setFilename(file.getFilename());
 		DBObject metadata = file.getMetaData();
-
+		
 		boolean compressed = false;
 		if (metadata.containsField(COMPRESSED)) {
 			compressed = (boolean) metadata.removeField(COMPRESSED);
 		}
-
+		
 		long timestamp = (long) metadata.removeField(TIMESTAMP);
-
+		
 		aBuilder.setCompressed(compressed);
 		aBuilder.setTimestamp(timestamp);
-
+		
 		aBuilder.setDocumentUniqueId((String) metadata.removeField(UNIQUE_ID_KEY));
 		for (String field : metadata.keySet()) {
 			aBuilder.addMetadata(Metadata.newBuilder().setKey(field).setValue((String) metadata.get(field)));
 		}
-
+		
 		if (FetchType.FULL.equals(fetchType)) {
 			byte[] bytes = MongoConstants.Functions.readFileFromGridFS(file);
 			if (null != bytes) {
@@ -353,7 +346,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		aBuilder.setIndexName(indexName);
 		return aBuilder.build();
 	}
-
+	
 	@Override
 	public List<String> getAssociatedFilenames(String uniqueId) throws Exception {
 		GridFS gridFS = createGridFSConnection();
@@ -364,22 +357,18 @@ public class MongoDocumentStorage implements DocumentStorage {
 		}
 		return fileNames;
 	}
-
+	
 	@Override
 	public void deleteAssociatedDocument(String uniqueId, String fileName) {
 		GridFS gridFS = createGridFSConnection();
 		gridFS.remove(new BasicDBObject(MongoConstants.StandardFields._ID, getGridFsId(uniqueId, fileName)));
-
+		
 	}
-
+	
 	@Override
 	public void deleteAssociatedDocuments(String uniqueId) {
 		GridFS gridFS = createGridFSConnection();
 		gridFS.remove(new BasicDBObject(METADATA + "." + UNIQUE_ID_KEY, uniqueId));
 	}
-
-
-
-
-
+	
 }

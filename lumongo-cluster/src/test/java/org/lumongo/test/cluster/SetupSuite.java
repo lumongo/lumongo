@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.lumongo.LumongoConstants;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
@@ -18,9 +19,6 @@ import org.lumongo.util.ServerNameHelper;
 import org.lumongo.util.TestHelper;
 import org.lumongo.util.properties.FakePropertiesReader;
 import org.lumongo.util.properties.PropertiesReader.PropertyException;
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.BeforeSuite;
-import org.testng.log4testng.Logger;
 
 import com.mongodb.Mongo;
 
@@ -30,7 +28,6 @@ public class SetupSuite {
 	private static LumongoWorkPool lumongoWorkPool;
 	private static List<LuceneNode> luceneNodes;
 	
-	@BeforeSuite
 	public static void startSuite() throws Exception {
 		
 		luceneNodes = new ArrayList<LuceneNode>();
@@ -51,7 +48,6 @@ public class SetupSuite {
 		startServer();
 	}
 	
-	@AfterSuite
 	public static void stopSuite() throws Exception {
 		stopClient();
 		stopServer();
@@ -133,6 +129,7 @@ public class SetupSuite {
 	}
 	
 	public static void startClient() throws Exception {
+		System.out.println("starting client");
 		LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 		lumongoPoolConfig.addMember("localhost");
 		lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
