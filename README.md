@@ -25,5 +25,5 @@ To learn more see the [wiki](https://github.com/lumongo/lumongo/wiki):
 * [Java Client](https://github.com/lumongo/lumongo/wiki/Java-Client)
 * [Maven/Gradle](https://github.com/lumongo/lumongo/wiki/Maven) 
 
-https://www.codeship.io/projects/5461c610-b691-0131-08b5-36113d49e761/status
+![Status](https://www.codeship.io/projects/5461c610-b691-0131-08b5-36113d49e761/status)
 
