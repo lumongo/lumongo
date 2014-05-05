@@ -75,6 +75,7 @@ import org.junit.BeforeClass;
 //   - skipTo(term)
 //   - skipTo(doc)
 
+@SuppressWarnings("deprecation")
 public class TestCodecs extends LumongoTestCase {
 	private static String[] fieldNames = new String[] { "one", "two", "three", "four" };
 	
@@ -498,8 +499,6 @@ public class TestCodecs extends LumongoTestCase {
 			assertEquals(DocIdSetIterator.NO_MORE_DOCS, docsEnum.nextDoc());
 		}
 		
-		byte[] data = new byte[10];
-		
 		private void verifyPositions(final PositionData[] positions, final DocsAndPositionsEnum posEnum) throws Throwable {
 			for (int i = 0; i < positions.length; i++) {
 				final int pos = posEnum.nextPosition();
@@ -621,20 +620,19 @@ public class TestCodecs extends LumongoTestCase {
 					term = field.terms[upto];
 					if (random().nextInt(3) == 1) {
 						final DocsEnum docs;
-						final DocsEnum docsAndFreqs;
 						final DocsAndPositionsEnum postings;
 						if (!field.omitTF) {
 							postings = termsEnum.docsAndPositions(null, null);
 							if (postings != null) {
-								docs = docsAndFreqs = postings;
+								docs = postings;
 							}
 							else {
-								docs = docsAndFreqs = TestUtil.docs(random(), termsEnum, null, null, DocsEnum.FLAG_FREQS);
+								docs = TestUtil.docs(random(), termsEnum, null, null, DocsEnum.FLAG_FREQS);
 							}
 						}
 						else {
 							postings = null;
-							docsAndFreqs = null;
+							
 							docs = TestUtil.docs(random(), termsEnum, null, null, DocsEnum.FLAG_NONE);
 						}
 						assertNotNull(docs);

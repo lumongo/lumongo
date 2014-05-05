@@ -26,44 +26,38 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.LockObtainFailedException;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.lumongo.LuceneConstants;
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.TestHelper;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeSuite;
-import org.testng.annotations.Test;
 
 import com.mongodb.MongoClient;
 
-public class StorageTest {
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+public class BasicStorageTest {
 	private static final String STORAGE_TEST_INDEX = "storageTest";
 	private static Directory directory;
 	
-	@BeforeSuite
+	@BeforeClass
 	public static void cleanDatabaseAndInit() throws Exception {
 		MongoClient mongo = TestHelper.getMongo();
 		mongo.dropDatabase(TestHelper.TEST_DATABASE_NAME);
-	}
-	
-	@BeforeClass
-	public static void openDirectory() throws Exception {
-		System.out.println("Creating lucene directory for storage test");
-		MongoClient mongo = TestHelper.getMongo();
 		directory = new DistributedDirectory(new MongoDirectory(mongo, TestHelper.TEST_DATABASE_NAME, STORAGE_TEST_INDEX, false, false));
 	}
 	
 	@AfterClass
 	public static void closeDirectory() throws Exception {
-		System.out.println("Closing lucene directory for storage test");
 		directory.close();
 	}
 	
-	@Test(
-		groups = "load")
-	public void addDocs() throws CorruptIndexException, LockObtainFailedException, IOException {
+	@Test
+	public void test1Add() throws CorruptIndexException, LockObtainFailedException, IOException {
 		StandardAnalyzer analyzer = new StandardAnalyzer(LuceneConstants.VERSION);
 		IndexWriterConfig config = new IndexWriterConfig(LuceneConstants.VERSION, analyzer);
 		
@@ -86,15 +80,13 @@ public class StorageTest {
 		doc.add(new TextField("uid", uid, Field.Store.YES));
 		doc.add(new StringField("uid", uid, Field.Store.YES));
 		doc.add(new IntField("testIntField", 3, Field.Store.YES));
-		System.out.println(doc.toString());
+		
 		Term uidTerm = new Term("uid", uid);
 		w.updateDocument(uidTerm, doc);
 	}
 	
-	@Test(
-		groups = "query",
-		dependsOnGroups = "load")
-	public void queryDocs() throws CorruptIndexException, ParseException, IOException {
+	@Test
+	public void test2Query() throws CorruptIndexException, ParseException, IOException {
 		IndexReader indexReader = DirectoryReader.open(directory);
 		
 		StandardAnalyzer analyzer = new StandardAnalyzer(LuceneConstants.VERSION);
@@ -128,23 +120,23 @@ public class StorageTest {
 		int hits = 0;
 		
 		hits = runQuery(indexReader, qp, "java", 10);
-		Assert.assertEquals(hits, 2, "Expected 2 hits");
+		Assert.assertEquals("Expected 2 hits", hits, 2);
 		hits = runQuery(indexReader, qp, "perl", 10);
-		Assert.assertEquals(hits, 0, "Expected 0 hits");
+		Assert.assertEquals("Expected 0 hits", hits, 0);
 		hits = runQuery(indexReader, qp, "treatment", 10);
-		Assert.assertEquals(hits, 0, "Expected 0 hits");
+		Assert.assertEquals("Expected 0 hits", hits, 0);
 		hits = runQuery(indexReader, qp, "long", 10);
-		Assert.assertEquals(hits, 2, "Expected 2 hits");
+		Assert.assertEquals("Expected 2 hits", hits, 2);
 		hits = runQuery(indexReader, qp, "MongoDB", 10);
-		Assert.assertEquals(hits, 1, "Expected 1 hit");
+		Assert.assertEquals("Expected 1 hit", hits, 1);
 		hits = runQuery(indexReader, qp, "java AND awesome", 10);
-		Assert.assertEquals(hits, 1, "Expected 1 hit");
+		Assert.assertEquals("Expected 1 hit", hits, 1);
 		hits = runQuery(indexReader, qp, "testIntField:[1 TO 10]", 10);
-		Assert.assertEquals(hits, 5, "Expected 5 hits");
+		Assert.assertEquals("Expected 5 hits", hits, 5);
 		hits = runQuery(indexReader, qp, "testIntField:1", 10);
-		Assert.assertEquals(hits, 0, "Expected 0 hits");
+		Assert.assertEquals("Expected 0 hits", hits, 0);
 		hits = runQuery(indexReader, qp, "testIntField:3", 10);
-		Assert.assertEquals(hits, 5, "Expected 5 hits");
+		Assert.assertEquals("Expected 5 hits", hits, 5);
 		
 		indexReader.close();
 	}
@@ -164,6 +156,7 @@ public class StorageTest {
 		searcher.search(q, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
 		int totalHits = collector.getTotalHits();
+		@SuppressWarnings("unused")
 		long searchTime = System.currentTimeMillis() - start;
 		
 		start = System.currentTimeMillis();
@@ -174,20 +167,14 @@ public class StorageTest {
 			Document d = searcher.doc(docId);
 			ids.add(d.get("uid"));
 		}
+		@SuppressWarnings("unused")
 		long fetchTime = System.currentTimeMillis() - start;
-		
-		System.out.println("Query <" + q.toString() + "> found <" + totalHits + "> total hits in <" + searchTime + "ms>.  Fetched <" + hits.length
-						+ "> documents in >" + fetchTime + "ms>");
-		
-		System.out.println("  :" + ids);
 		
 		return totalHits;
 	}
 	
-	@Test(
-		groups = { "last" },
-		dependsOnGroups = { "query" })
-	public void apiUsage() throws Exception {
+	@Test
+	public void test3Api() throws Exception {
 		String hostName = TestHelper.getMongoServer();
 		String databaseName = TestHelper.TEST_DATABASE_NAME;
 		
