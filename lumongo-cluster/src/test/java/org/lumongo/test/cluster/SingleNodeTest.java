@@ -130,15 +130,16 @@ public class SingleNodeTest {
 		}
 		
 		{
-			System.out.println("-------------------------");
+			
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "date");
 			QueryResult qr = lumongoWorkPool.query(q);
 			
 			Assert.assertEquals("Total record count not " + totalRecords, qr.getTotalHits(), totalRecords);
 			
 			Assert.assertEquals("Total facets not " + 2, qr.getFacetCounts("date").size(), 2);
-			for (FacetCount fc : qr.getFacetCounts("date")) {
-				System.out.println(fc);
+			for (@SuppressWarnings("unused")
+			FacetCount fc : qr.getFacetCounts("date")) {
+				//System.out.println(fc);
 			}
 			
 		}
@@ -304,7 +305,6 @@ public class SingleNodeTest {
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocument(uniqueId, MY_TEST_INDEX));
 				Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
 				String recordText = response.getDocumentAsUtf8();
-				System.out.println("\n:" + recordText + ":\n");
 				Assert.assertTrue("Document contents is invalid for <" + uniqueId + ">", recordText.equals("<sampleXML>" + i + "</sampleXML>"));
 			}
 		}
@@ -509,15 +509,18 @@ public class SingleNodeTest {
 			
 			Query q = new Query(MY_TEST_INDEX, normalLuceneQuery, numberOfResults);
 			QueryResult qr = lumongoWorkPool.query(q);
+			@SuppressWarnings("unused")
 			long totalHits = qr.getTotalHits();
 			
 			for (ScoredResult sr : qr.getResults()) {
+				@SuppressWarnings("unused")
 				String uniqueId = sr.getUniqueId();
+				@SuppressWarnings("unused")
 				float score = sr.getScore();
-				System.out.println("Matching document <" + uniqueId + "> with score <" + score + "> and timestamp <" + sr.getTimestamp() + ">");
+				//System.out.println("Matching document <" + uniqueId + "> with score <" + score + "> and timestamp <" + sr.getTimestamp() + ">");
 			}
 			
-			System.out.println("Query <" + normalLuceneQuery + "> found <" + totalHits + "> total hits.  Fetched <" + qr.getResults().size() + "> documents.");
+			//System.out.println("Query <" + normalLuceneQuery + "> found <" + totalHits + "> total hits.  Fetched <" + qr.getResults().size() + "> documents.");
 		}
 		
 		{
@@ -542,7 +545,7 @@ public class SingleNodeTest {
 			String uniqueId = "someId";
 			FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(uniqueId, MY_TEST_INDEX));
 			if (!fr.hasResultDocument()) {
-				System.out.println("Document: " + fr.getDocumentAsUtf8());
+				//System.out.println("Document: " + fr.getDocumentAsUtf8());
 			}
 		}
 		{
@@ -550,8 +553,9 @@ public class SingleNodeTest {
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			for (FacetCount fc : qr.getFacetCounts("issn")) {
-				System.out.println("Facet <" + fc.getFacet() + "> has <" + fc.getCount() + "> items");
+			for (@SuppressWarnings("unused")
+			FacetCount fc : qr.getFacetCounts("issn")) {
+				//System.out.println("Facet <" + fc.getFacet() + "> has <" + fc.getCount() + "> items");
 			}
 		}
 		
