@@ -1,9 +1,12 @@
 # LuMongo
 =============
-## Distributed Lucene with Indexes Stored in MongoDB
+## Distributed Realtime Search With Lucene
 
 
-LuMongo is a real-time distributed search and storage system. LuMongo is designed to scale both vertically and horizontally across servers. LuMongo provides the flexibility and power of Lucene queries with the scalability and ease of use of MongoDB. By intelligently leveraging MongoDB, LuMongo is able to make Lucene scale without sacrificing Lucene's rich query syntax and without degrading MongoDB's scalability.
+LuMongo is a real-time distributed search and storage system based on Lucene. LuMongo is designed from the ground up to scale both vertically and horizontally across servers. LuMongo
+stores Lucene indexes directly into MongoDB.  Documents can be stored natively into MongoDB.  When stored natively document can be queried as normal
+out of MongoDB and use of [Map-Reduce](http://docs.mongodb.org/manual/core/map-reduce/) and the [Aggregation Framework](http://docs.mongodb.org/manual/core/aggregation-introduction/) is possible.</p>
+
 
 ## LuMongo is:
 * Realtime
