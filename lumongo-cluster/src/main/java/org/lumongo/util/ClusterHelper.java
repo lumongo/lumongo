@@ -18,7 +18,6 @@ import com.mongodb.WriteConcern;
 
 public class ClusterHelper {
 	
-	public static final String MEMBERSHIP_INDEX = "membershipIndex";
 	public static final String CLUSTER_CONFIG = "cluster_config_";
 	public static final String CLUSTER_MEMBERSHIP = "cluster_membership_";
 	public static final String _ID = "_id";
@@ -110,7 +109,11 @@ public class ClusterHelper {
 			DBObject index = new BasicDBObject();
 			index.put(SERVER_ADDRESS, 1);
 			index.put(INSTANCE, 1);
-			membershipCollection.ensureIndex(index, MEMBERSHIP_INDEX, true);
+			
+			DBObject options = new BasicDBObject();
+			options.put("unique", true);
+			
+			membershipCollection.createIndex(index, options);
 			
 			BasicDBObject search = new BasicDBObject();
 			search.put(SERVER_ADDRESS, serverAddress);
