@@ -5,11 +5,11 @@ defaultTasks 'compileProto', 'build'
 description 'Lumongo Common'
 
 dependencies {
-    compile 'org.mongodb:mongo-java-driver:2.12.0'
-    compile 'com.google.guava:guava:16.0.1'
+    compile 'org.mongodb:mongo-java-driver:2.12.2'
+    compile 'com.google.guava:guava:17.0'
     compile 'com.google.protobuf:protobuf-java:2.5.0'
-    compile 'com.googlecode.protobuf-rpc-pro:protobuf-rpc-pro-duplex:3.2.2'
-    compile 'log4j:log4j:1.2.16'
+    compile 'com.googlecode.protobuf-rpc-pro:protobuf-rpc-pro-duplex:3.2.3'
+    compile 'log4j:log4j:1.2.17'
     compile 'org.slf4j:slf4j-log4j12:1.7.2'
     compile 'commons-pool:commons-pool:1.6'
 }
