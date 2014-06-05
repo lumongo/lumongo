@@ -1,5 +1,7 @@
 package org.lumongo.test.cluster;
 
+import java.io.ByteArrayOutputStream;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -12,6 +14,7 @@ import org.lumongo.client.command.DeleteFull;
 import org.lumongo.client.command.DeleteIndex;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.command.FetchDocumentAndAssociated;
+import org.lumongo.client.command.FetchLargeAssociated;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
@@ -422,6 +425,13 @@ public class SingleNodeTest {
 				Assert.assertTrue("Associated document does not exist", response.getAssociatedDocument(1).hasDocument());
 				Assert.assertTrue("Associated document does not exist", response.getAssociatedDocument(2).hasDocument());
 				
+			}
+			
+			{
+				ByteArrayOutputStream os = new ByteArrayOutputStream();
+				lumongoWorkPool.fetchLargeAssociated(new FetchLargeAssociated(uniqueId, MY_TEST_INDEX, "myfile2", os));
+				String text = os.toString("UTF-8");
+				Assert.assertEquals("Associated document content does not match expected", "Some Other Text", text);
 			}
 		}
 	}
