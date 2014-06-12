@@ -21,10 +21,15 @@ public class LumongoConstants {
 	public static final String DELETE = "DELETE";
 	
 	public static final String ASSOCIATED_DOCUMENTS_URL = "/associatedDocs";
+	public static final String QUERY_URL = "query";
 	
+	public static final String QUERY = "query";
+	public static final String AMOUNT = "amount";
 	public static final String UNIQUE_ID = "uniqueId";
 	public static final String FILE_NAME = "fileName";
-	public static final String INDEX_NAME = "indexName";
+	public static final String INDEX = "index";
+	public static final String FACET = "facet";
+	public static final String PRETTY = "pretty";
 	
 	//General
 	public static final String UTF8 = "UTF-8";

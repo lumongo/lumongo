@@ -30,7 +30,7 @@ public class AssociatedResource {
 	@GET
 	@Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
 	public StreamingOutput get(@QueryParam(LumongoConstants.UNIQUE_ID) final String uniqueId, @QueryParam(LumongoConstants.FILE_NAME) final String fileName,
-					@QueryParam(LumongoConstants.INDEX_NAME) final String indexName) {
+					@QueryParam(LumongoConstants.INDEX) final String indexName) {
 		return new StreamingOutput() {
 			
 			@Override
@@ -59,7 +59,7 @@ public class AssociatedResource {
 	@POST
 	@Produces({ MediaType.TEXT_XML })
 	public Response post(@QueryParam(LumongoConstants.UNIQUE_ID) final String uniqueId, @QueryParam(LumongoConstants.FILE_NAME) final String fileName,
-					@QueryParam(LumongoConstants.INDEX_NAME) final String indexName, final InputStream is) {
+					@QueryParam(LumongoConstants.INDEX) final String indexName, final InputStream is) {
 		if (uniqueId != null && fileName != null && indexName != null) {
 			
 			try {
