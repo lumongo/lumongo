@@ -653,6 +653,7 @@ public class IndexManager {
 	
 	public QueryResponse query(final QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
+		long start = System.currentTimeMillis();
 		try {
 			log.info("Running query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + ">");
 			
@@ -702,6 +703,9 @@ public class IndexManager {
 			
 		}
 		finally {
+			long end = System.currentTimeMillis();
+			log.info("Finished query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + "> in " + (end - start) + "ms");
+			
 			globalLock.readLock().unlock();
 		}
 	}
