@@ -6,7 +6,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 public class QueryResultCache {
-	private static Cache<QueryCacheKey, SegmentResponse> queryResultCache;
+	private Cache<QueryCacheKey, SegmentResponse> queryResultCache;
 	
 	public QueryResultCache(int maxSize) {
 		queryResultCache = CacheBuilder.newBuilder().concurrencyLevel(16).maximumSize(maxSize).build();
