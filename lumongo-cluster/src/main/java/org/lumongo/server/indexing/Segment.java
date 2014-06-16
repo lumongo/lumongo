@@ -121,10 +121,17 @@ public class Segment {
 	
 	private LockHandler lockHandler;
 	
+	private QueryResultCache queryResultCache;
+	private QueryResultCache queryResultCacheRealtime;
+	
 	public Segment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter,
 					IndexConfig indexConfig, FacetsConfig facetsConfig, Analyzer analyzer) throws IOException {
 		
 		this.lockHandler = new LockHandler();
+		
+		//TODO configure
+		this.queryResultCache = new QueryResultCache(16);
+		this.queryResultCacheRealtime = new QueryResultCache(16);
 		
 		this.segmentNumber = segmentNumber;
 		this.documentStorage = documentStorage;
@@ -163,18 +170,27 @@ public class Segment {
 	public void updateIndexSettings(IndexSettings indexSettings, Analyzer analyzer) {
 		this.analyzer = analyzer;
 		this.indexConfig.configure(indexSettings);
+		
+		this.queryResultCacheRealtime.clear();
+		this.queryResultCache.clear();
+		
 	}
 	
 	public int getSegmentNumber() {
 		return segmentNumber;
 	}
 	
-	public SegmentResponse querySegment(Query q, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest, boolean realTime)
-					throws Exception {
+	public SegmentResponse querySegment(Query q, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest, boolean realTime,
+					QueryCacheKey queryCacheKey) throws Exception {
 		
 		IndexReader ir = null;
 		
 		try {
+			
+			SegmentResponse cacheSegmentResponse = queryResultCache.getCacheSegmentResponse(queryCacheKey);
+			if (cacheSegmentResponse != null) {
+				return cacheSegmentResponse;
+			}
 			
 			//ir = IndexReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
 			//ir = IndexReader.open(indexWriter.getDirectory());
@@ -287,7 +303,10 @@ public class Segment {
 			
 			builder.setIndexName(indexName);
 			builder.setSegmentNumber(segmentNumber);
-			return builder.build();
+			
+			SegmentResponse segmentResponse = builder.build();
+			queryResultCache.storeInCache(queryCacheKey, segmentResponse);
+			return segmentResponse;
 		}
 		finally {
 			if (ir != null) {
@@ -399,6 +418,7 @@ public class Segment {
 			}
 			indexWriter.flush(indexConfig.getApplyUncommitedDeletes());
 		}
+		queryResultCacheRealtime.clear();
 	}
 	
 	public void forceCommit() throws CorruptIndexException, IOException {
@@ -408,6 +428,10 @@ public class Segment {
 		}
 		
 		indexWriter.commit();
+		
+		queryResultCacheRealtime.clear();
+		queryResultCache.clear();
+		
 		lastCommit = currentTime;
 		
 	}
@@ -430,11 +454,12 @@ public class Segment {
 	}
 	
 	public void close() throws CorruptIndexException, IOException {
-		forceCommit();
+		if (indexWriter.hasUncommittedChanges()) {
+			forceCommit();
+		}
 		if (indexConfig.isFaceted()) {
 			taxonomyWriter.close();
 		}
-		
 		indexWriter.close();
 	}
 	
@@ -508,7 +533,6 @@ public class Segment {
 		
 		Term term = new Term(indexConfig.getUniqueIdField(), uniqueId);
 		indexWriter.updateDocument(term, d, analyzer);
-		
 		possibleCommit();
 	}
 	
@@ -574,7 +598,6 @@ public class Segment {
 		indexWriter.deleteAll();
 		documentStorage.deleteAllDocuments();
 		forceCommit();
-		
 	}
 	
 	public GetTermsResponse getTerms(GetTermsRequest request) throws IOException {
@@ -693,7 +716,6 @@ public class Segment {
 		
 		String uniqueId = storeRequest.getUniqueId();
 		ReadWriteLock lock = lockHandler.getLock(uniqueId);
-		
 		try {
 			lock.writeLock().lock();
 			
