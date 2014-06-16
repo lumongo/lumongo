@@ -187,7 +187,8 @@ public class Segment {
 		
 		try {
 			
-			SegmentResponse cacheSegmentResponse = queryResultCache.getCacheSegmentResponse(queryCacheKey);
+			QueryResultCache qrc = realTime ? queryResultCacheRealtime : queryResultCache;
+			SegmentResponse cacheSegmentResponse = qrc.getCacheSegmentResponse(queryCacheKey);
 			if (cacheSegmentResponse != null) {
 				return cacheSegmentResponse;
 			}
@@ -305,7 +306,7 @@ public class Segment {
 			builder.setSegmentNumber(segmentNumber);
 			
 			SegmentResponse segmentResponse = builder.build();
-			queryResultCache.storeInCache(queryCacheKey, segmentResponse);
+			qrc.storeInCache(queryCacheKey, segmentResponse);
 			return segmentResponse;
 		}
 		finally {
