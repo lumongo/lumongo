@@ -124,6 +124,8 @@ public class Segment {
 	private QueryResultCache queryResultCache;
 	private QueryResultCache queryResultCacheRealtime;
 	
+	private boolean queryCacheEnabled = true;
+	
 	public Segment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter,
 					IndexConfig indexConfig, FacetsConfig facetsConfig, Analyzer analyzer) throws IOException {
 		
@@ -171,8 +173,10 @@ public class Segment {
 		this.analyzer = analyzer;
 		this.indexConfig.configure(indexSettings);
 		
-		this.queryResultCacheRealtime.clear();
-		this.queryResultCache.clear();
+		if (queryCacheEnabled) {
+			this.queryResultCacheRealtime.clear();
+			this.queryResultCache.clear();
+		}
 		
 	}
 	
@@ -188,9 +192,11 @@ public class Segment {
 		try {
 			
 			QueryResultCache qrc = realTime ? queryResultCacheRealtime : queryResultCache;
-			SegmentResponse cacheSegmentResponse = qrc.getCacheSegmentResponse(queryCacheKey);
-			if (cacheSegmentResponse != null) {
-				return cacheSegmentResponse;
+			if (queryCacheEnabled) {
+				SegmentResponse cacheSegmentResponse = qrc.getCacheSegmentResponse(queryCacheKey);
+				if (cacheSegmentResponse != null) {
+					return cacheSegmentResponse;
+				}
 			}
 			
 			//ir = IndexReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
@@ -306,7 +312,9 @@ public class Segment {
 			builder.setSegmentNumber(segmentNumber);
 			
 			SegmentResponse segmentResponse = builder.build();
-			qrc.storeInCache(queryCacheKey, segmentResponse);
+			if (queryCacheEnabled) {
+				qrc.storeInCache(queryCacheKey, segmentResponse);
+			}
 			return segmentResponse;
 		}
 		finally {
@@ -419,7 +427,9 @@ public class Segment {
 			}
 			indexWriter.flush(indexConfig.getApplyUncommitedDeletes());
 		}
-		queryResultCacheRealtime.clear();
+		if (queryCacheEnabled) {
+			queryResultCacheRealtime.clear();
+		}
 	}
 	
 	public void forceCommit() throws CorruptIndexException, IOException {
@@ -430,8 +440,10 @@ public class Segment {
 		
 		indexWriter.commit();
 		
-		queryResultCacheRealtime.clear();
-		queryResultCache.clear();
+		if (queryCacheEnabled) {
+			queryResultCacheRealtime.clear();
+			queryResultCache.clear();
+		}
 		
 		lastCommit = currentTime;
 		
