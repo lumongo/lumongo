@@ -19,6 +19,7 @@ import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetGroup;
+import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.util.LogUtil;
 
@@ -40,6 +41,7 @@ public class Search {
 		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET).withRequiredArg().describedAs("Count facets on");
 		OptionSpec<String> drillDownArg = parser.accepts(AdminConstants.DRILL_DOWN).withRequiredArg().describedAs("Drill down on");
 		OptionSpec<String> sortArg = parser.accepts(AdminConstants.SORT).withRequiredArg().describedAs("Field to sort on");
+		OptionSpec<String> sortDescArg = parser.accepts(AdminConstants.SORT_DESC).withRequiredArg().describedAs("Field to sort on (descending)");
 		OptionSpec<Void> fetchArg = parser.accepts(AdminConstants.FETCH);
 		
 		try {
@@ -54,6 +56,7 @@ public class Search {
 			List<String> facets = options.valuesOf(facetsArg);
 			List<String> drillDowns = options.valuesOf(drillDownArg);
 			List<String> sortList = options.valuesOf(sortArg);
+			List<String> sortDescList = options.valuesOf(sortDescArg);
 			boolean fetch = options.has(fetchArg);
 			
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
@@ -73,7 +76,12 @@ public class Search {
 				}
 				
 				for (String sort : sortList) {
+					
 					q.addFieldSort(sort);
+				}
+				
+				for (String sortDesc : sortDescList) {
+					q.addFieldSort(sortDesc, Direction.DESCENDING);
 				}
 				
 				q.setRealTime(realTime);
