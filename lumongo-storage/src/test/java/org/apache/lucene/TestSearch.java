@@ -1,4 +1,4 @@
-package org.apache.lucene.search;
+package org.apache.lucene;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,16 +33,21 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.MergePolicy;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.Explanation;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.PhraseQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LumongoTestCase;
 
 /** JUnit adaptation of an older test case SearchTest. */
 public class TestSearch extends LumongoTestCase {
-	
-	@Override
-	public void setUp() throws Exception {
-		super.setUp();
-	}
 	
 	public void testNegativeQueryBoost() throws Exception {
 		Query q = new TermQuery(new Term("foo", "bar"));

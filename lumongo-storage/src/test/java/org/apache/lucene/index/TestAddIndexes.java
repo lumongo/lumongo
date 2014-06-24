@@ -28,7 +28,7 @@ import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.codecs.FilterCodec;
 import org.apache.lucene.codecs.PostingsFormat;
-import org.apache.lucene.codecs.lucene46.Lucene46Codec;
+import org.apache.lucene.codecs.lucene49.Lucene49Codec;
 import org.apache.lucene.codecs.pulsing.Pulsing41PostingsFormat;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -387,9 +387,7 @@ public class TestAddIndexes extends LumongoTestCase {
 		
 		setUpDirs(dir, aux, true);
 		
-		IndexWriterConfig dontMergeConfig = new IndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random()))
-						.setMergePolicy(NoMergePolicy.COMPOUND_FILES);
-		@SuppressWarnings("resource")
+		IndexWriterConfig dontMergeConfig = new IndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random())).setMergePolicy(NoMergePolicy.INSTANCE);
 		IndexWriter writer = new IndexWriter(aux, dontMergeConfig);
 		for (int i = 0; i < 20; i++) {
 			writer.deleteDocuments(new Term("id", "" + i));
@@ -430,8 +428,7 @@ public class TestAddIndexes extends LumongoTestCase {
 		assertEquals(3, writer.getSegmentCount());
 		writer.close();
 		
-		IndexWriterConfig dontMergeConfig = new IndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random()))
-						.setMergePolicy(NoMergePolicy.COMPOUND_FILES);
+		IndexWriterConfig dontMergeConfig = new IndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random())).setMergePolicy(NoMergePolicy.INSTANCE);
 		writer = new IndexWriter(aux, dontMergeConfig);
 		for (int i = 0; i < 27; i++) {
 			writer.deleteDocuments(new Term("id", "" + i));
@@ -441,7 +438,7 @@ public class TestAddIndexes extends LumongoTestCase {
 		assertEquals(3, reader.numDocs());
 		reader.close();
 		
-		dontMergeConfig = new IndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random())).setMergePolicy(NoMergePolicy.COMPOUND_FILES);
+		dontMergeConfig = new IndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random())).setMergePolicy(NoMergePolicy.INSTANCE);
 		writer = new IndexWriter(aux2, dontMergeConfig);
 		for (int i = 0; i < 8; i++) {
 			writer.deleteDocuments(new Term("id", "" + i));
@@ -989,7 +986,7 @@ public class TestAddIndexes extends LumongoTestCase {
 		aux2.close();
 	}
 	
-	private static final class CustomPerFieldCodec extends Lucene46Codec {
+	private static final class CustomPerFieldCodec extends Lucene49Codec {
 		private final PostingsFormat simpleTextFormat = PostingsFormat.forName("SimpleText");
 		private final PostingsFormat defaultFormat = PostingsFormat.forName("Lucene41");
 		private final PostingsFormat mockSepFormat = PostingsFormat.forName("MockSep");
@@ -1041,7 +1038,7 @@ public class TestAddIndexes extends LumongoTestCase {
 	
 	private static final class UnRegisteredCodec extends FilterCodec {
 		public UnRegisteredCodec() {
-			super("NotRegistered", new Lucene46Codec());
+			super("NotRegistered", new Lucene49Codec());
 		}
 	}
 	

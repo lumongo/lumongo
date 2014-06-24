@@ -36,6 +36,11 @@ import org.apache.lucene.util.LumongoTestCase;
  */
 public class TestWildcard extends LumongoTestCase {
 	
+	@Override
+	public void setUp() throws Exception {
+		super.setUp();
+	}
+	
 	public void testEquals() {
 		WildcardQuery wq1 = new WildcardQuery(new Term("field", "b*a"));
 		WildcardQuery wq2 = new WildcardQuery(new Term("field", "b*a"));

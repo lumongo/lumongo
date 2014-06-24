@@ -24,7 +24,7 @@ import org.apache.lucene.store.IndexInput;
 public class DistributedIndexInput extends IndexInput {
 	private final NosqlFile nosqlFile;
 	
-	private long position;
+	protected long position;
 	
 	public DistributedIndexInput(NosqlFile nosqlFile) {
 		super(DistributedIndexInput.class.getSimpleName() + "(" + nosqlFile.getFileName() + ")");
@@ -64,4 +64,28 @@ public class DistributedIndexInput extends IndexInput {
 		position += length;
 	}
 	
+	@Override
+	public IndexInput slice(String sliceDescription, final long sliceOffset, final long length) throws IOException {
+		
+		final DistributedIndexInput dii = new DistributedIndexInput(nosqlFile) {
+			
+			@Override
+			public long length() {
+				return length;
+			}
+			
+			@Override
+			public byte readByte() throws IOException {
+				return nosqlFile.readByte(position++ + sliceOffset);
+			}
+			
+			@Override
+			public void readBytes(byte[] b, int offset, int length) throws IOException {
+				nosqlFile.readBytes(position + sliceOffset, b, offset, length);
+				position += length;
+			}
+		};
+		
+		return dii;
+	}
 }
