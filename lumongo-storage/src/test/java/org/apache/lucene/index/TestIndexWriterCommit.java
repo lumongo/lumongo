@@ -252,8 +252,6 @@ public class TestIndexWriterCommit extends LumongoTestCase {
 	 * "commit on close" works correctly both for rollback()
 	 * and close().
 	 */
-	@SuppressWarnings("resource")
-	//Index writer needs to be closed but this is copied straight from the lucene test case
 	public void testCommitOnCloseForceMerge() throws IOException {
 		Directory dir = newDirectory();
 		// Must disable throwing exc on double-write: this

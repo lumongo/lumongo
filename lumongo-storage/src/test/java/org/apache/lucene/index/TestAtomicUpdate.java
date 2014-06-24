@@ -16,14 +16,19 @@ package org.apache.lucene.index;
  * limitations under the License.
  */
 
+import java.io.File;
+
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.MockDirectoryWrapper;
+import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.English;
 import org.apache.lucene.util.LumongoTestCase;
+import org.apache.lucene.util.TestUtil;
 
 public class TestAtomicUpdate extends LumongoTestCase {
 	
@@ -172,7 +177,6 @@ public class TestAtomicUpdate extends LumongoTestCase {
 	public void testAtomicUpdates() throws Exception {
 		Directory directory;
 		
-		/*
 		// First in a RAM directory:
 		directory = new MockDirectoryWrapper(random(), new RAMDirectory());
 		runTest(directory);
@@ -184,9 +188,5 @@ public class TestAtomicUpdate extends LumongoTestCase {
 		runTest(directory);
 		directory.close();
 		TestUtil.rm(dirPath);
-		*/
-		directory = newDirectory();
-		runTest(directory);
-		directory.close();
 	}
 }

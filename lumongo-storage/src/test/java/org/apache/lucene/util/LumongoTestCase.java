@@ -9,6 +9,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext.Context;
 import org.apache.lucene.store.MockDirectoryWrapper;
 import org.apache.lucene.store.RateLimitedDirectoryWrapper;
+import org.apache.lucene.util.LuceneTestCase.SuppressSysoutChecks;
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.TestHelper;
@@ -16,6 +17,8 @@ import org.lumongo.util.TestHelper;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 
+@SuppressSysoutChecks(
+	bugUrl = "gradle switches the input stream")
 public class LumongoTestCase extends LuceneTestCase {
 	
 	private static int indexNameCounter = 0;
@@ -35,27 +38,6 @@ public class LumongoTestCase extends LuceneTestCase {
 	
 	public static MockDirectoryWrapper newMockDirectory() {
 		return newMockDirectory(random());
-	}
-	
-	public static BaseDirectoryWrapper newDirectory(Random random) {
-		
-		if (rarely(random)) {
-			return newMockDirectory(random);
-		}
-		else {
-			Directory directory = newDistributedDirectory(random);
-			BaseDirectoryWrapper base = new BaseDirectoryWrapper(directory);
-			closeAfterSuite(new CloseableDirectory(base, suiteFailureMarker));
-			return base;
-		}
-	}
-	
-	public static MockDirectoryWrapper newMockDirectory(Random random) {
-		Directory directory = newDistributedDirectory(random);
-		MockDirectoryWrapper mock = new MockDirectoryWrapper(random, directory);
-		mock.setThrottling(TEST_THROTTLING);
-		closeAfterSuite(new CloseableDirectory(mock, suiteFailureMarker));
-		return mock;
 	}
 	
 	public static Directory newDistributedDirectory(Random random) {

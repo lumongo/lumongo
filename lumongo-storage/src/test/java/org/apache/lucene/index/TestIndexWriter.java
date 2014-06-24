@@ -17,7 +17,9 @@ package org.apache.lucene.index;
  * limitations under the License.
  */
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -45,6 +47,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.SortedDocValuesField;
+import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
@@ -114,7 +117,7 @@ public class TestIndexWriter extends LumongoTestCase {
 		writer.close();
 		
 		// delete 40 documents
-		writer = new IndexWriter(dir, newIndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random())).setMergePolicy(NoMergePolicy.NO_COMPOUND_FILES));
+		writer = new IndexWriter(dir, newIndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random())).setMergePolicy(NoMergePolicy.INSTANCE));
 		for (i = 0; i < 40; i++) {
 			writer.deleteDocuments(new Term("id", "" + i));
 		}
@@ -160,8 +163,6 @@ public class TestIndexWriter extends LumongoTestCase {
 		writer.addDocument(doc);
 	}
 	
-	@SuppressWarnings("resource")
-	//Index writer needs to be closed but this is copied straight from the lucene test case
 	public static void assertNoUnreferencedFiles(Directory dir, String message) throws IOException {
 		String[] startFiles = dir.listAll();
 		new IndexWriter(dir, new IndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random()))).rollback();
@@ -991,6 +992,8 @@ public class TestIndexWriter extends LumongoTestCase {
 		volatile boolean allowInterrupt = false;
 		final Random random;
 		final Directory adder;
+		final ByteArrayOutputStream bytesLog = new ByteArrayOutputStream();
+		final PrintStream log = new PrintStream(bytesLog, true, IOUtils.UTF_8);
 		
 		IndexerThreadInterrupt() throws IOException {
 			this.random = new Random(random().nextLong());
@@ -1011,6 +1014,10 @@ public class TestIndexWriter extends LumongoTestCase {
 				doc.add(new SortedSetDocValuesField("sortedsetdv", new BytesRef("one")));
 				doc.add(new SortedSetDocValuesField("sortedsetdv", new BytesRef("two")));
 			}
+			if (defaultCodecSupportsSortedNumeric()) {
+				doc.add(new SortedNumericDocValuesField("sortednumericdv", 4));
+				doc.add(new SortedNumericDocValuesField("sortednumericdv", 3));
+			}
 			w.addDocument(doc);
 			doc = new Document();
 			doc.add(newStringField(random, "id", "501", Field.Store.NO));
@@ -1023,6 +1030,10 @@ public class TestIndexWriter extends LumongoTestCase {
 			if (defaultCodecSupportsSortedSet()) {
 				doc.add(new SortedSetDocValuesField("sortedsetdv", new BytesRef("two")));
 				doc.add(new SortedSetDocValuesField("sortedsetdv", new BytesRef("three")));
+			}
+			if (defaultCodecSupportsSortedNumeric()) {
+				doc.add(new SortedNumericDocValuesField("sortednumericdv", 6));
+				doc.add(new SortedNumericDocValuesField("sortednumericdv", 1));
 			}
 			w.addDocument(doc);
 			w.deleteDocuments(new Term("id", "500"));
@@ -1136,9 +1147,8 @@ public class TestIndexWriter extends LumongoTestCase {
 					// on!!  This test doesn't repro easily so when
 					// Jenkins hits a fail we need to study where the
 					// interrupts struck!
-					//for Lumongo I am disabling this noise
-					//System.out.println("TEST: got interrupt");
-					//re.printStackTrace(System.out);
+					log.println("TEST: got interrupt");
+					re.printStackTrace(log);
 					Throwable e = re.getCause();
 					assertTrue(e instanceof InterruptedException);
 					if (finish) {
@@ -1146,16 +1156,19 @@ public class TestIndexWriter extends LumongoTestCase {
 					}
 				}
 				catch (Throwable t) {
-					System.out.println("FAILED; unexpected exception");
-					t.printStackTrace(System.out);
+					log.println("FAILED; unexpected exception");
+					t.printStackTrace(log);
 					failed = true;
 					break;
 				}
 			}
 			
+			if (VERBOSE) {
+				log.println("TEST: now finish failed=" + failed);
+			}
 			if (!failed) {
 				if (VERBOSE) {
-					System.out.println("TEST: now rollback");
+					log.println("TEST: now rollback");
 				}
 				// clear interrupt state:
 				Thread.interrupted();
@@ -1173,8 +1186,8 @@ public class TestIndexWriter extends LumongoTestCase {
 				}
 				catch (Exception e) {
 					failed = true;
-					System.out.println("CheckIndex FAILED: unexpected exception");
-					e.printStackTrace(System.out);
+					log.println("CheckIndex FAILED: unexpected exception");
+					e.printStackTrace(log);
 				}
 				try {
 					IndexReader r = DirectoryReader.open(dir);
@@ -1183,8 +1196,8 @@ public class TestIndexWriter extends LumongoTestCase {
 				}
 				catch (Exception e) {
 					failed = true;
-					System.out.println("DirectoryReader.open FAILED: unexpected exception");
-					e.printStackTrace(System.out);
+					log.println("DirectoryReader.open FAILED: unexpected exception");
+					e.printStackTrace(log);
 				}
 			}
 			try {
@@ -1230,7 +1243,9 @@ public class TestIndexWriter extends LumongoTestCase {
 		}
 		t.finish = true;
 		t.join();
-		assertFalse(t.failed);
+		if (t.failed) {
+			fail(new String(t.bytesLog.toString("UTF-8")));
+		}
 	}
 	
 	/** testThreadInterruptDeadlock but with 2 indexer threads */
@@ -1582,8 +1597,6 @@ public class TestIndexWriter extends LumongoTestCase {
 		dir.close();
 	}
 	
-	@SuppressWarnings("resource")
-	//Index writer needs to be closed but this is copied straight from the lucene test case
 	public void testNoSegmentFile() throws IOException {
 		BaseDirectoryWrapper dir = newDirectory();
 		dir.setLockFactory(NoLockFactory.getNoLockFactory());
@@ -1778,8 +1791,7 @@ public class TestIndexWriter extends LumongoTestCase {
 		
 		SortedDocValues dti = FieldCache.DEFAULT.getTermsIndex(SlowCompositeReaderWrapper.wrap(reader), "content", random().nextFloat() * PackedInts.FAST);
 		assertEquals(4, dti.getValueCount());
-		BytesRef br = new BytesRef();
-		dti.lookupOrd(2, br);
+		BytesRef br = dti.lookupOrd(2);
 		assertEquals(bigTermBytesRef, br);
 		reader.close();
 		dir.close();
@@ -1920,8 +1932,6 @@ public class TestIndexWriter extends LumongoTestCase {
 		dir.close();
 	}
 	
-	@SuppressWarnings("resource")
-	//Index writer needs to be closed but this is copied straight from the lucene test case
 	// LUCENE-3872
 	public void testPrepareCommitThenRollback() throws Exception {
 		Directory dir = newDirectory();
@@ -1933,8 +1943,6 @@ public class TestIndexWriter extends LumongoTestCase {
 		dir.close();
 	}
 	
-	@SuppressWarnings("resource")
-	//Index writer needs to be closed but this is copied straight from the lucene test case
 	// LUCENE-3872
 	public void testPrepareCommitThenRollback2() throws Exception {
 		Directory dir = newDirectory();
@@ -2142,8 +2150,6 @@ public class TestIndexWriter extends LumongoTestCase {
 	}
 	
 	// LUCENE-4575
-	@SuppressWarnings("serial")
-	//HashMap needs a serial id
 	public void testCommitWithUserDataOnly() throws Exception {
 		Directory dir = newDirectory();
 		IndexWriter writer = new IndexWriter(dir, newIndexWriterConfig(TEST_VERSION_CURRENT, null));
@@ -2191,8 +2197,6 @@ public class TestIndexWriter extends LumongoTestCase {
 	}
 	
 	@Test
-	@SuppressWarnings("serial")
-	//HashMap needs a serial id
 	public void testGetCommitData() throws Exception {
 		Directory dir = newDirectory();
 		IndexWriter writer = new IndexWriter(dir, newIndexWriterConfig(TEST_VERSION_CURRENT, null));
@@ -2210,6 +2214,131 @@ public class TestIndexWriter extends LumongoTestCase {
 		writer.close();
 		
 		dir.close();
+	}
+	
+	public void testNullAnalyzer() throws IOException {
+		Directory dir = newDirectory();
+		IndexWriterConfig iwConf = newIndexWriterConfig(TEST_VERSION_CURRENT, null);
+		RandomIndexWriter iw = new RandomIndexWriter(random(), dir, iwConf);
+		// add 3 good docs
+		for (int i = 0; i < 3; i++) {
+			Document doc = new Document();
+			doc.add(new StringField("id", Integer.toString(i), Field.Store.NO));
+			iw.addDocument(doc);
+		}
+		// add broken doc
+		try {
+			Document broke = new Document();
+			broke.add(newTextField("test", "broken", Field.Store.NO));
+			iw.addDocument(broke);
+			fail();
+		}
+		catch (NullPointerException expected) {
+		}
+		// ensure good docs are still ok
+		IndexReader ir = iw.getReader();
+		assertEquals(3, ir.numDocs());
+		ir.close();
+		iw.close();
+		dir.close();
+	}
+	
+	public void testNullDocument() throws IOException {
+		Directory dir = newDirectory();
+		RandomIndexWriter iw = new RandomIndexWriter(random(), dir);
+		// add 3 good docs
+		for (int i = 0; i < 3; i++) {
+			Document doc = new Document();
+			doc.add(new StringField("id", Integer.toString(i), Field.Store.NO));
+			iw.addDocument(doc);
+		}
+		// add broken doc
+		try {
+			iw.addDocument(null);
+			fail();
+		}
+		catch (NullPointerException expected) {
+		}
+		// ensure good docs are still ok
+		IndexReader ir = iw.getReader();
+		assertEquals(3, ir.numDocs());
+		ir.close();
+		iw.close();
+		dir.close();
+	}
+	
+	public void testNullDocuments() throws IOException {
+		Directory dir = newDirectory();
+		RandomIndexWriter iw = new RandomIndexWriter(random(), dir);
+		// add 3 good docs
+		for (int i = 0; i < 3; i++) {
+			Document doc = new Document();
+			doc.add(new StringField("id", Integer.toString(i), Field.Store.NO));
+			iw.addDocument(doc);
+		}
+		// add broken doc block
+		try {
+			iw.addDocuments(null);
+			fail();
+		}
+		catch (NullPointerException expected) {
+		}
+		// ensure good docs are still ok
+		IndexReader ir = iw.getReader();
+		assertEquals(3, ir.numDocs());
+		ir.close();
+		iw.close();
+		dir.close();
+	}
+	
+	public void testIterableFieldThrowsException() throws IOException {
+		Directory dir = newDirectory();
+		IndexWriter w = new IndexWriter(dir, newIndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random())));
+		int iters = atLeast(100);
+		int docCount = 0;
+		int docId = 0;
+		Set<String> liveIds = new HashSet<>();
+		for (int i = 0; i < iters; i++) {
+			int numDocs = atLeast(4);
+			for (int j = 0; j < numDocs; j++) {
+				String id = Integer.toString(docId++);
+				final List<IndexableField> fields = new ArrayList<>();
+				fields.add(new StringField("id", id, Field.Store.YES));
+				fields.add(new StringField("foo", TestUtil.randomSimpleString(random()), Field.Store.NO));
+				docId++;
+				
+				boolean success = false;
+				try {
+					w.addDocument(new RandomFailingIterable<IndexableField>(fields, random()));
+					success = true;
+				}
+				catch (RuntimeException e) {
+					assertEquals("boom", e.getMessage());
+				}
+				finally {
+					if (success) {
+						docCount++;
+						liveIds.add(id);
+					}
+				}
+			}
+		}
+		DirectoryReader reader = w.getReader();
+		assertEquals(docCount, reader.numDocs());
+		List<AtomicReaderContext> leaves = reader.leaves();
+		for (AtomicReaderContext atomicReaderContext : leaves) {
+			AtomicReader ar = atomicReaderContext.reader();
+			Bits liveDocs = ar.getLiveDocs();
+			int maxDoc = ar.maxDoc();
+			for (int i = 0; i < maxDoc; i++) {
+				if (liveDocs == null || liveDocs.get(i)) {
+					assertTrue(liveIds.remove(ar.document(i).get("id")));
+				}
+			}
+		}
+		assertTrue(liveIds.isEmpty());
+		w.close();
+		IOUtils.close(reader, dir);
 	}
 	
 	public void testIterableThrowsException() throws IOException {
@@ -2233,7 +2362,7 @@ public class TestIndexWriter extends LumongoTestCase {
 			}
 			boolean success = false;
 			try {
-				w.addDocuments(new RandomFailingFieldIterable(docs, random()));
+				w.addDocuments(new RandomFailingIterable<Iterable<IndexableField>>(docs, random()));
 				success = true;
 			}
 			catch (RuntimeException e) {
@@ -2265,19 +2394,55 @@ public class TestIndexWriter extends LumongoTestCase {
 		IOUtils.close(reader, w, dir);
 	}
 	
-	private static class RandomFailingFieldIterable implements Iterable<Iterable<IndexableField>> {
-		private final List<Iterable<IndexableField>> docList;
-		private final Random random;
+	public void testIterableThrowsException2() throws IOException {
+		Directory dir = newDirectory();
+		IndexWriter w = new IndexWriter(dir, newIndexWriterConfig(TEST_VERSION_CURRENT, new MockAnalyzer(random())));
+		try {
+			w.addDocuments(new Iterable<Document>() {
+				@Override
+				public Iterator<Document> iterator() {
+					return new Iterator<Document>() {
+						
+						@Override
+						public boolean hasNext() {
+							return true;
+						}
+						
+						@Override
+						public Document next() {
+							throw new RuntimeException("boom");
+						}
+						
+						@Override
+						public void remove() {
+							assert false;
+						}
+					};
+				}
+			});
+		}
+		catch (Exception e) {
+			assertNotNull(e.getMessage());
+			assertEquals("boom", e.getMessage());
+		}
+		w.close();
+		IOUtils.close(dir);
+	}
+	
+	private static class RandomFailingIterable<T> implements Iterable<T> {
+		private final Iterable<? extends T> list;
+		private final int failOn;
 		
-		public RandomFailingFieldIterable(List<Iterable<IndexableField>> docList, Random random) {
-			this.docList = docList;
-			this.random = random;
+		public RandomFailingIterable(Iterable<? extends T> list, Random random) {
+			this.list = list;
+			this.failOn = random.nextInt(5);
 		}
 		
 		@Override
-		public Iterator<Iterable<IndexableField>> iterator() {
-			final Iterator<Iterable<IndexableField>> docIter = docList.iterator();
-			return new Iterator<Iterable<IndexableField>>() {
+		public Iterator<T> iterator() {
+			final Iterator<? extends T> docIter = list.iterator();
+			return new Iterator<T>() {
+				int count = 0;
 				
 				@Override
 				public boolean hasNext() {
@@ -2285,10 +2450,11 @@ public class TestIndexWriter extends LumongoTestCase {
 				}
 				
 				@Override
-				public Iterable<IndexableField> next() {
-					if (random.nextInt(5) == 0) {
+				public T next() {
+					if (count == failOn) {
 						throw new RuntimeException("boom");
 					}
+					count++;
 					return docIter.next();
 				}
 				
@@ -2296,10 +2462,8 @@ public class TestIndexWriter extends LumongoTestCase {
 				public void remove() {
 					throw new UnsupportedOperationException();
 				}
-				
 			};
 		}
-		
 	}
 	
 	// LUCENE-2727/LUCENE-2812/LUCENE-4738:
