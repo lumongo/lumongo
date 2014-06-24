@@ -58,11 +58,6 @@ public class DistributedIndexOutput extends IndexOutput {
 	}
 	
 	@Override
-	public void seek(long pos) throws IOException {
-		this.position = pos;
-	}
-	
-	@Override
 	public void writeByte(byte b) throws IOException {
 		nosqlFile.write(position, b);
 		position += 1;
@@ -72,11 +67,6 @@ public class DistributedIndexOutput extends IndexOutput {
 	public void writeBytes(byte[] b, int offset, int length) throws IOException {
 		nosqlFile.write(position, b, offset, length);
 		position += length;
-	}
-	
-	@Override
-	public void setLength(long length) throws IOException {
-		nosqlFile.setFileLength(length);
 	}
 	
 	@Override
