@@ -17,9 +17,6 @@ subprojects {
 	
 	repositories {
 		mavenCentral()
-		maven {
-			url 'http://people.apache.org/~rmuir/staging_area/lucene_solr_4_9_0_r1604085/lucene/maven/'
-		}
 	}
 	
 	test {
