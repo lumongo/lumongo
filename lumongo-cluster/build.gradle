@@ -11,7 +11,6 @@ dependencies {
     compile 'org.apache.lucene:lucene-facet:4.9.0'
     compile 'org.apache.lucene:lucene-queryparser:4.9.0'
     compile 'org.apache.lucene:lucene-analyzers-common:4.9.0'
-	compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.9'
 }
 
 jar {
