@@ -8,8 +8,8 @@ import com.google.common.cache.CacheBuilder;
 public class QueryResultCache {
 	private Cache<QueryCacheKey, SegmentResponse> queryResultCache;
 	
-	public QueryResultCache(int maxSize) {
-		queryResultCache = CacheBuilder.newBuilder().concurrencyLevel(16).maximumSize(maxSize).build();
+	public QueryResultCache(int maxSize, int concurrency) {
+		queryResultCache = CacheBuilder.newBuilder().concurrencyLevel(concurrency).maximumSize(maxSize).build();
 	}
 	
 	public SegmentResponse getCacheSegmentResponse(QueryCacheKey queryCacheKey) {

@@ -20,6 +20,8 @@ public class IndexConfig {
 	private Integer segmentCommitInterval;
 	private Boolean blockCompression;
 	private Double segmentTolerance;
+	private Integer segmentQueryCacheSize;
+	
 	private LMAnalyzer defaultAnalyzer;
 
 
@@ -143,6 +145,14 @@ public class IndexConfig {
 		return this;
 	}
 
+	public Integer getSegmentQueryCacheSize() {
+		return segmentQueryCacheSize;
+	}
+
+	public void setSegmentQueryCacheSize(Integer segmentQueryCacheSize) {
+		this.segmentQueryCacheSize = segmentQueryCacheSize;
+	}
+
 	public LMAnalyzer getDefaultAnalyzer() {
 		return defaultAnalyzer;
 	}
@@ -192,6 +202,9 @@ public class IndexConfig {
 		if (segmentFlushInterval != null) {
 			isb.setSegmentFlushInterval(segmentFlushInterval);
 		}
+		if (segmentQueryCacheSize != null) {
+			isb.setSegmentQueryCacheSize(segmentQueryCacheSize);
+		}
 
 		for (String fieldName : analyzerMap.keySet()) {
 			LMAnalyzer fieldAnalyzer = analyzerMap.get(fieldName);
@@ -212,6 +225,7 @@ public class IndexConfig {
 		this.idleTimeWithoutCommit = indexSettings.getIdleTimeWithoutCommit();
 		this.segmentTolerance = indexSettings.getSegmentTolerance();
 		this.defaultAnalyzer = indexSettings.getDefaultAnalyzer();
+		this.segmentQueryCacheSize = indexSettings.getSegmentQueryCacheSize();
 
 		this.analyzerMap = new TreeMap<String, LMAnalyzer>();
 

@@ -14,8 +14,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
 public class IndexConfig {
-
-
+	
 	public static final String DEFAULT_SEARCH_FIELD = "defaultSearchField";
 	public static final String APPLY_UNCOMMITED_DELETES = "applyUncommitedDeletes";
 	public static final String BLOCK_COMPRESSION = "blockCompression";
@@ -27,6 +26,7 @@ public class IndexConfig {
 	public static final String IDLE_TIME_WITHOUT_COMMIT = "idleTimeWithoutCommit";
 	public static final String SEGMENT_FLUSH_INTERVAL = "segmentFlushInterval";
 	public static final String SEGMENT_COMMIT_INTERVAL = "segmentCommitInterval";
+	public static final String SEGMENT_QUERY_CACHE_SIZE = "segmentQueryCacheSize";
 	public static final String SEGMENT_TOLERANCE = "segmentTolerance";
 	public static final String DEFAULT_ANALYZER = "defaultAnalyzer";
 	public static final String FIELD_CONFIGS = "fieldConfigs";
@@ -36,7 +36,7 @@ public class IndexConfig {
 	public static final String DATABASE_PER_RAW_DOCUMENT_SEGMENT = "databasePerRawDocumentSegment";
 	public static final String COLLECTION_PER_RAW_DOCUMENT_SEGMENT = "collectionPerRawDocumentSegment";
 	public static final String DATABASE_PER_INDEX_SEGMENT = "databasePerIndexSegment";
-
+	
 	private String defaultSearchField;
 	private boolean applyUncommitedDeletes;
 	private double requestFactor;
@@ -47,23 +47,25 @@ public class IndexConfig {
 	private int idleTimeWithoutCommit;
 	private int segmentFlushInterval;
 	private int segmentCommitInterval;
+	private int segmentQueryCacheSize;
+	
 	private boolean blockCompression;
 	private double segmentTolerance;
 	private LMAnalyzer defaultAnalyzer;
 	private TreeMap<String, FieldConfig> fieldConfigMap;
 	private boolean faceted;
-
+	
 	private boolean databasePerIndexSegment;
 	private boolean collectionPerRawDocumentSegment;
 	private boolean databasePerRawDocumentSegment;
-
+	
 	protected IndexConfig() {
-
+		
 	}
-
+	
 	public IndexConfig(IndexCreateRequest request) {
 		this();
-
+		
 		indexName = request.getIndexName();
 		numberOfSegments = request.getNumberOfSegments();
 		uniqueIdField = request.getUniqueIdField();
@@ -71,10 +73,10 @@ public class IndexConfig {
 		databasePerIndexSegment = request.getDatabasePerIndexSegment();
 		collectionPerRawDocumentSegment = request.getCollectionPerRawDocumentSegment();
 		databasePerRawDocumentSegment = request.getDatabasePerRawDocumentSegment();
-
+		
 		configure(request.getIndexSettings());
 	}
-
+	
 	public void configure(IndexSettings indexSettings) {
 		this.defaultSearchField = indexSettings.getDefaultSearchField();
 		this.applyUncommitedDeletes = indexSettings.getApplyUncommitedDeletes();
@@ -86,15 +88,16 @@ public class IndexConfig {
 		this.idleTimeWithoutCommit = indexSettings.getIdleTimeWithoutCommit();
 		this.segmentTolerance = indexSettings.getSegmentTolerance();
 		this.defaultAnalyzer = indexSettings.getDefaultAnalyzer();
-
+		this.segmentQueryCacheSize = indexSettings.getSegmentQueryCacheSize();
+		
 		this.fieldConfigMap = new TreeMap<String, FieldConfig>();
-
+		
 		for (FieldConfig fc : indexSettings.getFieldConfigList()) {
 			fieldConfigMap.put(fc.getFieldName(), fc);
 		}
-
+		
 	}
-
+	
 	public IndexSettings getIndexSettings() {
 		IndexSettings.Builder isb = IndexSettings.newBuilder();
 		isb.setDefaultSearchField(defaultSearchField);
@@ -108,29 +111,30 @@ public class IndexConfig {
 		isb.setDefaultAnalyzer(defaultAnalyzer);
 		isb.addAllFieldConfig(fieldConfigMap.values());
 		isb.setSegmentFlushInterval(segmentFlushInterval);
+		isb.setSegmentQueryCacheSize(segmentQueryCacheSize);
 		return isb.build();
 	}
-
+	
 	public boolean isNumericField(String fieldName) {
 		return isNumericIntField(fieldName) || isNumericLongField(fieldName) || isNumericFloatField(fieldName) || isNumericDoubleField(fieldName);
 	}
-
+	
 	public boolean isNumericIntField(String fieldName) {
 		return LMAnalyzer.NUMERIC_INT.equals(getAnalyzer(fieldName));
 	}
-
+	
 	public boolean isNumericLongField(String fieldName) {
 		return LMAnalyzer.NUMERIC_LONG.equals(getAnalyzer(fieldName));
 	}
-
+	
 	public boolean isNumericFloatField(String fieldName) {
 		return LMAnalyzer.NUMERIC_FLOAT.equals(getAnalyzer(fieldName));
 	}
-
+	
 	public boolean isNumericDoubleField(String fieldName) {
 		return LMAnalyzer.NUMERIC_DOUBLE.equals(getAnalyzer(fieldName));
 	}
-
+	
 	public LMAnalyzer getAnalyzer(String fieldName) {
 		FieldConfig fc = fieldConfigMap.get(fieldName);
 		if (fc != null) {
@@ -138,91 +142,83 @@ public class IndexConfig {
 		}
 		return getDefaultAnalyzer();
 	}
-
+	
 	public Collection<FieldConfig> getFieldConfigList() {
 		return fieldConfigMap.values();
 	}
-
+	
 	public LMAnalyzer getDefaultAnalyzer() {
 		return defaultAnalyzer;
 	}
-
+	
 	public String getDefaultSearchField() {
 		return defaultSearchField;
 	}
-
+	
 	public boolean getApplyUncommitedDeletes() {
 		return applyUncommitedDeletes;
 	}
-
+	
 	public double getRequestFactor() {
 		return requestFactor;
 	}
-
+	
 	public int getMinSegmentRequest() {
 		return minSegmentRequest;
 	}
-
+	
 	public int getNumberOfSegments() {
 		return numberOfSegments;
 	}
-
+	
 	public String getIndexName() {
 		return indexName;
 	}
-
+	
 	public String getUniqueIdField() {
 		return uniqueIdField;
 	}
-
+	
 	public int getIdleTimeWithoutCommit() {
 		return idleTimeWithoutCommit;
 	}
-
+	
 	public int getSegmentCommitInterval() {
 		return segmentCommitInterval;
 	}
-
+	
 	public int getSegmentFlushInterval() {
 		return segmentFlushInterval;
 	}
-
+	
 	public boolean isBlockCompression() {
 		return blockCompression;
 	}
-
+	
 	public double getSegmentTolerance() {
 		return segmentTolerance;
 	}
-
+	
 	public boolean isFaceted() {
 		return faceted;
 	}
-
+	
 	public boolean isDatabasePerIndexSegment() {
 		return databasePerIndexSegment;
 	}
-
-	public void setDatabasePerIndexSegment(boolean databasePerIndexSegment) {
-		this.databasePerIndexSegment = databasePerIndexSegment;
-	}
-
+	
 	public boolean isCollectionPerRawDocumentSegment() {
 		return collectionPerRawDocumentSegment;
 	}
-
-	public void setCollectionPerRawDocumentSegment(boolean collectionPerRawDocumentSegment) {
-		this.collectionPerRawDocumentSegment = collectionPerRawDocumentSegment;
-	}
-
+	
 	public boolean isDatabasePerRawDocumentSegment() {
 		return databasePerRawDocumentSegment;
 	}
-
-	public void setDatabasePerRawDocumentSegment(boolean databasePerRawDocumentSegment) {
-		this.databasePerRawDocumentSegment = databasePerRawDocumentSegment;
+	
+	public int getSegmentQueryCacheSize() {
+		return segmentQueryCacheSize;
 	}
-
+	
 	public DBObject toDBObject() {
 		DBObject dbObject = new BasicDBObject();
 		dbObject.put(DEFAULT_SEARCH_FIELD, defaultSearchField);
@@ -242,7 +238,8 @@ public class IndexConfig {
 		dbObject.put(DATABASE_PER_INDEX_SEGMENT, databasePerIndexSegment);
 		dbObject.put(COLLECTION_PER_RAW_DOCUMENT_SEGMENT, collectionPerRawDocumentSegment);
 		dbObject.put(DATABASE_PER_RAW_DOCUMENT_SEGMENT, databasePerRawDocumentSegment);
-
+		dbObject.put(SEGMENT_QUERY_CACHE_SIZE, segmentQueryCacheSize);
+		
 		List<DBObject> fieldConfigs = new ArrayList<DBObject>();
 		for (FieldConfig fc : fieldConfigMap.values()) {
 			BasicDBObject fieldConfig = new BasicDBObject();
@@ -250,13 +247,13 @@ public class IndexConfig {
 			fieldConfig.put(ANALYZER, fc.getAnalyzer().toString());
 			fieldConfigs.add(fieldConfig);
 		}
-
+		
 		dbObject.put(FIELD_CONFIGS, fieldConfigs);
-
+		
 		return dbObject;
-
+		
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	public static IndexConfig fromDBObject(DBObject settings) {
 		IndexConfig indexConfig = new IndexConfig();
@@ -272,13 +269,18 @@ public class IndexConfig {
 		indexConfig.blockCompression = (boolean) settings.get(BLOCK_COMPRESSION);
 		indexConfig.segmentTolerance = (double) settings.get(SEGMENT_TOLERANCE);
 		indexConfig.defaultAnalyzer = LMAnalyzer.valueOf((String) settings.get(DEFAULT_ANALYZER));
+		
+		if (settings.get(SEGMENT_QUERY_CACHE_SIZE) != null) {
+			indexConfig.segmentQueryCacheSize = (int) settings.get(SEGMENT_QUERY_CACHE_SIZE);
+		}
+		
 		indexConfig.fieldConfigMap = new TreeMap<String, FieldConfig>();
-
+		
 		indexConfig.faceted = false;
 		if (settings.containsField(FACETED)) {
 			indexConfig.faceted = (boolean) settings.get(FACETED);
 		}
-
+		
 		if (settings.containsField(DATABASE_PER_INDEX_SEGMENT)) {
 			indexConfig.databasePerIndexSegment = (boolean) settings.get(DATABASE_PER_INDEX_SEGMENT);
 		}
@@ -288,8 +290,7 @@ public class IndexConfig {
 		if (settings.containsField(DATABASE_PER_RAW_DOCUMENT_SEGMENT)) {
 			indexConfig.databasePerRawDocumentSegment = (boolean) settings.get(DATABASE_PER_RAW_DOCUMENT_SEGMENT);
 		}
-
-
+		
 		if (settings.containsField(SEGMENT_FLUSH_INTERVAL)) {
 			indexConfig.segmentFlushInterval = (int) settings.get(SEGMENT_FLUSH_INTERVAL);
 		}
@@ -297,27 +298,27 @@ public class IndexConfig {
 			//make flush interval equal to segment commit interval divided by 2 if not defined (for old indexes)
 			indexConfig.segmentFlushInterval = (indexConfig.segmentCommitInterval / 2);
 		}
-
+		
 		List<DBObject> fieldConfigs = (List<DBObject>) settings.get(FIELD_CONFIGS);
 		for (DBObject fieldConfig : fieldConfigs) {
 			String fieldName = (String) fieldConfig.get(FIELD_NAME);
 			LMAnalyzer analyzer = LMAnalyzer.valueOf((String) fieldConfig.get(ANALYZER));
 			indexConfig.fieldConfigMap.put(fieldName, FieldConfig.newBuilder().setFieldName(fieldName).setAnalyzer(analyzer).build());
 		}
-
+		
 		return indexConfig;
 	}
-
+	
 	@Override
 	public String toString() {
 		return "IndexConfig [defaultSearchField=" + defaultSearchField + ", applyUncommitedDeletes=" + applyUncommitedDeletes + ", requestFactor="
-				+ requestFactor + ", minSegmentRequest=" + minSegmentRequest + ", numberOfSegments=" + numberOfSegments + ", indexName=" + indexName
-				+ ", uniqueIdField=" + uniqueIdField + ", idleTimeWithoutCommit=" + idleTimeWithoutCommit + ", segmentFlushInterval=" + segmentFlushInterval
-				+ ", segmentCommitInterval=" + segmentCommitInterval + ", blockCompression=" + blockCompression + ", segmentTolerance=" + segmentTolerance
-				+ ", defaultAnalyzer=" + defaultAnalyzer + ", fieldConfigMap=" + fieldConfigMap + ", faceted=" + faceted + ", databasePerIndexSegment="
-				+ databasePerIndexSegment + ", collectionPerRawDocumentSegment=" + collectionPerRawDocumentSegment + ", databasePerRawDocumentSegment="
-				+ databasePerRawDocumentSegment + "]";
+						+ requestFactor + ", minSegmentRequest=" + minSegmentRequest + ", numberOfSegments=" + numberOfSegments + ", indexName=" + indexName
+						+ ", uniqueIdField=" + uniqueIdField + ", idleTimeWithoutCommit=" + idleTimeWithoutCommit + ", segmentFlushInterval="
+						+ segmentFlushInterval + ", segmentCommitInterval=" + segmentCommitInterval + ", segmentQueryCacheSize=" + segmentQueryCacheSize
+						+ ", blockCompression=" + blockCompression + ", segmentTolerance=" + segmentTolerance + ", defaultAnalyzer=" + defaultAnalyzer
+						+ ", fieldConfigMap=" + fieldConfigMap + ", faceted=" + faceted + ", databasePerIndexSegment=" + databasePerIndexSegment
+						+ ", collectionPerRawDocumentSegment=" + collectionPerRawDocumentSegment + ", databasePerRawDocumentSegment="
+						+ databasePerRawDocumentSegment + "]";
 	}
-
-
+	
 }
