@@ -127,7 +127,10 @@ public class MongoDocumentStorage implements DocumentStorage {
 		document.put(COMPRESSED, doc.getCompressed());
 		document.put(TYPE, doc.getType().toString());
 		document.put(MongoConstants.StandardFields._ID, uniqueId);
-		coll.save(document);
+		
+		DBObject query = new BasicDBObject(MongoConstants.StandardFields._ID, uniqueId);
+		
+		coll.update(query, document, true, false);
 	}
 	
 	@Override
