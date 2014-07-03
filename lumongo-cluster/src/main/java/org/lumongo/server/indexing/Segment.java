@@ -126,16 +126,14 @@ public class Segment {
 	
 	private boolean queryCacheEnabled;
 	
+	private int segmentQueryCacheMaxAmount;
+	
 	public Segment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter,
 					IndexConfig indexConfig, FacetsConfig facetsConfig, Analyzer analyzer) throws IOException {
 		
 		this.lockHandler = new LockHandler();
 		
-		if (indexConfig.getSegmentQueryCacheSize() > 0) {
-			queryCacheEnabled = true;
-			this.queryResultCache = new QueryResultCache(indexConfig.getSegmentQueryCacheSize(), 8);
-			this.queryResultCacheRealtime = new QueryResultCache(indexConfig.getSegmentQueryCacheSize(), 8);
-		}
+		setupQueryCache(indexConfig);
 		
 		this.segmentNumber = segmentNumber;
 		this.documentStorage = documentStorage;
@@ -159,27 +157,33 @@ public class Segment {
 		this.lastChange = null;
 		this.indexName = indexConfig.getIndexName();
 		
-		//term vectors enabled for sorting code
+		// term vectors enabled for sorting code
 		notStoredTextField = new FieldType(TextField.TYPE_NOT_STORED);
 		notStoredTextField.setStoreTermVectors(true);
 		notStoredTextField.setStoreTermVectorOffsets(true);
 		notStoredTextField.setStoreTermVectorPositions(true);
-		//For PostingsHighlighter in Lucene 4.1 +
-		//notStoredTextField.setIndexOptions(FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
-		//example https://svn.apache.org/repos/asf/lucene/dev/trunk/lucene/highlighter/src/test/org/apache/lucene/search/postingshighlight/TestPostingsHighlighter.java
+		// For PostingsHighlighter in Lucene 4.1 +
+		// notStoredTextField.setIndexOptions(FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
+		// example
+		// https://svn.apache.org/repos/asf/lucene/dev/trunk/lucene/highlighter/src/test/org/apache/lucene/search/postingshighlight/TestPostingsHighlighter.java
 		notStoredTextField.freeze();
 		
+	}
+	
+	private void setupQueryCache(IndexConfig indexConfig) {
+		queryCacheEnabled = (indexConfig.getSegmentQueryCacheSize() > 0);
+		segmentQueryCacheMaxAmount = indexConfig.getSegmentQueryCacheMaxAmount();
+		
+		if (queryCacheEnabled) {
+			this.queryResultCache = new QueryResultCache(indexConfig.getSegmentQueryCacheSize(), 8);
+			this.queryResultCacheRealtime = new QueryResultCache(indexConfig.getSegmentQueryCacheSize(), 8);
+		}
 	}
 	
 	public void updateIndexSettings(IndexSettings indexSettings, Analyzer analyzer) {
 		this.analyzer = analyzer;
 		this.indexConfig.configure(indexSettings);
-		
-		if (queryCacheEnabled) {
-			this.queryResultCacheRealtime.clear();
-			this.queryResultCache.clear();
-		}
-		
+		setupQueryCache(indexConfig);
 	}
 	
 	public int getSegmentNumber() {
@@ -194,15 +198,19 @@ public class Segment {
 		try {
 			
 			QueryResultCache qrc = realTime ? queryResultCacheRealtime : queryResultCache;
-			if (queryCacheEnabled) {
+			
+			boolean useCache = queryCacheEnabled && ((segmentQueryCacheMaxAmount <= 0) || (segmentQueryCacheMaxAmount >= amount));
+			if (useCache) {
 				SegmentResponse cacheSegmentResponse = qrc.getCacheSegmentResponse(queryCacheKey);
 				if (cacheSegmentResponse != null) {
 					return cacheSegmentResponse;
 				}
+				
 			}
 			
-			//ir = IndexReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
-			//ir = IndexReader.open(indexWriter.getDirectory());
+			// ir = IndexReader.open(indexWriter,
+			// indexConfig.getApplyUncommitedDeletes());
+			// ir = IndexReader.open(indexWriter.getDirectory());
 			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
 			
 			IndexSearcher is = new IndexSearcher(ir);
@@ -215,7 +223,7 @@ public class Segment {
 			TopDocsCollector<?> collector;
 			
 			List<SortField> sortFields = new ArrayList<SortField>();
-			boolean sorting = sortRequest != null && !sortRequest.getFieldSortList().isEmpty();
+			boolean sorting = (sortRequest != null) && !sortRequest.getFieldSortList().isEmpty();
 			if (sorting) {
 				
 				for (FieldSort fs : sortRequest.getFieldSortList()) {
@@ -254,11 +262,13 @@ public class Segment {
 			
 			SegmentResponse.Builder builder = SegmentResponse.newBuilder();
 			
-			if (indexConfig.isFaceted() && facetRequest != null && !facetRequest.getCountRequestList().isEmpty()) {
+			if (indexConfig.isFaceted() && (facetRequest != null) && !facetRequest.getCountRequestList().isEmpty()) {
 				
 				taxonomyReader = taxonomyReader.doOpenIfChanged(realTime);
 				
-				int maxFacets = Integer.MAX_VALUE; //have to fetch all facets to merge between segments correctly
+				int maxFacets = Integer.MAX_VALUE; // have to fetch all facets
+				// to merge between segments
+				// correctly
 				
 				if (facetRequest.getDrillSideways()) {
 					DrillSideways ds = new DrillSideways(is, facetsConfig, taxonomyReader);
@@ -314,7 +324,7 @@ public class Segment {
 			builder.setSegmentNumber(segmentNumber);
 			
 			SegmentResponse segmentResponse = builder.build();
-			if (queryCacheEnabled) {				
+			if (useCache) {
 				qrc.storeInCache(queryCacheKey, segmentResponse);
 			}
 			return segmentResponse;
@@ -369,7 +379,8 @@ public class Segment {
 				if (indexConfig.isNumericField(sortField)) {
 					if (indexConfig.isNumericIntField(sortField)) {
 						if (o == null) {
-							srBuilder.addSortInteger(0); // TODO what should nulls value be?
+							srBuilder.addSortInteger(0); // TODO what should
+							// nulls value be?
 						}
 						else {
 							srBuilder.addSortInteger((Integer) o);
@@ -377,7 +388,8 @@ public class Segment {
 					}
 					else if (indexConfig.isNumericLongField(sortField)) {
 						if (o == null) {
-							srBuilder.addSortLong(0L);// TODO what should nulls value be?
+							srBuilder.addSortLong(0L);// TODO what should nulls
+							// value be?
 						}
 						else {
 							srBuilder.addSortLong((Long) o);
@@ -385,7 +397,8 @@ public class Segment {
 					}
 					else if (indexConfig.isNumericFloatField(sortField)) {
 						if (o == null) {
-							srBuilder.addSortFloat(0f);// TODO what should nulls value be?
+							srBuilder.addSortFloat(0f);// TODO what should nulls
+							// value be?
 						}
 						else {
 							srBuilder.addSortFloat((Float) o);
@@ -393,7 +406,8 @@ public class Segment {
 					}
 					else if (indexConfig.isNumericDoubleField(sortField)) {
 						if (o == null) {
-							srBuilder.addSortDouble(0);// TODO what should nulls value be?
+							srBuilder.addSortDouble(0);// TODO what should nulls
+							// value be?
 						}
 						else {
 							srBuilder.addSortDouble((Double) o);
@@ -402,7 +416,8 @@ public class Segment {
 				}
 				else {
 					if (o == null) {
-						srBuilder.addSortTerm(""); // TODO what should nulls value be?
+						srBuilder.addSortTerm(""); // TODO what should nulls
+						// value be?
 					}
 					else {
 						BytesRef b = (BytesRef) o;
@@ -420,10 +435,10 @@ public class Segment {
 		lastChange = System.currentTimeMillis();
 		
 		long count = counter.incrementAndGet();
-		if (count % indexConfig.getSegmentCommitInterval() == 0) {
+		if ((count % indexConfig.getSegmentCommitInterval()) == 0) {
 			forceCommit();
 		}
-		else if (count % indexConfig.getSegmentFlushInterval() == 0) {
+		else if ((count % indexConfig.getSegmentFlushInterval()) == 0) {
 			if (indexConfig.isFaceted()) {
 				taxonomyWriter.flush();
 			}
@@ -460,7 +475,7 @@ public class Segment {
 		
 		if (lastCh != null) {
 			if ((currentTime - lastCh) > (indexConfig.getIdleTimeWithoutCommit() * 1000)) {
-				if (lastCommit == null || lastCh > lastCommit) {
+				if ((lastCommit == null) || (lastCh > lastCommit)) {
 					log.info("Flushing segment <" + segmentNumber + "> for index <" + indexName + ">");
 					forceCommit();
 				}
@@ -516,7 +531,7 @@ public class Segment {
 					}
 				}
 				else {
-					//should be impossible
+					// should be impossible
 					throw new RuntimeException("Unsupported numeric field type for field <" + fieldName + ">");
 				}
 				
@@ -525,7 +540,7 @@ public class Segment {
 		d.removeFields(indexConfig.getUniqueIdField());
 		d.add(new TextField(indexConfig.getUniqueIdField(), uniqueId, Store.NO));
 		
-		//make sure the update works because it is searching on a term
+		// make sure the update works because it is searching on a term
 		d.add(new StringField(indexConfig.getUniqueIdField(), uniqueId, Store.YES));
 		
 		d.add(new LongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
@@ -609,7 +624,7 @@ public class Segment {
 	}
 	
 	public void clear() throws IOException {
-		//index has write lock so none needed here
+		// index has write lock so none needed here
 		indexWriter.deleteAll();
 		documentStorage.deleteAllDocuments();
 		forceCommit();
@@ -639,7 +654,7 @@ public class Segment {
 					
 					Terms terms = fields.terms(fieldName);
 					if (terms != null) {
-						//TODO reuse?
+						// TODO reuse?
 						TermsEnum termsEnum = terms.iterator(null);
 						SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
 						
@@ -674,7 +689,7 @@ public class Segment {
 				AtomicLong docFreq = termsMap.get(term);
 				builder.addTerm(Lumongo.Term.newBuilder().setValue(term).setDocFreq(docFreq.get()));
 				
-				//TODO remove the limit and paging and just return all?
+				// TODO remove the limit and paging and just return all?
 				i++;
 				if (i > amount) {
 					break;

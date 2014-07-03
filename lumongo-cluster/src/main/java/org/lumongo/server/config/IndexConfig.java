@@ -27,6 +27,7 @@ public class IndexConfig {
 	public static final String SEGMENT_FLUSH_INTERVAL = "segmentFlushInterval";
 	public static final String SEGMENT_COMMIT_INTERVAL = "segmentCommitInterval";
 	public static final String SEGMENT_QUERY_CACHE_SIZE = "segmentQueryCacheSize";
+	public static final String SEGMENT_QUERY_CACHE_MAX_AMOUNT = "segmentQueryCacheMaxAmount";
 	public static final String SEGMENT_TOLERANCE = "segmentTolerance";
 	public static final String DEFAULT_ANALYZER = "defaultAnalyzer";
 	public static final String FIELD_CONFIGS = "fieldConfigs";
@@ -48,6 +49,7 @@ public class IndexConfig {
 	private int segmentFlushInterval;
 	private int segmentCommitInterval;
 	private int segmentQueryCacheSize;
+	private int segmentQueryCacheMaxAmount;
 	
 	private boolean blockCompression;
 	private double segmentTolerance;
@@ -89,6 +91,7 @@ public class IndexConfig {
 		this.segmentTolerance = indexSettings.getSegmentTolerance();
 		this.defaultAnalyzer = indexSettings.getDefaultAnalyzer();
 		this.segmentQueryCacheSize = indexSettings.getSegmentQueryCacheSize();
+		this.segmentQueryCacheMaxAmount = indexSettings.getSegmentQueryCacheMaxAmount();
 		
 		this.fieldConfigMap = new TreeMap<String, FieldConfig>();
 		
@@ -112,6 +115,7 @@ public class IndexConfig {
 		isb.addAllFieldConfig(fieldConfigMap.values());
 		isb.setSegmentFlushInterval(segmentFlushInterval);
 		isb.setSegmentQueryCacheSize(segmentQueryCacheSize);
+		isb.setSegmentQueryCacheMaxAmount(segmentQueryCacheMaxAmount);
 		return isb.build();
 	}
 	
@@ -218,7 +222,11 @@ public class IndexConfig {
 	public int getSegmentQueryCacheSize() {
 		return segmentQueryCacheSize;
 	}
-	
+		
+	public int getSegmentQueryCacheMaxAmount() {
+		return segmentQueryCacheMaxAmount;
+	}
+
 	public DBObject toDBObject() {
 		DBObject dbObject = new BasicDBObject();
 		dbObject.put(DEFAULT_SEARCH_FIELD, defaultSearchField);
@@ -239,6 +247,7 @@ public class IndexConfig {
 		dbObject.put(COLLECTION_PER_RAW_DOCUMENT_SEGMENT, collectionPerRawDocumentSegment);
 		dbObject.put(DATABASE_PER_RAW_DOCUMENT_SEGMENT, databasePerRawDocumentSegment);
 		dbObject.put(SEGMENT_QUERY_CACHE_SIZE, segmentQueryCacheSize);
+		dbObject.put(SEGMENT_QUERY_CACHE_MAX_AMOUNT, segmentQueryCacheMaxAmount);
 		
 		List<DBObject> fieldConfigs = new ArrayList<DBObject>();
 		for (FieldConfig fc : fieldConfigMap.values()) {
@@ -272,6 +281,9 @@ public class IndexConfig {
 		
 		if (settings.get(SEGMENT_QUERY_CACHE_SIZE) != null) {
 			indexConfig.segmentQueryCacheSize = (int) settings.get(SEGMENT_QUERY_CACHE_SIZE);
+		}
+		if (settings.get(SEGMENT_QUERY_CACHE_MAX_AMOUNT) != null) {
+			indexConfig.segmentQueryCacheMaxAmount = (int) settings.get(SEGMENT_QUERY_CACHE_MAX_AMOUNT);
 		}
 		
 		indexConfig.fieldConfigMap = new TreeMap<String, FieldConfig>();
@@ -308,17 +320,30 @@ public class IndexConfig {
 		
 		return indexConfig;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "IndexConfig [defaultSearchField=" + defaultSearchField + ", applyUncommitedDeletes=" + applyUncommitedDeletes + ", requestFactor="
-						+ requestFactor + ", minSegmentRequest=" + minSegmentRequest + ", numberOfSegments=" + numberOfSegments + ", indexName=" + indexName
-						+ ", uniqueIdField=" + uniqueIdField + ", idleTimeWithoutCommit=" + idleTimeWithoutCommit + ", segmentFlushInterval="
-						+ segmentFlushInterval + ", segmentCommitInterval=" + segmentCommitInterval + ", segmentQueryCacheSize=" + segmentQueryCacheSize
-						+ ", blockCompression=" + blockCompression + ", segmentTolerance=" + segmentTolerance + ", defaultAnalyzer=" + defaultAnalyzer
-						+ ", fieldConfigMap=" + fieldConfigMap + ", faceted=" + faceted + ", databasePerIndexSegment=" + databasePerIndexSegment
-						+ ", collectionPerRawDocumentSegment=" + collectionPerRawDocumentSegment + ", databasePerRawDocumentSegment="
-						+ databasePerRawDocumentSegment + "]";
+		return "IndexConfig [defaultSearchField=" + defaultSearchField
+				+ ", applyUncommitedDeletes=" + applyUncommitedDeletes
+				+ ", requestFactor=" + requestFactor + ", minSegmentRequest="
+				+ minSegmentRequest + ", numberOfSegments=" + numberOfSegments
+				+ ", indexName=" + indexName + ", uniqueIdField="
+				+ uniqueIdField + ", idleTimeWithoutCommit="
+				+ idleTimeWithoutCommit + ", segmentFlushInterval="
+				+ segmentFlushInterval + ", segmentCommitInterval="
+				+ segmentCommitInterval + ", segmentQueryCacheSize="
+				+ segmentQueryCacheSize + ", segmentQueryCacheMaxAmount="
+				+ segmentQueryCacheMaxAmount + ", blockCompression="
+				+ blockCompression + ", segmentTolerance=" + segmentTolerance
+				+ ", defaultAnalyzer=" + defaultAnalyzer + ", fieldConfigMap="
+				+ fieldConfigMap + ", faceted=" + faceted
+				+ ", databasePerIndexSegment=" + databasePerIndexSegment
+				+ ", collectionPerRawDocumentSegment="
+				+ collectionPerRawDocumentSegment
+				+ ", databasePerRawDocumentSegment="
+				+ databasePerRawDocumentSegment + "]";
 	}
+	
+
 	
 }

@@ -21,6 +21,7 @@ public class IndexConfig {
 	private Boolean blockCompression;
 	private Double segmentTolerance;
 	private Integer segmentQueryCacheSize;
+	private Integer segmentQueryCacheMaxAmount;
 	
 	private LMAnalyzer defaultAnalyzer;
 
@@ -153,6 +154,15 @@ public class IndexConfig {
 		this.segmentQueryCacheSize = segmentQueryCacheSize;
 	}
 
+
+	public Integer getSegmentQueryCacheMaxAmount() {
+		return segmentQueryCacheMaxAmount;
+	}
+
+	public void setSegmentQueryCacheMaxAmount(Integer segmentQueryCacheMaxAmount) {
+		this.segmentQueryCacheMaxAmount = segmentQueryCacheMaxAmount;
+	}
+
 	public LMAnalyzer getDefaultAnalyzer() {
 		return defaultAnalyzer;
 	}
@@ -205,6 +215,10 @@ public class IndexConfig {
 		if (segmentQueryCacheSize != null) {
 			isb.setSegmentQueryCacheSize(segmentQueryCacheSize);
 		}
+		
+		if (segmentQueryCacheMaxAmount != null) {
+			isb.setSegmentQueryCacheMaxAmount(segmentQueryCacheMaxAmount);
+		}
 
 		for (String fieldName : analyzerMap.keySet()) {
 			LMAnalyzer fieldAnalyzer = analyzerMap.get(fieldName);
@@ -226,7 +240,7 @@ public class IndexConfig {
 		this.segmentTolerance = indexSettings.getSegmentTolerance();
 		this.defaultAnalyzer = indexSettings.getDefaultAnalyzer();
 		this.segmentQueryCacheSize = indexSettings.getSegmentQueryCacheSize();
-
+		this.segmentQueryCacheMaxAmount = indexSettings.getSegmentQueryCacheMaxAmount();
 		this.analyzerMap = new TreeMap<String, LMAnalyzer>();
 
 		for (FieldConfig fc : indexSettings.getFieldConfigList()) {
