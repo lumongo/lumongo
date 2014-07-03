@@ -26,6 +26,7 @@ public @interface Settings {
 	boolean blockCompression() default false;
 	double segmentTolerance() default 0.05;
 	int segmentFlushInterval() default 1600;
+	int segmentQueryCacheSize() default 512;
 
 	boolean databasePerIndexSegment() default false;
 	boolean collectionPerRawDocumentSegment() default false;

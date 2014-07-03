@@ -124,16 +124,18 @@ public class Segment {
 	private QueryResultCache queryResultCache;
 	private QueryResultCache queryResultCacheRealtime;
 	
-	private boolean queryCacheEnabled = true;
+	private boolean queryCacheEnabled;
 	
 	public Segment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter,
 					IndexConfig indexConfig, FacetsConfig facetsConfig, Analyzer analyzer) throws IOException {
 		
 		this.lockHandler = new LockHandler();
 		
-		//TODO configure
-		this.queryResultCache = new QueryResultCache(16);
-		this.queryResultCacheRealtime = new QueryResultCache(16);
+		if (indexConfig.getSegmentQueryCacheSize() > 0) {
+			queryCacheEnabled = true;
+			this.queryResultCache = new QueryResultCache(indexConfig.getSegmentQueryCacheSize(), 8);
+			this.queryResultCacheRealtime = new QueryResultCache(indexConfig.getSegmentQueryCacheSize(), 8);
+		}
 		
 		this.segmentNumber = segmentNumber;
 		this.documentStorage = documentStorage;
@@ -312,7 +314,7 @@ public class Segment {
 			builder.setSegmentNumber(segmentNumber);
 			
 			SegmentResponse segmentResponse = builder.build();
-			if (queryCacheEnabled) {
+			if (queryCacheEnabled) {				
 				qrc.storeInCache(queryCacheKey, segmentResponse);
 			}
 			return segmentResponse;
