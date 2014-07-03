@@ -22,7 +22,7 @@ public class QueryTest {
 		LumongoWorkPool lumongoWorkPool = new LumongoWorkPool(new LumongoPoolConfig().addMember("192.168.0.1"));
 		
 		try {
-			Mapper<Document> mapper = new Mapper<Document>(Document.class);
+			Mapper<MedlineDocument> mapper = new Mapper<MedlineDocument>(MedlineDocument.class);
 			
 			{
 				//simple query and document by document lookup
@@ -37,7 +37,7 @@ public class QueryTest {
 					
 					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
 					
-					Document d = fr.getDocument(mapper);
+					MedlineDocument d = fr.getDocument(mapper);
 					
 					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
 				}
@@ -55,7 +55,7 @@ public class QueryTest {
 					
 					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
 					
-					Document d = fr.getDocument(mapper);
+					MedlineDocument d = fr.getDocument(mapper);
 					
 					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
 				}
@@ -74,7 +74,7 @@ public class QueryTest {
 					
 					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
 					
-					Document d = fr.getDocument(mapper);
+					MedlineDocument d = fr.getDocument(mapper);
 					
 					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
 				}
@@ -98,7 +98,7 @@ public class QueryTest {
 					
 					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
 					
-					Document d = fr.getDocument(mapper);
+					MedlineDocument d = fr.getDocument(mapper);
 					
 					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
 				}
@@ -123,7 +123,7 @@ public class QueryTest {
 					
 					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
 					
-					Document d = fr.getDocument(mapper);
+					MedlineDocument d = fr.getDocument(mapper);
 					
 					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
 				}
@@ -153,7 +153,7 @@ public class QueryTest {
 					
 					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
 					
-					Document d = fr.getDocument(mapper);
+					MedlineDocument d = fr.getDocument(mapper);
 					
 					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
 				}
@@ -180,7 +180,7 @@ public class QueryTest {
 					
 					FetchResult fr = lumongoWorkPool.fetch(new FetchDocument(sr));
 					
-					Document d = fr.getDocument(mapper);
+					MedlineDocument d = fr.getDocument(mapper);
 					
 					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
 				}
@@ -211,7 +211,7 @@ public class QueryTest {
 					System.out.println("Fetching documents took " + (end - start) + "ms");
 					
 					@SuppressWarnings("unused")
-					List<Document> documents = mapper.fromBatchFetchResult(batchFetchResult);
+					List<MedlineDocument> documents = mapper.fromBatchFetchResult(batchFetchResult);
 				}
 				
 				{
@@ -228,7 +228,7 @@ public class QueryTest {
 					System.out.println("Fetching documents took " + (end - start) + "ms");
 					
 					@SuppressWarnings("unused")
-					List<Document> documents = mapper.fromBatchFetchResult(batchFetchResult);
+					List<MedlineDocument> documents = mapper.fromBatchFetchResult(batchFetchResult);
 				}
 				
 			}
