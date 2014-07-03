@@ -160,6 +160,7 @@ public class Mapper<T> {
 		indexConfig.setSegmentTolerance(settings.segmentTolerance());
 		indexConfig.setSegmentFlushInterval(settings.segmentFlushInterval());
 		indexConfig.setSegmentQueryCacheSize(settings.segmentQueryCacheSize());
+		indexConfig.setSegmentQueryCacheMaxAmount(settings.segmentQueryCacheMaxAmount());
 		
 		CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(settings.indexName(), settings.numberOfSegments(), uniqueIdField.getFieldName(),
 						indexConfig);
