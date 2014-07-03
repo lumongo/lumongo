@@ -17,7 +17,7 @@ import org.lumongo.fields.annotations.UniqueId;
 	numberOfSegments = 8,
 	segmentFlushInterval = 6000,
 	segmentCommitInterval = 24000)
-public class Document {
+public class MedlineDocument {
 	
 	@DefaultSearch
 	@Saved
