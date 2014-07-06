@@ -91,38 +91,38 @@ import com.mongodb.DB;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 
-public class IndexManager {
-	private final static Logger log = Logger.getLogger(IndexManager.class);
-	
+public class LumongoIndexManager {
+	private final static Logger log = Logger.getLogger(LumongoIndexManager.class);
+
 	private final ReadWriteLock globalLock;
-	
-	private final ConcurrentHashMap<String, Index> indexMap;
+
+	private final ConcurrentHashMap<String, LumongoIndex> indexMap;
 	private final InternalClient internalClient;
-	
+
 	private final ExecutorService pool;
-	
+
 	private HazelcastManager hazelcastManager;
-	
+
 	private MongoConfig mongoConfig;
 	private ClusterConfig clusterConfig;
-	
+
 	private MongoClient mongo;
-	
-	public IndexManager(MongoConfig mongoConfig, ClusterConfig clusterConfig) throws UnknownHostException {
+
+	public LumongoIndexManager(MongoConfig mongoConfig, ClusterConfig clusterConfig) throws UnknownHostException {
 		this.globalLock = new ReentrantReadWriteLock(true);
-		
+
 		this.mongoConfig = mongoConfig;
 		this.clusterConfig = clusterConfig;
-		
-		this.indexMap = new ConcurrentHashMap<String, Index>();
+
+		this.indexMap = new ConcurrentHashMap<String, LumongoIndex>();
 		this.internalClient = new InternalClient(mongoConfig, clusterConfig);
-		
+
 		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
-		
+
 		this.pool = Executors.newCachedThreadPool(new LumongoThreadFactory("manager"));
-		
+
 	}
-	
+
 	public void init(HazelcastManager hazelcastManager) throws UnknownHostException, MongoException {
 		globalLock.writeLock().lock();
 		try {
@@ -131,24 +131,24 @@ public class IndexManager {
 		finally {
 			globalLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	public void handleServerRemoved(Set<Member> currentMembers, Member memberRemoved, boolean master) {
 		globalLock.writeLock().lock();
 		try {
 			if (master) {
 				handleServerRemoved(currentMembers, memberRemoved);
 			}
-			
+
 			internalClient.removeMember(memberRemoved);
 		}
 		finally {
 			globalLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	public void handleServerAdded(Set<Member> currentMembers, Member memberAdded, boolean master) throws Exception {
 		globalLock.writeLock().lock();
 		try {
@@ -157,43 +157,43 @@ public class IndexManager {
 				Nodes nodes = ClusterHelper.getNodes(mongoConfig);
 				@SuppressWarnings("unused")
 				LocalNodeConfig localNodeConfig = nodes.find(memberAdded);
-				
+
 				handleServerAdded(currentMembers, memberAdded);
 			}
-			
+
 			internalClient.addMember(memberAdded);
 		}
 		finally {
 			globalLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	public List<String> getIndexNames() {
 		globalLock.writeLock().lock();
-		
+
 		try {
 			ArrayList<String> indexNames = new ArrayList<String>();
 			DB db = mongo.getDB(mongoConfig.getDatabaseName());
 			Set<String> allCollections = db.getCollectionNames();
-			
+
 			for (String collection : allCollections) {
-				if (collection.endsWith(Index.CONFIG_SUFFIX)) {
-					String indexName = collection.substring(0, collection.length() - Index.CONFIG_SUFFIX.length());
+				if (collection.endsWith(LumongoIndex.CONFIG_SUFFIX)) {
+					String indexName = collection.substring(0, collection.length() - LumongoIndex.CONFIG_SUFFIX.length());
 					indexNames.add(indexName);
 				}
 			}
-			
+
 			return indexNames;
 		}
 		finally {
 			globalLock.writeLock().unlock();
 		}
 	}
-	
+
 	public void loadIndexes() {
 		globalLock.writeLock().lock();
-		
+
 		try {
 			log.info("Loading existing indexes");
 			List<String> indexNames = getIndexNames();
@@ -211,36 +211,36 @@ public class IndexManager {
 			globalLock.writeLock().unlock();
 		}
 	}
-	
+
 	public IndexCreateResponse createIndex(IndexCreateRequest request) throws Exception {
 		globalLock.writeLock().lock();
 		try {
 			log.info("Creating index: <" + request.getIndexName() + ">");
-			
+
 			IndexConfig indexConfig = new IndexConfig(request);
-			
+
 			String indexName = indexConfig.getIndexName();
 			if (indexMap.containsKey(indexName)) {
 				throw new Exception("Index <" + indexName + "> already exist");
 			}
-			Index i = Index.createIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
+			LumongoIndex i = LumongoIndex.createIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
 			indexMap.put(indexConfig.getIndexName(), i);
 			i.loadAllSegments();
 			i.forceBalance(hazelcastManager.getMembers());
-			
+
 			log.info("Created index: <" + request.getIndexName() + ">");
-			
+
 			return IndexCreateResponse.newBuilder().build();
 		}
 		finally {
 			globalLock.writeLock().unlock();
 		}
 	}
-	
+
 	public void loadIndex(String indexName, boolean loadAllSegments) throws Exception {
 		globalLock.writeLock().lock();
 		try {
-			Index i = Index.loadIndex(hazelcastManager, mongoConfig, mongo, clusterConfig, indexName);
+			LumongoIndex i = LumongoIndex.loadIndex(hazelcastManager, mongoConfig, mongo, clusterConfig, indexName);
 			if (loadAllSegments) {
 				i.loadAllSegments();
 			}
@@ -250,12 +250,12 @@ public class IndexManager {
 			globalLock.writeLock().unlock();
 		}
 	}
-	
+
 	private void handleServerAdded(Set<Member> currentMembers, Member memberAdded) {
 		globalLock.writeLock().lock();
 		try {
 			for (String key : indexMap.keySet()) {
-				Index i = indexMap.get(key);
+				LumongoIndex i = indexMap.get(key);
 				i.handleServerAdded(currentMembers, memberAdded);
 			}
 		}
@@ -263,12 +263,12 @@ public class IndexManager {
 			globalLock.writeLock().unlock();
 		}
 	}
-	
+
 	private void handleServerRemoved(Set<Member> currentMembers, Member memberRemoved) {
 		globalLock.writeLock().lock();
 		try {
 			for (String key : indexMap.keySet()) {
-				Index i = indexMap.get(key);
+				LumongoIndex i = indexMap.get(key);
 				i.handleServerRemoved(currentMembers, memberRemoved);
 			}
 		}
@@ -276,15 +276,15 @@ public class IndexManager {
 			globalLock.writeLock().unlock();
 		}
 	}
-	
+
 	public void updateSegmentMap(String indexName, Map<Member, Set<Integer>> newMemberToSegmentMap) throws Exception {
 		globalLock.writeLock().lock();
 		try {
 			if (!indexMap.containsKey(indexName)) {
 				loadIndex(indexName, false);
 			}
-			
-			Index i = indexMap.get(indexName);
+
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
@@ -294,22 +294,22 @@ public class IndexManager {
 			globalLock.writeLock().unlock();
 		}
 	}
-	
+
 	public IndexDeleteResponse deleteIndex(IndexDeleteRequest request) throws Exception {
 		globalLock.writeLock().lock();
 		try {
 			String indexName = request.getIndexName();
-			
-			Index i = indexMap.get(indexName);
+
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			
+
 			Set<Member> currentMembers = hazelcastManager.getMembers();
 			IExecutorService executorService = hazelcastManager.getExecutorService();
-			
+
 			Member self = hazelcastManager.getSelf();
-			
+
 			log.info("Unload index <" + indexName + "> for delete");
 			for (Member m : currentMembers) {
 				try {
@@ -325,28 +325,28 @@ public class IndexManager {
 				catch (Exception e) {
 					log.error(e.getClass().getSimpleName() + ": ", e);
 				}
-				
+
 			}
-			
+
 			log.info("Deleting index <" + indexName + ">");
 			i.deleteIndex();
 			indexMap.remove(indexName);
-			
+
 			return IndexDeleteResponse.newBuilder().build();
 		}
 		finally {
 			globalLock.writeLock().unlock();
 		}
 	}
-	
+
 	public void unloadIndex(String indexName) throws IndexDoesNotExist, CorruptIndexException, IOException {
 		globalLock.writeLock().lock();
 		try {
-			Index i = indexMap.get(indexName);
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			
+
 			i.unload();
 			indexMap.remove(indexName);
 		}
@@ -354,34 +354,34 @@ public class IndexManager {
 			globalLock.writeLock().unlock();
 		}
 	}
-	
+
 	public void shutdown() {
-		
+
 		log.info("Starting index manager shutdown");
-		
+
 		//TODO configure or force a lock acquire
 		int waitSeconds = 10;
-		
+
 		log.info("Waiting for lock");
 		boolean locked = false;
 		try {
 			locked = globalLock.writeLock().tryLock(waitSeconds, TimeUnit.SECONDS);
 		}
 		catch (InterruptedException e1) {
-			
+
 		}
-		
+
 		if (!locked) {
 			log.info("Failed to get manager lock within <" + waitSeconds + "> seconds");
 		}
-		
+
 		try {
 			log.info("Stopping manager pool");
 			pool.shutdownNow();
-			
+
 			log.info("Shutting down indexes");
 			for (String indexName : indexMap.keySet()) {
-				Index i = indexMap.get(indexName);
+				LumongoIndex i = indexMap.get(indexName);
 				try {
 					log.info("Unloading <" + indexName + ">");
 					i.unload();
@@ -397,9 +397,9 @@ public class IndexManager {
 			}
 		}
 	}
-	
+
 	public void openConnections(Set<Member> members) throws Exception {
-		
+
 		globalLock.writeLock().lock();
 		try {
 			Member self = hazelcastManager.getSelf();
@@ -412,25 +412,25 @@ public class IndexManager {
 		finally {
 			globalLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	public IndexSettingsResponse updateIndex(String indexName, IndexSettings request) throws IndexDoesNotExist, InvalidIndexConfig, MongoException, IOException {
 		globalLock.readLock().lock();
 		try {
-			
-			Index i = indexMap.get(indexName);
+
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			
+
 			i.updateIndexSettings(request);
-			
+
 			Set<Member> currentMembers = hazelcastManager.getMembers();
 			IExecutorService executorService = hazelcastManager.getExecutorService();
-			
+
 			Member self = hazelcastManager.getSelf();
-			
+
 			for (Member m : currentMembers) {
 				try {
 					ReloadIndexSettingsTask rist = new ReloadIndexSettingsTask(m.getSocketAddress().getPort(), indexName);
@@ -445,141 +445,141 @@ public class IndexManager {
 				catch (Exception e) {
 					log.error(e.getClass().getSimpleName() + ": ", e);
 				}
-				
+
 			}
-			
+
 			return IndexSettingsResponse.newBuilder().build();
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public void reloadIndexSettings(String indexName) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			
-			Index i = indexMap.get(indexName);
+
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			
+
 			i.reloadIndexSettings();
-			
+
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public DeleteResponse internalDeleteDocument(DeleteRequest deleteRequest) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			
-			Index i = indexMap.get(deleteRequest.getIndexName());
+
+			LumongoIndex i = indexMap.get(deleteRequest.getIndexName());
 			if (i == null) {
 				throw new IndexDoesNotExist(deleteRequest.getIndexName());
 			}
 			i.deleteDocument(deleteRequest);
-			
+
 			return DeleteResponse.newBuilder().build();
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public DeleteResponse deleteDocument(DeleteRequest deleteRequest) throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist, IOException,
-					Exception {
+	Exception {
 		globalLock.readLock().lock();
 		try {
-			
+
 			String indexName = deleteRequest.getIndexName();
 			String uniqueId = deleteRequest.getUniqueId();
-			
-			Index i = indexMap.get(indexName);
+
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			
+
 			Member m = i.findMember(uniqueId);
-			
+
 			Member self = hazelcastManager.getSelf();
-			
+
 			if (!self.equals(m)) {
 				return internalClient.executeDelete(m, deleteRequest);
 			}
 			else {
 				return internalDeleteDocument(deleteRequest);
 			}
-			
+
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public StoreResponse storeInternal(StoreRequest storeRequest) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			String indexName = storeRequest.getIndexName();
-			Index i = indexMap.get(indexName);
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			
+
 			i.storeInternal(storeRequest);
-			
+
 			return StoreResponse.newBuilder().build();
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public StoreResponse storeDocument(StoreRequest storeRequest) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			
+
 			String uniqueId = storeRequest.getUniqueId();
 			String indexName = storeRequest.getIndexName();
-			
-			Index i = indexMap.get(indexName);
+
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			
+
 			Member m = i.findMember(uniqueId);
-			
+
 			Member self = hazelcastManager.getSelf();
-			
+
 			if (!self.equals(m)) {
 				return internalClient.executeStore(m, storeRequest);
 			}
 			else {
 				return storeInternal(storeRequest);
 			}
-			
+
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
-		
+
 	}
-	
+
 	public FetchResponse fetch(FetchRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			
+
 			String indexName = request.getIndexName();
-			
-			Index i = indexMap.get(indexName);
+
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			
+
 			FetchResponse.Builder frBuilder = FetchResponse.newBuilder();
-			
+
 			if (!FetchType.NONE.equals(request.getResultFetchType())) {
 				ResultDocument resultDoc = i.getSourceDocument(request.getUniqueId(), request.getResultFetchType());
 				if (null != resultDoc) {
@@ -605,33 +605,33 @@ public class IndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	private Map<String, Query> getQueryMap(QueryRequest queryRequest) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			String queryString = queryRequest.getQuery();
 			List<String> indexNames = queryRequest.getIndexList();
-			
+
 			HashMap<String, Query> queryMap = new HashMap<String, Query>();
 			for (String indexName : indexNames) {
-				Index i = indexMap.get(indexName);
+				LumongoIndex i = indexMap.get(indexName);
 				if (i == null) {
 					throw new IndexDoesNotExist(indexName);
 				}
-				Query query = i.getQuery(queryString);
+				Query query = i.getQuery(queryString, queryRequest.getQueryFieldsList());
 				if (queryRequest.hasFacetRequest()) {
 					if (i.isFaceted()) {
 						FacetRequest facetRequest = queryRequest.getFacetRequest();
-						
+
 						List<LMFacet> drillDownList = facetRequest.getDrillDownList();
 						if (!drillDownList.isEmpty()) {
 							FacetsConfig facetsConfig = i.getFacetsConfig();
 							DrillDownQuery ddQuery = new DrillDownQuery(facetsConfig, query);
-							
+
 							for (LMFacet or : drillDownList) {
 								ddQuery.add(or.getLabel(), or.getPathList().toArray(new String[0]));
 							}
-							
+
 							query = ddQuery;
 						}
 					}
@@ -640,56 +640,56 @@ public class IndexManager {
 						throw new IOException("Cannot use facet request on non-faceted index <" + indexName + ">");
 					}
 				}
-				
+
 				queryMap.put(indexName, query);
 			}
-			
+
 			return queryMap;
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public QueryResponse query(final QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
 		long start = System.currentTimeMillis();
 		try {
 			log.info("Running query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + ">");
-			
+
 			final Map<String, Query> queryMap = getQueryMap(request);
-			
-			final Map<String, Index> indexSegmentMap = new HashMap<String, Index>();
+
+			final Map<String, LumongoIndex> indexSegmentMap = new HashMap<String, LumongoIndex>();
 			for (String indexName : request.getIndexList()) {
-				Index i = indexMap.get(indexName);
+				LumongoIndex i = indexMap.get(indexName);
 				if (i == null) {
 					throw new IndexDoesNotExist(indexName);
 				}
 				indexSegmentMap.put(indexName, i);
 			}
-			
+
 			SocketRequestFederator<QueryRequest, InternalQueryResponse> queryFederator = new SocketRequestFederator<QueryRequest, InternalQueryResponse>(
 							hazelcastManager, pool) {
-				
+
 				@Override
 				public InternalQueryResponse processExternal(Member m, QueryRequest request) throws Exception {
 					return internalClient.executeQuery(m, request);
 				}
-				
+
 				@Override
 				public InternalQueryResponse processInternal(QueryRequest request) throws Exception {
 					return internalQuery(queryMap, request);
 				}
 			};
-			
+
 			List<InternalQueryResponse> results = queryFederator.send(request);
-			
+
 			QueryCombiner queryCombiner = new QueryCombiner(indexSegmentMap, request, results);
-			
+
 			queryCombiner.validate();
-			
+
 			QueryResponse qr = queryCombiner.getQueryResponse();
-			
+
 			if (!queryCombiner.isShort()) {
 				return qr;
 			}
@@ -697,19 +697,19 @@ public class IndexManager {
 				if (!request.getFetchFull()) {
 					return query(request.toBuilder().setFetchFull(true).build());
 				}
-				
+
 				throw new Exception("Full fetch request is short");
 			}
-			
+
 		}
 		finally {
 			long end = System.currentTimeMillis();
 			log.info("Finished query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + "> in " + (end - start) + "ms");
-			
+
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public InternalQueryResponse internalQuery(QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
@@ -720,31 +720,31 @@ public class IndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	private InternalQueryResponse internalQuery(Map<String, Query> queryMap, QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			
+
 			InternalQueryResponse.Builder internalQueryResponseBuilder = InternalQueryResponse.newBuilder();
 			for (String indexName : queryMap.keySet()) {
-				
-				Index i = indexMap.get(indexName);
+
+				LumongoIndex i = indexMap.get(indexName);
 				if (i == null) {
 					throw new IndexDoesNotExist(indexName);
 				}
 				Query query = queryMap.get(indexName);
-				
+
 				IndexSegmentResponse isr = i.queryInternal(query, request);
 				internalQueryResponseBuilder.addIndexSegmentResponse(isr);
 			}
-			
+
 			return internalQueryResponseBuilder.build();
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public GetIndexesResponse getIndexes(GetIndexesRequest request) {
 		globalLock.readLock().lock();
 		try {
@@ -756,12 +756,12 @@ public class IndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public GetNumberOfDocsResponse getNumberOfDocsInternal(GetNumberOfDocsRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			String indexName = request.getIndexName();
-			Index i = indexMap.get(indexName);
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
@@ -771,113 +771,113 @@ public class IndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public GetNumberOfDocsResponse getNumberOfDocs(GetNumberOfDocsRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			String indexName = request.getIndexName();
-			Index i = indexMap.get(indexName);
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
 			int numberOfSegments = i.getNumberOfSegments();
-			
+
 			SocketRequestFederator<GetNumberOfDocsRequest, GetNumberOfDocsResponse> federator = new SocketRequestFederator<GetNumberOfDocsRequest, GetNumberOfDocsResponse>(
 							hazelcastManager, pool) {
-				
+
 				@Override
 				public GetNumberOfDocsResponse processExternal(Member m, GetNumberOfDocsRequest request) throws Exception {
 					return internalClient.getNumberOfDocs(m, request);
 				}
-				
+
 				@Override
 				public GetNumberOfDocsResponse processInternal(GetNumberOfDocsRequest request) throws Exception {
 					return getNumberOfDocsInternal(request);
 				}
-				
+
 			};
-			
+
 			GetNumberOfDocsResponse.Builder responseBuilder = GetNumberOfDocsResponse.newBuilder();
 			responseBuilder.setNumberOfDocs(0);
 			List<GetNumberOfDocsResponse> responses = federator.send(request);
-			
+
 			List<SegmentCountResponse> segmentCountResponses = new ArrayList<SegmentCountResponse>();
-			
+
 			for (GetNumberOfDocsResponse r : responses) {
 				responseBuilder.setNumberOfDocs(responseBuilder.getNumberOfDocs() + r.getNumberOfDocs());
 				segmentCountResponses.addAll(r.getSegmentCountResponseList());
 			}
-			
+
 			Collections.sort(segmentCountResponses, new Comparator<SegmentCountResponse>() {
-				
+
 				@Override
 				public int compare(SegmentCountResponse o1, SegmentCountResponse o2) {
 					return Integer.compare(o1.getSegmentNumber(), o2.getSegmentNumber());
 				}
-				
+
 			});
-			
+
 			responseBuilder.addAllSegmentCountResponse(segmentCountResponses);
-			
+
 			GetNumberOfDocsResponse response = responseBuilder.build();
-			
+
 			HashSet<Integer> segments = new HashSet<Integer>();
-			
+
 			for (SegmentCountResponse r : response.getSegmentCountResponseList()) {
 				segments.add(r.getSegmentNumber());
 			}
-			
+
 			if (segments.size() != numberOfSegments) {
 				throw new Exception("Expected <" + numberOfSegments + "> segments, found <" + segments.size() + "> segments");
 			}
-			
+
 			for (int segmentNumber = 0; segmentNumber < numberOfSegments; segmentNumber++) {
 				if (!segments.contains(segmentNumber)) {
 					throw new Exception("Missing results for segment <" + segmentNumber + ">");
 				}
 			}
-			
+
 			return response;
-			
+
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public ClearResponse clearIndex(ClearRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			SocketRequestFederator<ClearRequest, ClearResponse> federator = new SocketRequestFederator<ClearRequest, ClearResponse>(hazelcastManager, pool) {
-				
+
 				@Override
 				public ClearResponse processExternal(Member m, ClearRequest request) throws Exception {
 					return internalClient.clear(m, request);
 				}
-				
+
 				@Override
 				public ClearResponse processInternal(ClearRequest request) throws Exception {
 					return clearInternal(request);
 				}
-				
+
 			};
-			
+
 			// nothing in responses currently
 			@SuppressWarnings("unused")
 			List<ClearResponse> responses = federator.send(request);
-			
+
 			return ClearResponse.newBuilder().build();
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public ClearResponse clearInternal(ClearRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			String indexName = request.getIndexName();
-			Index i = indexMap.get(indexName);
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
@@ -888,41 +888,41 @@ public class IndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public OptimizeResponse optimize(OptimizeRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			SocketRequestFederator<OptimizeRequest, OptimizeResponse> federator = new SocketRequestFederator<OptimizeRequest, OptimizeResponse>(
 							hazelcastManager, pool) {
-				
+
 				@Override
 				public OptimizeResponse processExternal(Member m, OptimizeRequest request) throws Exception {
 					return internalClient.optimize(m, request);
 				}
-				
+
 				@Override
 				public OptimizeResponse processInternal(OptimizeRequest request) throws Exception {
 					return optimizeInternal(request);
 				}
-				
+
 			};
-			
+
 			// nothing in responses currently
 			@SuppressWarnings("unused")
 			List<OptimizeResponse> responses = federator.send(request);
-			
+
 			return OptimizeResponse.newBuilder().build();
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public OptimizeResponse optimizeInternal(OptimizeRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			String indexName = request.getIndexName();
-			Index i = indexMap.get(indexName);
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
@@ -933,31 +933,31 @@ public class IndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public GetFieldNamesResponse getFieldNames(GetFieldNamesRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			SocketRequestFederator<GetFieldNamesRequest, GetFieldNamesResponse> federator = new SocketRequestFederator<GetFieldNamesRequest, GetFieldNamesResponse>(
 							hazelcastManager, pool) {
-				
+
 				@Override
 				public GetFieldNamesResponse processExternal(Member m, GetFieldNamesRequest request) throws Exception {
 					return internalClient.getFieldNames(m, request);
 				}
-				
+
 				@Override
 				public GetFieldNamesResponse processInternal(GetFieldNamesRequest request) throws Exception {
 					return getFieldNamesInternal(request);
 				}
-				
+
 			};
-			
+
 			Set<String> fieldNames = new HashSet<String>();
 			List<GetFieldNamesResponse> responses = federator.send(request);
 			for (GetFieldNamesResponse response : responses) {
 				fieldNames.addAll(response.getFieldNameList());
 			}
-			
+
 			GetFieldNamesResponse.Builder responseBuilder = GetFieldNamesResponse.newBuilder();
 			responseBuilder.addAllFieldName(fieldNames);
 			return responseBuilder.build();
@@ -966,12 +966,12 @@ public class IndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public GetFieldNamesResponse getFieldNamesInternal(GetFieldNamesRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			String indexName = request.getIndexName();
-			Index i = indexMap.get(indexName);
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
@@ -981,29 +981,29 @@ public class IndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public GetTermsResponse getTerms(GetTermsRequest request) throws Exception {
-		
+
 		globalLock.readLock().lock();
 		try {
-			
+
 			SocketRequestFederator<GetTermsRequest, GetTermsResponse> federator = new SocketRequestFederator<GetTermsRequest, GetTermsResponse>(
 							hazelcastManager, pool) {
-				
+
 				@Override
 				public GetTermsResponse processExternal(Member m, GetTermsRequest request) throws Exception {
 					return internalClient.getTerms(m, request);
 				}
-				
+
 				@Override
 				public GetTermsResponse processInternal(GetTermsRequest request) throws Exception {
 					return getTermsInternal(request);
 				}
-				
+
 			};
-			
+
 			List<GetTermsResponse> responses = federator.send(request);
-			
+
 			//not threaded but atomic long is convenient
 			//TODO: maybe change to something else for speed
 			TreeMap<String, AtomicLong> terms = new TreeMap<String, AtomicLong>();
@@ -1015,15 +1015,15 @@ public class IndexManager {
 					terms.get(term.getValue()).addAndGet(term.getDocFreq());
 				}
 			}
-			
+
 			GetTermsResponse.Builder responseBuilder = GetTermsResponse.newBuilder();
-			
+
 			int amountToReturn = Math.min(request.getAmount(), terms.size());
-			
+
 			String value = null;
 			Long frequency = null;
-			
-			for (int i = 0; i < amountToReturn && !terms.isEmpty();) {
+
+			for (int i = 0; (i < amountToReturn) && !terms.isEmpty();) {
 				value = terms.firstKey();
 				AtomicLong docFreq = terms.remove(value);
 				frequency = docFreq.get();
@@ -1032,22 +1032,22 @@ public class IndexManager {
 					responseBuilder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(frequency));
 				}
 			}
-			if (value != null && frequency != null) {
+			if ((value != null) && (frequency != null)) {
 				responseBuilder.setLastTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(frequency).build());
 			}
-			
+
 			return responseBuilder.build();
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public GetTermsResponse getTermsInternal(GetTermsRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			String indexName = request.getIndexName();
-			Index i = indexMap.get(indexName);
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
@@ -1057,59 +1057,59 @@ public class IndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	//rest
 	public void storeAssociatedDocument(String indexName, String uniqueId, String fileName, InputStream is, boolean compress,
 					HashMap<String, String> metadataMap) throws Exception {
 		globalLock.readLock().lock();
 		try {
-			Index i = indexMap.get(indexName);
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			
+
 			i.storeAssociatedDocument(uniqueId, fileName, is, compress, hazelcastManager.getClusterTime(), metadataMap);
-			
+
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	//rest
 	public InputStream getAssociatedDocumentStream(String indexName, String uniqueId, String fileName) throws IOException {
 		globalLock.readLock().lock();
 		try {
-			Index i = indexMap.get(indexName);
+			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			
+
 			return i.getAssociatedDocumentStream(uniqueId, fileName);
-			
+
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 	public GetMembersResponse getMembers(GetMembersRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			Set<Member> members = hazelcastManager.getMembers();
 			GetMembersResponse.Builder responseBuilder = GetMembersResponse.newBuilder();
-			
+
 			Nodes nodes = ClusterHelper.getNodes(mongoConfig);
-			
+
 			HashMap<Member, LMMember> memberMap = new HashMap<Member, LMMember>();
-			
+
 			for (Member m : members) {
 				LocalNodeConfig localNodeConfig = nodes.find(m);
-				
+
 				InetAddress inetAddress = m.getSocketAddress().getAddress();
-				
+
 				String fullHostName = inetAddress.getCanonicalHostName();
-				
+
 				LMMember.Builder lmMemberBuilder = LMMember.newBuilder();
 				lmMemberBuilder.setServerAddress(fullHostName);
 				lmMemberBuilder.setExternalPort(localNodeConfig.getExternalServicePort());
@@ -1120,14 +1120,14 @@ public class IndexManager {
 				responseBuilder.addMember(lmMember);
 				memberMap.put(m, lmMember);
 			}
-			
+
 			for (String indexName : indexMap.keySet()) {
-				Index i = indexMap.get(indexName);
-				
+				LumongoIndex i = indexMap.get(indexName);
+
 				IndexMapping.Builder indexMappingBuilder = IndexMapping.newBuilder();
 				indexMappingBuilder.setIndexName(indexName);
 				indexMappingBuilder.setNumberOfSegments(i.getNumberOfSegments());
-				
+
 				Map<Integer, Member> segmentToMemberMap = i.getSegmentToMemberMap();
 				for (Integer segmentNumber : segmentToMemberMap.keySet()) {
 					Member m = segmentToMemberMap.get(segmentNumber);
@@ -1137,12 +1137,12 @@ public class IndexManager {
 				}
 				responseBuilder.addIndexMapping(indexMappingBuilder);
 			}
-			
+
 			return responseBuilder.build();
 		}
 		finally {
 			globalLock.readLock().unlock();
 		}
 	}
-	
+
 }

@@ -43,7 +43,7 @@ import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
-import org.lumongo.server.indexing.IndexManager;
+import org.lumongo.server.indexing.LumongoIndexManager;
 
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
@@ -56,13 +56,13 @@ import com.googlecode.protobuf.pro.duplex.util.RenamingThreadFactoryProxy;
 public class ExternalServiceHandler extends ExternalService {
 	private final static Logger log = Logger.getLogger(ExternalServiceHandler.class);
 	
-	private final IndexManager indexManger;
+	private final LumongoIndexManager indexManger;
 	private final ClusterConfig clusterConfig;
 	private final LocalNodeConfig localNodeConfig;
 	
 	private ServerBootstrap bootstrap;
 	
-	public ExternalServiceHandler(ClusterConfig clusterConfig, LocalNodeConfig localNodeConfig, IndexManager indexManger) throws UnknownHostException {
+	public ExternalServiceHandler(ClusterConfig clusterConfig, LocalNodeConfig localNodeConfig, LumongoIndexManager indexManger) throws UnknownHostException {
 		this.clusterConfig = clusterConfig;
 		this.localNodeConfig = localNodeConfig;
 		this.indexManger = indexManger;

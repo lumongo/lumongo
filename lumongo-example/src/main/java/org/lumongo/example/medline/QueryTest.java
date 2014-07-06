@@ -1,5 +1,6 @@
 package org.lumongo.example.medline;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.lumongo.client.cache.DocumentCache;
@@ -19,14 +20,15 @@ public class QueryTest {
 	public static void main(String[] args) throws Exception {
 		LogUtil.loadLogConfig();
 		
-		LumongoWorkPool lumongoWorkPool = new LumongoWorkPool(new LumongoPoolConfig().addMember("192.168.0.1"));
+		LumongoWorkPool lumongoWorkPool = new LumongoWorkPool(new LumongoPoolConfig().addMember("localhost"));
 		
 		try {
 			Mapper<MedlineDocument> mapper = new Mapper<MedlineDocument>(MedlineDocument.class);
-			
-			{
+
+			for (String term : Arrays.asList("cancer", "molecular", "biology", "kinases", "DNA", "replication", "regulators", "neurons", "animals",
+							"depression", "serotonin", "rats", "male", "university", "nicotine", "France", "United States")) {
 				//simple query and document by document lookup
-				Query query = new Query("medline", "title:cancer", 10);
+				Query query = new Query("medline", "title:" + term, 10);
 				
 				QueryResult queryResult = lumongoWorkPool.query(query);
 				
@@ -39,9 +41,10 @@ public class QueryTest {
 					
 					MedlineDocument d = fr.getDocument(mapper);
 					
-					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
+					//System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
 				}
 			}
+
 			{
 				//using field sort
 				Query query = new Query("medline", "title:cancer AND issn:*", 10);
@@ -198,7 +201,7 @@ public class QueryTest {
 				DocumentCache documentCache = new DocumentCache(lumongoWorkPool, maxSize);
 				
 				{
-					Query query = new Query("medline", "title:cancer AND issn:*", 10000);
+					Query query = new Query("medline", "title:cancer AND issn:*", 1000);
 					QueryResult queryResult = lumongoWorkPool.query(query);
 					
 					long totalHits = queryResult.getTotalHits();
@@ -215,7 +218,7 @@ public class QueryTest {
 				}
 				
 				{
-					Query query = new Query("medline", "title:cancer AND issn:*", 10000);
+					Query query = new Query("medline", "title:cancer AND issn:*", 1000);
 					QueryResult queryResult = lumongoWorkPool.query(query);
 					
 					long totalHits = queryResult.getTotalHits();
@@ -231,6 +234,41 @@ public class QueryTest {
 					List<MedlineDocument> documents = mapper.fromBatchFetchResult(batchFetchResult);
 				}
 				
+				{
+					Query query = new Query("medline", "title:oncology", 100);
+					QueryResult queryResult = lumongoWorkPool.query(query);
+					System.out.println(queryResult.getCommandTimeMs());
+					
+					long totalHits = queryResult.getTotalHits();
+					
+					System.out.println("Found <" + totalHits + "> hits");
+					long start = System.currentTimeMillis();
+					BatchFetchResult batchFetchResult = documentCache.fetch(queryResult);
+					
+					long end = System.currentTimeMillis();
+					System.out.println("Fetching documents took " + (end - start) + "ms");
+					
+					@SuppressWarnings("unused")
+					List<MedlineDocument> documents = mapper.fromBatchFetchResult(batchFetchResult);
+				}
+				
+				{
+					Query query = new Query("medline", "title:oncology", 1000);
+					QueryResult queryResult = lumongoWorkPool.query(query);
+					
+					long totalHits = queryResult.getTotalHits();
+					
+					System.out.println("Found <" + totalHits + "> hits");
+					long start = System.currentTimeMillis();
+					BatchFetchResult batchFetchResult = documentCache.fetch(queryResult);
+					
+					long end = System.currentTimeMillis();
+					System.out.println("Fetching documents took " + (end - start) + "ms");
+					
+					@SuppressWarnings("unused")
+					List<MedlineDocument> documents = mapper.fromBatchFetchResult(batchFetchResult);
+				}
+
 			}
 		}
 		finally {

@@ -3,6 +3,7 @@ package org.lumongo.client.command;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.lumongo.client.command.base.SimpleCommand;
@@ -33,9 +34,11 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private Collection<String> indexes;
 	private Boolean realTime;
 	private QueryResult lastResult;
-	private List<CountRequest> countRequests;
-	private List<LMFacet> drillDowns;
-	private List<FieldSort> fieldSorts;
+	private List<CountRequest> countRequests = Collections.emptyList();
+	private List<LMFacet> drillDowns = Collections.emptyList();
+	private List<FieldSort> fieldSorts = Collections.emptyList();
+	private List<String> queryFields = Collections.emptyList();
+	
 	private Boolean drillSideways;
 	
 	public Query(String index, String query, int amount) {
@@ -50,9 +53,6 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		this.indexes = indexes;
 		this.query = query;
 		this.amount = amount;
-		this.countRequests = new ArrayList<CountRequest>();
-		this.drillDowns = new ArrayList<LMFacet>();
-		this.fieldSorts = new ArrayList<FieldSort>();
 	}
 	
 	public String getQuery() {
@@ -110,6 +110,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	}
 	
 	public Query addDrillDown(String label, String... path) {
+		if (drillDowns.isEmpty()) {
+			this.drillDowns = new ArrayList<LMFacet>();
+		}
+		
 		drillDowns.add(LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build());
 		return this;
 	}
@@ -118,9 +122,29 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return drillDowns;
 	}
 	
+	public List<String> getQueryFields() {
+		return queryFields;
+	}
+
+	public void setQueryFields(List<String> queryFields) {
+		this.queryFields = queryFields;
+	}
+	
+	public Query addQueryField(String queryField) {
+		if (queryFields.isEmpty()) {
+			this.queryFields = new ArrayList<String>();
+		}
+		
+		queryFields.add(queryField);
+		return this;
+	}
+
 	public Query addCountRequest(String label, String... path) {
 		LMFacet facet = LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build();
 		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).build();
+		if (countRequests.isEmpty()) {
+			this.countRequests = new ArrayList<CountRequest>();
+		}
 		countRequests.add(countRequest);
 		return this;
 	}
@@ -128,6 +152,9 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	public Query addCountRequest(int maxFacets, String label, String... path) {
 		LMFacet facet = LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build();
 		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).setMaxFacets(maxFacets).build();
+		if (countRequests.isEmpty()) {
+			this.countRequests = new ArrayList<CountRequest>();
+		}
 		countRequests.add(countRequest);
 		return this;
 	}
@@ -137,10 +164,16 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	}
 	
 	public void addFieldSort(String sort) {
+		if (fieldSorts.isEmpty()) {
+			this.fieldSorts = new ArrayList<FieldSort>();
+		}
 		fieldSorts.add(FieldSort.newBuilder().setSortField(sort).setDirection(Direction.ASCENDING).build());
 	}
 	
 	public void addFieldSort(String sort, Direction direction) {
+		if (fieldSorts.isEmpty()) {
+			this.fieldSorts = new ArrayList<FieldSort>();
+		}
 		fieldSorts.add(FieldSort.newBuilder().setSortField(sort).setDirection(direction).build());
 	}
 	
@@ -173,6 +206,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 			
 			requestBuilder.setFacetRequest(facetRequestBuilder.build());
 			
+		}
+
+		if (!queryFields.isEmpty()) {
+			requestBuilder.addAllQueryFields(queryFields);
 		}
 		
 		SortRequest.Builder sortRequestBuilder = SortRequest.newBuilder();

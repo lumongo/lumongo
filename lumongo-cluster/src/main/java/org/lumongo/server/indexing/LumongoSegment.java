@@ -91,9 +91,9 @@ import org.lumongo.server.config.IndexConfig;
 import org.lumongo.storage.rawfiles.MongoDocumentStorage;
 import org.lumongo.util.LockHandler;
 
-public class Segment {
+public class LumongoSegment {
 	
-	private final static Logger log = Logger.getLogger(Segment.class);
+	private final static Logger log = Logger.getLogger(LumongoSegment.class);
 	
 	private final int segmentNumber;
 	
@@ -128,7 +128,7 @@ public class Segment {
 	
 	private int segmentQueryCacheMaxAmount;
 	
-	public Segment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter,
+	public LumongoSegment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter,
 					IndexConfig indexConfig, FacetsConfig facetsConfig, Analyzer analyzer) throws IOException {
 		
 		this.lockHandler = new LockHandler();

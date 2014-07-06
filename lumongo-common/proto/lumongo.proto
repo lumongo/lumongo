@@ -348,6 +348,7 @@ message QueryRequest {
 	optional bool realTime = 6 [default = true];
 	optional FacetRequest facetRequest = 7;
 	optional SortRequest sortRequest = 8;
+	repeated string queryFields = 9;
 }
 
 

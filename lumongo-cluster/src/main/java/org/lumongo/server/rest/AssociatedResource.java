@@ -15,15 +15,15 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
 import org.lumongo.LumongoConstants;
-import org.lumongo.server.indexing.IndexManager;
+import org.lumongo.server.indexing.LumongoIndexManager;
 import org.lumongo.util.StreamHelper;
 
 @Path(LumongoConstants.ASSOCIATED_DOCUMENTS_URL)
 public class AssociatedResource {
 	
-	private IndexManager indexManager;
+	private LumongoIndexManager indexManager;
 	
-	public AssociatedResource(IndexManager indexManager) {
+	public AssociatedResource(LumongoIndexManager indexManager) {
 		this.indexManager = indexManager;
 	}
 	
