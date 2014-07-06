@@ -27,7 +27,7 @@ import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
-import org.lumongo.server.indexing.Index;
+import org.lumongo.server.indexing.LumongoIndex;
 
 public class QueryCombiner {
 	
@@ -35,7 +35,7 @@ public class QueryCombiner {
 	
 	private final static Logger log = Logger.getLogger(QueryCombiner.class);
 	
-	private final Map<String, Index> usedIndexMap;
+	private final Map<String, LumongoIndex> usedIndexMap;
 	private final List<InternalQueryResponse> responses;
 	
 	private final Map<String, Map<Integer, SegmentResponse>> indexToSegmentResponseMap;
@@ -52,7 +52,7 @@ public class QueryCombiner {
 	
 	private String query;
 	
-	public QueryCombiner(Map<String, Index> usedIndexMap, QueryRequest request, List<InternalQueryResponse> responses) {
+	public QueryCombiner(Map<String, LumongoIndex> usedIndexMap, QueryRequest request, List<InternalQueryResponse> responses) {
 		this.usedIndexMap = usedIndexMap;
 		this.responses = responses;
 		this.amount = request.getAmount();
@@ -210,7 +210,7 @@ public class QueryCombiner {
 				
 				LMAnalyzer lmAnalyzer = null;
 				for (String indexName : usedIndexMap.keySet()) {
-					Index index = usedIndexMap.get(indexName);
+					LumongoIndex index = usedIndexMap.get(indexName);
 					if (lmAnalyzer == null) {
 						lmAnalyzer = index.getLMAnalyzer(sortField);
 					}

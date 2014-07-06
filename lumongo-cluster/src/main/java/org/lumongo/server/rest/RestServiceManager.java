@@ -11,7 +11,7 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.lumongo.server.config.LocalNodeConfig;
-import org.lumongo.server.indexing.IndexManager;
+import org.lumongo.server.indexing.LumongoIndexManager;
 
 public class RestServiceManager {
 	
@@ -19,11 +19,11 @@ public class RestServiceManager {
 	
 	private final int restPort;
 	
-	private IndexManager indexManager;
+	private LumongoIndexManager indexManager;
 	
 	private HttpServer server;
 	
-	public RestServiceManager(LocalNodeConfig localNodeConfig, IndexManager indexManager) {
+	public RestServiceManager(LocalNodeConfig localNodeConfig, LumongoIndexManager indexManager) {
 		this.indexManager = indexManager;
 		this.restPort = localNodeConfig.getRestPort();
 		

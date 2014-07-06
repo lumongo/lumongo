@@ -28,7 +28,7 @@ import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
-import org.lumongo.server.indexing.IndexManager;
+import org.lumongo.server.indexing.LumongoIndexManager;
 
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
@@ -42,13 +42,13 @@ public class InternalServiceHandler extends InternalService {
 	
 	private final static Logger log = Logger.getLogger(InternalServiceHandler.class);
 	
-	private final IndexManager indexManager;
+	private final LumongoIndexManager indexManager;
 	private final ClusterConfig clusterConfig;
 	private final LocalNodeConfig localNodeConfig;
 	
 	private ServerBootstrap bootstrap;
 	
-	public InternalServiceHandler(ClusterConfig clusterConfig, LocalNodeConfig localNodeConfig, IndexManager indexManager) {
+	public InternalServiceHandler(ClusterConfig clusterConfig, LocalNodeConfig localNodeConfig, LumongoIndexManager indexManager) {
 		this.clusterConfig = clusterConfig;
 		this.localNodeConfig = localNodeConfig;
 		this.indexManager = indexManager;

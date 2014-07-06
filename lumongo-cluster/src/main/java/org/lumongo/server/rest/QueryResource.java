@@ -15,7 +15,7 @@ import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
-import org.lumongo.server.indexing.IndexManager;
+import org.lumongo.server.indexing.LumongoIndexManager;
 
 import com.cedarsoftware.util.io.JsonWriter;
 import com.googlecode.protobuf.format.JsonFormat;
@@ -23,9 +23,9 @@ import com.googlecode.protobuf.format.JsonFormat;
 @Path(LumongoConstants.QUERY_URL)
 public class QueryResource {
 	
-	private IndexManager indexManager;
+	private LumongoIndexManager indexManager;
 	
-	public QueryResource(IndexManager indexManager) {
+	public QueryResource(LumongoIndexManager indexManager) {
 		this.indexManager = indexManager;
 		
 	}

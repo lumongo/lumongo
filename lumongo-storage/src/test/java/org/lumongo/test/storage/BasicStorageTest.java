@@ -25,7 +25,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.LockObtainFailedException;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -49,15 +48,7 @@ public class BasicStorageTest {
 		MongoClient mongo = TestHelper.getMongo();
 		mongo.dropDatabase(TestHelper.TEST_DATABASE_NAME);
 		directory = new DistributedDirectory(new MongoDirectory(mongo, TestHelper.TEST_DATABASE_NAME, STORAGE_TEST_INDEX, false, false));
-	}
-	
-	@AfterClass
-	public static void closeDirectory() throws Exception {
-		directory.close();
-	}
-	
-	@Test
-	public void test1Add() throws CorruptIndexException, LockObtainFailedException, IOException {
+		
 		StandardAnalyzer analyzer = new StandardAnalyzer(LuceneConstants.VERSION);
 		IndexWriterConfig config = new IndexWriterConfig(LuceneConstants.VERSION, analyzer);
 		
@@ -72,6 +63,11 @@ public class BasicStorageTest {
 		
 		w.commit();
 		w.close();
+	}
+	
+	@AfterClass
+	public static void closeDirectory() throws Exception {
+		directory.close();
 	}
 	
 	private static void addDoc(IndexWriter w, String title, String uid) throws IOException {
@@ -162,8 +158,8 @@ public class BasicStorageTest {
 		start = System.currentTimeMillis();
 		
 		List<String> ids = new ArrayList<String>();
-		for (int i = 0; i < hits.length; ++i) {
-			int docId = hits[i].doc;
+		for (ScoreDoc hit : hits) {
+			int docId = hit.doc;
 			Document d = searcher.doc(docId);
 			ids.add(d.get("uid"));
 		}

@@ -12,7 +12,7 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.Nodes.HazelcastNode;
 import org.lumongo.server.exceptions.IndexDoesNotExist;
-import org.lumongo.server.indexing.IndexManager;
+import org.lumongo.server.indexing.LumongoIndexManager;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
@@ -33,7 +33,7 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 	private final static Logger log = Logger.getLogger(HazelcastManager.class);
 	
 	private LocalNodeConfig localNodeConfig;
-	private IndexManager indexManager;
+	private LumongoIndexManager indexManager;
 	
 	private final ReadWriteLock initLock;
 	
@@ -42,7 +42,7 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 	
 	private final static Map<Integer, HazelcastManager> portToHazelcastManagerMap = new HashMap<Integer, HazelcastManager>();
 	
-	public static HazelcastManager createHazelcastManager(LocalNodeConfig localNodeConfig, IndexManager indexManager, Set<HazelcastNode> nodes,
+	public static HazelcastManager createHazelcastManager(LocalNodeConfig localNodeConfig, LumongoIndexManager indexManager, Set<HazelcastNode> nodes,
 					String hazelcastName) throws Exception {
 		HazelcastManager hazelcastManager = new HazelcastManager(localNodeConfig, indexManager);
 		portToHazelcastManagerMap.put(hazelcastManager.getHazelcastPort(), hazelcastManager);
@@ -55,7 +55,7 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		return portToHazelcastManagerMap.get(port);
 	}
 	
-	private HazelcastManager(LocalNodeConfig localNodeConfig, IndexManager indexManager) {
+	private HazelcastManager(LocalNodeConfig localNodeConfig, LumongoIndexManager indexManager) {
 		this.initLock = new ReentrantReadWriteLock(true);
 		initLock.writeLock().lock();
 		this.indexManager = indexManager;

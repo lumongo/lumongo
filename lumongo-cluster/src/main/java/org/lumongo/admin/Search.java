@@ -42,6 +42,8 @@ public class Search {
 		OptionSpec<String> drillDownArg = parser.accepts(AdminConstants.DRILL_DOWN).withRequiredArg().describedAs("Drill down on");
 		OptionSpec<String> sortArg = parser.accepts(AdminConstants.SORT).withRequiredArg().describedAs("Field to sort on");
 		OptionSpec<String> sortDescArg = parser.accepts(AdminConstants.SORT_DESC).withRequiredArg().describedAs("Field to sort on (descending)");
+		OptionSpec<String> queryFieldArg = parser.accepts(AdminConstants.QUERY_FIELD).withRequiredArg()
+						.describedAs("Specific field(s) for query to search if none specified in query instead of index default");
 		OptionSpec<Void> fetchArg = parser.accepts(AdminConstants.FETCH);
 		
 		try {
@@ -57,6 +59,7 @@ public class Search {
 			List<String> drillDowns = options.valuesOf(drillDownArg);
 			List<String> sortList = options.valuesOf(sortArg);
 			List<String> sortDescList = options.valuesOf(sortDescArg);
+			List<String> queryFieldsList = options.valuesOf(queryFieldArg);
 			boolean fetch = options.has(fetchArg);
 			
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
@@ -82,6 +85,10 @@ public class Search {
 				
 				for (String sortDesc : sortDescList) {
 					q.addFieldSort(sortDesc, Direction.DESCENDING);
+				}
+				
+				for (String queryField : queryFieldsList) {
+					q.addQueryField(queryField);
 				}
 				
 				q.setRealTime(realTime);

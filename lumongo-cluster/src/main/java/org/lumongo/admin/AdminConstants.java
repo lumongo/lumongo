@@ -27,5 +27,6 @@ public class AdminConstants {
 	public static final String SORT = "sort";
 	public static final String SORT_DESC = "sortDesc";
 	public static final String FETCH = "fetch";
+	public static final String QUERY_FIELD = "queryField";
 	
 }

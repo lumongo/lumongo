@@ -10,7 +10,7 @@ import org.lumongo.server.config.Nodes;
 import org.lumongo.server.connection.ExternalServiceHandler;
 import org.lumongo.server.connection.InternalServiceHandler;
 import org.lumongo.server.hazelcast.HazelcastManager;
-import org.lumongo.server.indexing.IndexManager;
+import org.lumongo.server.indexing.LumongoIndexManager;
 import org.lumongo.server.rest.RestServiceManager;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.ClusterHelper;
@@ -32,7 +32,7 @@ public class LuceneNode {
 
 	private final ExternalServiceHandler externalServiceHandler;
 	private final InternalServiceHandler internalServiceHandler;
-	private final IndexManager indexManager;
+	private final LumongoIndexManager indexManager;
 	private final HazelcastManager hazelcastManager;
 
 	private final RestServiceManager restServiceManager;
@@ -47,7 +47,7 @@ public class LuceneNode {
 
 		MongoDirectory.setMaxIndexBlocks(clusterConfig.getMaxIndexBlocks());
 
-		this.indexManager = new IndexManager(mongoConfig, clusterConfig);
+		this.indexManager = new LumongoIndexManager(mongoConfig, clusterConfig);
 
 		this.externalServiceHandler = new ExternalServiceHandler(clusterConfig, localNodeConfig, indexManager);
 		this.internalServiceHandler = new InternalServiceHandler(clusterConfig, localNodeConfig, indexManager);
