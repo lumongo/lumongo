@@ -38,6 +38,8 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private List<LMFacet> drillDowns = Collections.emptyList();
 	private List<FieldSort> fieldSorts = Collections.emptyList();
 	private List<String> queryFields = Collections.emptyList();
+	private List<String> filterQueries = Collections.emptyList();
+	
 	
 	private Boolean drillSideways;
 	
@@ -138,6 +140,23 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		queryFields.add(queryField);
 		return this;
 	}
+	
+	public List<String> getFilterQueries() {
+		return filterQueries;
+	}
+
+	public void setFilterQueries(List<String> filterQueries) {
+		this.filterQueries = filterQueries;
+	}
+	
+	public Query addFilterQuery(String filterQuery) {
+		if (filterQueries.isEmpty()) {
+			this.filterQueries = new ArrayList<String>();
+		}
+		
+		filterQueries.add(filterQuery);
+		return this;
+	}
 
 	public Query addCountRequest(String label, String... path) {
 		LMFacet facet = LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build();
@@ -210,6 +229,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 		if (!queryFields.isEmpty()) {
 			requestBuilder.addAllQueryFields(queryFields);
+		}
+		
+		if (!filterQueries.isEmpty()) {
+			requestBuilder.addAllFilterQuery(filterQueries);
 		}
 		
 		SortRequest.Builder sortRequestBuilder = SortRequest.newBuilder();

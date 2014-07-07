@@ -349,6 +349,7 @@ message QueryRequest {
 	optional FacetRequest facetRequest = 7;
 	optional SortRequest sortRequest = 8;
 	repeated string queryFields = 9;
+	repeated string filterQuery = 10;
 }
 
 

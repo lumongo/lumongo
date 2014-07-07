@@ -44,6 +44,9 @@ public class Search {
 		OptionSpec<String> sortDescArg = parser.accepts(AdminConstants.SORT_DESC).withRequiredArg().describedAs("Field to sort on (descending)");
 		OptionSpec<String> queryFieldArg = parser.accepts(AdminConstants.QUERY_FIELD).withRequiredArg()
 						.describedAs("Specific field(s) for query to search if none specified in query instead of index default");
+		OptionSpec<String> filterQueryArg = parser.accepts(AdminConstants.QUERY_FIELD).withRequiredArg()
+				.describedAs("Specific field(s) for query to search if none specified in query instead of index default");
+
 		OptionSpec<Void> fetchArg = parser.accepts(AdminConstants.FETCH);
 		
 		try {
@@ -60,6 +63,8 @@ public class Search {
 			List<String> sortList = options.valuesOf(sortArg);
 			List<String> sortDescList = options.valuesOf(sortDescArg);
 			List<String> queryFieldsList = options.valuesOf(queryFieldArg);
+			List<String> filterQueryList = options.valuesOf(filterQueryArg);
+			
 			boolean fetch = options.has(fetchArg);
 			
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
@@ -89,6 +94,11 @@ public class Search {
 				
 				for (String queryField : queryFieldsList) {
 					q.addQueryField(queryField);
+				}
+				
+				
+				for (String filterQuery : filterQueryList) {
+					q.addFilterQuery(filterQuery);
 				}
 				
 				q.setRealTime(realTime);
