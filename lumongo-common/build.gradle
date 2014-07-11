@@ -12,6 +12,7 @@ dependencies {
     compile 'log4j:log4j:1.2.17'
     compile 'org.slf4j:slf4j-log4j12:1.7.2'
     compile 'commons-pool:commons-pool:1.6'
+    compile 'com.jcraft:jzlib:1.1.3'
 }
 
 
