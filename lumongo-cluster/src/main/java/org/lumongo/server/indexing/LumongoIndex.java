@@ -66,6 +66,7 @@ import org.lumongo.server.exceptions.InvalidIndexConfig;
 import org.lumongo.server.exceptions.SegmentDoesNotExist;
 import org.lumongo.server.hazelcast.HazelcastManager;
 import org.lumongo.server.hazelcast.UpdateSegmentsTask;
+import org.lumongo.server.searching.QueryWithFilters;
 import org.lumongo.storage.constants.MongoConstants;
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
@@ -777,7 +778,7 @@ public class LumongoIndex {
 		}
 	}
 	
-	public IndexSegmentResponse queryInternal(final Query query, final QueryRequest queryRequest) throws Exception {
+	public IndexSegmentResponse queryInternal(final QueryWithFilters queryWithFilters, final QueryRequest queryRequest) throws Exception {
 		indexLock.readLock().lock();
 		try {
 			int amount = queryRequest.getAmount();
@@ -850,8 +851,8 @@ public class LumongoIndex {
 					
 					@Override
 					public SegmentResponse call() throws Exception {
-						return segment.querySegment(query, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
-										queryRequest.getSortRequest(), queryRequest.getRealTime(), new QueryCacheKey(queryRequest));
+						return segment.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest
+										.getFacetRequest(), queryRequest.getSortRequest(), queryRequest.getRealTime(), new QueryCacheKey(queryRequest));
 					}
 					
 				});
