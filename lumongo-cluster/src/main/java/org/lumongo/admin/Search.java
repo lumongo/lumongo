@@ -1,5 +1,6 @@
 package org.lumongo.admin;
 
+import java.text.DecimalFormat;
 import java.util.List;
 
 import joptsimple.OptionException;
@@ -27,6 +28,8 @@ public class Search {
 	
 	public static void main(String[] args) throws Exception {
 		
+		DecimalFormat df = new DecimalFormat("#.00");
+		
 		LogUtil.loadLogConfig();
 		
 		OptionParser parser = new OptionParser();
@@ -44,9 +47,8 @@ public class Search {
 		OptionSpec<String> sortDescArg = parser.accepts(AdminConstants.SORT_DESC).withRequiredArg().describedAs("Field to sort on (descending)");
 		OptionSpec<String> queryFieldArg = parser.accepts(AdminConstants.QUERY_FIELD).withRequiredArg()
 						.describedAs("Specific field(s) for query to search if none specified in query instead of index default");
-		OptionSpec<String> filterQueryArg = parser.accepts(AdminConstants.QUERY_FIELD).withRequiredArg()
-				.describedAs("Specific field(s) for query to search if none specified in query instead of index default");
-
+		OptionSpec<String> filterQueryArg = parser.accepts(AdminConstants.FILTER_QUERY).withRequiredArg().describedAs("Filter query");
+		
 		OptionSpec<Void> fetchArg = parser.accepts(AdminConstants.FETCH);
 		
 		try {
@@ -96,7 +98,6 @@ public class Search {
 					q.addQueryField(queryField);
 				}
 				
-				
 				for (String filterQuery : filterQueryList) {
 					q.addFilterQuery(filterQuery);
 				}
@@ -128,7 +129,7 @@ public class Search {
 				for (ScoredResult sr : srList) {
 					System.out.print(sr.getUniqueId());
 					System.out.print("\t");
-					System.out.print(sr.getScore());
+					System.out.print(df.format(sr.getScore()));
 					System.out.print("\t");
 					System.out.print(sr.getIndexName());
 					System.out.print("\t");

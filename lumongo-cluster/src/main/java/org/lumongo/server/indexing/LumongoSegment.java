@@ -51,10 +51,14 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.index.TermsEnum.SeekStatus;
+import org.apache.lucene.queries.ChainedFilter;
 import org.apache.lucene.search.FieldDoc;
+import org.apache.lucene.search.Filter;
+import org.apache.lucene.search.FilteredQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MultiCollector;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
@@ -88,6 +92,7 @@ import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
 import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.server.config.IndexConfig;
+import org.lumongo.server.searching.QueryWithFilters;
 import org.lumongo.storage.rawfiles.MongoDocumentStorage;
 import org.lumongo.util.LockHandler;
 
@@ -128,8 +133,8 @@ public class LumongoSegment {
 	
 	private int segmentQueryCacheMaxAmount;
 	
-	public LumongoSegment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter,
-					IndexConfig indexConfig, FacetsConfig facetsConfig, Analyzer analyzer) throws IOException {
+	public LumongoSegment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter,
+					LumongoDirectoryTaxonomyWriter taxonomyWriter, IndexConfig indexConfig, FacetsConfig facetsConfig, Analyzer analyzer) throws IOException {
 		
 		this.lockHandler = new LockHandler();
 		
@@ -190,8 +195,8 @@ public class LumongoSegment {
 		return segmentNumber;
 	}
 	
-	public SegmentResponse querySegment(Query q, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest, boolean realTime,
-					QueryCacheKey queryCacheKey) throws Exception {
+	public SegmentResponse querySegment(QueryWithFilters queryWithFilters, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest,
+					boolean realTime, QueryCacheKey queryCacheKey) throws Exception {
 		
 		IndexReader ir = null;
 		
@@ -208,9 +213,20 @@ public class LumongoSegment {
 				
 			}
 			
-			// ir = IndexReader.open(indexWriter,
-			// indexConfig.getApplyUncommitedDeletes());
-			// ir = IndexReader.open(indexWriter.getDirectory());
+			Query q = queryWithFilters.getQuery();
+			
+			if (!queryWithFilters.getFilterQueries().isEmpty()) {
+				Filter[] filters = new Filter[queryWithFilters.getFilterQueries().size()];
+				int i = 0;
+				for (Query filterQuery : queryWithFilters.getFilterQueries()) {
+					filters[i] = new QueryWrapperFilter(filterQuery);
+					i++;
+				}
+				
+				ChainedFilter cf = new ChainedFilter(filters, ChainedFilter.AND);
+				q = new FilteredQuery(q, cf);
+			}
+			
 			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
 			
 			IndexSearcher is = new IndexSearcher(ir);
@@ -266,9 +282,7 @@ public class LumongoSegment {
 				
 				taxonomyReader = taxonomyReader.doOpenIfChanged(realTime);
 				
-				int maxFacets = Integer.MAX_VALUE; // have to fetch all facets
-				// to merge between segments
-				// correctly
+				int maxFacets = Integer.MAX_VALUE; // have to fetch all facets to merge between segments correctly
 				
 				if (facetRequest.getDrillSideways()) {
 					DrillSideways ds = new DrillSideways(is, facetsConfig, taxonomyReader);
