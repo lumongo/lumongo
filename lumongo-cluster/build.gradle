@@ -11,7 +11,7 @@ dependencies {
     compile 'org.apache.lucene:lucene-facet:4.9.0'
     compile 'org.apache.lucene:lucene-queryparser:4.9.0'
     compile 'org.apache.lucene:lucene-analyzers-common:4.9.0'
-	compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.9'
+	compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.10.1'	
 	compile 'com.cedarsoftware:json-io:2.6.0'
 	compile 'com.googlecode.protobuf-java-format:protobuf-java-format:1.2'	
 }
