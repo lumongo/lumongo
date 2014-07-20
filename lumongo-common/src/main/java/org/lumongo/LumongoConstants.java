@@ -23,7 +23,9 @@ public class LumongoConstants {
 	public static final String ASSOCIATED_DOCUMENTS_URL = "/associatedDocs";
 	public static final String QUERY_URL = "query";
 	
-	public static final String QUERY = "query";
+	public static final String QUERY = "q";
+	public static final String QUERY_FIELD = "qf";
+	public static final String FILTER_QUERY = "fq";
 	public static final String AMOUNT = "amount";
 	public static final String UNIQUE_ID = "uniqueId";
 	public static final String FILE_NAME = "fileName";
