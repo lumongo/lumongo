@@ -13,7 +13,6 @@ import org.apache.lucene.facet.taxonomy.ParallelTaxonomyArrays;
 import org.apache.lucene.facet.taxonomy.TaxonomyReader;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.DocsEnum;
-import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.search.DocIdSetIterator;
@@ -51,7 +50,6 @@ import org.apache.lucene.util.IOUtils;
  *
  * modifed for lumongo to allow a realtime reader to be used without forcing a flush
  *
- * @lucene.experimental
  */
 public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	
@@ -60,7 +58,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	private static final int DEFAULT_CACHE_VALUE = 4000;
 	
 	private final LumongoDirectoryTaxonomyWriter taxoWriter;
-	private final long taxoEpoch; // used in doOpenIfChanged 
+	private final long taxoEpoch; // used in doOpenIfChanged
 	private final DirectoryReader indexReader;
 	
 	// TODO: test DoubleBarrelLRUCache and consider using it instead
@@ -88,7 +86,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	}
 	
 	/**
-	 * Opens a {@link NewDirectoryTaxonomyReader} over the given
+	 * Opens a {@link LumongoDirectoryTaxonomyReader} over the given
 	 * {@link DirectoryTaxonomyWriter} (for NRT).
 	 *
 	 * @param taxoWriter
@@ -126,11 +124,11 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	}
 	
 	/**
-	 * Implements the opening of a new {@link NewDirectoryTaxonomyReader} instance if
+	 * Implements the opening of a new {@link LumongoDirectoryTaxonomyReader} instance if
 	 * the taxonomy has changed.
 	 *
 	 * <p>
-	 * <b>NOTE:</b> the returned {@link NewDirectoryTaxonomyReader} shares the
+	 * <b>NOTE:</b> the returned {@link LumongoDirectoryTaxonomyReader} shares the
 	 * ordinal and category caches with this reader. This is not expected to cause
 	 * any issues, unless the two instances continue to live. The reader
 	 * guarantees that the two instances cannot affect each other in terms of
@@ -173,14 +171,22 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		}
 	}
 	
-	/** Open the {@link DirectoryReader} from this {@link
-	 *  Directory}. */
+	/**
+	 * 	Open the {@link DirectoryReader} from this  {@link Directory}
+	 * @param directory
+	 * @return
+	 * @throws IOException
+	 */
 	protected DirectoryReader openIndexReader(Directory directory) throws IOException {
 		return DirectoryReader.open(directory);
 	}
 	
-	/** Open the {@link DirectoryReader} from this {@link
-	 *  IndexWriter}. */
+	/**
+	 * 	Open the {@link DirectoryReader} from this {@link LumongoIndexWriter}
+	 * @param writer
+	 * @return
+	 * @throws IOException
+	 */
 	protected DirectoryReader openIndexReader(LumongoIndexWriter writer) throws IOException {
 		return writer.getReader(false, true);
 	}
@@ -240,7 +246,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		// value from disk, and then also put it in the cache:
 		int ret = TaxonomyReader.INVALID_ORDINAL;
 		DocsEnum docs = MultiFields.getTermDocsEnum(indexReader, null, Consts.FULL, new BytesRef(FacetsConfig.pathToString(cp.components, cp.length)), 0);
-		if (docs != null && docs.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+		if ((docs != null) && (docs.nextDoc() != DocIdSetIterator.NO_MORE_DOCS)) {
 			ret = docs.docID();
 			
 			// we only store the fact that a category exists, not its inexistence.
@@ -264,7 +270,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		// doOpenIfChanged, we need to ensure that the ordinal is one that this DTR
 		// instance recognizes. Therefore we do this check up front, before we hit
 		// the cache.
-		if (ordinal < 0 || ordinal >= indexReader.maxDoc()) {
+		if ((ordinal < 0) || (ordinal >= indexReader.maxDoc())) {
 			return null;
 		}
 		
@@ -312,7 +318,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		}
 	}
 	
-	/** Returns ordinal -> label mapping, up to the provided
+	/** Returns ordinal label mapping, up to the provided
 	 *  max ordinal or number of ordinals, whichever is
 	 *  smaller. */
 	public String toString(int max) {

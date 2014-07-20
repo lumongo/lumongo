@@ -1,6 +1,30 @@
 apply from: '../maven.gradle'
+apply from: '../jaxb.gradle'
 
 description 'Lumongo Examples'
+
+
+task generateJaxbMedline(type: project.ext.generateJaxbType) {
+	jaxbPackage = 'org.lumongo.example.medline.schema'
+	schema = file('src/main/schemas/nlmmedlinecitationset_130101.dtd')
+	dtd = true
+	outputDir = file("${buildDir}/generated-sources/")
+}
+
+task generateJaxbWikipedia(type: project.ext.generateJaxbType) {
+	jaxbPackage = 'org.lumongo.example.wikipedia.schema'
+	schema = file('src/main/schemas/mediawiki-export-0.8.xsd')
+	dtd = false	
+	outputDir = file("${buildDir}/generated-sources/")
+}
+
+compileJava.dependsOn generateJaxbMedline
+compileJava.dependsOn generateJaxbWikipedia
+eclipseProject.dependsOn generateJaxbMedline
+eclipseProject.dependsOn generateJaxbWikipedia
+sourceSets { main { java { srcDir generateJaxbMedline.outputDir } } }
+sourceSets { main { java { srcDir generateJaxbWikipedia.outputDir } } }
+
 
 dependencies {
 	compile project(':lumongo-client')
@@ -23,4 +47,6 @@ dependencies {
 	compile 'org.twitter4j:twitter4j-core:[3.0,)'
 	compile 'org.twitter4j:twitter4j-stream:[3.0,)'
 }
+
+
 
