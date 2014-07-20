@@ -228,7 +228,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		}
 
 		if (!queryFields.isEmpty()) {
-			requestBuilder.addAllQueryFields(queryFields);
+			requestBuilder.addAllQueryField(queryFields);
 		}
 		
 		if (!filterQueries.isEmpty()) {

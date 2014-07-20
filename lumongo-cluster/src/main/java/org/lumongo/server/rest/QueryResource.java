@@ -48,7 +48,7 @@ public class QueryResource {
 		
 		if (queryFields != null) {
 			for (String queryField : queryFields) {
-				qrBuilder.addQueryFields(queryField);
+				qrBuilder.addQueryField(queryField);
 			}
 		}
 		
