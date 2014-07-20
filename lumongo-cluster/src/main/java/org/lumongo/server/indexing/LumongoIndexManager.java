@@ -620,7 +620,7 @@ public class LumongoIndexManager {
 				if (i == null) {
 					throw new IndexDoesNotExist(indexName);
 				}
-				Query query = i.getQuery(queryString, queryRequest.getQueryFieldsList());
+				Query query = i.getQuery(queryString, queryRequest.getQueryFieldList());
 				
 				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 				
