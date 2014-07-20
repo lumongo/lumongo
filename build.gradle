@@ -49,6 +49,7 @@ subprojects {
 
 	javadoc {
 		options.addStringOption("sourcepath", "src/main/java")
+		exclude '**/schema/**'
 	}
 	
 	sourceSets {

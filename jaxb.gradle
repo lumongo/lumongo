@@ -1,0 +1,63 @@
+apply plugin: 'java'
+
+import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
+
+final String JAXB_CONFIGURATION_NAME = "jaxb"
+
+project.ext { jaxbVersion = '2.2.7' }
+
+ConfigurationContainer configurations = project.configurations
+configurations.create(JAXB_CONFIGURATION_NAME).
+		setVisible(false).
+		extendsFrom(configurations.getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME)).
+		setDescription("JAXB Compile")
+
+ExternalModuleDependency dependency
+
+dependency = new DefaultExternalModuleDependency("com.sun.xml.bind", "jaxb-xjc", project.ext.jaxbVersion)
+dependency.setTransitive(false)
+project.configurations.getByName(JAXB_CONFIGURATION_NAME).dependencies.add(dependency)
+
+dependency = new DefaultExternalModuleDependency("com.sun.xml.bind", "jaxb-core",  project.ext.jaxbVersion)
+dependency.setTransitive(false)
+project.configurations.getByName(JAXB_CONFIGURATION_NAME).dependencies.add(dependency)
+
+
+class GenerateJaxb extends org.gradle.api.internal.ConventionTask {
+
+
+
+	@Input
+	String jaxbPackage
+
+	@InputFile
+	File schema
+
+	@Input
+	Boolean dtd
+
+	@OutputDirectory
+	File outputDir
+
+	@org.gradle.api.tasks.TaskAction
+	void generateJaxb() {
+		println("Generating JAXB: ")
+		println("  jaxbPackage: " + jaxbPackage)
+		println("  schema: " + schema.absolutePath)
+		println("  dtd: " + dtd)
+		println("  outputDir: " + outputDir)
+
+		outputDir.mkdirs()
+
+		ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJC2Task', classpath: project.configurations.jaxb.asPath)
+		
+		ant.xjc(destdir: outputDir, package: jaxbPackage, schema: schema.absolutePath) {
+			if (dtd) {
+				arg(value: '-dtd')
+			}
+		}
+	}
+}
+
+project.ext.generateJaxbType = GenerateJaxb.class
+
