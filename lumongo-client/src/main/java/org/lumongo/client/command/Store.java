@@ -14,6 +14,7 @@ import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.doc.AssociatedBuilder;
+import org.lumongo.doc.IndexedDocBuilder;
 import org.lumongo.doc.ResultDocBuilder;
 
 import com.google.protobuf.RpcController;
@@ -26,79 +27,83 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> implements R
 	private LMDoc indexedDocument;
 	private List<AssociatedDocument> associatedDocuments;
 	private Boolean clearExistingAssociated;
-
+	
 	public Store(String uniqueId, String indexName) {
 		this.uniqueId = uniqueId;
 		this.indexName = indexName;
 		this.associatedDocuments = new ArrayList<AssociatedDocument>();
 	}
-
+	
 	@Override
 	public String getUniqueId() {
 		return uniqueId;
 	}
-
+	
 	@Override
 	public String getIndexName() {
 		return indexName;
 	}
-
+	
 	public Store setUniqueId(String uniqueId) {
 		this.uniqueId = uniqueId;
 		return this;
 	}
-
+	
 	public ResultDocument getResultDocument() {
 		return resultDocument;
 	}
-
+	
 	public Store setResultDocument(ResultDocBuilder resultDocumentBuilder) {
 		resultDocumentBuilder.setUniqueId(uniqueId);
 		resultDocumentBuilder.setIndexName(indexName);
-		this.resultDocument = resultDocumentBuilder.build();
+		this.resultDocument = resultDocumentBuilder.getResultDocument();
 		return this;
 	}
-
+	
 	public Store setIndexedDocument(LMDoc indexedDocument) {
 		this.indexedDocument = indexedDocument;
 		return this;
 	}
 
+	public void setIndexedDocument(IndexedDocBuilder indexedDocBuilder) {
+		this.indexedDocument = indexedDocBuilder.getIndexedDoc();
+	}
+	
 	public LMDoc getIndexedDocument() {
 		return indexedDocument;
 	}
-
+	
 	public Store addAssociatedDocument(AssociatedBuilder associatedBuilder) {
 		associatedBuilder.setDocumentUniqueId(uniqueId);
 		associatedBuilder.setIndexName(indexName);
 		associatedDocuments.add(associatedBuilder.getAssociatedDocument());
 		return this;
 	}
-
+	
 	public List<AssociatedDocument> getAssociatedDocuments() {
 		return associatedDocuments;
 	}
-
+	
 	public Store setAssociatedDocuments(List<AssociatedDocument> associatedDocuments) {
 		this.associatedDocuments = associatedDocuments;
 		return this;
 	}
-
+	
 	public Boolean isClearExistingAssociated() {
 		return clearExistingAssociated;
 	}
-
+	
 	public Store setClearExistingAssociated(Boolean clearExistingAssociated) {
 		this.clearExistingAssociated = clearExistingAssociated;
 		return this;
 	}
-
+	
 	@Override
 	public StoreRequest getRequest() {
 		StoreRequest.Builder storeRequestBuilder = StoreRequest.newBuilder();
 		storeRequestBuilder.setUniqueId(uniqueId);
 		storeRequestBuilder.setIndexName(indexName);
-
+		
 		if (indexedDocument != null) {
 			storeRequestBuilder.setIndexedDocument(indexedDocument);
 		}
@@ -108,24 +113,22 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> implements R
 		if (associatedDocuments != null) {
 			storeRequestBuilder.addAllAssociatedDocument(associatedDocuments);
 		}
-
+		
 		if (clearExistingAssociated != null) {
 			storeRequestBuilder.setClearExistingAssociated(clearExistingAssociated);
 		}
 		return storeRequestBuilder.build();
 	}
-
+	
 	@Override
 	public StoreResult execute(LumongoConnection lumongoConnection) throws ServiceException {
 		ExternalService.BlockingInterface service = lumongoConnection.getService();
-
+		
 		RpcController controller = lumongoConnection.getController();
-
+		
 		StoreResponse storeResponse = service.store(controller, getRequest());
-
+		
 		return new StoreResult(storeResponse);
 	}
-
-
-
+	
 }
