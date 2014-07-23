@@ -79,7 +79,7 @@ public class ResultDocBuilder {
 		return this;
 	}
 
-	public ResultDocument build() {
+	public ResultDocument getResultDocument() {
 		return resultDocumentBuilder.build();
 	}
 }
