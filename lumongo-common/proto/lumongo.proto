@@ -158,7 +158,9 @@ enum LMAnalyzer {
 		NUMERIC_FLOAT = 7;
 		NUMERIC_DOUBLE = 8;
 		DEFAULT = 9;
-
+		STANDARD_FOLDING = 10;
+		STANDARD_NO_STOP = 11;
+		STANDARD_FOLDING_NO_STOP = 12;
 }
 
 message IndexSettings {
