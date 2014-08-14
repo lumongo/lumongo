@@ -782,7 +782,7 @@ public class LumongoIndex {
 		indexLock.readLock().lock();
 		try {
 			int amount = queryRequest.getAmount();
-			if (!queryRequest.getFetchFull()) {
+			if (!queryRequest.getFetchFull() && (amount > 0)) {
 				amount = (int) (((queryRequest.getAmount() / numberOfSegments) + indexConfig.getMinSegmentRequest()) * indexConfig.getRequestFactor());
 			}
 
