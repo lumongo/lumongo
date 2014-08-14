@@ -342,6 +342,11 @@ public class QueryCombiner {
 					}
 				}
 				
+				if (lastForIndex == null) {
+					//this happen what amount from index is zero
+					continue;
+				}
+				
 				double segmentTolerance = usedIndexMap.get(indexName).getSegmentTolerance();
 				
 				int numberOfSegments = usedIndexMap.get(indexName).getNumberOfSegments();
