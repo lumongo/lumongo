@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
@@ -37,10 +39,9 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private List<CountRequest> countRequests = Collections.emptyList();
 	private List<LMFacet> drillDowns = Collections.emptyList();
 	private List<FieldSort> fieldSorts = Collections.emptyList();
-	private List<String> queryFields = Collections.emptyList();
+	private Set<String> queryFields = Collections.emptySet();
 	private List<String> filterQueries = Collections.emptyList();
-	
-	
+
 	private Boolean drillSideways;
 	
 	public Query(String index, String query, int amount) {
@@ -124,20 +125,36 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return drillDowns;
 	}
 	
-	public List<String> getQueryFields() {
+	public Set<String> getQueryFields() {
 		return queryFields;
 	}
-
-	public void setQueryFields(List<String> queryFields) {
-		this.queryFields = queryFields;
+	
+	public void setQueryFields(Collection<String> queryFields) {
+		this.queryFields = new HashSet<String>(queryFields);
+	}
+	
+	public void setQueryFields(String... queryFields) {
+		this.queryFields = new HashSet<String>(Arrays.asList(queryFields));
+		
 	}
 	
 	public Query addQueryField(String queryField) {
 		if (queryFields.isEmpty()) {
-			this.queryFields = new ArrayList<String>();
+			this.queryFields = new HashSet<String>();
 		}
 		
 		queryFields.add(queryField);
+		return this;
+	}
+	
+	public Query addQueryField(String... queryFields) {
+		if (this.queryFields.isEmpty()) {
+			this.queryFields = new HashSet<String>();
+		}
+		
+		for (String queryField : queryFields) {
+			this.queryFields.add(queryField);
+		}
 		return this;
 	}
 	
