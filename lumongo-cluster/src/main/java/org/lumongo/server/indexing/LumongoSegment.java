@@ -13,6 +13,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
@@ -658,6 +659,16 @@ public class LumongoSegment {
 				startTerm = request.getStartingTerm();
 			}
 			
+			Pattern termFilter = null;
+			if (request.hasTermFilter()) {
+				termFilter = Pattern.compile(request.getTermFilter());
+			}
+			
+			Pattern termMatch = null;
+			if (request.hasTermMatch()) {
+				termMatch = Pattern.compile(request.getTermMatch());
+			}
+			
 			BytesRef startTermBytes = new BytesRef(startTerm);
 			
 			SortedMap<String, AtomicLong> termsMap = new TreeMap<String, AtomicLong>();
@@ -676,6 +687,19 @@ public class LumongoSegment {
 						if (!seekStatus.equals(SeekStatus.END)) {
 							text = termsEnum.term();
 							String textStr = text.utf8ToString();
+							
+							if (termFilter != null) {
+								if (termFilter.matcher(textStr).matches()) {
+									continue;
+								}
+							}
+							
+							if (termMatch != null) {
+								if (!termMatch.matcher(textStr).matches()) {
+									continue;
+								}
+							}
+							
 							if (!termsMap.containsKey(textStr)) {
 								termsMap.put(textStr, new AtomicLong());
 							}
