@@ -29,4 +29,6 @@ public class AdminConstants {
 	public static final String FETCH = "fetch";
 	public static final String QUERY_FIELD = "queryField";
 	public static final String FILTER_QUERY = "filterQuery";
+	public static final String TERM_FILTER = "termFilter";
+	public static final String TERM_MATCH = "termMatch";
 }

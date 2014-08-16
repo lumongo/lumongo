@@ -1,7 +1,6 @@
 option java_generic_services = true;
 option java_package = "org.lumongo.cluster.message";
 
-// services
 service ExternalService {
  	rpc Query (QueryRequest) returns (QueryResponse);
 	rpc Store (StoreRequest) returns (StoreResponse);
@@ -66,6 +65,8 @@ message GetTermsRequest {
 	optional string startingTerm = 4;
 	optional uint32 minDocFreq = 5 [default = 1];
 	optional bool realTime = 6 [default = true];
+	optional string termFilter = 7;
+	optional string termMatch = 8;
 }
 
 message GetTermsResponse {
