@@ -686,32 +686,11 @@ public class LumongoSegment {
 						BytesRef text;
 						if (!seekStatus.equals(SeekStatus.END)) {
 							text = termsEnum.term();
-							String textStr = text.utf8ToString();
 							
-							if (termFilter != null) {
-								if (termFilter.matcher(textStr).matches()) {
-									continue;
-								}
-							}
-							
-							if (termMatch != null) {
-								if (!termMatch.matcher(textStr).matches()) {
-									continue;
-								}
-							}
-							
-							if (!termsMap.containsKey(textStr)) {
-								termsMap.put(textStr, new AtomicLong());
-							}
-							termsMap.get(textStr).addAndGet(termsEnum.docFreq());
+							handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
 							
 							while ((text = termsEnum.next()) != null) {
-								textStr = text.utf8ToString();
-								if (!termsMap.containsKey(textStr)) {
-									termsMap.put(textStr, new AtomicLong());
-								}
-								termsMap.get(textStr).addAndGet(termsEnum.docFreq());
-								
+								handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
 							}
 							
 						}
@@ -742,6 +721,28 @@ public class LumongoSegment {
 				ir.close();
 			}
 		}
+	}
+	
+	private void handleTerm(SortedMap<String, AtomicLong> termsMap, TermsEnum termsEnum, BytesRef text, Pattern termFilter, Pattern termMatch)
+					throws IOException {
+		String textStr = text.utf8ToString();
+		
+		if (termFilter != null) {
+			if (termFilter.matcher(textStr).matches()) {
+				return;
+			}
+		}
+		
+		if (termMatch != null) {
+			if (!termMatch.matcher(textStr).matches()) {
+				return;
+			}
+		}
+		
+		if (!termsMap.containsKey(textStr)) {
+			termsMap.put(textStr, new AtomicLong());
+		}
+		termsMap.get(textStr).addAndGet(termsEnum.docFreq());
 	}
 	
 	public SegmentCountResponse getNumberOfDocs(boolean realTime) throws CorruptIndexException, IOException {
