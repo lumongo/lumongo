@@ -116,23 +116,23 @@ public class BasicStorageTest {
 		int hits = 0;
 		
 		hits = runQuery(indexReader, qp, "java", 10);
-		Assert.assertEquals("Expected 2 hits", hits, 2);
+		Assert.assertEquals("Expected 2 hits", 2, hits);
 		hits = runQuery(indexReader, qp, "perl", 10);
-		Assert.assertEquals("Expected 0 hits", hits, 0);
+		Assert.assertEquals("Expected 0 hits", 0, hits);
 		hits = runQuery(indexReader, qp, "treatment", 10);
-		Assert.assertEquals("Expected 0 hits", hits, 0);
+		Assert.assertEquals("Expected 0 hits", 0, hits);
 		hits = runQuery(indexReader, qp, "long", 10);
-		Assert.assertEquals("Expected 2 hits", hits, 2);
+		Assert.assertEquals("Expected 2 hits", 2, hits);
 		hits = runQuery(indexReader, qp, "MongoDB", 10);
-		Assert.assertEquals("Expected 1 hit", hits, 1);
+		Assert.assertEquals("Expected 1 hit", 1, hits);
 		hits = runQuery(indexReader, qp, "java AND awesome", 10);
-		Assert.assertEquals("Expected 1 hit", hits, 1);
+		Assert.assertEquals("Expected 1 hit", 1, hits);
 		hits = runQuery(indexReader, qp, "testIntField:[1 TO 10]", 10);
-		Assert.assertEquals("Expected 5 hits", hits, 5);
+		Assert.assertEquals("Expected 5 hits", 5, hits);
 		hits = runQuery(indexReader, qp, "testIntField:1", 10);
-		Assert.assertEquals("Expected 0 hits", hits, 0);
+		Assert.assertEquals("Expected 0 hits", 0, hits);
 		hits = runQuery(indexReader, qp, "testIntField:3", 10);
-		Assert.assertEquals("Expected 5 hits", hits, 5);
+		Assert.assertEquals("Expected 5 hits", 5, hits);
 		
 		indexReader.close();
 	}
