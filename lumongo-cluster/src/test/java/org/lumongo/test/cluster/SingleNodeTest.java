@@ -123,11 +123,12 @@ public class SingleNodeTest {
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "issn");
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals("Total record count not " + totalRecords, qr.getTotalHits(), totalRecords);
+			Assert.assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
 			
 			Assert.assertEquals("Total facets not " + issns.length, qr.getFacetCounts("issn").size(), issns.length);
 			for (FacetCount fc : qr.getFacetCounts("issn")) {
-				Assert.assertEquals("Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">", fc.getCount(), COUNT_PER_ISSN);
+				System.out.println(fc.getFacet() + ": " + fc.getCount());
+				Assert.assertEquals("Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">", COUNT_PER_ISSN, fc.getCount());
 			}
 			
 		}
@@ -137,9 +138,9 @@ public class SingleNodeTest {
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "date");
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals("Total record count not " + totalRecords, qr.getTotalHits(), totalRecords);
+			Assert.assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
 			
-			Assert.assertEquals("Total facets not " + 2, qr.getFacetCounts("date").size(), 2);
+			Assert.assertEquals("Total facets not " + 2, 2, qr.getFacetCounts("date").size());
 			for (@SuppressWarnings("unused")
 			FacetCount fc : qr.getFacetCounts("date")) {
 				//System.out.println(fc);
@@ -151,9 +152,9 @@ public class SingleNodeTest {
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "date", "2013");
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals("Total record count not " + totalRecords, qr.getTotalHits(), totalRecords);
+			Assert.assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
 			
-			Assert.assertEquals("Total facets not " + 2, qr.getFacetCounts("date").size(), 2);
+			Assert.assertEquals("Total facets not " + 2, 2, qr.getFacetCounts("date").size());
 			for (@SuppressWarnings("unused")
 			FacetCount fc : qr.getFacetCounts("date")) {
 				//System.out.println(fc);
@@ -166,7 +167,7 @@ public class SingleNodeTest {
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals("Total record count after drill down not " + totalRecords / 10, qr.getTotalHits(), totalRecords / 10);
+			Assert.assertEquals("Total record count after drill down not " + totalRecords / 10, totalRecords / 10, qr.getTotalHits());
 			
 		}
 		
@@ -175,7 +176,7 @@ public class SingleNodeTest {
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals("Total record count after drill down not " + (totalRecords * 2) / 5, qr.getTotalHits(), (totalRecords * 2) / 5);
+			Assert.assertEquals("Total record count after drill down not " + (totalRecords * 2) / 5, (totalRecords * 2) / 5, qr.getTotalHits());
 			
 		}
 		
@@ -184,7 +185,7 @@ public class SingleNodeTest {
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals("Total record count after drill down not " + totalRecords / 2, qr.getTotalHits(), totalRecords / 2);
+			Assert.assertEquals("Total record count after drill down not " + totalRecords / 2, totalRecords / 2, qr.getTotalHits());
 			
 		}
 		
@@ -193,7 +194,7 @@ public class SingleNodeTest {
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals("Total record count after drill down not " + COUNT_PER_ISSN, qr.getTotalHits(), COUNT_PER_ISSN);
+			Assert.assertEquals("Total record count after drill down not " + COUNT_PER_ISSN, COUNT_PER_ISSN, qr.getTotalHits());
 			
 		}
 		
@@ -202,15 +203,15 @@ public class SingleNodeTest {
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals("Total record count after drill down not " + (COUNT_PER_ISSN * 2), qr.getTotalHits(), COUNT_PER_ISSN * 2);
+			Assert.assertEquals("Total record count after drill down not " + (COUNT_PER_ISSN * 2), COUNT_PER_ISSN * 2, qr.getTotalHits());
 		}
 		{
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("issn", "1234-1234").addDrillDown("country", "France");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals("Total record count after drill down not " + (COUNT_PER_ISSN / 2), qr.getTotalHits(), COUNT_PER_ISSN / 2);
-			Assert.assertEquals("Total record count after drill down not " + (COUNT_PER_ISSN / 2), qr.getTotalHits(), COUNT_PER_ISSN / 2);
+			Assert.assertEquals("Total record count after drill down not " + (COUNT_PER_ISSN / 2), COUNT_PER_ISSN / 2, qr.getTotalHits());
+			Assert.assertEquals("Total record count after drill down not " + (COUNT_PER_ISSN / 2), COUNT_PER_ISSN / 2, qr.getTotalHits());
 		}
 		
 		{
@@ -221,12 +222,12 @@ public class SingleNodeTest {
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
-			Assert.assertEquals("Total record count after drill down not " + (COUNT_PER_ISSN / 2), qr.getTotalHits(), COUNT_PER_ISSN / 2);
-			Assert.assertEquals("Number of issn facets not equal " + issns.length, qr.getFacetCounts("issn").size(), issns.length);
+			Assert.assertEquals("Total record count after drill down not " + (COUNT_PER_ISSN / 2), COUNT_PER_ISSN / 2, qr.getTotalHits());
+			Assert.assertEquals("Number of issn facets not equal " + issns.length, issns.length, qr.getFacetCounts("issn").size());
 			
 			q.setDrillSideways(false);
 			qr = lumongoWorkPool.query(q);
-			Assert.assertEquals("Number of issn facets not equal " + 1, qr.getFacetCounts("issn").size(), 1);
+			Assert.assertEquals("Number of issn facets not equal " + 1, 1, qr.getFacetCounts("issn").size());
 		}
 		
 	}
@@ -276,28 +277,28 @@ public class SingleNodeTest {
 			QueryResult qr = null;
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "an:3", 10));
-			Assert.assertEquals("Total hits is not 1", qr.getTotalHits(), 1);
+			Assert.assertEquals("Total hits is not 1", 1, qr.getTotalHits());
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "an:[1 TO 3]", 10));
-			Assert.assertEquals("Total hits is not 3", qr.getTotalHits(), 3);
+			Assert.assertEquals("Total hits is not 3", 3, qr.getTotalHits());
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "an:{1 TO 3}", 10));
-			Assert.assertEquals("Total hits is not 1", qr.getTotalHits(), 1);
+			Assert.assertEquals("Total hits is not 1", 1, qr.getTotalHits());
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "title:distributed", 300));
-			Assert.assertEquals("Total hits is not " + DOCUMENTS_LOADED, qr.getTotalHits(), DOCUMENTS_LOADED);
+			Assert.assertEquals("Total hits is not " + DOCUMENTS_LOADED, DOCUMENTS_LOADED, qr.getTotalHits());
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "title:distributed", 100));
-			Assert.assertEquals("Total hits is not " + DOCUMENTS_LOADED, qr.getTotalHits(), DOCUMENTS_LOADED);
+			Assert.assertEquals("Total hits is not " + DOCUMENTS_LOADED, DOCUMENTS_LOADED, qr.getTotalHits());
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "distributed", 20));
-			Assert.assertEquals("Total hits is not " + DOCUMENTS_LOADED, qr.getTotalHits(), DOCUMENTS_LOADED);
+			Assert.assertEquals("Total hits is not " + DOCUMENTS_LOADED, DOCUMENTS_LOADED, qr.getTotalHits());
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "issn:1234-1234", 20));
-			Assert.assertEquals("Total hits is not " + DOCUMENTS_LOADED, qr.getTotalHits(), DOCUMENTS_LOADED);
+			Assert.assertEquals("Total hits is not " + DOCUMENTS_LOADED, DOCUMENTS_LOADED, qr.getTotalHits());
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "title:cluster", 10));
-			Assert.assertEquals("Total hits is not 0", qr.getTotalHits(), 0);
+			Assert.assertEquals("Total hits is not 0", 0, qr.getTotalHits());
 			
 		}
 		
@@ -336,8 +337,8 @@ public class SingleNodeTest {
 			FetchResult response = lumongoWorkPool.fetch(new FetchDocument(uniqueId, MY_TEST_INDEX));
 			Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
 			DBObject dbObject = response.getDocumentAsBson();
-			Assert.assertEquals("BSON object is missing field", dbObject.get("someKey"), "someValue");
-			Assert.assertEquals("BSON object is missing field", dbObject.get("other key"), "other value");
+			Assert.assertEquals("BSON object is missing field", "someValue", dbObject.get("someKey"));
+			Assert.assertEquals("BSON object is missing field", "other value", dbObject.get("other key"));
 		}
 		
 	}
@@ -405,10 +406,10 @@ public class SingleNodeTest {
 				Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
 				DBObject dbObject = response.getDocumentAsBson();
 				;
-				Assert.assertEquals("BSON object is missing field", dbObject.get("key1"), "val1");
-				Assert.assertEquals("BSON object is missing field", dbObject.get("key2"), "val2");
+				Assert.assertEquals("BSON object is missing field", "val1", dbObject.get("key1"));
+				Assert.assertEquals("BSON object is missing field", "val2", dbObject.get("key2"));
 				
-				Assert.assertEquals("Expected 3 associated documents", response.getAssociatedDocumentCount(), 3);
+				Assert.assertEquals("Expected 3 associated documents", 3, response.getAssociatedDocumentCount());
 				Assert.assertTrue("Associated Document should be meta only", !response.getAssociatedDocument(0).hasDocument());
 				Assert.assertTrue("Associated Document should be meta only", !response.getAssociatedDocument(1).hasDocument());
 				Assert.assertTrue("Associated Document should be meta only", !response.getAssociatedDocument(2).hasDocument());
@@ -417,10 +418,10 @@ public class SingleNodeTest {
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX));
 				Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
 				DBObject dbObject = response.getDocumentAsBson();
-				Assert.assertEquals("BSON object is missing field", dbObject.get("key1"), "val1");
+				Assert.assertEquals("BSON object is missing field", "val1", dbObject.get("key1"));
 				// Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 				
-				Assert.assertEquals("Expected 3 associated documents", response.getAssociatedDocumentCount(), 3);
+				Assert.assertEquals("Expected 3 associated documents", 3, response.getAssociatedDocumentCount());
 				Assert.assertTrue("Associated document does not exist", response.getAssociatedDocument(0).hasDocument());
 				Assert.assertTrue("Associated document does not exist", response.getAssociatedDocument(1).hasDocument());
 				Assert.assertTrue("Associated document does not exist", response.getAssociatedDocument(2).hasDocument());
@@ -449,7 +450,7 @@ public class SingleNodeTest {
 			Assert.assertTrue("Document is missing raw document before delete", fr.hasResultDocument());
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "uid" + ":" + uniqueIdToDelete, 10));
-			Assert.assertEquals("Total hits is not 1 before delete", qr.getTotalHits(), 1);
+			Assert.assertEquals("Total hits is not 1 before delete", 1, qr.getTotalHits());
 			
 			lumongoWorkPool.delete(new DeleteFull(uniqueIdToDelete, MY_TEST_INDEX));
 			
@@ -457,7 +458,7 @@ public class SingleNodeTest {
 			Assert.assertTrue("Document has raw document after delete", !fr.hasResultDocument());
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "uid" + ":" + uniqueIdToDelete, 10));
-			Assert.assertEquals("Total hits is not 0 after delete", qr.getTotalHits(), 0);
+			Assert.assertEquals("Total hits is not 0 after delete", 0, qr.getTotalHits());
 		}
 		
 		{
@@ -466,19 +467,19 @@ public class SingleNodeTest {
 			{
 				
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX));
-				Assert.assertEquals("Expecting 3 associated documents", response.getAssociatedDocumentCount(), 3);
+				Assert.assertEquals("Expecting 3 associated documents", 3, response.getAssociatedDocumentCount());
 			}
 			
 			{
 				lumongoWorkPool.delete(new DeleteAssociated(uniqueId, MY_TEST_INDEX, fileName));
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX));
-				Assert.assertEquals("Expecting 2 associated document", response.getAssociatedDocumentCount(), 2);
+				Assert.assertEquals("Expecting 2 associated document", 2, response.getAssociatedDocumentCount());
 			}
 			
 			{
 				lumongoWorkPool.delete(new DeleteAllAssociated(uniqueId, MY_TEST_INDEX));
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX));
-				Assert.assertEquals("Expecting 0 associated documents", response.getAssociatedDocumentCount(), 0);
+				Assert.assertEquals("Expecting 0 associated documents", 0, response.getAssociatedDocumentCount());
 				Assert.assertTrue("Expecting raw document", response.hasResultDocument());
 				
 			}
@@ -486,7 +487,7 @@ public class SingleNodeTest {
 			{
 				lumongoWorkPool.delete(new DeleteFull(uniqueId, MY_TEST_INDEX));
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX));
-				Assert.assertEquals("Expecting 0 associated document", response.getAssociatedDocumentCount(), 0);
+				Assert.assertEquals("Expecting 0 associated document", 0, response.getAssociatedDocumentCount());
 				Assert.assertTrue("Expecting no raw document", !response.hasResultDocument());
 				
 			}
@@ -584,10 +585,10 @@ public class SingleNodeTest {
 		GetIndexesResult gir = null;
 		
 		gir = lumongoWorkPool.getIndexes();
-		Assert.assertEquals("Expected two indexes", gir.getIndexCount(), 2);
+		Assert.assertEquals("Expected two indexes", 2, gir.getIndexCount());
 		lumongoWorkPool.deleteIndex(new DeleteIndex(MY_TEST_INDEX));
 		gir = lumongoWorkPool.getIndexes();
-		Assert.assertEquals("Expected one indexes", gir.getIndexCount(), 1);
+		Assert.assertEquals("Expected one indexes", 1, gir.getIndexCount());
 	}
 	
 	@AfterClass
