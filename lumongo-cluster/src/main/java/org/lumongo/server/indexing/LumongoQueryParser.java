@@ -5,7 +5,6 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
-import org.lumongo.LumongoLuceneConstants;
 import org.lumongo.server.config.IndexConfig;
 
 public class LumongoQueryParser extends QueryParser {
@@ -13,7 +12,7 @@ public class LumongoQueryParser extends QueryParser {
 	private IndexConfig indexConfig;
 	
 	public LumongoQueryParser(Analyzer analyzer, IndexConfig indexConfig) {
-		super(LumongoLuceneConstants.VERSION, indexConfig.getDefaultSearchField(), analyzer);
+		super(indexConfig.getDefaultSearchField(), analyzer);
 		this.indexConfig = indexConfig;
 		setAllowLeadingWildcard(true);
 	}
