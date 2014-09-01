@@ -33,21 +33,21 @@ public class Search {
 		LogUtil.loadLogConfig();
 		
 		OptionParser parser = new OptionParser();
-		OptionSpec<String> addressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
-		OptionSpec<Integer> portArg = parser.accepts(AdminConstants.PORT).withRequiredArg().ofType(Integer.class)
-						.defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT).describedAs("Lumongo external port");
-		OptionSpec<String> indexesArg = parser.accepts(AdminConstants.INDEX).withRequiredArg().required().describedAs("Index to search");
-		OptionSpec<String> queryArg = parser.accepts(AdminConstants.QUERY).withRequiredArg().required().describedAs("Lucene query");
-		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT).withRequiredArg().required().ofType(Integer.class)
-						.describedAs("Amount of results to return");
-		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME).withRequiredArg().ofType(Boolean.class).describedAs("Real time search");
-		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET).withRequiredArg().describedAs("Count facets on");
-		OptionSpec<String> drillDownArg = parser.accepts(AdminConstants.DRILL_DOWN).withRequiredArg().describedAs("Drill down on");
-		OptionSpec<String> sortArg = parser.accepts(AdminConstants.SORT).withRequiredArg().describedAs("Field to sort on");
-		OptionSpec<String> sortDescArg = parser.accepts(AdminConstants.SORT_DESC).withRequiredArg().describedAs("Field to sort on (descending)");
-		OptionSpec<String> queryFieldArg = parser.accepts(AdminConstants.QUERY_FIELD).withRequiredArg()
-						.describedAs("Specific field(s) for query to search if none specified in query instead of index default");
-		OptionSpec<String> filterQueryArg = parser.accepts(AdminConstants.FILTER_QUERY).withRequiredArg().describedAs("Filter query");
+		OptionSpec<String> addressArg = parser.accepts(AdminConstants.ADDRESS, "LuMongo server address").withRequiredArg().defaultsTo("localhost");
+		OptionSpec<Integer> portArg = parser.accepts(AdminConstants.PORT, "LuMongo external port").withRequiredArg().ofType(Integer.class)
+						.defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT);
+		OptionSpec<String> indexesArg = parser.accepts(AdminConstants.INDEX, "Index to search").withRequiredArg().required();
+		OptionSpec<String> queryArg = parser.accepts(AdminConstants.QUERY, "Lucene query (matches all docs by default)").withRequiredArg();
+		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT, "Amount of results to return").withRequiredArg().ofType(Integer.class)
+						.defaultsTo(10);
+		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME, "Real time search").withRequiredArg().ofType(Boolean.class);
+		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET, "Count facets on").withRequiredArg();
+		OptionSpec<String> drillDownArg = parser.accepts(AdminConstants.DRILL_DOWN, "Drill down on").withRequiredArg();
+		OptionSpec<String> sortArg = parser.accepts(AdminConstants.SORT, "Field to sort on").withRequiredArg();
+		OptionSpec<String> sortDescArg = parser.accepts(AdminConstants.SORT_DESC, "Field to sort on (descending)").withRequiredArg();
+		OptionSpec<String> queryFieldArg = parser.accepts(AdminConstants.QUERY_FIELD,
+						"Specific field(s) for query to search if none specified in query instead of index default").withRequiredArg();
+		OptionSpec<String> filterQueryArg = parser.accepts(AdminConstants.FILTER_QUERY, "Filter query").withRequiredArg();
 		
 		OptionSpec<Void> fetchArg = parser.accepts(AdminConstants.FETCH);
 		
