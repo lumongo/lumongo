@@ -48,11 +48,11 @@ import org.apache.lucene.util.IOUtils;
  * provide answers directly from in-memory tables. See the documentation of
  * individual methods for comments on their performance.
  * 
- * @lucene.experimental
+ * 
  */
 public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	
-	private static final Logger logger = Logger.getLogger(DirectoryTaxonomyReader.class.getName());
+	private static final Logger logger = Logger.getLogger(LumongoDirectoryTaxonomyReader.class.getName());
 	
 	private static final int DEFAULT_CACHE_VALUE = 4000;
 	
@@ -309,7 +309,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		}
 	}
 	
-	/** Returns ordinal -> label mapping, up to the provided
+	/** Returns ordinal to label mapping, up to the provided
 	 *  max ordinal or number of ordinals, whichever is
 	 *  smaller. */
 	public String toString(int max) {
