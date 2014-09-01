@@ -1,6 +1,7 @@
 package org.lumongo.fields;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,26 +14,26 @@ public class SavedFieldInfo<T> {
 	private final Field field;
 	private boolean compressed;
 	private boolean fieldIsList;
-
+	
 	public SavedFieldInfo(Field field, String fieldName, boolean compressed) {
 		this.fieldName = fieldName;
 		this.field = field;
 		this.compressed = compressed;
 		this.fieldIsList = List.class.isAssignableFrom(field.getType());
 	}
-
+	
 	public String getFieldName() {
 		return fieldName;
 	}
-
+	
 	public boolean isCompressed() {
 		return compressed;
 	}
-
+	
 	Object getValue(T object) throws Exception {
-
+		
 		Object o = field.get(object);
-
+		
 		if (o != null && compressed) {
 			if (String.class.equals(field.getType())) {
 				String s = (String) o;
@@ -43,12 +44,12 @@ public class SavedFieldInfo<T> {
 				o = CommonCompression.compressZlib(b, CommonCompression.CompressionLevel.NORMAL);
 			}
 		}
-
+		
 		return o;
 	}
-
+	
 	public void populate(T newInstance, DBObject savedDBObject) throws Exception {
-
+		
 		Object value = savedDBObject.get(fieldName);
 		if (value != null && compressed) {
 			if (value instanceof byte[]) {
@@ -61,19 +62,22 @@ public class SavedFieldInfo<T> {
 					field.set(newInstance, CommonCompression.uncompressZlib(b));
 					return;
 				}
-
+				
 			}
-
+			
 		}
-
+		
 		boolean valuesIsList = value instanceof List;
 		if (valuesIsList && !fieldIsList) {
 			List<?> valueList = (List<?>) value;
 			if (valueList.size() == 1) {
-				field.set(newInstance, valueList.iterator().next());
+				Object first = valueList.iterator().next();
+				if (first != null) {
+					field.set(newInstance, first);
+				}
 			}
 			else if (valueList.isEmpty()) {
-
+				
 			}
 			else {
 				throw new Exception("Cannot assign multiple values <" + valueList + "> to field <" + field.getName() + "> with type <" + field.getType()
@@ -81,10 +85,12 @@ public class SavedFieldInfo<T> {
 			}
 		}
 		else if (!valuesIsList && fieldIsList) {
-			field.set(newInstance, Arrays.asList(value));
+			if (value != null) {
+				field.set(newInstance, Arrays.asList(value));
+			}
 		}
 		else {
-			field.set(newInstance, value);
+			field.set(newInstance, new ArrayList<>((List<?>) value));
 		}
 	}
 }
