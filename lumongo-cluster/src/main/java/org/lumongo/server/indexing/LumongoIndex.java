@@ -324,7 +324,15 @@ public class LumongoIndex {
 		//only need to be done once but no harm
 		FacetsConfig.DEFAULT_DIM_CONFIG.hierarchical = true;
 		FacetsConfig.DEFAULT_DIM_CONFIG.multiValued = true;
-		return new FacetsConfig();
+		return new FacetsConfig() {
+			@Override
+			public synchronized DimConfig getDimConfig(String dimName) {
+				DimConfig dc = new DimConfig();
+				dc.multiValued = true;
+				dc.hierarchical = true;
+				return dc;
+			}
+		};
 	}
 	
 	private void loadSegment(int segmentNumber) throws Exception {
