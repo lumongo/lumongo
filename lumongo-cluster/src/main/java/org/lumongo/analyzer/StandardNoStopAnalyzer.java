@@ -25,19 +25,15 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.standard.StandardFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
-import org.apache.lucene.util.Version;
 
 public final class StandardNoStopAnalyzer extends Analyzer {
-
+	
 	/** Default maximum allowed token length */
 	public static final int DEFAULT_MAX_TOKEN_LENGTH = 255;
-
+	
 	private int maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
 	
-	protected final Version matchVersion;
-
-	public StandardNoStopAnalyzer(Version matchVersion) {
-		this.matchVersion = matchVersion;
+	public StandardNoStopAnalyzer() {
 	}
 	
 	/**
@@ -49,20 +45,20 @@ public final class StandardNoStopAnalyzer extends Analyzer {
 	public void setMaxTokenLength(int length) {
 		maxTokenLength = length;
 	}
-
+	
 	/**
 	 * @see #setMaxTokenLength
 	 */
 	public int getMaxTokenLength() {
 		return maxTokenLength;
 	}
-
+	
 	@Override
 	protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
-		final StandardTokenizer src = new StandardTokenizer(matchVersion, reader);
+		final StandardTokenizer src = new StandardTokenizer(reader);
 		src.setMaxTokenLength(maxTokenLength);
-		TokenStream tok = new StandardFilter(matchVersion, src);
-		tok = new LowerCaseFilter(matchVersion, tok);
+		TokenStream tok = new StandardFilter(src);
+		tok = new LowerCaseFilter(tok);
 		return new TokenStreamComponents(src, tok) {
 			@Override
 			protected void setReader(final Reader reader) throws IOException {

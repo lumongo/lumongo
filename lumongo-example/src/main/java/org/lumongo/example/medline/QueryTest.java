@@ -24,7 +24,7 @@ public class QueryTest {
 		
 		try {
 			Mapper<MedlineDocument> mapper = new Mapper<MedlineDocument>(MedlineDocument.class);
-
+			
 			for (String term : Arrays.asList("cancer", "molecular", "biology", "kinases", "DNA", "replication", "regulators", "neurons", "animals",
 							"depression", "serotonin", "rats", "male", "university", "nicotine", "France", "United States")) {
 				//simple query and document by document lookup
@@ -41,10 +41,10 @@ public class QueryTest {
 					
 					MedlineDocument d = fr.getDocument(mapper);
 					
-					//System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
+					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
 				}
 			}
-
+			
 			{
 				//using field sort
 				Query query = new Query("medline", "title:cancer AND issn:*", 10);
@@ -268,7 +268,7 @@ public class QueryTest {
 					@SuppressWarnings("unused")
 					List<MedlineDocument> documents = mapper.fromBatchFetchResult(batchFetchResult);
 				}
-
+				
 			}
 		}
 		finally {

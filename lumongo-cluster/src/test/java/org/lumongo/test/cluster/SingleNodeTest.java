@@ -61,14 +61,14 @@ public class SingleNodeTest {
 		indexConfig.setFieldAnalyzer("an", LMAnalyzer.NUMERIC_INT);
 		
 		lumongoWorkPool.createIndex(MY_TEST_INDEX, 16, "uid", indexConfig);
-		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 16, "uid", indexConfig, true);
+		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, "uid", indexConfig, true);
 	}
 	
 	@Test
 	public void test03Facet() throws Exception {
 		lumongoWorkPool = SetupSuite.getLumongoWorkPool();
 		
-		final int COUNT_PER_ISSN = 100;
+		final int COUNT_PER_ISSN = 10;
 		final String uniqueIdPrefix = "myId-";
 		
 		final String[] issns = new String[] { "1234-1234", "3333-1234", "1234-5555", "1234-4444", "2222-2222" };

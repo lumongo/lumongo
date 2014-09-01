@@ -6,7 +6,6 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.KeywordTokenizer;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
-import org.lumongo.LumongoLuceneConstants;
 
 public class LowercaseKeywordAnalyzer extends Analyzer {
 	public LowercaseKeywordAnalyzer() {
@@ -15,7 +14,7 @@ public class LowercaseKeywordAnalyzer extends Analyzer {
 	@Override
 	protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
 		KeywordTokenizer src = new KeywordTokenizer(reader);
-		TokenStream tok = new LowerCaseFilter(LumongoLuceneConstants.VERSION, src);
+		TokenStream tok = new LowerCaseFilter(src);
 		
 		return new TokenStreamComponents(src, tok);
 	}

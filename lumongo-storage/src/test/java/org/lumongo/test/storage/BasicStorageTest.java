@@ -25,13 +25,13 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.Version;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.lumongo.LumongoLuceneConstants;
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.TestHelper;
@@ -49,8 +49,8 @@ public class BasicStorageTest {
 		mongo.dropDatabase(TestHelper.TEST_DATABASE_NAME);
 		directory = new DistributedDirectory(new MongoDirectory(mongo, TestHelper.TEST_DATABASE_NAME, STORAGE_TEST_INDEX, false, false));
 		
-		StandardAnalyzer analyzer = new StandardAnalyzer(LumongoLuceneConstants.VERSION);
-		IndexWriterConfig config = new IndexWriterConfig(LumongoLuceneConstants.VERSION, analyzer);
+		StandardAnalyzer analyzer = new StandardAnalyzer();
+		IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, analyzer);
 		
 		IndexWriter w = new IndexWriter(directory, config);
 		
@@ -85,8 +85,8 @@ public class BasicStorageTest {
 	public void test2Query() throws CorruptIndexException, ParseException, IOException {
 		IndexReader indexReader = DirectoryReader.open(directory);
 		
-		StandardAnalyzer analyzer = new StandardAnalyzer(LumongoLuceneConstants.VERSION);
-		QueryParser qp = new QueryParser(LumongoLuceneConstants.VERSION, "title", analyzer) {
+		StandardAnalyzer analyzer = new StandardAnalyzer();
+		QueryParser qp = new QueryParser("title", analyzer) {
 			
 			@Override
 			protected Query getRangeQuery(final String fieldName, final String start, final String end, final boolean startInclusive, final boolean endInclusive)
@@ -179,8 +179,8 @@ public class BasicStorageTest {
 			MongoClient mongo = new MongoClient(hostName);
 			Directory directory = new DistributedDirectory(new MongoDirectory(mongo, databaseName, STORAGE_TEST_INDEX));
 			
-			StandardAnalyzer analyzer = new StandardAnalyzer(LumongoLuceneConstants.VERSION);
-			IndexWriterConfig config = new IndexWriterConfig(LumongoLuceneConstants.VERSION, analyzer);
+			StandardAnalyzer analyzer = new StandardAnalyzer();
+			IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, analyzer);
 			IndexWriter w = new IndexWriter(directory, config);
 			
 			boolean applyDeletes = true;

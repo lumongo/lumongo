@@ -298,6 +298,7 @@ public class LumongoSegment {
 					
 				}
 				else {
+					System.out.println("facet");
 					FacetsCollector fc = new FacetsCollector();
 					is.search(q, MultiCollector.wrap(collector, fc));
 					Facets facets = new FastTaxonomyFacetCounts(taxonomyReader, facetsConfig, fc);
@@ -563,6 +564,7 @@ public class LumongoSegment {
 		if (indexConfig.isFaceted()) {
 			if (lmDoc.getFacetCount() != 0) {
 				for (LMFacet facet : lmDoc.getFacetList()) {
+					System.out.println(facet.getLabel() + ":" + facet.getPathList());
 					d.add(new FacetField(facet.getLabel(), facet.getPathList().toArray(new String[0])));
 					
 				}

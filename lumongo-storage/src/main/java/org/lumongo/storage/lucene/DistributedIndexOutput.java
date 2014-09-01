@@ -43,11 +43,6 @@ public class DistributedIndexOutput extends IndexOutput {
 	}
 	
 	@Override
-	public long length() throws IOException {
-		return nosqlFile.getFileLength();
-	}
-	
-	@Override
 	public void flush() throws IOException {
 		nosqlFile.flush();
 	}
