@@ -344,7 +344,7 @@ message IndexSegmentResponse {
 
 message QueryRequest {
 	repeated string index = 1;
-	required string query = 2;
+	optional string query = 2;
 	required uint32 amount = 3;
 	optional LastResult lastResult = 4;
 	optional bool fetchFull = 5 [default = false];

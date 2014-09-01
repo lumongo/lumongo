@@ -35,6 +35,7 @@ import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Version;
 import org.lumongo.LumongoConstants;
@@ -755,9 +756,12 @@ public class LumongoIndex {
 		indexLock.readLock().lock();
 		try {
 			LumongoQueryParser qp = null;
-			
+			if (query == null || query.isEmpty()) {
+				return new MatchAllDocsQuery();
+			}
 			try {
 				qp = parsers.borrowObject();
+				System.out.println(qp);
 				if (queryFields.isEmpty()) {
 					qp.setField(indexConfig.getDefaultSearchField());
 					return qp.parse(query);

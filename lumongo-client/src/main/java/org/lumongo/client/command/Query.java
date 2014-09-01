@@ -41,7 +41,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private List<FieldSort> fieldSorts = Collections.emptyList();
 	private Set<String> queryFields = Collections.emptySet();
 	private List<String> filterQueries = Collections.emptyList();
-
+	
 	private Boolean drillSideways;
 	
 	public Query(String index, String query, int amount) {
@@ -161,7 +161,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	public List<String> getFilterQueries() {
 		return filterQueries;
 	}
-
+	
 	public void setFilterQueries(List<String> filterQueries) {
 		this.filterQueries = filterQueries;
 	}
@@ -174,7 +174,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		filterQueries.add(filterQuery);
 		return this;
 	}
-
+	
 	public Query addCountRequest(String label, String... path) {
 		LMFacet facet = LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build();
 		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).build();
@@ -217,7 +217,9 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	public QueryRequest getRequest() {
 		QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
 		requestBuilder.setAmount(amount);
-		requestBuilder.setQuery(query);
+		if (query != null) {
+			requestBuilder.setQuery(query);
+		}
 		if (realTime != null) {
 			requestBuilder.setRealTime(realTime);
 		}
@@ -243,7 +245,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 			requestBuilder.setFacetRequest(facetRequestBuilder.build());
 			
 		}
-
+		
 		if (!queryFields.isEmpty()) {
 			requestBuilder.addAllQueryField(queryFields);
 		}
