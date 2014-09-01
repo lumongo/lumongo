@@ -90,7 +90,9 @@ public class SavedFieldInfo<T> {
 			}
 		}
 		else {
-			field.set(newInstance, new ArrayList<>((List<?>) value));
+			if (value != null) {
+				field.set(newInstance, new ArrayList<>((List<?>) value));
+			}
 		}
 	}
 }
