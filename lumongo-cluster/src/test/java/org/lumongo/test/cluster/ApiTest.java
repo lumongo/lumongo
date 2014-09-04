@@ -55,6 +55,8 @@ import com.mongodb.DBObject;
 
 public class ApiTest {
 	public static final String MY_INDEX_NAME = SingleNodeTest.MY_TEST_INDEX;
+	public static final String MY_INDEX_NAME2 = "myIndexName2";
+	
 	private LumongoWorkPool lumongoWorkPool;
 	
 	public void startClient() throws Exception {
@@ -315,10 +317,29 @@ public class ApiTest {
 	
 	public void simpleQuery() throws Exception {
 		int numberOfResults = 10;
-		String[] indexes = new String[] { MY_INDEX_NAME, "myIndexName2" };
+		String[] indexes = new String[] { MY_INDEX_NAME, MY_INDEX_NAME2 };
 		String normalLuceneQuery = "issn:1234-1234 AND title:special";
 		Query query = new Query(indexes, normalLuceneQuery, numberOfResults);
 		query.setRealTime(false);
+		QueryResult queryResult = lumongoWorkPool.query(query);
+		
+		long totalHits = queryResult.getTotalHits();
+		
+		System.out.println("Found <" + totalHits + "> hits");
+		for (ScoredResult sr : queryResult.getResults()) {
+			System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + ">");
+		}
+		
+	}
+	
+	public void moreComplexQuery() throws Exception {
+		int numberOfResults = 10;
+		
+		Query query = new Query(Arrays.asList(MY_INDEX_NAME, MY_INDEX_NAME2), "cancer cure", numberOfResults);
+		query.addQueryField("abstract");
+		query.addQueryField("title");
+		query.addFilterQuery("title:special");
+		query.addFilterQuery("issn:1234-1234");
 		QueryResult queryResult = lumongoWorkPool.query(query);
 		
 		long totalHits = queryResult.getTotalHits();
@@ -369,7 +390,7 @@ public class ApiTest {
 	
 	public void queryWithBatchFetch() throws Exception {
 		int numberOfResults = 10;
-		String[] indexes = new String[] { MY_INDEX_NAME, "myIndexName2" };
+		String[] indexes = new String[] { MY_INDEX_NAME, MY_INDEX_NAME2 };
 		String normalLuceneQuery = "issn:1234-1234 AND title:special";
 		Query query = new Query(indexes, normalLuceneQuery, numberOfResults);
 		
@@ -391,7 +412,7 @@ public class ApiTest {
 		int numberOfResults = 2;
 		String normalLuceneQuery = "issn:1234-1234 AND title:special";
 		
-		String[] indexes = new String[] { MY_INDEX_NAME, "myIndexName2" };
+		String[] indexes = new String[] { MY_INDEX_NAME, MY_INDEX_NAME2 };
 		Query query = new Query(indexes, normalLuceneQuery, numberOfResults);
 		
 		QueryResult firstResult = lumongoWorkPool.query(query);
@@ -409,7 +430,7 @@ public class ApiTest {
 	public void facetQuery() throws Exception {
 		// Can set number of documents to return to 0 unless you want the documents
 		// at the same time
-		String[] indexes = new String[] { MY_INDEX_NAME, "myIndexName2" };
+		String[] indexes = new String[] { MY_INDEX_NAME, MY_INDEX_NAME2 };
 		
 		Query query = new Query(indexes, "title:special", 0);
 		int maxFacets = 30;
@@ -487,7 +508,7 @@ public class ApiTest {
 	public void storeLargeAssociated() throws Exception {
 		String uniqueId = "myid333";
 		String filename = "myfilename";
-		String indexName = "myIndexName";
+		String indexName = MY_INDEX_NAME;
 		
 		StoreLargeAssociated storeLargeAssociated = new StoreLargeAssociated(uniqueId, indexName, filename, new File("/tmp/myFile"));
 		
@@ -498,7 +519,7 @@ public class ApiTest {
 	public void fetchLargeAssociated() throws Exception {
 		String uniqueId = "myid333";
 		String filename = "myfilename";
-		String indexName = "myIndexName";
+		String indexName = MY_INDEX_NAME;
 		
 		FetchLargeAssociated fetchLargeAssociated = new FetchLargeAssociated(uniqueId, indexName, filename, new File("/tmp/myFetchedFile"));
 		lumongoWorkPool.fetchLargeAssociated(fetchLargeAssociated);
@@ -570,10 +591,10 @@ public class ApiTest {
 			//apiTest.updateIndex();
 			
 			apiTest.createOrUpdateIndex(MY_INDEX_NAME);
-			apiTest.createOrUpdateIndex("myIndexName2");
+			apiTest.createOrUpdateIndex(MY_INDEX_NAME2);
 			
 			apiTest.storeDocumentText(MY_INDEX_NAME, "myid555");
-			apiTest.storeDocumentText("myIndexName2", "myid666");
+			apiTest.storeDocumentText(MY_INDEX_NAME2, "myid666");
 			
 			apiTest.storeDocumentBson();
 			apiTest.storeDocumentBinary();
