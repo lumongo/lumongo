@@ -37,21 +37,8 @@ public class ResultDocBuilder {
 		return this;
 	}
 	
-	public ResultDocBuilder setDocument(String utf8Text) {
-		resultDocumentBuilder.setDocument(ByteString.copyFromUtf8(utf8Text));
-		resultDocumentBuilder.setType(ResultDocument.Type.TEXT);
-		return this;
-	}
-	
 	public ResultDocBuilder setDocument(DBObject document) {
 		resultDocumentBuilder.setDocument(ByteString.copyFrom(BSON.encode(document)));
-		resultDocumentBuilder.setType(ResultDocument.Type.BSON);
-		return this;
-	}
-	
-	public ResultDocBuilder setDocument(byte[] bytes) {
-		resultDocumentBuilder.setDocument(ByteString.copyFrom(bytes));
-		resultDocumentBuilder.setType(ResultDocument.Type.BINARY);
 		return this;
 	}
 	

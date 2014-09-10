@@ -35,8 +35,8 @@ import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.DeleteResponse;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest;
-import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
+import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesRequest;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetIndexesRequest;
@@ -491,7 +491,7 @@ public class LumongoIndexManager {
 	}
 	
 	public DeleteResponse deleteDocument(DeleteRequest deleteRequest) throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist, IOException,
-					Exception {
+	Exception {
 		globalLock.readLock().lock();
 		try {
 			
