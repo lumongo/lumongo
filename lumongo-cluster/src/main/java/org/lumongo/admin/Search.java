@@ -207,16 +207,7 @@ public class Search {
 						System.out.println();
 						
 						if (fetchResult.hasResultDocument()) {
-							
-							if (fetchResult.isDocumentText()) {
-								System.out.println(fetchResult.getUniqueId() + ":\n" + fetchResult.getDocumentAsUtf8());
-							}
-							else if (fetchResult.isDocumentBson()) {
-								System.out.println(fetchResult.getUniqueId() + ":\n" + fetchResult.getDocumentAsBson());
-							}
-							else {
-								System.out.println(fetchResult.getUniqueId() + ":\n [binary]");
-							}
+							System.out.println(fetchResult.getUniqueId() + ":\n" + fetchResult.getDocument());
 						}
 						else {
 							System.out.println(fetchResult.getUniqueId() + ":\n" + "Failed to fetch");

@@ -41,7 +41,7 @@ import org.apache.lucene.util.Version;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
-import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
+import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
