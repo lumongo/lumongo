@@ -336,7 +336,7 @@ public class SingleNodeTest {
 		{
 			FetchResult response = lumongoWorkPool.fetch(new FetchDocument(uniqueId, MY_TEST_INDEX));
 			Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
-			DBObject dbObject = response.getDocument();
+			DBObject dbObject = response.getDocumentAsBson();
 			Assert.assertEquals("BSON object is missing field", "someValue", dbObject.get("someKey"));
 			Assert.assertEquals("BSON object is missing field", "other value", dbObject.get("other key"));
 		}
@@ -404,7 +404,7 @@ public class SingleNodeTest {
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX, true));
 				
 				Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
-				DBObject dbObject = response.getDocument();
+				DBObject dbObject = response.getDocumentAsBson();
 				;
 				Assert.assertEquals("BSON object is missing field", "val1", dbObject.get("key1"));
 				Assert.assertEquals("BSON object is missing field", "val2", dbObject.get("key2"));
@@ -417,7 +417,7 @@ public class SingleNodeTest {
 			{
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX));
 				Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
-				DBObject dbObject = response.getDocument();
+				DBObject dbObject = response.getDocumentAsBson();
 				Assert.assertEquals("BSON object is missing field", "val1", dbObject.get("key1"));
 				// Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 				
