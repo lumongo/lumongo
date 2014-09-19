@@ -10,7 +10,7 @@ subprojects {
 	sourceCompatibility = 1.7
 	targetCompatibility = 1.7
 	
-	version = '0.29'
+	version = '0.30-SNAPSHOT'
 	ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 	group = 'org.lumongo'
