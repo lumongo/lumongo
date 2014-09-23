@@ -9,7 +9,7 @@ import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
-import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
+import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.GroupFetchRequest;
 import org.lumongo.cluster.message.Lumongo.GroupFetchResponse;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
@@ -23,20 +23,20 @@ import com.google.protobuf.ServiceException;
  *
  */
 public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResult> {
-
+	
 	private List<Fetch> fetchList;
-
+	
 	public BatchFetch() {
 		this.fetchList = new ArrayList<Fetch>();
 	}
-
+	
 	public BatchFetch addFetches(Collection<? extends Fetch> fetches) {
 		this.fetchList.addAll(fetches);
 		return this;
 	}
-
+	
 	public BatchFetch addFetchDocumentsFromUniqueIds(Collection<String> uniqueIds, String indexName) {
-
+		
 		for (String uniqueId : uniqueIds) {
 			Fetch f = new Fetch(uniqueId, indexName);
 			f.setResultFetchType(FetchType.FULL);
@@ -45,13 +45,13 @@ public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResul
 		}
 		return this;
 	}
-
+	
 	public BatchFetch addFetchDocumentsFromResults(QueryResult qr) {
 		return addFetchDocumentsFromResults(qr.getResults());
 	}
-
+	
 	public BatchFetch addFetchDocumentsFromResults(Collection<ScoredResult> scoredResults) {
-
+		
 		for (ScoredResult scoredResult : scoredResults) {
 			Fetch f = new Fetch(scoredResult.getUniqueId(), scoredResult.getIndexName());
 			f.setResultFetchType(FetchType.FULL);
@@ -60,8 +60,7 @@ public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResul
 		}
 		return this;
 	}
-
-
+	
 	@Override
 	public GroupFetchRequest getRequest() {
 		GroupFetchRequest.Builder groupFetchRequestBuilder = GroupFetchRequest.newBuilder();
@@ -70,15 +69,15 @@ public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResul
 		}
 		return groupFetchRequestBuilder.build();
 	}
-
+	
 	@Override
 	public BatchFetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
 		ExternalService.BlockingInterface service = lumongoConnection.getService();
 		RpcController controller = lumongoConnection.getController();
-
+		
 		GroupFetchResponse groupFetchResponse = service.groupFetch(controller, getRequest());
-
+		
 		return new BatchFetchResult(groupFetchResponse);
 	}
-
+	
 }

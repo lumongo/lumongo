@@ -12,7 +12,7 @@ import org.lumongo.analyzer.LowercaseWhitespaceAnalyzer;
 import org.lumongo.analyzer.StandardFoldingAnalyzer;
 import org.lumongo.analyzer.StandardFoldingNoStopAnalyzer;
 import org.lumongo.analyzer.StandardNoStopAnalyzer;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
+import org.lumongo.cluster.message.Lumongo.IndexAs;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.server.config.IndexConfig;
 
@@ -54,6 +54,9 @@ public class LumongoAnalyzerFactory {
 		else if (LMAnalyzer.NUMERIC_DOUBLE.equals(lmAnalyzer)) {
 			return new KeywordAnalyzer();
 		}
+		else if (LMAnalyzer.DATE.equals(lmAnalyzer)) {
+			return new KeywordAnalyzer();
+		}
 		
 		throw new Exception("Unsupport analyzer <" + lmAnalyzer + ">");
 		
@@ -67,13 +70,14 @@ public class LumongoAnalyzerFactory {
 	
 	public Analyzer getAnalyzer() throws Exception {
 		HashMap<String, Analyzer> customAnalyzerMap = new HashMap<String, Analyzer>();
-		for (FieldConfig fieldConfig : indexConfig.getFieldConfigList()) {
-			Analyzer a = getAnalyzer(fieldConfig.getAnalyzer());
-			customAnalyzerMap.put(fieldConfig.getFieldName(), a);
+		for (IndexAs indexAs : indexConfig.getIndexAsValues()) {
+			Analyzer a = getAnalyzer(indexAs.getAnalyzer());
+			customAnalyzerMap.put(indexAs.getIndexFieldName(), a);
 			
 		}
 		
-		Analyzer defaultAnalyzer = getAnalyzer(indexConfig.getDefaultAnalyzer());
+		//All fields should have analyzers defined but user queries could search against non existing field?
+		Analyzer defaultAnalyzer = new KeywordAnalyzer();
 		
 		PerFieldAnalyzerWrapper aWrapper = new PerFieldAnalyzerWrapper(defaultAnalyzer, customAnalyzerMap);
 		return aWrapper;

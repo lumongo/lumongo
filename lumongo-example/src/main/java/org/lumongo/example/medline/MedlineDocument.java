@@ -8,60 +8,59 @@ import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Faceted;
 import org.lumongo.fields.annotations.Indexed;
-import org.lumongo.fields.annotations.Saved;
 import org.lumongo.fields.annotations.Settings;
 import org.lumongo.fields.annotations.UniqueId;
 
 @Settings(
-	indexName = "medline",
-	numberOfSegments = 8,
-	segmentFlushInterval = 6000,
-	segmentCommitInterval = 24000)
+				indexName = "medline",
+				numberOfSegments = 8,
+				segmentFlushInterval = 6000,
+				segmentCommitInterval = 24000)
 public class MedlineDocument {
 	
 	@DefaultSearch
-	@Saved
-	@Indexed(LMAnalyzer.STANDARD)
+	@Indexed(
+					analyzer = LMAnalyzer.STANDARD)
 	private String title;
 	
-	@Saved
-	@Indexed(LMAnalyzer.STANDARD)
+	@Indexed(
+					analyzer = LMAnalyzer.STANDARD)
 	private String journalTitle;
 	
-	@Saved
-	@Indexed(LMAnalyzer.STANDARD)
+	@Indexed(
+		analyzer = LMAnalyzer.STANDARD)
 	private String abstractText;
 	
-	@Saved
 	@Faceted
-	@Indexed(LMAnalyzer.NUMERIC_LONG)
+	@Indexed(
+		analyzer = LMAnalyzer.NUMERIC_LONG)
 	private Date publicationDate;
 	
-	@Saved
-	@Indexed(LMAnalyzer.LC_KEYWORD)
+	@Indexed(
+					analyzer = LMAnalyzer.LC_KEYWORD)
 	private String journalVolume;
 	
-	@Saved
-	@Indexed(LMAnalyzer.LC_KEYWORD)
+	@Indexed(
+		analyzer = LMAnalyzer.LC_KEYWORD)
 	private String journalIssue;
 	
-	@Saved
 	@Faceted
-	@Indexed(LMAnalyzer.LC_KEYWORD)
+	@Indexed(
+		analyzer = LMAnalyzer.LC_KEYWORD)
 	private String journalCountry;
 	
-	@Saved
 	@Faceted
-	@Indexed(LMAnalyzer.LC_KEYWORD)
+	@Indexed(
+					analyzer = LMAnalyzer.LC_KEYWORD)
 	private String issn;
 	
-	@Saved
-	@Indexed(LMAnalyzer.STANDARD)
+	@Indexed(
+		analyzer = LMAnalyzer.STANDARD)
 	private List<String> authors;
 	
-	@Saved
 	@Faceted
-	@Indexed(LMAnalyzer.LC_KEYWORD)
+	@Indexed(
+					analyzer = LMAnalyzer.LC_KEYWORD)
 	private List<String> authorsExact;
 	
 	@UniqueId

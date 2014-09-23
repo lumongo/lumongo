@@ -41,7 +41,7 @@ import org.apache.lucene.util.Version;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
-import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
+import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
@@ -366,13 +366,11 @@ public class LumongoIndex {
 				LumongoDirectoryTaxonomyWriter taxonomyWriter = null;
 				FacetsConfig facetsConfig = null;
 				
-				if (indexConfig.isFaceted()) {
-					MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName + "_" + FACETS_SUFFIX,
-									clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
-					DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
-					taxonomyWriter = new LumongoDirectoryTaxonomyWriter(ddFacet);
-					facetsConfig = getFacetsConfig();
-				}
+				MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName + "_" + FACETS_SUFFIX,
+								clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
+				DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
+				taxonomyWriter = new LumongoDirectoryTaxonomyWriter(ddFacet);
+				facetsConfig = getFacetsConfig();
 				
 				LumongoSegment s = new LumongoSegment(segmentNumber, documentStorage, indexWriter, taxonomyWriter, indexConfig, facetsConfig,
 								lumongoAnalyzerFactory.getAnalyzer());
@@ -395,7 +393,9 @@ public class LumongoIndex {
 	
 	private String getIndexSegmentDbName(int segmentNumber) {
 		String indexSegmentDbName;
-		if (indexConfig.isDatabasePerIndexSegment()) {
+		
+		boolean databasePerIndexSegment = false;
+		if (databasePerIndexSegment) {
 			indexSegmentDbName = mongoConfig.getDatabaseName() + "_" + indexName + "_" + segmentNumber;
 		}
 		else {
@@ -408,14 +408,18 @@ public class LumongoIndex {
 		
 		String rawStorageDb;
 		String rawStorageCollection;
-		if (indexConfig.isDatabasePerRawDocumentSegment()) {
+		
+		boolean databasePerRawDocumentSegment = false;
+		boolean collectionPerRawDocumentSegment = false;
+		
+		if (databasePerRawDocumentSegment) {
 			rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + "_" + segmentNumber + STORAGE_DB_SUFFIX;
 		}
 		else {
 			rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + STORAGE_DB_SUFFIX;
 		}
 		
-		if (indexConfig.isCollectionPerRawDocumentSegment()) {
+		if (collectionPerRawDocumentSegment) {
 			rawStorageCollection = RESULT_STORAGE_COLLECTION + "_" + segmentNumber;
 		}
 		else {
@@ -707,9 +711,7 @@ public class LumongoIndex {
 			String dbName = getIndexSegmentDbName(i);
 			String collectionName = getIndexSegmentCollectionName(i);
 			MongoDirectory.dropIndex(mongo, dbName, collectionName);
-			if (indexConfig.isFaceted()) {
-				MongoDirectory.dropIndex(mongo, dbName, collectionName + "_" + FACETS_SUFFIX);
-			}
+			MongoDirectory.dropIndex(mongo, dbName, collectionName + "_" + FACETS_SUFFIX);
 			
 			mongoDocumentStorageArray[i].drop();
 		}
@@ -761,7 +763,6 @@ public class LumongoIndex {
 			}
 			try {
 				qp = parsers.borrowObject();
-				System.out.println(qp);
 				if (queryFields.isEmpty()) {
 					qp.setField(indexConfig.getDefaultSearchField());
 					return qp.parse(query);
@@ -821,12 +822,13 @@ public class LumongoIndex {
 							int longIndex = 0;
 							int floatIndex = 0;
 							int doubleIndex = 0;
+							int dateIndex = 0;
 							
 							for (FieldSort fs : sortRequest.getFieldSortList()) {
 								
 								String sortField = fs.getSortField();
 								
-								if (indexConfig.isNumericField(sortField)) {
+								if (indexConfig.isNumericOrDateField(sortField)) {
 									if (indexConfig.isNumericIntField(sortField)) {
 										sortTerms[sortTermsIndex] = sr.getSortInteger(intIndex++);
 									}
@@ -838,6 +840,9 @@ public class LumongoIndex {
 									}
 									else if (indexConfig.isNumericDoubleField(sortField)) {
 										sortTerms[sortTermsIndex] = sr.getSortDouble(doubleIndex++);
+									}
+									else if (indexConfig.isDateField(sortField)) {
+										sortTerms[sortTermsIndex] = sr.getSortDate(dateIndex++);
 									}
 								}
 								else { //string
@@ -1158,10 +1163,6 @@ public class LumongoIndex {
 		finally {
 			indexLock.readLock().unlock();
 		}
-	}
-	
-	public boolean isFaceted() {
-		return indexConfig.isFaceted();
 	}
 	
 	private static IndexConfig loadIndexSettings(Mongo mongo, String database, String indexName) throws InvalidIndexConfig {

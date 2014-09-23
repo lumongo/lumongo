@@ -2,7 +2,7 @@ option java_generic_services = true;
 option java_package = "org.lumongo.cluster.message";
 
 service ExternalService {
- 	rpc Query (QueryRequest) returns (QueryResponse);
+	rpc Query (QueryRequest) returns (QueryResponse);
 	rpc Store (StoreRequest) returns (StoreResponse);
 	rpc Delete (DeleteRequest) returns (DeleteResponse);
 	rpc Fetch (FetchRequest) returns (FetchResponse);
@@ -11,7 +11,8 @@ service ExternalService {
 	rpc ChangeIndex (IndexSettingsRequest) returns (IndexSettingsResponse);
 	rpc DeleteIndex (IndexDeleteRequest) returns (IndexDeleteResponse);
 	rpc GetIndexes (GetIndexesRequest) returns (GetIndexesResponse);
-	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
+	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns
+	(GetNumberOfDocsResponse);
 	rpc Clear (ClearRequest) returns (ClearResponse);
 	rpc Optimize (OptimizeRequest) returns (OptimizeResponse);
 	rpc GetFieldNames (GetFieldNamesRequest) returns (GetFieldNamesResponse);
@@ -23,7 +24,8 @@ service InternalService {
 	rpc Query (QueryRequest) returns (InternalQueryResponse);
 	rpc Store (StoreRequest) returns (StoreResponse);
 	rpc Delete (DeleteRequest) returns (DeleteResponse);
-	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
+	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns
+	(GetNumberOfDocsResponse);
 	rpc Clear (ClearRequest) returns (ClearResponse);
 	rpc Optimize (OptimizeRequest) returns (OptimizeResponse);
 	rpc GetFieldNames (GetFieldNamesRequest) returns (GetFieldNamesResponse);
@@ -31,7 +33,6 @@ service InternalService {
 }
 
 message GetMembersRequest {
-
 }
 
 message LMMember {
@@ -92,7 +93,6 @@ message ClearRequest {
 }
 
 message ClearResponse {
-
 }
 
 message OptimizeRequest {
@@ -100,11 +100,9 @@ message OptimizeRequest {
 }
 
 message OptimizeResponse {
-
 }
 
 message GetIndexesRequest {
-
 }
 
 message GetIndexesResponse {
@@ -126,20 +124,14 @@ message SegmentCountResponse {
 	required uint32 numberOfDocs = 2;
 }
 
-
 message IndexCreateRequest {
 	required string indexName = 1;
 	required string uniqueIdField = 2;
 	required uint32 numberOfSegments = 3;
 	required IndexSettings indexSettings = 4;
-	optional bool faceted = 5 [default = false];
-	optional bool databasePerIndexSegment = 6 [default = false];
-	optional bool collectionPerRawDocumentSegment = 7 [default = false];
-	optional bool databasePerRawDocumentSegment = 8 [default = false];
 }
 
 message IndexCreateResponse {
-
 }
 
 message IndexSettingsRequest {
@@ -147,46 +139,59 @@ message IndexSettingsRequest {
 	required IndexSettings indexSettings = 4;
 }
 
-
 enum LMAnalyzer {
-		KEYWORD =0;
-		LC_KEYWORD = 1;
-		WHITESPACE = 2;
-		LC_WHITESPACE =3;
-		STANDARD = 4;
-		NUMERIC_INT = 5;
-		NUMERIC_LONG = 6;
-		NUMERIC_FLOAT = 7;
-		NUMERIC_DOUBLE = 8;
-		DEFAULT = 9;
-		STANDARD_FOLDING = 10;
-		STANDARD_NO_STOP = 11;
-		STANDARD_FOLDING_NO_STOP = 12;
+	KEYWORD = 1;
+	LC_KEYWORD = 2;
+	WHITESPACE = 3;
+	LC_WHITESPACE = 4;
+	STANDARD = 5;
+	NUMERIC_INT = 6;
+	NUMERIC_LONG = 7;
+	NUMERIC_FLOAT = 8;
+	NUMERIC_DOUBLE = 9;
+	STANDARD_FOLDING = 10;
+	STANDARD_NO_STOP = 11;
+	STANDARD_FOLDING_NO_STOP = 12;
+	DATE = 13;
 }
 
 message IndexSettings {
 	required string defaultSearchField = 1;
 	repeated FieldConfig fieldConfig = 2;
-	optional LMAnalyzer defaultAnalyzer = 3 [default = LC_KEYWORD];
-	optional bool applyUncommitedDeletes = 4 [default = true];
-	optional double requestFactor = 5 [default = 2.0];
-	optional uint32 minSegmentRequest = 6 [default = 2];
-	optional uint32 idleTimeWithoutCommit = 7 [default = 30];
-	optional uint32 segmentCommitInterval = 8 [default = 3200];
-	optional bool blockCompression = 9 [default = false];
-	optional double segmentTolerance = 10 [default = 0.05];
-	optional uint32 segmentFlushInterval = 11 [default = 1600];
-	optional uint32 segmentQueryCacheSize = 12 [default = 512];
-	optional uint32 segmentQueryCacheMaxAmount = 13 [default = 256];
+	optional bool applyUncommitedDeletes = 3 [default = true];
+	optional double requestFactor = 4 [default = 2.0];
+	optional uint32 minSegmentRequest = 5 [default = 2];
+	optional uint32 idleTimeWithoutCommit = 6 [default = 30];
+	optional uint32 segmentCommitInterval = 7 [default = 3200];
+	optional bool blockCompression = 8 [default = false];
+	optional double segmentTolerance = 9 [default = 0.05];
+	optional uint32 segmentFlushInterval = 10 [default = 1600];
+	optional uint32 segmentQueryCacheSize = 11 [default = 512];
+	optional uint32 segmentQueryCacheMaxAmount = 12 [default = 256];
 }
 
 message FieldConfig {
-	required string fieldName = 1;
-	optional LMAnalyzer analyzer = 2;
+	required string storedFieldName = 1;
+	repeated IndexAs indexAs = 2;
+	repeated FacetAs facetAs = 3;
+}
+
+message IndexAs {
+	required string indexFieldName = 1;
+	required LMAnalyzer analyzer = 2;
+}
+
+message FacetAs {
+	enum LMFacetType {
+		STANDARD = 1;
+		DATE_YYYY_MM_DD = 2;
+		DATE_YYYYMMDD = 3;
+	}
+	required string facetName = 1;
+	required LMFacetType facetType = 2;
 }
 
 message IndexSettingsResponse {
-
 }
 
 message IndexDeleteRequest {
@@ -194,16 +199,14 @@ message IndexDeleteRequest {
 }
 
 message IndexDeleteResponse {
-
 }
 
 message StoreRequest {
-    required string uniqueId = 1;
-    required string indexName = 2;
-	optional LMDoc indexedDocument = 3;
-	optional ResultDocument resultDocument = 4;
-	repeated AssociatedDocument associatedDocument = 5;
-	optional bool clearExistingAssociated = 6 [default = false];
+	required string uniqueId = 1;
+	required string indexName = 2;
+	optional ResultDocument resultDocument = 3;
+	repeated AssociatedDocument associatedDocument = 4;
+	optional bool clearExistingAssociated = 5 [default = false];
 }
 
 message StoreResponse {
@@ -220,7 +223,6 @@ message LMFacet {
 	repeated string path = 2;
 }
 
-
 message LMField {
 	required string fieldName = 1;
 	repeated string fieldValue = 2;
@@ -230,20 +232,12 @@ message LMField {
 	repeated double doubleValue = 6;
 }
 
-
 message ResultDocument {
 	required string uniqueId = 1;
 	required string indexName = 2;
 	optional bytes document = 3;
-	enum Type {
-		BSON = 0;
-		BINARY = 1;
-		TEXT = 2;
-	}
-	optional Type type = 4 [default = BINARY];
-	optional bool compressed = 5 [default = false];
-	repeated Metadata metadata = 6;
-	optional int64 timestamp = 7;
+	repeated Metadata metadata = 4;
+	optional int64 timestamp = 5;
 }
 
 message AssociatedDocument {
@@ -273,7 +267,8 @@ message ScoredResult {
 	repeated int64 sortLong = 9;
 	repeated float sortFloat = 10;
 	repeated double sortDouble = 11;
-	required int64 timestamp = 12;
+	repeated int64 sortDate = 12;
+	required int64 timestamp = 13;
 }
 
 message SortRequest {
@@ -306,23 +301,19 @@ message FacetRequest {
 	optional bool drillSideways = 3 [default = false];
 }
 
-
-
 message CountRequest {
 	required LMFacet facetField = 1;
 	optional uint32 maxFacets = 2 [default = 10];
 }
 
-
 message SegmentResponse {
-    required uint32 segmentNumber = 1;
-    required string indexName = 2;
-    required uint32 totalHits = 3;
-    repeated ScoredResult scoredResult = 4;
-    optional ScoredResult next = 5;
-    repeated FacetGroup facetGroup = 6;
+	required uint32 segmentNumber = 1;
+	required string indexName = 2;
+	required uint32 totalHits = 3;
+	repeated ScoredResult scoredResult = 4;
+	optional ScoredResult next = 5;
+	repeated FacetGroup facetGroup = 6;
 }
-
 
 message LastIndexResult {
 	required string indexName = 1;
@@ -353,8 +344,9 @@ message QueryRequest {
 	optional SortRequest sortRequest = 8;
 	repeated string queryField = 9;
 	repeated string filterQuery = 10;
+	repeated string fields = 11;
+	optional FetchType resultFetchType = 12 [default = NONE];
 }
-
 
 message QueryResponse {
 	required uint64 totalHits = 1;
@@ -365,14 +357,13 @@ message QueryResponse {
 
 message DeleteRequest {
 	required string indexName = 1;
-    required string uniqueId = 2;
-    optional string filename = 3;
-    optional bool deleteDocument = 4 [default = true];
-    optional bool deleteAllAssociated = 5 [default = true];
+	required string uniqueId = 2;
+	optional string filename = 3;
+	optional bool deleteDocument = 4 [default = true];
+	optional bool deleteAllAssociated = 5 [default = true];
 }
 
 message DeleteResponse {
-
 }
 
 message GroupFetchRequest {
@@ -383,17 +374,18 @@ message GroupFetchResponse {
 	repeated FetchResponse fetchResponse = 1;
 }
 
+enum FetchType {
+	FULL = 1;
+	META = 2;
+	NONE = 3;
+}
+
 message FetchRequest {
-    required string uniqueId = 1;
-    required string indexName = 2;
-    optional string fileName = 3;
-    enum FetchType {
-		FULL = 1;
-		META = 2;
-		NONE = 3;
-	}
-    optional FetchType resultFetchType = 4 [default = FULL];
-    optional FetchType associatedFetchType = 5 [default = META];
+	required string uniqueId = 1;
+	required string indexName = 2;
+	optional string fileName = 3;
+	optional FetchType resultFetchType = 4 [default = FULL];
+	optional FetchType associatedFetchType = 5 [default = META];
 }
 
 message FetchResponse {

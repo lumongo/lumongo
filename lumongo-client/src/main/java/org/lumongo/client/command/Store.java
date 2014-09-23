@@ -9,12 +9,10 @@ import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.StoreResult;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
-import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.doc.AssociatedBuilder;
-import org.lumongo.doc.IndexedDocBuilder;
 import org.lumongo.doc.ResultDocBuilder;
 
 import com.google.protobuf.RpcController;
@@ -24,7 +22,7 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> implements R
 	private String uniqueId;
 	private String indexName;
 	private ResultDocument resultDocument;
-	private LMDoc indexedDocument;
+	
 	private List<AssociatedDocument> associatedDocuments;
 	private Boolean clearExistingAssociated;
 	
@@ -60,19 +58,6 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> implements R
 		return this;
 	}
 	
-	public Store setIndexedDocument(LMDoc indexedDocument) {
-		this.indexedDocument = indexedDocument;
-		return this;
-	}
-
-	public void setIndexedDocument(IndexedDocBuilder indexedDocBuilder) {
-		this.indexedDocument = indexedDocBuilder.getIndexedDoc();
-	}
-	
-	public LMDoc getIndexedDocument() {
-		return indexedDocument;
-	}
-	
 	public Store addAssociatedDocument(AssociatedBuilder associatedBuilder) {
 		associatedBuilder.setDocumentUniqueId(uniqueId);
 		associatedBuilder.setIndexName(indexName);
@@ -104,9 +89,6 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> implements R
 		storeRequestBuilder.setUniqueId(uniqueId);
 		storeRequestBuilder.setIndexName(indexName);
 		
-		if (indexedDocument != null) {
-			storeRequestBuilder.setIndexedDocument(indexedDocument);
-		}
 		if (resultDocument != null) {
 			storeRequestBuilder.setResultDocument(resultDocument);
 		}

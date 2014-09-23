@@ -20,110 +20,51 @@ import com.google.protobuf.ServiceException;
  *
  */
 public class CreateIndex extends SimpleCommand<IndexCreateRequest, CreateIndexResult> {
-
+	
 	private String indexName;
 	private Integer numberOfSegments;
 	private String uniqueIdField;
-	private Boolean faceted;
-	private Boolean databasePerIndexSegment;
-	private Boolean collectionPerRawDocumentSegment;
-	private Boolean databasePerRawDocumentSegment;
 	private IndexConfig indexConfig;
-
+	
 	public CreateIndex(String indexName, Integer numberOfSegments, String uniqueIdField, IndexConfig indexConfig) {
 		this.indexName = indexName;
 		this.numberOfSegments = numberOfSegments;
 		this.uniqueIdField = uniqueIdField;
 		this.indexConfig = indexConfig;
 	}
-
-	public CreateIndex setFaceted(Boolean faceted) {
-		this.faceted = faceted;
-		return this;
-	}
-
-	public Boolean getFaceted() {
-		return faceted;
-	}
-
-	public CreateIndex setDatabasePerIndexSegment(Boolean databasePerIndexSegment) {
-		this.databasePerIndexSegment = databasePerIndexSegment;
-		return this;
-	}
-
-	public Boolean getDatabasePerIndexSegment() {
-		return databasePerIndexSegment;
-	}
-
-	public CreateIndex setCollectionPerRawDocumentSegment(Boolean collectionPerRawDocumentSegment) {
-		this.collectionPerRawDocumentSegment = collectionPerRawDocumentSegment;
-		return this;
-	}
-
-	public Boolean getCollectionPerRawDocumentSegment() {
-		return collectionPerRawDocumentSegment;
-	}
-
-	public CreateIndex setDatabasePerRawDocumentSegment(Boolean databasePerRawDocumentSegment) {
-		this.databasePerRawDocumentSegment = databasePerRawDocumentSegment;
-		return this;
-	}
-
-	public Boolean getDatabasePerRawDocumentSegment() {
-		return databasePerRawDocumentSegment;
-	}
-
+	
 	@Override
 	public IndexCreateRequest getRequest() {
 		IndexCreateRequest.Builder indexCreateRequestBuilder = IndexCreateRequest.newBuilder();
-
+		
 		if (indexName != null) {
 			indexCreateRequestBuilder.setIndexName(indexName);
 		}
-
+		
 		if (numberOfSegments != null) {
 			indexCreateRequestBuilder.setNumberOfSegments(numberOfSegments);
 		}
-
+		
 		if (uniqueIdField != null) {
 			indexCreateRequestBuilder.setUniqueIdField(uniqueIdField);
 		}
-
+		
 		if (indexConfig != null) {
 			indexCreateRequestBuilder.setIndexSettings(indexConfig.getIndexSettings());
 		}
-
-		if (faceted != null) {
-			indexCreateRequestBuilder.setFaceted(faceted);
-		}
-
-		if (collectionPerRawDocumentSegment != null) {
-			indexCreateRequestBuilder.setCollectionPerRawDocumentSegment(collectionPerRawDocumentSegment);
-		}
-
-		if (databasePerRawDocumentSegment != null) {
-			indexCreateRequestBuilder.setDatabasePerRawDocumentSegment(databasePerRawDocumentSegment);
-		}
-
-		if (databasePerIndexSegment != null) {
-			indexCreateRequestBuilder.setDatabasePerIndexSegment(databasePerIndexSegment);
-		}
-
-
+		
 		return indexCreateRequestBuilder.build();
 	}
-
+	
 	@Override
 	public CreateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
 		ExternalService.BlockingInterface service = lumongoConnection.getService();
-
+		
 		RpcController controller = lumongoConnection.getController();
-
+		
 		IndexCreateResponse indexCreateResponse = service.createIndex(controller, getRequest());
-
+		
 		return new CreateIndexResult(indexCreateResponse);
 	}
-
-
-
+	
 }

@@ -11,6 +11,6 @@ import java.lang.annotation.Target;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD })
-public @interface Saved {
-    boolean compressed() default false;
+public @interface NotSaved {
+	
 }
