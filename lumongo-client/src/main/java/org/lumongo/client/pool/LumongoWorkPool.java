@@ -72,21 +72,12 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
 		return execute(new CreateIndex(indexName, segments, uniqueIdField, indexConfig));
 	}
 	
-	public CreateIndexResult createIndex(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig, Boolean faceted) throws Exception {
-		return execute(new CreateIndex(indexName, segments, uniqueIdField, indexConfig).setFaceted(faceted));
-	}
-	
 	public ListenableFuture<CreateIndexResult> createIndexAsync(CreateIndex createIndex) throws Exception {
 		return executeAsync(createIndex);
 	}
 	
 	public ListenableFuture<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig) throws Exception {
 		return executeAsync(new CreateIndex(indexName, segments, uniqueIdField, indexConfig));
-	}
-	
-	public ListenableFuture<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig, Boolean faceted)
-					throws Exception {
-		return executeAsync(new CreateIndex(indexName, segments, uniqueIdField, indexConfig).setFaceted(faceted));
 	}
 	
 	public CreateOrUpdateIndexResult createOrUpdateIndex(CreateOrUpdateIndex createOrUpdateIndex) throws Exception {

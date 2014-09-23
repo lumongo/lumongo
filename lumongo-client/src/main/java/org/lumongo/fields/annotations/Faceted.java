@@ -7,10 +7,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
+
 @Documented
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD })
 public @interface Faceted {
-
+	
+	LMFacetType type() default LMFacetType.STANDARD;
+	
+	String name() default "";
 }

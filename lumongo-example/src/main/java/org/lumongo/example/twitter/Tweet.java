@@ -4,9 +4,9 @@ import java.util.Date;
 
 import org.apache.solr.client.solrj.beans.Field;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
+import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Indexed;
-import org.lumongo.fields.annotations.Saved;
 import org.lumongo.fields.annotations.Settings;
 import org.lumongo.fields.annotations.UniqueId;
 
@@ -37,42 +37,42 @@ public class Tweet {
 	}
 	
 	@UniqueId
-	@Field(ID)
+	@AsField(ID)
 	private String id;
 	
-	@Saved
-	@Indexed(LMAnalyzer.NUMERIC_INT)
+	@Indexed(
+		analyzer = LMAnalyzer.NUMERIC_INT)
 	@Field(FAVORITE_COUNT)
 	private Integer favoriteCount;
 	
-	@Saved
-	@Indexed(LMAnalyzer.NUMERIC_INT)
+	@Indexed(
+					analyzer = LMAnalyzer.NUMERIC_INT)
 	@Field(RETWEET_COUNT)
 	private Integer retweetCount;
 	
-	@Saved
-	@Indexed(LMAnalyzer.LC_KEYWORD)
+	@Indexed(
+		analyzer = LMAnalyzer.LC_KEYWORD)
 	@Field(USER_NAME)
 	private String username;
 	
-	@Saved
-	@Indexed(LMAnalyzer.STANDARD)
+	@Indexed(
+					analyzer = LMAnalyzer.STANDARD)
 	@Field(TEXT)
 	@DefaultSearch
 	private String text;
 	
-	@Saved
-	@Indexed(LMAnalyzer.NUMERIC_LONG)
+	@Indexed(
+					analyzer = LMAnalyzer.NUMERIC_LONG)
 	@Field(CREATED_DATE)
 	private Date createdDate;
 	
-	@Saved
-	@Indexed(LMAnalyzer.NUMERIC_DOUBLE)
+	@Indexed(
+					analyzer = LMAnalyzer.NUMERIC_DOUBLE)
 	@Field(LATITUDE)
 	private Double latitude;
 	
-	@Saved
-	@Indexed(LMAnalyzer.NUMERIC_DOUBLE)
+	@Indexed(
+					analyzer = LMAnalyzer.NUMERIC_DOUBLE)
 	@Field(LONGITUDE)
 	private Double longitude;
 	

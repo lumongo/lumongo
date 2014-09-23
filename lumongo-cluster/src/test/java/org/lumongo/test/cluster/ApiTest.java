@@ -36,16 +36,16 @@ import org.lumongo.client.result.GetMembersResult;
 import org.lumongo.client.result.GetNumberOfDocsResult;
 import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.client.result.QueryResult;
+import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
-import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.Term;
 import org.lumongo.doc.AssociatedBuilder;
-import org.lumongo.doc.IndexedDocBuilder;
 import org.lumongo.doc.ResultDocBuilder;
+import org.lumongo.fields.FieldConfigBuilder;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -92,10 +92,9 @@ public class ApiTest {
 		String uniqueIdField = "uid";
 		
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
-		indexConfig.setDefaultAnalyzer(LMAnalyzer.KEYWORD);
-		indexConfig.setFieldAnalyzer("title", LMAnalyzer.STANDARD);
-		indexConfig.setFieldAnalyzer("issn", LMAnalyzer.LC_KEYWORD);
-		indexConfig.setFieldAnalyzer("an", LMAnalyzer.NUMERIC_INT);
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
 		
 		CreateIndex createIndex = new CreateIndex(MY_INDEX_NAME, numberOfSegments, uniqueIdField, indexConfig);
 		lumongoWorkPool.createIndex(createIndex);
@@ -105,11 +104,11 @@ public class ApiTest {
 		
 		String defaultSearchField = "abstract";
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
-		indexConfig.setDefaultAnalyzer(LMAnalyzer.LC_KEYWORD);
-		indexConfig.setFieldAnalyzer("title", LMAnalyzer.STANDARD);
-		indexConfig.setFieldAnalyzer("issn", LMAnalyzer.LC_KEYWORD);
-		indexConfig.setFieldAnalyzer("an", LMAnalyzer.NUMERIC_INT);
-		indexConfig.setFieldAnalyzer("abstract", LMAnalyzer.STANDARD);
+		
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("abstract").indexAs(LMAnalyzer.STANDARD));
 		
 		UpdateIndex updateIndex = new UpdateIndex(MY_INDEX_NAME, indexConfig);
 		lumongoWorkPool.updateIndex(updateIndex);
@@ -121,76 +120,34 @@ public class ApiTest {
 		String uniqueIdField = "uid";
 		
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
-		indexConfig.setDefaultAnalyzer(LMAnalyzer.LC_KEYWORD);
-		indexConfig.setFieldAnalyzer("title", LMAnalyzer.STANDARD);
-		indexConfig.setFieldAnalyzer("issn", LMAnalyzer.LC_KEYWORD);
-		indexConfig.setFieldAnalyzer("an", LMAnalyzer.NUMERIC_INT);
-		indexConfig.setFieldAnalyzer("abstract", LMAnalyzer.STANDARD);
+		
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("abstract").indexAs(LMAnalyzer.STANDARD));
 		
 		CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(indexName, numberOfSegments, uniqueIdField, indexConfig);
-		createOrUpdateIndex.setFaceted(true);
 		CreateOrUpdateIndexResult result = lumongoWorkPool.createOrUpdateIndex(createOrUpdateIndex);
 		System.out.println(result.isNewIndex());
 		System.out.println(result.isUpdatedIndex());
 	}
 	
-	public void storeDocumentText(String indexName, String uniqueId) throws Exception {
-		
-		IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-		docBuilder.addField("issn", "1234-1234");
-		docBuilder.addField("title", "A really special title");
-		docBuilder.addFacet("issn", "1234-1234");
-		LMDoc indexedDoc = docBuilder.getIndexedDoc();
-		
-		String xml = "<sampleXML></sampleXML>";
-		
-		Store s = new Store(uniqueId, indexName);
-		s.setIndexedDocument(indexedDoc);
-		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
-		resultDocumentBuilder.setDocument(xml);
-		s.setResultDocument(resultDocumentBuilder);
-		
-		// s.setResultDocument(xml, true); // store compressed
-		
-		lumongoWorkPool.store(s);
-		
-		Store s1 = new Store(uniqueId + "-meta", indexName);
-		s1.setIndexedDocument(indexedDoc);
-		
-		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
-		resultDocumentBuilder1.setDocument(xml);
-		resultDocumentBuilder1.addMetaData("test1", "val1");
-		resultDocumentBuilder1.addMetaData("test2", "val2");
-		resultDocumentBuilder1.setCompressed(true);
-		s1.setResultDocument(resultDocumentBuilder1);
-		
-		lumongoWorkPool.store(s1);
-	}
-	
 	public void storeDocumentBson() throws Exception {
 		
-		IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-		docBuilder.addField("title", "Magic Java Beans");
-		docBuilder.addField("issn", "4321-4321");
-		docBuilder.addFacet("issn", "4321-4321");
-		LMDoc indexedDoc = docBuilder.getIndexedDoc();
-		
 		DBObject dbObject = new BasicDBObject();
-		dbObject.put("someKey", "someValue");
-		dbObject.put("other key", "other value");
+		dbObject.put("title", "Magic Java Beans");
+		dbObject.put("issn", "4321-4321");
 		
 		Store s = new Store("myid222", MY_INDEX_NAME);
-		s.setIndexedDocument(indexedDoc);
 		
 		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
 		resultDocumentBuilder.setDocument(dbObject);
-		resultDocumentBuilder.setCompressed(true);
 		s.setResultDocument(resultDocumentBuilder);
 		
 		lumongoWorkPool.store(s);
 		
+		//with same with meta
 		Store s1 = new Store("myid2222", MY_INDEX_NAME);
-		s1.setIndexedDocument(indexedDoc);
 		
 		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
 		resultDocumentBuilder1.setDocument(dbObject);
@@ -203,64 +160,13 @@ public class ApiTest {
 		
 	}
 	
-	public void storeDocumentBinary() throws Exception {
-		IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-		docBuilder.addField("title", "Another great and special book");
-		docBuilder.addField("issn", "1111-1111");
-		docBuilder.addFacet("issn", "1111-1111");
-		LMDoc indexedDoc = docBuilder.getIndexedDoc();
-		
-		byte[] bytes = new byte[] { 1, 2, 3 };
-		Store s = new Store("myid333", MY_INDEX_NAME);
-		s.setIndexedDocument(indexedDoc);
-		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
-		resultDocumentBuilder.setDocument(bytes);
-		
-		lumongoWorkPool.store(s);
-		
-		Store s1 = new Store("myid3333", MY_INDEX_NAME);
-		s1.setIndexedDocument(indexedDoc);
-		
-		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
-		resultDocumentBuilder1.setDocument(bytes);
-		resultDocumentBuilder1.addMetaData("test1", "val1");
-		resultDocumentBuilder1.addMetaData("test2", "val2");
-		
-		s1.setResultDocument(resultDocumentBuilder1);
-		
-		lumongoWorkPool.store(s1);
-	}
-	
-	public void fetchDocumentText() throws Exception {
-		FetchDocument fetchDocument = new FetchDocument("myid111", MY_INDEX_NAME);
-		
-		FetchResult fetchResult = lumongoWorkPool.fetch(fetchDocument);
-		
-		if (fetchResult.hasResultDocument()) {
-			String text = fetchResult.getDocumentAsUtf8();
-			System.out.println(text);
-		}
-		
-		FetchDocument fetchDocument1 = new FetchDocument("myid1111", MY_INDEX_NAME);
-		
-		FetchResult fetchResult1 = lumongoWorkPool.fetch(fetchDocument1);
-		
-		if (fetchResult1.hasResultDocument()) {
-			String text = fetchResult1.getDocumentAsUtf8();
-			System.out.println(text);
-			
-			Map<String, String> meta = fetchResult1.getMeta();
-			System.out.println(meta);
-		}
-	}
-	
 	public void fetchDocumentBson() throws Exception {
 		FetchDocument fetchDocument = new FetchDocument("myid222", MY_INDEX_NAME);
 		
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchDocument);
 		
 		if (fetchResult.hasResultDocument()) {
-			DBObject object = fetchResult.getDocumentAsBson();
+			DBObject object = fetchResult.getDocument();
 			System.out.println(object);
 		}
 		
@@ -269,31 +175,8 @@ public class ApiTest {
 		FetchResult fetchResult1 = lumongoWorkPool.fetch(fetchDocument1);
 		
 		if (fetchResult1.hasResultDocument()) {
-			DBObject object = fetchResult1.getDocumentAsBson();
+			DBObject object = fetchResult1.getDocument();
 			System.out.println(object);
-			
-			Map<String, String> meta = fetchResult1.getMeta();
-			System.out.println(meta);
-		}
-	}
-	
-	public void fetchDocumentBinary() throws Exception {
-		FetchDocument fetchDocument = new FetchDocument("myid333", MY_INDEX_NAME);
-		
-		FetchResult fetchResult = lumongoWorkPool.fetch(fetchDocument);
-		
-		if (fetchResult.hasResultDocument()) {
-			byte[] bytes = fetchResult.getDocumentAsBytes();
-			System.out.println(Arrays.toString(bytes));
-		}
-		
-		FetchDocument fetchDocument1 = new FetchDocument("myid3333", MY_INDEX_NAME);
-		
-		FetchResult fetchResult1 = lumongoWorkPool.fetch(fetchDocument1);
-		
-		if (fetchResult1.hasResultDocument()) {
-			byte[] bytes = fetchResult1.getDocumentAsBytes();
-			System.out.println(Arrays.toString(bytes));
 			
 			Map<String, String> meta = fetchResult1.getMeta();
 			System.out.println(meta);
@@ -306,8 +189,6 @@ public class ApiTest {
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchDocument);
 		
 		if (fetchResult.hasResultDocument()) {
-			String text = fetchResult.getDocumentAsUtf8();
-			System.out.println(text);
 			
 			Map<String, String> meta = fetchResult.getMeta();
 			System.out.println(meta);
@@ -593,15 +474,8 @@ public class ApiTest {
 			apiTest.createOrUpdateIndex(MY_INDEX_NAME);
 			apiTest.createOrUpdateIndex(MY_INDEX_NAME2);
 			
-			apiTest.storeDocumentText(MY_INDEX_NAME, "myid555");
-			apiTest.storeDocumentText(MY_INDEX_NAME2, "myid666");
-			
 			apiTest.storeDocumentBson();
-			apiTest.storeDocumentBinary();
-			
-			apiTest.fetchDocumentText();
 			apiTest.fetchDocumentBson();
-			apiTest.fetchDocumentBinary();
 			
 			apiTest.simpleQuery();
 			

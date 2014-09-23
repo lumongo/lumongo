@@ -238,6 +238,9 @@ public class QueryCombiner {
 				else if (LMAnalyzer.NUMERIC_DOUBLE.equals(lmAnalyzer)) {
 					fieldToTypeMap.put(sortField, SortField.Type.DOUBLE);
 				}
+				else if (LMAnalyzer.DATE.equals(lmAnalyzer)) {
+					fieldToTypeMap.put(sortField, SortField.Type.LONG);
+				}
 				else if (LMAnalyzer.KEYWORD.equals(lmAnalyzer) || LMAnalyzer.LC_KEYWORD.equals(lmAnalyzer)) {
 					fieldToTypeMap.put(sortField, SortField.Type.STRING);
 				}

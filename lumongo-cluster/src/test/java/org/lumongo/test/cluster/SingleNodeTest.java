@@ -1,7 +1,9 @@
 package org.lumongo.test.cluster;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Date;
 
+import org.joda.time.DateTime;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -22,13 +24,13 @@ import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.QueryResult;
+import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
-import org.lumongo.cluster.message.Lumongo.LMDoc;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.doc.AssociatedBuilder;
-import org.lumongo.doc.IndexedDocBuilder;
 import org.lumongo.doc.ResultDocBuilder;
+import org.lumongo.fields.FieldConfigBuilder;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -53,15 +55,18 @@ public class SingleNodeTest {
 		
 		String defaultSearchField = "title";
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
-		indexConfig.setDefaultAnalyzer(LMAnalyzer.KEYWORD);
+		
 		indexConfig.setSegmentTolerance(0.05);
-		indexConfig.setFieldAnalyzer("title", LMAnalyzer.STANDARD);
-		indexConfig.setFieldAnalyzer("issn", LMAnalyzer.LC_KEYWORD);
-		indexConfig.setFieldAnalyzer("uid", LMAnalyzer.LC_KEYWORD);
-		indexConfig.setFieldAnalyzer("an", LMAnalyzer.NUMERIC_INT);
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("eissn").indexAs(LMAnalyzer.LC_KEYWORD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("uid").indexAs(LMAnalyzer.LC_KEYWORD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("country").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("date").indexAs(LMAnalyzer.DATE).facetAs(LMFacetType.DATE_YYYY_MM_DD));
 		
 		lumongoWorkPool.createIndex(MY_TEST_INDEX, 16, "uid", indexConfig);
-		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, "uid", indexConfig, true);
+		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, "uid", indexConfig);
 	}
 	
 	@Test
@@ -85,35 +90,32 @@ public class SingleNodeTest {
 					
 					String uniqueId = uniqueIdPrefix + id;
 					
-					IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-					docBuilder.addField("issn", issn);
-					docBuilder.addField("title", "Facet Userguide");
-					docBuilder.addFacet("issn", issn);
+					DBObject object = new BasicDBObject();
+					object.put("issn", issn);
+					object.put("title", "Facet Userguide");
 					
 					if (half) { // 1/2 of input
-						docBuilder.addFacet("country", "US");
+						object.put("country", "US");
 					}
 					else { // 1/2 of input
-						docBuilder.addFacet("country", "France");
+						object.put("country", "France");
 					}
 					
 					if (tenth) { // 1/10 of input
-						docBuilder.addFacet("date", "2014", "10", "4");
+						Date d = (new DateTime()).withDate(2014, 10, 4).toDate();
+						object.put("date", d);
 					}
 					else if (half) { // 2/5 of input
-						docBuilder.addFacet("date", "2013", "9", "4");
+						Date d = (new DateTime()).withDate(2013, 9, 4).toDate();
+						object.put("date", d);
 					}
 					else { // 1/2 of input
-						docBuilder.addFacet("date", "2013", "8", "4");
+						Date d = (new DateTime()).withDate(2013, 8, 4).toDate();
+						object.put("date", d);
 					}
 					
-					LMDoc indexedDoc = docBuilder.getIndexedDoc();
-					
-					String xml = "<sampleXML>" + i + "</sampleXML>";
-					
 					Store s = new Store(uniqueId, FACET_TEST_INDEX);
-					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(xml).setCompressed(half));
-					s.setIndexedDocument(indexedDoc);
+					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
 					
 					lumongoWorkPool.store(s);
 				}
@@ -241,35 +243,23 @@ public class SingleNodeTest {
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
 				String uniqueId = uniqueIdPrefix + i;
 				
-				IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-				docBuilder.addField("issn", "1333-1333");
-				docBuilder.addField("title", "Search and Storage");
-				LMDoc indexedDoc = docBuilder.getIndexedDoc();
+				DBObject object = new BasicDBObject();
+				object.put("issn", "1333-1333");
+				object.put("title", "Search and Storage");
 				
-				boolean compressed = (i % 2 == 0);
-				
-				String xml = "<sampleXML>random xml</sampleXML>";
-				
-				Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(xml).setCompressed(compressed));
-				s.setIndexedDocument(indexedDoc);
+				Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
 				lumongoWorkPool.store(s);
 			}
 			
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
 				String uniqueId = uniqueIdPrefix + i;
 				
-				IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-				docBuilder.addField("issn", "1234-1234");
-				docBuilder.addField("title", "Distributed Search and Storage System");
-				docBuilder.addField("an", i);
-				LMDoc indexedDoc = docBuilder.getIndexedDoc();
+				DBObject object = new BasicDBObject();
+				object.put("issn", "1234-1234");
+				object.put("title", "Distributed Search and Storage System");
+				object.put("an", i);
 				
-				boolean compressed = (i % 2 == 0);
-				
-				String xml = "<sampleXML>" + i + "</sampleXML>";
-				
-				Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(xml).setCompressed(compressed));
-				s.setIndexedDocument(indexedDoc);
+				Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
 				lumongoWorkPool.store(s);
 			}
 		}
@@ -308,8 +298,7 @@ public class SingleNodeTest {
 				
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocument(uniqueId, MY_TEST_INDEX));
 				Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
-				String recordText = response.getDocumentAsUtf8();
-				Assert.assertTrue("Document contents is invalid for <" + uniqueId + ">", recordText.equals("<sampleXML>" + i + "</sampleXML>"));
+				
 			}
 		}
 	}
@@ -319,24 +308,22 @@ public class SingleNodeTest {
 		lumongoWorkPool = SetupSuite.getLumongoWorkPool();
 		String uniqueId = "bsonTestObjectId";
 		{
-			IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-			docBuilder.addField("issn", "4321-4321");
-			docBuilder.addField("title", "Magic Java Beans");
-			docBuilder.addField("eissn", "3333-3333");
-			LMDoc indexedDoc = docBuilder.getIndexedDoc();
 			
 			DBObject dbObject = new BasicDBObject();
 			dbObject.put("someKey", "someValue");
 			dbObject.put("other key", "other value");
+			dbObject.put("issn", "4321-4321");
+			dbObject.put("title", "Magic Java Beans");
+			dbObject.put("eissn", "3333-3333");
 			
-			Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(dbObject)).setIndexedDocument(indexedDoc);
+			Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(dbObject));
 			lumongoWorkPool.store(s);
 		}
 		
 		{
 			FetchResult response = lumongoWorkPool.fetch(new FetchDocument(uniqueId, MY_TEST_INDEX));
 			Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
-			DBObject dbObject = response.getDocumentAsBson();
+			DBObject dbObject = response.getDocument();
 			Assert.assertEquals("BSON object is missing field", "someValue", dbObject.get("someKey"));
 			Assert.assertEquals("BSON object is missing field", "other value", dbObject.get("other key"));
 		}
@@ -349,15 +336,12 @@ public class SingleNodeTest {
 		String uniqueId = "id3333";
 		{
 			{
-				IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-				docBuilder.addField("issn", "6666-6666");
-				docBuilder.addField("title", "More Magic Java Beans");
-				docBuilder.addField("eissn", 2222 - 1111);
-				LMDoc indexedDoc = docBuilder.getIndexedDoc();
-				
 				DBObject dbObject = new BasicDBObject();
 				dbObject.put("key1", "val1");
 				dbObject.put("key2", "val2");
+				dbObject.put("issn", "6666-6666");
+				dbObject.put("title", "More Magic Java Beans");
+				dbObject.put("eissn", 2222 - 1111);
 				
 				AssociatedBuilder associatedBuilder = new AssociatedBuilder();
 				associatedBuilder.setFilename("myfile");
@@ -367,7 +351,6 @@ public class SingleNodeTest {
 				associatedBuilder.addMetaData("sometypeinfo", "text file");
 				
 				Store s = new Store(uniqueId, MY_TEST_INDEX);
-				s.setIndexedDocument(indexedDoc);
 				s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(dbObject));
 				s.addAssociatedDocument(associatedBuilder);
 				
@@ -404,7 +387,7 @@ public class SingleNodeTest {
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX, true));
 				
 				Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
-				DBObject dbObject = response.getDocumentAsBson();
+				DBObject dbObject = response.getDocument();
 				;
 				Assert.assertEquals("BSON object is missing field", "val1", dbObject.get("key1"));
 				Assert.assertEquals("BSON object is missing field", "val2", dbObject.get("key2"));
@@ -417,7 +400,7 @@ public class SingleNodeTest {
 			{
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX));
 				Assert.assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
-				DBObject dbObject = response.getDocumentAsBson();
+				DBObject dbObject = response.getDocument();
 				Assert.assertEquals("BSON object is missing field", "val1", dbObject.get("key1"));
 				// Assert.assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
 				
@@ -499,18 +482,14 @@ public class SingleNodeTest {
 	public void test08Api() throws Exception {
 		lumongoWorkPool = SetupSuite.getLumongoWorkPool();
 		{
-			IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-			docBuilder.addField("issn", "4444-1111");
-			docBuilder.addField("title", "A really special title to search");
-			LMDoc indexedDoc = docBuilder.getIndexedDoc();
+			DBObject object = new BasicDBObject();
+			object.put("issn", "4444-1111");
+			object.put("title", "A really special title to search");
 			
 			String uniqueId = "myid123";
 			Store s = new Store(uniqueId, MY_TEST_INDEX);
-			s.setIndexedDocument(indexedDoc);
 			
-			String xml = "<sampleXML></sampleXML>";
-			
-			s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(xml).setCompressed(true));
+			s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
 			
 			lumongoWorkPool.store(s);
 		}

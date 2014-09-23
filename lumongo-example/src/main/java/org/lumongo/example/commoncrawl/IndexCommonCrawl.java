@@ -30,78 +30,81 @@ import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
-import org.lumongo.doc.IndexedDocBuilder;
 import org.lumongo.doc.ResultDocBuilder;
+import org.lumongo.fields.FieldConfigBuilder;
 import org.lumongo.util.LogUtil;
 import org.lumongo.util.properties.PropertiesReader;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 
 public class IndexCommonCrawl {
 	//fields
 	private static final String UID = "uid";
 	private static final String URL = "url";
 	private static final String CONTENTS = "contents";
+	private static final String TEXT_CONTENTS = "textContents";
 	private static final String TITLE = "title";
-
+	
 	private final static Logger log = Logger.getLogger(IndexCommonCrawl.class);
-
+	
 	private static final AtomicLong count = new AtomicLong();
 	private static LumongoWorkPool lumongoWorkPool;
-
+	
 	public static void main(String[] args) throws Exception {
-
+		
 		if (args.length != 4) {
 			System.err.println("usage: awsPropertiesFile prefix lumongoServers indexName");
 			System.err.println("usage: aws.properties 2010/09/25/9 10.0.0.1,10.0.0.2 ccrawl");
 			System.exit(1);
 		}
-
+		
 		LogUtil.loadLogConfig();
-
+		
 		String propFileName = args[0];
 		String prefix = args[1];
 		final String[] serverNames = args[2].split(",");
 		final String indexName = args[3];
-
+		
 		final LumongoPoolConfig clientConfig = new LumongoPoolConfig();
 		for (String serverName : serverNames) {
 			clientConfig.addMember(serverName);
 		}
-
+		
 		File propFile = new File(propFileName);
-
+		
 		PropertiesReader pr = new PropertiesReader(propFile);
-
+		
 		String awsAccessKey = pr.getString("awsAccessKey");
 		String awsSecretKey = pr.getString("awsSecretKey");
-
+		
 		final AWSCredentials awsCredentials = new AWSCredentials(awsAccessKey, awsSecretKey);
-
+		
 		RestS3Service s3Service = new RestS3Service(awsCredentials);
 		s3Service.setRequesterPaysEnabled(true);
-
+		
 		System.out.println("Fetching files list for prefix <" + prefix + ">");
 		System.out.println("This can take awhile ...");
-
+		
 		S3Object[] objects = s3Service.listObjects("aws-publicdatasets", "common-crawl/crawl-002/" + prefix, null);
 		System.out.println("Fetched info for <" + objects.length + "> files");
-
+		
 		lumongoWorkPool = new LumongoWorkPool(clientConfig);
-
+		
 		IndexConfig indexConfig = new IndexConfig(CONTENTS);
-		indexConfig.setDefaultAnalyzer(LMAnalyzer.LC_KEYWORD);
-		indexConfig.setFieldAnalyzer(URL, LMAnalyzer.LC_KEYWORD);
-		indexConfig.setFieldAnalyzer(CONTENTS, LMAnalyzer.STANDARD);
-		indexConfig.setFieldAnalyzer(TITLE, LMAnalyzer.STANDARD);
-
+		indexConfig.addFieldConfig(FieldConfigBuilder.create(URL).indexAs(LMAnalyzer.LC_KEYWORD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create(TEXT_CONTENTS).indexAs(LMAnalyzer.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create(TITLE).indexAs(LMAnalyzer.STANDARD));
+		
 		CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(indexName, 16, UID, indexConfig);
-
+		
 		lumongoWorkPool.createOrUpdateIndex(createOrUpdateIndex);
-
+		
 		ExecutorService pool = Executors.newFixedThreadPool(16);
-
+		
 		for (S3Object object : objects) {
 			final String key = object.getKey();
-
+			
 			pool.execute(new Runnable() {
 				@Override
 				public void run() {
@@ -113,61 +116,59 @@ public class IndexCommonCrawl {
 					}
 				}
 			});
-
+			
 		}
-
+		
 		pool.shutdown();
 		lumongoWorkPool.shutdown();
-
+		
 		while (!pool.isTerminated()) {
 			pool.awaitTermination(1, TimeUnit.MINUTES);
 		}
-
+		
 	}
-
-	private static void handleFile(String indexName, AWSCredentials awsCredentials, String key) throws S3ServiceException,
-	IOException, ServiceException {
-
+	
+	private static void handleFile(String indexName, AWSCredentials awsCredentials, String key) throws S3ServiceException, IOException, ServiceException {
+		
 		ArcReader ar = null;
-
+		
 		try {
-
+			
 			RestS3Service s3Service = new RestS3Service(awsCredentials);
 			s3Service.setRequesterPaysEnabled(true);
-
+			
 			S3Object object = s3Service.getObject("aws-publicdatasets", key);
 			ar = ArcReaderFactory.getReader(object.getDataInputStream(), 1024 * 16);
-
+			
 			log.info("Opened <" + key + ">");
-
+			
 			ar.getVersionBlock();
 			ArcRecord arcRecord = null;
 			while ((arcRecord = ar.getNextRecord()) != null) {
 				try {
 					String uniqueId = arcRecord.getUrl().toString();
-
+					
 					String url = null;
 					if (arcRecord.getUrl() != null) {
 						url = arcRecord.getUrl().toString();
 					}
 					String contentType = arcRecord.getContentType();
-
+					
 					if ("text/html".equals(contentType)) {
 						Payload p = arcRecord.getPayload();
 						byte[] bytes = getBytes(p.getInputStream());
-
+						
 						Store s = new Store(uniqueId, indexName);
-						ResultDocBuilder rdBuilder = new ResultDocBuilder().setCompressed(true).setDocument(bytes);
-
+						
 						try (Scanner scanner = new Scanner(new ByteArrayInputStream(bytes))) {
 							String content = scanner.useDelimiter("\\A").next();
-
+							
 							Document d = Jsoup.parse(content);
-
+							
 							String pageText = d.text();
-
+							
 							String title = null;
-
+							
 							try {
 								Elements e = d.head().getElementsByTag(TITLE);
 								if (!e.isEmpty()) {
@@ -175,30 +176,29 @@ public class IndexCommonCrawl {
 								}
 							}
 							catch (Exception e) {
-
+								
 							}
-
+							
 							if (url != null) {
-								IndexedDocBuilder docBuilder = new IndexedDocBuilder();
-								docBuilder.addField(CONTENTS, pageText);
-								if (title != null) {
-									docBuilder.addField(TITLE, title);
-								}
-								docBuilder.addFacet(URL, url);
-
-
-								s.setIndexedDocument(docBuilder.getIndexedDoc());
+								
+								DBObject document = new BasicDBObject();
+								document.put(CONTENTS, bytes);
+								document.put(TEXT_CONTENTS, pageText);
+								document.put(TITLE, title);
+								document.put(URL, url);
+								
+								ResultDocBuilder rdBuilder = new ResultDocBuilder().setDocument(document);
 								s.setResultDocument(rdBuilder);
 								lumongoWorkPool.store(s);
 							}
 						}
-
+						
 						long c = count.getAndIncrement();
 						if (c % 5000 == 0) {
 							log.info("Indexed <" + c + ">");
 						}
 					}
-
+					
 				}
 				catch (Exception e) {
 					log.warn(e.getClass().getSimpleName() + ": " + e);
@@ -211,22 +211,22 @@ public class IndexCommonCrawl {
 				ar.close();
 			}
 		}
-
+		
 	}
-
+	
 	protected static byte[] getBytes(InputStream is) throws IOException {
 		try {
 			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-
+			
 			int nRead;
 			byte[] data = new byte[1024 * 16];
-
+			
 			while ((nRead = is.read(data, 0, data.length)) != -1) {
 				buffer.write(data, 0, nRead);
 			}
-
+			
 			buffer.flush();
-
+			
 			return buffer.toByteArray();
 		}
 		finally {
@@ -235,5 +235,5 @@ public class IndexCommonCrawl {
 			}
 		}
 	}
-
+	
 }

@@ -35,8 +35,8 @@ import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.DeleteResponse;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FetchRequest;
-import org.lumongo.cluster.message.Lumongo.FetchRequest.FetchType;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
+import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesRequest;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetIndexesRequest;
@@ -624,24 +624,18 @@ public class LumongoIndexManager {
 				Query query = i.getQuery(queryString, queryRequest.getQueryFieldList());
 				
 				if (queryRequest.hasFacetRequest()) {
-					if (i.isFaceted()) {
-						FacetRequest facetRequest = queryRequest.getFacetRequest();
+					FacetRequest facetRequest = queryRequest.getFacetRequest();
+					
+					List<LMFacet> drillDownList = facetRequest.getDrillDownList();
+					if (!drillDownList.isEmpty()) {
+						FacetsConfig facetsConfig = i.getFacetsConfig();
+						DrillDownQuery ddQuery = new DrillDownQuery(facetsConfig, query);
 						
-						List<LMFacet> drillDownList = facetRequest.getDrillDownList();
-						if (!drillDownList.isEmpty()) {
-							FacetsConfig facetsConfig = i.getFacetsConfig();
-							DrillDownQuery ddQuery = new DrillDownQuery(facetsConfig, query);
-							
-							for (LMFacet or : drillDownList) {
-								ddQuery.add(or.getLabel(), or.getPathList().toArray(new String[0]));
-							}
-							
-							query = ddQuery;
+						for (LMFacet or : drillDownList) {
+							ddQuery.add(or.getLabel(), or.getPathList().toArray(new String[0]));
 						}
-					}
-					else {
-						//TODO make this fail silently if multiple indexes queried?
-						throw new IOException("Cannot use facet request on non-faceted index <" + indexName + ">");
+						
+						query = ddQuery;
 					}
 				}
 				
@@ -665,7 +659,9 @@ public class LumongoIndexManager {
 		globalLock.readLock().lock();
 		long start = System.currentTimeMillis();
 		try {
-			log.info("Running query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + ">");
+			//log.info("Running query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + ">");
+			
+			log.info("Running query: <" + request + "> on indexes <" + request.getIndexList() + ">");
 			
 			final Map<String, QueryWithFilters> queryMap = getQueryMap(request);
 			
