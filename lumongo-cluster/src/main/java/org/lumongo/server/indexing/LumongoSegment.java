@@ -1,20 +1,17 @@
 package org.lumongo.server.indexing;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
@@ -65,20 +62,19 @@ import org.apache.lucene.search.TopFieldCollector;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.util.BytesRef;
-import org.bson.BSON;
 import org.bson.BSONObject;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
-import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.FacetAs;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetGroup;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
-import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
@@ -88,12 +84,10 @@ import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 import org.lumongo.cluster.message.Lumongo.IndexAs;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
-import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
-import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.indexing.field.DateFieldIndexer;
 import org.lumongo.server.indexing.field.DoubleFieldIndexer;
@@ -102,10 +96,10 @@ import org.lumongo.server.indexing.field.IntFieldIndexer;
 import org.lumongo.server.indexing.field.LongFieldIndexer;
 import org.lumongo.server.indexing.field.StringFieldIndexer;
 import org.lumongo.server.searching.QueryWithFilters;
-import org.lumongo.storage.rawfiles.MongoDocumentStorage;
-import org.lumongo.util.LockHandler;
 
 public class LumongoSegment {
+	
+	private final static DateTimeFormatter FORMATTER_YYYY_MM_DD = DateTimeFormat.forPattern("yyyyMMdd").withZoneUTC();
 	
 	private final static Logger log = Logger.getLogger(LumongoSegment.class);
 	
@@ -129,10 +123,6 @@ public class LumongoSegment {
 	
 	private final Set<String> fetchSet;
 	
-	private MongoDocumentStorage documentStorage;
-	
-	private LockHandler lockHandler;
-	
 	private QueryResultCache queryResultCache;
 	private QueryResultCache queryResultCacheRealtime;
 	
@@ -140,15 +130,13 @@ public class LumongoSegment {
 	
 	private int segmentQueryCacheMaxAmount;
 	
-	public LumongoSegment(int segmentNumber, MongoDocumentStorage documentStorage, LumongoIndexWriter indexWriter,
-					LumongoDirectoryTaxonomyWriter taxonomyWriter, IndexConfig indexConfig, FacetsConfig facetsConfig, Analyzer analyzer) throws IOException {
-		
-		this.lockHandler = new LockHandler();
+	public LumongoSegment(int segmentNumber, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter, IndexConfig indexConfig,
+					FacetsConfig facetsConfig, Analyzer analyzer) throws IOException {
 		
 		setupQueryCache(indexConfig);
 		
 		this.segmentNumber = segmentNumber;
-		this.documentStorage = documentStorage;
+		
 		this.indexWriter = indexWriter;
 		
 		this.taxonomyWriter = taxonomyWriter;
@@ -504,7 +492,7 @@ public class LumongoSegment {
 		indexWriter.close();
 	}
 	
-	private void index(String uniqueId, BSONObject document, long timestamp) throws Exception {
+	public void index(String uniqueId, BSONObject document, long timestamp) throws Exception {
 		Document d = new Document();
 		
 		List<FacetField> facetFields = new ArrayList<FacetField>();
@@ -591,7 +579,8 @@ public class LumongoSegment {
 				if (o instanceof Date) {
 					Date da = (Date) o;
 					DateTime dt = new DateTime(da);
-					facetFields.add(new FacetField(fa.getFacetName(), dt.getYear() + "", dt.getMonthOfYear() + "", dt.getDayOfMonth() + ""));
+					facetFields.add(new FacetField(fa.getFacetName(), String.format("%04d", dt.getYear()), String.format("%02d", dt.getMonthOfYear()), String
+									.format("%02d", dt.getDayOfMonth())));
 				}
 				else if (o instanceof Collection) {
 					Collection<?> c = (Collection<?>) o;
@@ -599,7 +588,8 @@ public class LumongoSegment {
 						if (obj instanceof Date) {
 							Date da = (Date) o;
 							DateTime dt = new DateTime(da);
-							facetFields.add(new FacetField(fa.getFacetName(), dt.getYear() + "", dt.getMonthOfYear() + "", dt.getDayOfMonth() + ""));
+							facetFields.add(new FacetField(fa.getFacetName(), String.format("%04d", dt.getYear()), String.format("%02d", dt.getMonthOfYear()),
+											String.format("%02d", dt.getDayOfMonth())));
 						}
 						else {
 							throw new Exception("Cannot facet date for field <" + fc.getStoredFieldName()
@@ -615,8 +605,9 @@ public class LumongoSegment {
 			else if (LMFacetType.DATE_YYYYMMDD.equals(fa.getFacetType())) {
 				if (o instanceof Date) {
 					Date da = (Date) o;
-					DateTime dt = new DateTime(da);
-					facetFields.add(new FacetField(fa.getFacetName(), dt.getYear() + "" + dt.getMonthOfYear() + "" + dt.getDayOfMonth() + ""));
+					DateTime dt = new DateTime(da).withZone(DateTimeZone.UTC);
+					String facetValue = FORMATTER_YYYY_MM_DD.print(dt);
+					facetFields.add(new FacetField(fa.getFacetName(), facetValue));
 				}
 				else if (o instanceof Collection) {
 					Collection<?> c = (Collection<?>) o;
@@ -641,32 +632,10 @@ public class LumongoSegment {
 		}
 	}
 	
-	public void deleteDocument(DeleteRequest deleteRequest) throws Exception {
-		String uniqueId = deleteRequest.getUniqueId();
-		
-		ReadWriteLock lock = lockHandler.getLock(uniqueId);
-		
-		try {
-			lock.writeLock().lock();
-			
-			if (deleteRequest.getDeleteDocument()) {
-				Term term = new Term(uniqueIdField, uniqueId);
-				indexWriter.deleteDocuments(term);
-				possibleCommit();
-				documentStorage.deleteSourceDocument(uniqueId);
-			}
-			
-			if (deleteRequest.getDeleteAllAssociated()) {
-				documentStorage.deleteAssociatedDocuments(uniqueId);
-			}
-			else if (deleteRequest.hasFilename()) {
-				String fileName = deleteRequest.getFilename();
-				documentStorage.deleteAssociatedDocument(uniqueId, fileName);
-			}
-		}
-		finally {
-			lock.writeLock().unlock();
-		}
+	public void deleteDocument(String uniqueId) throws Exception {
+		Term term = new Term(uniqueIdField, uniqueId);
+		indexWriter.deleteDocuments(term);
+		possibleCommit();
 		
 	}
 	
@@ -701,7 +670,6 @@ public class LumongoSegment {
 	public void clear() throws IOException {
 		// index has write lock so none needed here
 		indexWriter.deleteAll();
-		documentStorage.deleteAllDocuments();
 		forceCommit();
 	}
 	
@@ -817,55 +785,6 @@ public class LumongoSegment {
 			if (ir != null) {
 				ir.close();
 			}
-		}
-	}
-	
-	public List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType associatedFetchType) throws Exception {
-		return documentStorage.getAssociatedDocuments(uniqueId, associatedFetchType);
-	}
-	
-	public AssociatedDocument getAssociatedDocument(String uniqueId, String fileName, FetchType associatedFetchType) throws Exception {
-		return documentStorage.getAssociatedDocument(uniqueId, fileName, associatedFetchType);
-	}
-	
-	public ResultDocument getSourceDocument(String uniqueId, FetchType resultFetchType) throws Exception {
-		return documentStorage.getSourceDocument(uniqueId, resultFetchType);
-	}
-	
-	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long clusterTime,
-					HashMap<String, String> metadataMap) throws Exception {
-		documentStorage.storeAssociatedDocument(uniqueId, fileName, is, compress, clusterTime, metadataMap);
-	}
-	
-	public InputStream getAssociatedDocumentStream(String uniqueId, String fileName) throws IOException {
-		return documentStorage.getAssociatedDocumentStream(uniqueId, fileName);
-	}
-	
-	public void store(StoreRequest storeRequest, long timestamp) throws Exception {
-		
-		String uniqueId = storeRequest.getUniqueId();
-		ReadWriteLock lock = lockHandler.getLock(uniqueId);
-		try {
-			lock.writeLock().lock();
-			
-			if (storeRequest.hasResultDocument()) {
-				BSONObject document = BSON.decode(storeRequest.getResultDocument().getDocument().toByteArray());
-				this.index(uniqueId, document, timestamp);
-				
-				documentStorage.storeSourceDocument(storeRequest.getUniqueId(), timestamp, document, storeRequest.getResultDocument().getMetadataList());
-			}
-			
-			if (storeRequest.getClearExistingAssociated()) {
-				documentStorage.deleteAssociatedDocuments(uniqueId);
-			}
-			
-			for (AssociatedDocument ad : storeRequest.getAssociatedDocumentList()) {
-				ad = AssociatedDocument.newBuilder(ad).setTimestamp(timestamp).build();
-				documentStorage.storeAssociatedDocument(ad);
-			}
-		}
-		finally {
-			lock.writeLock().unlock();
 		}
 	}
 	

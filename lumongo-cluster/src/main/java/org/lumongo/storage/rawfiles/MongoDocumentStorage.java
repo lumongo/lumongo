@@ -117,12 +117,38 @@ public class MongoDocumentStorage implements DocumentStorage {
 	}
 	
 	@Override
-	public ResultDocument getSourceDocument(String uniqueId, FetchType fetchType) throws Exception {
+	public ResultDocument getSourceDocument(String uniqueId, FetchType fetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception {
 		if (!FetchType.NONE.equals(fetchType)) {
 			DB db = pool.getDB(database);
 			DBCollection coll = db.getCollection(rawCollectionName);
 			DBObject search = new BasicDBObject(MongoConstants.StandardFields._ID, uniqueId);
-			DBObject result = coll.findOne(search);
+			
+			DBObject fields = null;
+			
+			if (FetchType.FULL.equals(fetchType)) {
+				if (!fieldsToReturn.isEmpty() || !fieldsToMask.isEmpty()) {
+					fields = new BasicDBObject();
+					for (String fieldToReturn : fieldsToReturn) {
+						fields.put(fieldToReturn, 1);
+					}
+					for (String fieldToMask : fieldsToMask) {
+						fields.put(fieldToMask, 0);
+					}
+					
+					fields.put(MongoConstants.StandardFields._ID, 1);
+					fields.put(TIMESTAMP, 1);
+					fields.put(METADATA, 1);
+				}
+			}
+			else if (FetchType.META.equals(fetchType)) {
+				fields = new BasicDBObject();
+				fields.put(MongoConstants.StandardFields._ID, 1);
+				fields.put(TIMESTAMP, 1);
+				fields.put(METADATA, 1);
+			}
+			
+			DBObject result = coll.findOne(search, fields);
+			
 			if (null != result) {
 				
 				long timestamp = (long) result.removeField(TIMESTAMP);
@@ -158,6 +184,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		coll.remove(search);
 	}
 	
+	@Override
 	public void deleteAllDocuments() {
 		GridFS gridFS = createGridFSConnection();
 		gridFS.remove(new BasicDBObject());
@@ -167,6 +194,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		coll.remove(new BasicDBObject());
 	}
 	
+	@Override
 	public void drop() {
 		DB db = pool.getDB(database);
 		db.dropDatabase();
