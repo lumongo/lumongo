@@ -38,6 +38,8 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Version;
+import org.bson.BSON;
+import org.bson.BSONObject;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
@@ -71,7 +73,9 @@ import org.lumongo.server.searching.QueryWithFilters;
 import org.lumongo.storage.constants.MongoConstants;
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
+import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.storage.rawfiles.MongoDocumentStorage;
+import org.lumongo.util.LockHandler;
 import org.lumongo.util.LumongoThreadFactory;
 import org.lumongo.util.SegmentUtil;
 
@@ -123,12 +127,16 @@ public class LumongoIndex {
 	
 	private final HazelcastManager hazelcastManager;
 	
-	private final MongoDocumentStorage[] mongoDocumentStorageArray;
+	private final DocumentStorage documentStorage;
 	
 	private LumongoAnalyzerFactory lumongoAnalyzerFactory;
 	
+	private LockHandler documentLockHandler;
+	
 	private LumongoIndex(HazelcastManager hazelcastManger, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig)
 					throws UnknownHostException, MongoException {
+		
+		this.documentLockHandler = new LockHandler();
 		
 		this.hazelcastManager = hazelcastManger;
 		
@@ -143,11 +151,9 @@ public class LumongoIndex {
 		
 		this.storageMongoClient = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
 		
-		this.mongoDocumentStorageArray = new MongoDocumentStorage[numberOfSegments];
+		String rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + STORAGE_DB_SUFFIX;
 		
-		for (int i = 0; i < numberOfSegments; i++) {
-			mongoDocumentStorageArray[i] = createMongoDocumentStorage(i);
-		}
+		this.documentStorage = new MongoDocumentStorage(storageMongoClient, indexName, rawStorageDb, RESULT_STORAGE_COLLECTION, clusterConfig.isSharded());
 		
 		this.segmentPool = Executors.newCachedThreadPool(new LumongoThreadFactory(indexName + "-segments"));
 		
@@ -347,8 +353,6 @@ public class LumongoIndex {
 				hzLock.lock();
 				log.info("Obtained lock for index <" + indexName + "> segment <" + segmentNumber + ">");
 				
-				MongoDocumentStorage documentStorage = mongoDocumentStorageArray[segmentNumber];
-				
 				String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
 				String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
 				
@@ -372,7 +376,7 @@ public class LumongoIndex {
 				taxonomyWriter = new LumongoDirectoryTaxonomyWriter(ddFacet);
 				facetsConfig = getFacetsConfig();
 				
-				LumongoSegment s = new LumongoSegment(segmentNumber, documentStorage, indexWriter, taxonomyWriter, indexConfig, facetsConfig,
+				LumongoSegment s = new LumongoSegment(segmentNumber, indexWriter, taxonomyWriter, indexConfig, facetsConfig,
 								lumongoAnalyzerFactory.getAnalyzer());
 				segmentMap.put(segmentNumber, s);
 				
@@ -402,34 +406,6 @@ public class LumongoIndex {
 			indexSegmentDbName = mongoConfig.getDatabaseName() + "_" + indexName;
 		}
 		return indexSegmentDbName;
-	}
-	
-	protected MongoDocumentStorage createMongoDocumentStorage(int segmentNumber) {
-		
-		String rawStorageDb;
-		String rawStorageCollection;
-		
-		boolean databasePerRawDocumentSegment = false;
-		boolean collectionPerRawDocumentSegment = false;
-		
-		if (databasePerRawDocumentSegment) {
-			rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + "_" + segmentNumber + STORAGE_DB_SUFFIX;
-		}
-		else {
-			rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + STORAGE_DB_SUFFIX;
-		}
-		
-		if (collectionPerRawDocumentSegment) {
-			rawStorageCollection = RESULT_STORAGE_COLLECTION + "_" + segmentNumber;
-		}
-		else {
-			rawStorageCollection = RESULT_STORAGE_COLLECTION;
-		}
-		
-		MongoDocumentStorage documentStorage = new MongoDocumentStorage(storageMongoClient, indexName, rawStorageDb, rawStorageCollection,
-						clusterConfig.isSharded());
-		return documentStorage;
-		
 	}
 	
 	public void unloadSegment(int segmentNumber) throws CorruptIndexException, IOException {
@@ -713,7 +689,7 @@ public class LumongoIndex {
 			MongoDirectory.dropIndex(mongo, dbName, collectionName);
 			MongoDirectory.dropIndex(mongo, dbName, collectionName + "_" + FACETS_SUFFIX);
 			
-			mongoDocumentStorageArray[i].drop();
+			documentStorage.drop();
 		}
 		
 		for (int i = 0; i < numberOfSegments; i++) {
@@ -728,11 +704,35 @@ public class LumongoIndex {
 		indexLock.readLock().lock();
 		
 		try {
-			String uniqueId = storeRequest.getUniqueId();
-			LumongoSegment s = findSegmentFromUniqueId(uniqueId);
 			
 			long timestamp = hazelcastManager.getClusterTime();
-			s.store(storeRequest, timestamp);
+			
+			String uniqueId = storeRequest.getUniqueId();
+			ReadWriteLock documentLock = documentLockHandler.getLock(uniqueId);
+			try {
+				documentLock.writeLock().lock();
+				
+				if (storeRequest.hasResultDocument()) {
+					BSONObject document = BSON.decode(storeRequest.getResultDocument().getDocument().toByteArray());
+					
+					LumongoSegment s = findSegmentFromUniqueId(uniqueId);
+					s.index(uniqueId, document, timestamp);
+					
+					documentStorage.storeSourceDocument(storeRequest.getUniqueId(), timestamp, document, storeRequest.getResultDocument().getMetadataList());
+				}
+				
+				if (storeRequest.getClearExistingAssociated()) {
+					documentStorage.deleteAssociatedDocuments(uniqueId);
+				}
+				
+				for (AssociatedDocument ad : storeRequest.getAssociatedDocumentList()) {
+					ad = AssociatedDocument.newBuilder(ad).setTimestamp(timestamp).build();
+					documentStorage.storeAssociatedDocument(ad);
+				}
+			}
+			finally {
+				documentLock.writeLock().unlock();
+			}
 			
 		}
 		finally {
@@ -746,8 +746,31 @@ public class LumongoIndex {
 		
 		try {
 			
-			LumongoSegment s = findSegmentFromUniqueId(deleteRequest.getUniqueId());
-			s.deleteDocument(deleteRequest);
+			String uniqueId = deleteRequest.getUniqueId();
+			
+			ReadWriteLock documentLock = documentLockHandler.getLock(uniqueId);
+			
+			try {
+				documentLock.writeLock().lock();
+				
+				if (deleteRequest.getDeleteDocument()) {
+					LumongoSegment s = findSegmentFromUniqueId(deleteRequest.getUniqueId());
+					s.deleteDocument(uniqueId);
+					documentStorage.deleteSourceDocument(uniqueId);
+				}
+				
+				if (deleteRequest.getDeleteAllAssociated()) {
+					documentStorage.deleteAssociatedDocuments(uniqueId);
+				}
+				else if (deleteRequest.hasFilename()) {
+					String fileName = deleteRequest.getFilename();
+					documentStorage.deleteAssociatedDocument(uniqueId, fileName);
+				}
+			}
+			finally {
+				documentLock.writeLock().unlock();
+			}
+			
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -1100,6 +1123,8 @@ public class LumongoIndex {
 				}
 			}
 			
+			documentStorage.deleteAllDocuments();
+			
 		}
 		finally {
 			indexLock.writeLock().unlock();
@@ -1200,8 +1225,7 @@ public class LumongoIndex {
 					HashMap<String, String> metadataMap) throws Exception {
 		indexLock.readLock().lock();
 		try {
-			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
-			mongoDocumentStorageArray[segmentNumber].storeAssociatedDocument(uniqueId, fileName, is, compress, clusterTime, metadataMap);
+			documentStorage.storeAssociatedDocument(uniqueId, fileName, is, compress, clusterTime, metadataMap);
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -1211,19 +1235,18 @@ public class LumongoIndex {
 	public InputStream getAssociatedDocumentStream(String uniqueId, String fileName) throws IOException {
 		indexLock.readLock().lock();
 		try {
-			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
-			return mongoDocumentStorageArray[segmentNumber].getAssociatedDocumentStream(uniqueId, fileName);
+			return documentStorage.getAssociatedDocumentStream(uniqueId, fileName);
 		}
 		finally {
 			indexLock.readLock().unlock();
 		}
 	}
 	
-	public ResultDocument getSourceDocument(String uniqueId, FetchType resultFetchType) throws Exception {
+	public ResultDocument getSourceDocument(String uniqueId, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
+					throws Exception {
 		indexLock.readLock().lock();
 		try {
-			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
-			return mongoDocumentStorageArray[segmentNumber].getSourceDocument(uniqueId, resultFetchType);
+			return documentStorage.getSourceDocument(uniqueId, resultFetchType, fieldsToReturn, fieldsToMask);
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -1233,8 +1256,7 @@ public class LumongoIndex {
 	public AssociatedDocument getAssociatedDocument(String uniqueId, String fileName, FetchType associatedFetchType) throws Exception {
 		indexLock.readLock().lock();
 		try {
-			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
-			return mongoDocumentStorageArray[segmentNumber].getAssociatedDocument(uniqueId, fileName, associatedFetchType);
+			return documentStorage.getAssociatedDocument(uniqueId, fileName, associatedFetchType);
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -1244,8 +1266,7 @@ public class LumongoIndex {
 	public List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType associatedFetchType) throws Exception {
 		indexLock.readLock().lock();
 		try {
-			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
-			return mongoDocumentStorageArray[segmentNumber].getAssociatedDocuments(uniqueId, associatedFetchType);
+			return documentStorage.getAssociatedDocuments(uniqueId, associatedFetchType);
 		}
 		finally {
 			indexLock.readLock().unlock();

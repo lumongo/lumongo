@@ -15,8 +15,6 @@ public interface DocumentStorage {
 	
 	public void storeAssociatedDocument(AssociatedDocument docs) throws Exception;
 	
-	public ResultDocument getSourceDocument(String uniqueId, FetchType fetchType) throws Exception;
-	
 	public List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType fetchType) throws Exception;
 	
 	public AssociatedDocument getAssociatedDocument(String uniqueId, String filename, FetchType fetchType) throws Exception;
@@ -34,4 +32,9 @@ public interface DocumentStorage {
 	
 	public void deleteAssociatedDocuments(String uniqueId);
 	
+	public void drop();
+	
+	public void deleteAllDocuments();
+	
+	public ResultDocument getSourceDocument(String uniqueId, FetchType fetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception;
 }
