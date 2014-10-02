@@ -174,7 +174,7 @@ public class SingleNodeTest {
 		}
 		
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013", "9");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013", "09");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
@@ -183,7 +183,7 @@ public class SingleNodeTest {
 		}
 		
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013", "8");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013", "08");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
