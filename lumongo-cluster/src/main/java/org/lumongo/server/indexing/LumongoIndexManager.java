@@ -491,7 +491,7 @@ public class LumongoIndexManager {
 	}
 	
 	public DeleteResponse deleteDocument(DeleteRequest deleteRequest) throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist, IOException,
-					Exception {
+	Exception {
 		globalLock.readLock().lock();
 		try {
 			
@@ -582,7 +582,8 @@ public class LumongoIndexManager {
 			FetchResponse.Builder frBuilder = FetchResponse.newBuilder();
 			
 			if (!FetchType.NONE.equals(request.getResultFetchType())) {
-				ResultDocument resultDoc = i.getSourceDocument(request.getUniqueId(), request.getResultFetchType());
+				ResultDocument resultDoc = i.getSourceDocument(request.getUniqueId(), request.getResultFetchType(), request.getDocumentFieldsList(),
+								request.getDocumentMaskedFieldsList());
 				if (null != resultDoc) {
 					frBuilder.setResultDocument(resultDoc);
 				}

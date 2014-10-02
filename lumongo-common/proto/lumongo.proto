@@ -386,6 +386,8 @@ message FetchRequest {
 	optional string fileName = 3;
 	optional FetchType resultFetchType = 4 [default = FULL];
 	optional FetchType associatedFetchType = 5 [default = META];
+	repeated string documentFields = 6;
+	repeated string documentMaskedFields = 7;
 }
 
 message FetchResponse {
