@@ -1,5 +1,7 @@
 package org.lumongo.admin;
 
+import java.util.List;
+
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -29,6 +31,9 @@ public class Fetch {
 		OptionSpec<String> uniqueIdArg = parser.accepts(AdminConstants.UNIQUE_ID).withRequiredArg().required().describedAs("Unique Id to fetch");
 		OptionSpec<String> indexArg = parser.accepts(AdminConstants.INDEX).withRequiredArg().required().describedAs("Index to fetch from");
 		
+		OptionSpec<String> documentFieldsArg = parser.accepts(AdminConstants.DOCUMENT_FIELDS, "Fields to return from mongo").withRequiredArg();
+		OptionSpec<String> documentMaskedFieldsArg = parser.accepts(AdminConstants.DOCUMENT_MASKED_FIELDS, "Fields to mask from mongo").withRequiredArg();
+		
 		try {
 			OptionSet options = parser.parse(args);
 			
@@ -37,13 +42,26 @@ public class Fetch {
 			String uniqueId = options.valueOf(uniqueIdArg);
 			String indexName = options.valueOf(indexArg);
 			
+			List<String> documentFields = options.valuesOf(documentFieldsArg);
+			List<String> documentMaskedFields = options.valuesOf(documentMaskedFieldsArg);
+			
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 			lumongoPoolConfig.addMember(address, port);
 			LumongoBaseWorkPool lumongoWorkPool = new LumongoBaseWorkPool(new LumongoPool(lumongoPoolConfig));
 			
 			try {
 				
-				FetchResult fr = lumongoWorkPool.execute(new FetchDocument(uniqueId, indexName));
+				FetchDocument fetch = new FetchDocument(uniqueId, indexName);
+				
+				for (String documentField : documentFields) {
+					fetch.addDocumentField(documentField);
+				}
+				
+				for (String documentMaskedField : documentMaskedFields) {
+					fetch.addDocumentMaskedField(documentMaskedField);
+				}
+				
+				FetchResult fr = lumongoWorkPool.execute(fetch);
 				if (fr.hasResultDocument()) {
 					DBObject dbObject = fr.getDocument();
 					System.out.println(dbObject.toString());

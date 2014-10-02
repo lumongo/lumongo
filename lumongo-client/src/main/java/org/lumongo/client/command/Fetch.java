@@ -1,5 +1,9 @@
 package org.lumongo.client.command;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.FetchResult;
@@ -18,6 +22,9 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> {
 	private String fileName;
 	private FetchType resultFetchType;
 	private FetchType associatedFetchType;
+	
+	private Set<String> documentFields = Collections.emptySet();
+	private Set<String> documentMaskedFields = Collections.emptySet();
 	
 	public Fetch(String uniqueId, String indexName) {
 		this.uniqueId = uniqueId;
@@ -55,6 +62,30 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> {
 		return this;
 	}
 	
+	public Set<String> getDocumentMaskedFields() {
+		return documentMaskedFields;
+	}
+	
+	public Fetch addDocumentMaskedField(String documentMaskedField) {
+		if (documentMaskedFields.isEmpty()) {
+			documentMaskedFields = new LinkedHashSet<String>();
+		}
+		
+		documentMaskedFields.add(documentMaskedField);
+		return this;
+	}
+	
+	public Set<String> getDocumentFields() {
+		return documentFields;
+	}
+	
+	public void addDocumentField(String documentField) {
+		if (documentFields.isEmpty()) {
+			this.documentFields = new LinkedHashSet<String>();
+		}
+		documentFields.add(documentField);
+	}
+	
 	@Override
 	public FetchRequest getRequest() {
 		FetchRequest.Builder fetchRequestBuilder = FetchRequest.newBuilder();
@@ -73,6 +104,9 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> {
 		if (associatedFetchType != null) {
 			fetchRequestBuilder.setAssociatedFetchType(associatedFetchType);
 		}
+		fetchRequestBuilder.addAllDocumentFields(documentFields);
+		fetchRequestBuilder.addAllDocumentMaskedFields(documentMaskedFields);
+		
 		return fetchRequestBuilder.build();
 	}
 	

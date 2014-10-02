@@ -128,16 +128,27 @@ public class MongoDocumentStorage implements DocumentStorage {
 			if (FetchType.FULL.equals(fetchType)) {
 				if (!fieldsToReturn.isEmpty() || !fieldsToMask.isEmpty()) {
 					fields = new BasicDBObject();
-					for (String fieldToReturn : fieldsToReturn) {
-						fields.put(fieldToReturn, 1);
+					
+					if (!fieldsToReturn.isEmpty()) {
+						for (String fieldToReturn : fieldsToReturn) {
+							fields.put(fieldToReturn, 1);
+						}
+						fields.put(MongoConstants.StandardFields._ID, 1);
+						fields.put(TIMESTAMP, 1);
+						fields.put(METADATA, 1);
 					}
-					for (String fieldToMask : fieldsToMask) {
-						fields.put(fieldToMask, 0);
+					else if (!fieldsToMask.isEmpty()) {
+						for (String fieldToMask : fieldsToMask) {
+							fields.put(fieldToMask, 0);
+						}
+						fields.removeField(TIMESTAMP);
+						fields.removeField(METADATA);
+						fields.removeField(MongoConstants.StandardFields._ID);
 					}
 					
-					fields.put(MongoConstants.StandardFields._ID, 1);
-					fields.put(TIMESTAMP, 1);
-					fields.put(METADATA, 1);
+					if (!fieldsToReturn.isEmpty() && !fieldsToMask.isEmpty()) {
+						//TODO: warn user fieldsToMask will be ignored?
+					}
 				}
 			}
 			else if (FetchType.META.equals(fetchType)) {
@@ -165,6 +176,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 				}
 				
 				if (FetchType.FULL.equals(fetchType)) {
+					
 					ByteString document = ByteString.copyFrom(BSON.encode(result));
 					dBuilder.setDocument(document);
 				}
