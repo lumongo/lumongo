@@ -43,22 +43,33 @@ public class LumongoQueryParser extends QueryParser {
 	private NumericRangeQuery<?> getNumericOrDateRange(final String fieldName, final String start, final String end, final boolean startInclusive,
 					final boolean endInclusive) {
 		if (indexConfig.isNumericIntField(fieldName)) {
-			return NumericRangeQuery.newIntRange(fieldName, Integer.parseInt(start), Integer.parseInt(end), startInclusive, endInclusive);
+			return NumericRangeQuery.newIntRange(fieldName, start == null ? null : Integer.parseInt(start), end == null ? null : Integer.parseInt(end),
+							startInclusive, endInclusive);
 		}
 		else if (indexConfig.isNumericLongField(fieldName)) {
-			return NumericRangeQuery.newLongRange(fieldName, Long.parseLong(start), Long.parseLong(end), startInclusive, endInclusive);
+			return NumericRangeQuery.newLongRange(fieldName, start == null ? null : Long.parseLong(start), end == null ? null : Long.parseLong(end),
+							startInclusive, endInclusive);
 		}
 		else if (indexConfig.isNumericFloatField(fieldName)) {
-			return NumericRangeQuery.newFloatRange(fieldName, Float.parseFloat(start), Float.parseFloat(end), startInclusive, endInclusive);
+			return NumericRangeQuery.newFloatRange(fieldName, start == null ? null : Float.parseFloat(start), end == null ? null : Float.parseFloat(end),
+							startInclusive, endInclusive);
 		}
 		else if (indexConfig.isNumericDoubleField(fieldName)) {
-			return NumericRangeQuery.newDoubleRange(fieldName, Double.parseDouble(start), Double.parseDouble(end), startInclusive, endInclusive);
+			return NumericRangeQuery.newDoubleRange(fieldName, start == null ? null : Double.parseDouble(start), end == null ? null : Double.parseDouble(end),
+							startInclusive, endInclusive);
 		}
 		else if (indexConfig.isDateField(fieldName)) {
-			DateTime startDate = dateFormatter.parseDateTime(start);
-			DateTime endDate = dateFormatter.parseDateTime(end);
-			
-			return NumericRangeQuery.newLongRange(fieldName, startDate.toDate().getTime(), endDate.toDate().getTime(), startInclusive, endInclusive);
+			Long startTime = null;
+			Long endTime = null;
+			if (start != null) {
+				DateTime startDate = dateFormatter.parseDateTime(start);
+				startTime = startDate.toDate().getTime();
+			}
+			if (end != null) {
+				DateTime endDate = dateFormatter.parseDateTime(end);
+				endTime = endDate.toDate().getTime();
+			}
+			return NumericRangeQuery.newLongRange(fieldName, startTime, endTime, startInclusive, endInclusive);
 		}
 		throw new RuntimeException("Not a valid numeric field <" + fieldName + ">");
 	}
