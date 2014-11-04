@@ -5,7 +5,7 @@ description 'LuMongo Cluster'
 dependencies {	    
     compile project(':lumongo-storage')	
     compile project(':lumongo-client') //needed for admin tools
-    compile 'com.hazelcast:hazelcast:3.3.1'
+    compile 'com.hazelcast:hazelcast:3.3.2'
     compile 'net.sf.jopt-simple:jopt-simple:4.6'
     compile 'org.apache.lucene:lucene-facet:4.10.2'
     compile 'org.apache.lucene:lucene-queryparser:4.10.2'
