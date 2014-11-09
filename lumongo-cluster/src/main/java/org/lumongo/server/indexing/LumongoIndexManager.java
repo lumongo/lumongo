@@ -622,7 +622,9 @@ public class LumongoIndexManager {
 					throw new IndexDoesNotExist(indexName);
 				}
 				
-				Query query = i.getQuery(queryString, queryRequest.getQueryFieldList());
+				int minimumShouldMatch = queryRequest.getMinimumNumberShouldMatch();
+				
+				Query query = i.getQuery(queryRequest.getQuery(), queryRequest.getQueryFieldList(), minimumShouldMatch);
 				
 				if (queryRequest.hasFacetRequest()) {
 					FacetRequest facetRequest = queryRequest.getFacetRequest();
@@ -643,7 +645,7 @@ public class LumongoIndexManager {
 				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 				
 				for (String filter : queryRequest.getFilterQueryList()) {
-					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.<String> emptyList()));
+					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.<String> emptyList(), 0));
 				}
 				
 				queryMap.put(indexName, queryWithFilters);

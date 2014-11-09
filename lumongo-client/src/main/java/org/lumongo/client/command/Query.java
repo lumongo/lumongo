@@ -41,6 +41,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private List<FieldSort> fieldSorts = Collections.emptyList();
 	private Set<String> queryFields = Collections.emptySet();
 	private List<String> filterQueries = Collections.emptyList();
+	private Integer minimumNumberShouldMatch;
 	
 	private Boolean drillSideways;
 	
@@ -74,6 +75,14 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	public Query setAmount(int amount) {
 		this.amount = amount;
 		return this;
+	}
+	
+	public Integer getMinimumNumberShouldMatch() {
+		return minimumNumberShouldMatch;
+	}
+	
+	public void setMinimumNumberShouldMatch(Integer minimumNumberShouldMatch) {
+		this.minimumNumberShouldMatch = minimumNumberShouldMatch;
 	}
 	
 	public Query setIndexes(Collection<String> indexes) {
@@ -217,6 +226,11 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	public QueryRequest getRequest() {
 		QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
 		requestBuilder.setAmount(amount);
+		
+		if (minimumNumberShouldMatch != null) {
+			requestBuilder.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
+		}
+		
 		if (query != null) {
 			requestBuilder.setQuery(query);
 		}

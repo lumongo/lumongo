@@ -777,15 +777,18 @@ public class LumongoIndex {
 		}
 	}
 	
-	public Query getQuery(String query, List<String> queryFields) throws Exception {
+	public Query getQuery(String query, List<String> queryFields, int minimumShouldMatchNumber) throws Exception {
 		indexLock.readLock().lock();
 		try {
+			
 			LumongoQueryParser qp = null;
 			if (query == null || query.isEmpty()) {
 				return new MatchAllDocsQuery();
 			}
 			try {
 				qp = parsers.borrowObject();
+				qp.setMinimumNumberShouldMatch(minimumShouldMatchNumber);
+				
 				if (queryFields.isEmpty()) {
 					qp.setField(indexConfig.getDefaultSearchField());
 					return qp.parse(query);

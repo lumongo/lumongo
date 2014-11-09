@@ -3,6 +3,7 @@ package org.lumongo.server.indexing;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.joda.time.DateTime;
@@ -16,6 +17,8 @@ public class LumongoQueryParser extends QueryParser {
 	
 	private IndexConfig indexConfig;
 	
+	private int minimumNumberShouldMatch;
+	
 	public LumongoQueryParser(Analyzer analyzer, IndexConfig indexConfig) {
 		super(indexConfig.getDefaultSearchField(), analyzer);
 		this.indexConfig = indexConfig;
@@ -27,6 +30,10 @@ public class LumongoQueryParser extends QueryParser {
 			throw new IllegalArgumentException("Field can not be null");
 		}
 		this.field = field;
+	}
+	
+	public void setMinimumNumberShouldMatch(int minimumNumberShouldMatch) {
+		this.minimumNumberShouldMatch = minimumNumberShouldMatch;
 	}
 	
 	@Override
@@ -84,5 +91,12 @@ public class LumongoQueryParser extends QueryParser {
 		}
 		
 		return super.newTermQuery(term);
+	}
+	
+	@Override
+	protected BooleanQuery newBooleanQuery(boolean disableCoord) {
+		BooleanQuery bq = new BooleanQuery(disableCoord);
+		bq.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
+		return bq;
 	}
 }

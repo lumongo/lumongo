@@ -333,6 +333,7 @@ message IndexSegmentResponse {
 	repeated SegmentResponse segmentReponse = 2;
 }
 
+
 message QueryRequest {
 	repeated string index = 1;
 	optional string query = 2;
@@ -346,6 +347,7 @@ message QueryRequest {
 	repeated string filterQuery = 10;
 	repeated string fields = 11;
 	optional FetchType resultFetchType = 12 [default = NONE];
+	optional uint32 minimumNumberShouldMatch = 13 [default = 0];
 }
 
 message QueryResponse {

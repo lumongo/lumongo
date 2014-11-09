@@ -48,6 +48,8 @@ public class Search {
 		OptionSpec<String> queryFieldArg = parser.accepts(AdminConstants.QUERY_FIELD,
 						"Specific field(s) for query to search if none specified in query instead of index default").withRequiredArg();
 		OptionSpec<String> filterQueryArg = parser.accepts(AdminConstants.FILTER_QUERY, "Filter query").withRequiredArg();
+		OptionSpec<Integer> minimumNumberShouldMatchArg = parser.accepts(AdminConstants.MIN_TO_MATCH, "Minimum number of optional boolean queries to match")
+						.withRequiredArg().ofType(Integer.class);
 		
 		OptionSpec<Void> fetchArg = parser.accepts(AdminConstants.FETCH);
 		
@@ -66,6 +68,7 @@ public class Search {
 			List<String> sortDescList = options.valuesOf(sortDescArg);
 			List<String> queryFieldsList = options.valuesOf(queryFieldArg);
 			List<String> filterQueryList = options.valuesOf(filterQueryArg);
+			Integer minimumNumberShouldMatch = options.valueOf(minimumNumberShouldMatchArg);
 			
 			boolean fetch = options.has(fetchArg);
 			
@@ -76,6 +79,10 @@ public class Search {
 			try {
 				
 				Query q = new Query(indexes, query, amount);
+				
+				if (minimumNumberShouldMatch != null) {
+					q.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
+				}
 				
 				for (String facet : facets) {
 					q.addCountRequest(facet);

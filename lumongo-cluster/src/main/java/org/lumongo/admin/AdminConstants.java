@@ -33,4 +33,5 @@ public class AdminConstants {
 	public static final String TERM_MATCH = "termMatch";
 	public static final String DOCUMENT_FIELDS = "field";
 	public static final String DOCUMENT_MASKED_FIELDS = "maskedField";
+	public static final String MIN_TO_MATCH = "minToMatch";
 }
