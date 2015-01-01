@@ -14,7 +14,6 @@ public class IndexConfig {
 	private Integer minSegmentRequest;
 	private Integer numberOfSegments;
 	private String indexName;
-	private String uniqueIdField;
 	private Integer idleTimeWithoutCommit;
 	private Integer segmentFlushInterval;
 	private Integer segmentCommitInterval;
@@ -85,15 +84,6 @@ public class IndexConfig {
 	
 	public IndexConfig setIndexName(String indexName) {
 		this.indexName = indexName;
-		return this;
-	}
-	
-	public String getUniqueIdField() {
-		return uniqueIdField;
-	}
-	
-	public IndexConfig setUniqueIdField(String uniqueIdField) {
-		this.uniqueIdField = uniqueIdField;
 		return this;
 	}
 	

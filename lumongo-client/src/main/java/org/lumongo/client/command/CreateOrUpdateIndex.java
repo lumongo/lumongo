@@ -28,6 +28,18 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
 		this.indexConfig = indexConfig;
 	}
 	
+	public void setIndexName(String indexName) {
+		this.indexName = indexName;
+	}
+	
+	public void setNumberOfSegments(Integer numberOfSegments) {
+		this.numberOfSegments = numberOfSegments;
+	}
+	
+	public void setUniqueIdField(String uniqueIdField) {
+		this.uniqueIdField = uniqueIdField;
+	}
+	
 	@Override
 	public CreateOrUpdateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
 		CreateOrUpdateIndexResult result = new CreateOrUpdateIndexResult();
