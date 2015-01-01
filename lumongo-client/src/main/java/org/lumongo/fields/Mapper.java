@@ -6,11 +6,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
+import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
+import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.FacetAs;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
@@ -215,6 +218,12 @@ public class Mapper<T> {
 		Store store = new Store(rd.getUniqueId(), indexName);
 		store.setResultDocument(rd);
 		return store;
+	}
+	
+	public List<T> fromQueryResult(LumongoWorkPool lumongoWorkPool, QueryResult queryResult) throws Exception {
+		BatchFetch batchFetch = new BatchFetch().addFetchDocumentsFromResults(queryResult);
+		BatchFetchResult bfr = lumongoWorkPool.batchFetch(batchFetch);
+		return fromBatchFetchResult(bfr);
 	}
 	
 	public List<T> fromBatchFetchResult(BatchFetchResult batchFetchResult) throws Exception {
