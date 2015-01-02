@@ -5,8 +5,9 @@ service ExternalService {
 	rpc Query (QueryRequest) returns (QueryResponse);
 	rpc Store (StoreRequest) returns (StoreResponse);
 	rpc Delete (DeleteRequest) returns (DeleteResponse);
+	rpc BatchDelete (BatchDeleteRequest) returns (BatchDeleteResponse);
 	rpc Fetch (FetchRequest) returns (FetchResponse);
-	rpc GroupFetch (GroupFetchRequest) returns (GroupFetchResponse);
+	rpc BatchFetch (BatchFetchRequest) returns (BatchFetchResponse);
 	rpc CreateIndex (IndexCreateRequest) returns (IndexCreateResponse);
 	rpc ChangeIndex (IndexSettingsRequest) returns (IndexSettingsResponse);
 	rpc DeleteIndex (IndexDeleteRequest) returns (IndexDeleteResponse);
@@ -19,6 +20,7 @@ service ExternalService {
 	rpc GetTerms (GetTermsRequest) returns (GetTermsResponse);
 	rpc GetMembers (GetMembersRequest) returns (GetMembersResponse);
 }
+
 
 service InternalService {
 	rpc Query (QueryRequest) returns (InternalQueryResponse);
@@ -368,11 +370,20 @@ message DeleteRequest {
 message DeleteResponse {
 }
 
-message GroupFetchRequest {
+message BatchDeleteRequest {
+	repeated DeleteRequest request = 1;
+}
+
+message BatchDeleteResponse {
+}
+
+
+
+message BatchFetchRequest {
 	repeated FetchRequest fetchRequest = 1;
 }
 
-message GroupFetchResponse {
+message BatchFetchResponse {
 	repeated FetchResponse fetchResponse = 1;
 }
 

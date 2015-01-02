@@ -8,10 +8,10 @@ import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.QueryResult;
+import org.lumongo.cluster.message.Lumongo.BatchFetchRequest;
+import org.lumongo.cluster.message.Lumongo.BatchFetchResponse;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.FetchType;
-import org.lumongo.cluster.message.Lumongo.GroupFetchRequest;
-import org.lumongo.cluster.message.Lumongo.GroupFetchResponse;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 
 import com.google.protobuf.RpcController;
@@ -22,7 +22,7 @@ import com.google.protobuf.ServiceException;
  * @author mdavis
  *
  */
-public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResult> {
+public class BatchFetch extends SimpleCommand<BatchFetchRequest, BatchFetchResult> {
 	
 	private List<Fetch> fetchList;
 	
@@ -62,12 +62,12 @@ public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResul
 	}
 	
 	@Override
-	public GroupFetchRequest getRequest() {
-		GroupFetchRequest.Builder groupFetchRequestBuilder = GroupFetchRequest.newBuilder();
+	public BatchFetchRequest getRequest() {
+		BatchFetchRequest.Builder batchFetchRequestBuilder = BatchFetchRequest.newBuilder();
 		for (Fetch f : fetchList) {
-			groupFetchRequestBuilder.addFetchRequest(f.getRequest());
+			batchFetchRequestBuilder.addFetchRequest(f.getRequest());
 		}
-		return groupFetchRequestBuilder.build();
+		return batchFetchRequestBuilder.build();
 	}
 	
 	@Override
@@ -75,9 +75,9 @@ public class BatchFetch extends SimpleCommand<GroupFetchRequest, BatchFetchResul
 		ExternalService.BlockingInterface service = lumongoConnection.getService();
 		RpcController controller = lumongoConnection.getController();
 		
-		GroupFetchResponse groupFetchResponse = service.groupFetch(controller, getRequest());
+		BatchFetchResponse batchFetchResponse = service.batchFetch(controller, getRequest());
 		
-		return new BatchFetchResult(groupFetchResponse);
+		return new BatchFetchResult(batchFetchResponse);
 	}
 	
 }

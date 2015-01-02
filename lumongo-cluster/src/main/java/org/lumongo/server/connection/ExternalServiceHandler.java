@@ -10,6 +10,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
+import org.lumongo.cluster.message.Lumongo.BatchDeleteRequest;
+import org.lumongo.cluster.message.Lumongo.BatchDeleteResponse;
+import org.lumongo.cluster.message.Lumongo.BatchFetchRequest;
+import org.lumongo.cluster.message.Lumongo.BatchFetchResponse;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
@@ -27,8 +31,6 @@ import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsRequest;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
-import org.lumongo.cluster.message.Lumongo.GroupFetchRequest;
-import org.lumongo.cluster.message.Lumongo.GroupFetchResponse;
 import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
 import org.lumongo.cluster.message.Lumongo.IndexCreateResponse;
 import org.lumongo.cluster.message.Lumongo.IndexDeleteRequest;
@@ -306,9 +308,9 @@ public class ExternalServiceHandler extends ExternalService {
 	}
 	
 	@Override
-	public void groupFetch(RpcController controller, GroupFetchRequest request, RpcCallback<GroupFetchResponse> done) {
+	public void batchFetch(RpcController controller, BatchFetchRequest request, RpcCallback<BatchFetchResponse> done) {
 		try {
-			GroupFetchResponse.Builder gfrb = GroupFetchResponse.newBuilder();
+			BatchFetchResponse.Builder gfrb = BatchFetchResponse.newBuilder();
 			for (FetchRequest fr : request.getFetchRequestList()) {
 				FetchResponse res = indexManger.fetch(fr);
 				gfrb.addFetchResponse(res);
@@ -317,6 +319,23 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to group fetch: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
+			controller.setFailed(e.getMessage());
+			done.run(null);
+		}
+	}
+	
+	@Override
+	public void batchDelete(RpcController controller, BatchDeleteRequest request, RpcCallback<BatchDeleteResponse> done) {
+		try {
+			
+			for (DeleteRequest dr : request.getRequestList()) {
+				@SuppressWarnings("unused")
+				DeleteResponse res = indexManger.deleteDocument(dr);
+			}
+			done.run(BatchDeleteResponse.newBuilder().build());
+		}
+		catch (Exception e) {
+			log.error("Failed to batch delete: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
 			controller.setFailed(e.getMessage());
 			done.run(null);
 		}
