@@ -64,7 +64,7 @@ public class SavedFieldInfo<T> {
 		else {
 			if (fieldIsList) {
 				if (value != null) {
-					field.set(newInstance, Arrays.asList(value));
+					field.set(newInstance, new ArrayList<>(Arrays.asList(value)));
 				}
 			}
 			else {
