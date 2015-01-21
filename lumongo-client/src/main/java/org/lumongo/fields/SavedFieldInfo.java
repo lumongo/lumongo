@@ -27,7 +27,7 @@ public class SavedFieldInfo<T> {
 		return compressed;
 	}
 	
-	Object getValue(T object) throws Exception {
+	public Object getValue(T object) throws Exception {
 		
 		Object o = field.get(object);
 		

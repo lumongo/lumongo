@@ -18,6 +18,7 @@ import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
+import org.lumongo.cluster.message.Lumongo.QueryRequest.Operator;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
 
@@ -42,6 +43,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private Set<String> queryFields = Collections.emptySet();
 	private List<String> filterQueries = Collections.emptyList();
 	private Integer minimumNumberShouldMatch;
+	private Operator defaultOperator;
 	
 	private Boolean drillSideways;
 	
@@ -222,6 +224,14 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		fieldSorts.add(FieldSort.newBuilder().setSortField(sort).setDirection(direction).build());
 	}
 	
+	public Operator getDefaultOperator() {
+		return defaultOperator;
+	}
+	
+	public void setDefaultOperator(Operator defaultOperator) {
+		this.defaultOperator = defaultOperator;
+	}
+	
 	@Override
 	public QueryRequest getRequest() {
 		QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
@@ -266,6 +276,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		
 		if (!filterQueries.isEmpty()) {
 			requestBuilder.addAllFilterQuery(filterQueries);
+		}
+		
+		if (defaultOperator != null) {
+			requestBuilder.setDefaultOperator(defaultOperator);
 		}
 		
 		SortRequest.Builder sortRequestBuilder = SortRequest.newBuilder();

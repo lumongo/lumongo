@@ -337,6 +337,11 @@ message IndexSegmentResponse {
 
 
 message QueryRequest {
+	enum Operator {
+		AND = 1;
+		OR = 2;
+	}
+
 	repeated string index = 1;
 	optional string query = 2;
 	required uint32 amount = 3;
@@ -350,6 +355,7 @@ message QueryRequest {
 	repeated string fields = 11;
 	optional FetchType resultFetchType = 12 [default = NONE];
 	optional uint32 minimumNumberShouldMatch = 13 [default = 0];
+	optional Operator defaultOperator = 14 [ default = OR ];
 }
 
 message QueryResponse {

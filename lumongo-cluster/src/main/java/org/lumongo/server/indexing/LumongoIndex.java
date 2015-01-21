@@ -32,6 +32,7 @@ import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LumongoIndexWriter;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
@@ -777,7 +778,7 @@ public class LumongoIndex {
 		}
 	}
 	
-	public Query getQuery(String query, List<String> queryFields, int minimumShouldMatchNumber) throws Exception {
+	public Query getQuery(String query, List<String> queryFields, int minimumShouldMatchNumber, Operator defaultOperator) throws Exception {
 		indexLock.readLock().lock();
 		try {
 			
@@ -788,6 +789,7 @@ public class LumongoIndex {
 			try {
 				qp = parsers.borrowObject();
 				qp.setMinimumNumberShouldMatch(minimumShouldMatchNumber);
+				qp.setDefaultOperator(defaultOperator);
 				
 				if (queryFields.isEmpty()) {
 					qp.setField(indexConfig.getDefaultSearchField());

@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.facet.DrillDownQuery;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.Query;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
@@ -491,7 +492,7 @@ public class LumongoIndexManager {
 	}
 	
 	public DeleteResponse deleteDocument(DeleteRequest deleteRequest) throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist, IOException,
-	Exception {
+					Exception {
 		globalLock.readLock().lock();
 		try {
 			
@@ -612,7 +613,6 @@ public class LumongoIndexManager {
 		globalLock.readLock().lock();
 		try {
 			
-			String queryString = queryRequest.getQuery();
 			List<String> indexNames = queryRequest.getIndexList();
 			
 			HashMap<String, QueryWithFilters> queryMap = new HashMap<String, QueryWithFilters>();
@@ -624,7 +624,19 @@ public class LumongoIndexManager {
 				
 				int minimumShouldMatch = queryRequest.getMinimumNumberShouldMatch();
 				
-				Query query = i.getQuery(queryRequest.getQuery(), queryRequest.getQueryFieldList(), minimumShouldMatch);
+				Operator operator = null;
+				if (queryRequest.getDefaultOperator().equals(QueryRequest.Operator.OR)) {
+					operator = Operator.OR;
+				}
+				else if (queryRequest.getDefaultOperator().equals(QueryRequest.Operator.AND)) {
+					operator = Operator.AND;
+				}
+				else {
+					//this should never happen
+					log.error("Unknown operator type: <" + operator + ">");
+				}
+				
+				Query query = i.getQuery(queryRequest.getQuery(), queryRequest.getQueryFieldList(), minimumShouldMatch, operator);
 				
 				if (queryRequest.hasFacetRequest()) {
 					FacetRequest facetRequest = queryRequest.getFacetRequest();
@@ -645,7 +657,7 @@ public class LumongoIndexManager {
 				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 				
 				for (String filter : queryRequest.getFilterQueryList()) {
-					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.<String> emptyList(), 0));
+					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.<String> emptyList(), 0, operator));
 				}
 				
 				queryMap.put(indexName, queryWithFilters);
