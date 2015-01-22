@@ -177,12 +177,11 @@ public class LumongoIndexManager {
 		
 		try {
 			ArrayList<String> indexNames = new ArrayList<String>();
-			log.info("Searching database <" + mongoConfig.getDatabaseName() + ">");
+			log.info("Searching database <" + mongoConfig.getDatabaseName() + "> for indexes");
 			DB db = mongo.getDB(mongoConfig.getDatabaseName());
 			Set<String> allCollections = db.getCollectionNames();
 			
 			for (String collection : allCollections) {
-				log.info("Searching collection <" + collection + ">");
 				if (collection.endsWith(LumongoIndex.CONFIG_SUFFIX)) {
 					String indexName = collection.substring(0, collection.length() - LumongoIndex.CONFIG_SUFFIX.length());
 					indexNames.add(indexName);
@@ -496,7 +495,7 @@ public class LumongoIndexManager {
 	}
 	
 	public DeleteResponse deleteDocument(DeleteRequest deleteRequest) throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist, IOException,
-	Exception {
+					Exception {
 		globalLock.readLock().lock();
 		try {
 			
