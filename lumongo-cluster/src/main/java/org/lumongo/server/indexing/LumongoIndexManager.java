@@ -119,6 +119,7 @@ public class LumongoIndexManager {
 		this.indexMap = new ConcurrentHashMap<String, LumongoIndex>();
 		this.internalClient = new InternalClient(mongoConfig, clusterConfig);
 		
+		log.info("Using mongo <" + mongoConfig.getMongoHost() + ":" + mongoConfig.getMongoPort() + ">");
 		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
 		
 		this.pool = Executors.newCachedThreadPool(new LumongoThreadFactory("manager"));
