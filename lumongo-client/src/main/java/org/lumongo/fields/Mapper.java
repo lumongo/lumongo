@@ -14,19 +14,14 @@ import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.QueryResult;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FacetAs;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.IndexAs;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.doc.ResultDocBuilder;
-import org.lumongo.fields.annotations.AsField;
-import org.lumongo.fields.annotations.DefaultSearch;
-import org.lumongo.fields.annotations.Faceted;
-import org.lumongo.fields.annotations.Indexed;
-import org.lumongo.fields.annotations.NotSaved;
-import org.lumongo.fields.annotations.Settings;
-import org.lumongo.fields.annotations.UniqueId;
+import org.lumongo.fields.annotations.*;
 import org.lumongo.util.AnnotationUtil;
 
 import com.mongodb.BasicDBObject;
@@ -98,7 +93,7 @@ public class Mapper<T> {
 				@SuppressWarnings("unused")
 				NotSaved saved = f.getAnnotation(NotSaved.class);
 				
-				if (f.isAnnotationPresent(Indexed.class) || f.isAnnotationPresent(Faceted.class) || f.isAnnotationPresent(UniqueId.class)
+				if (f.isAnnotationPresent(IndexedFields.class) || f.isAnnotationPresent(Indexed.class) || f.isAnnotationPresent(Faceted.class) || f.isAnnotationPresent(UniqueId.class)
 								|| f.isAnnotationPresent(DefaultSearch.class)) {
 					throw new RuntimeException("Cannot use NotSaved with Indexed, Faceted, UniqueId, DefaultSearch on field <" + f.getName() + "> for class <"
 									+ clazz.getSimpleName() + ">");
@@ -108,17 +103,16 @@ public class Mapper<T> {
 			else {
 				savedFields.add(new SavedFieldInfo<T>(f, fieldName));
 			}
-			
-			if (f.isAnnotationPresent(Indexed.class)) {
-				Indexed in = f.getAnnotation(Indexed.class);
-				LMAnalyzer analyzer = in.analyzer();
-				
-				String indexedFieldName = fieldName;
-				if (!in.fieldName().isEmpty()) {
-					indexedFieldName = in.fieldName();
+
+			if (f.isAnnotationPresent(IndexedFields.class)) {
+				IndexedFields in = f.getAnnotation(IndexedFields.class);
+				for (Indexed indexed : in.value()) {
+					addIndexedField(indexed, fieldName, fieldConfigBuilder);
 				}
-				
-				fieldConfigBuilder.addIndexAs(IndexAs.newBuilder().setIndexFieldName(indexedFieldName).setAnalyzer(analyzer));
+			}
+			else if (f.isAnnotationPresent(Indexed.class)) {
+				Indexed in = f.getAnnotation(Indexed.class);
+				addIndexedField(in, fieldName, fieldConfigBuilder);
 				
 			}
 			
@@ -137,7 +131,7 @@ public class Mapper<T> {
 			
 			if (f.isAnnotationPresent(DefaultSearch.class)) {
 				
-				if (!f.isAnnotationPresent(Indexed.class)) {
+				if (!f.isAnnotationPresent(Indexed.class) || !f.isAnnotationPresent(IndexedFields.class)) {
 					throw new RuntimeException("DefaultSearch must be on Indexed field <" + f.getName() + "> for class <" + clazz.getSimpleName() + ">");
 				}
 				
@@ -172,7 +166,18 @@ public class Mapper<T> {
 		}
 		
 	}
-	
+
+	private void addIndexedField(Indexed in, String fieldName, FieldConfig.Builder fieldConfigBuilder) {
+		LMAnalyzer analyzer = in.analyzer();
+
+		String indexedFieldName = fieldName;
+		if (!in.fieldName().isEmpty()) {
+			indexedFieldName = in.fieldName();
+		}
+
+		fieldConfigBuilder.addIndexAs(IndexAs.newBuilder().setIndexFieldName(indexedFieldName).setAnalyzer(analyzer));
+	}
+
 	public CreateOrUpdateIndex createOrUpdateIndex() {
 		
 		if (settings == null) {
