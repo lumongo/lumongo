@@ -27,7 +27,27 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
 		this.uniqueIdField = uniqueIdField;
 		this.indexConfig = indexConfig;
 	}
-	
+
+	public String getIndexName() {
+		return indexName;
+	}
+
+	public Integer getNumberOfSegments() {
+		return numberOfSegments;
+	}
+
+	public String getUniqueIdField() {
+		return uniqueIdField;
+	}
+
+	public IndexConfig getIndexConfig() {
+		return indexConfig;
+	}
+
+	public void setIndexConfig(IndexConfig indexConfig) {
+		this.indexConfig = indexConfig;
+	}
+
 	public void setIndexName(String indexName) {
 		this.indexName = indexName;
 	}

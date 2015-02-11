@@ -131,7 +131,7 @@ public class Mapper<T> {
 			
 			if (f.isAnnotationPresent(DefaultSearch.class)) {
 				
-				if (!f.isAnnotationPresent(Indexed.class) || !f.isAnnotationPresent(IndexedFields.class)) {
+				if (!f.isAnnotationPresent(Indexed.class) && !f.isAnnotationPresent(IndexedFields.class)) {
 					throw new RuntimeException("DefaultSearch must be on Indexed field <" + f.getName() + "> for class <" + clazz.getSimpleName() + ">");
 				}
 				
