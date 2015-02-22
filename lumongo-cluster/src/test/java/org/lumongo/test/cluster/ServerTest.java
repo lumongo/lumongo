@@ -1,5 +1,6 @@
 package org.lumongo.test.cluster;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,30 +33,35 @@ public class ServerTest {
 		
 		luceneNodes = new ArrayList<>();
 		
-		Thread.currentThread().setName("Test");
+		Thread.currentThread().setName(this.getClass().getSimpleName());
 		
 		LogUtil.loadLogConfig();
-		
-		log.info("Cleaning existing test dbs and initing");
-		
-		Mongo mongo = TestHelper.getMongo();
-		mongo.getDB(TestHelper.TEST_DATABASE_NAME).dropDatabase();
-		mongo.getDB(TestHelper.TEST_DATABASE_NAME + "_" + SingleNodeTest.MY_TEST_INDEX).dropDatabase();
-		mongo.getDB(TestHelper.TEST_DATABASE_NAME + "_" + SingleNodeTest.MY_TEST_INDEX + LumongoIndex.STORAGE_DB_SUFFIX).dropDatabase();
-		mongo.getDB(TestHelper.TEST_DATABASE_NAME + "_" + SingleNodeTest.FACET_TEST_INDEX).dropDatabase();
-		mongo.getDB(TestHelper.TEST_DATABASE_NAME + "_" + SingleNodeTest.FACET_TEST_INDEX + LumongoIndex.STORAGE_DB_SUFFIX).dropDatabase();
-		
+
+		removeTestDBs();
+
 		startServer(instanceCount);
 	}
-	
+
 	public void stopSuite() throws Exception {
 		stopClient();
 		stopServer();
+		removeTestDBs();
 	}
-	
+
+	private void removeTestDBs() throws UnknownHostException {
+		log.info("Removing test databases");
+		Mongo mongo = TestHelper.getMongo();
+
+		for (String dbName : mongo.getDatabaseNames()) {
+			if (dbName.startsWith(TestHelper.TEST_DATABASE_NAME)) {
+				mongo.getDB(dbName).dropDatabase();
+			}
+		}
+	}
+
 	public void startServer(int instanceCount) throws Exception {
 		
-		log.info("Starting server for single node test");
+		log.info("Starting server");
 		
 		MongoConfig mongoConfig = getTestMongoConfig();
 		
@@ -128,7 +134,7 @@ public class ServerTest {
 	}
 	
 	public void startClient() throws Exception {
-		System.out.println("starting client");
+		System.out.println("Starting client");
 		LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 		lumongoPoolConfig.addMember("localhost");
 		lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
