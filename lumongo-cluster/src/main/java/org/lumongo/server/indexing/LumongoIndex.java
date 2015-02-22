@@ -158,7 +158,7 @@ public class LumongoIndex {
 		
 		this.segmentPool = Executors.newCachedThreadPool(new LumongoThreadFactory(indexName + "-segments"));
 		
-		this.parsers = new GenericObjectPool<LumongoQueryParser>(new BasePoolableObjectFactory<LumongoQueryParser>() {
+		this.parsers = new GenericObjectPool<>(new BasePoolableObjectFactory<LumongoQueryParser>() {
 			
 			@Override
 			public LumongoQueryParser makeObject() throws Exception {
@@ -168,8 +168,8 @@ public class LumongoIndex {
 		});
 		
 		this.indexLock = new ReentrantReadWriteLock(true);
-		this.segmentMap = new ConcurrentHashMap<Integer, LumongoSegment>();
-		this.hazelLockMap = new ConcurrentHashMap<Integer, ILock>();
+		this.segmentMap = new ConcurrentHashMap<>();
+		this.hazelLockMap = new ConcurrentHashMap<>();
 		
 		commitTimer = new Timer(indexName + "-CommitTimer", true);
 		
@@ -238,7 +238,7 @@ public class LumongoIndex {
 			log.info("Updating segments map");
 			
 			this.memberToSegmentMap = newMemberToSegmentMap;
-			this.segmentToMemberMap = new HashMap<Integer, Member>();
+			this.segmentToMemberMap = new HashMap<>();
 			
 			for (Member m : memberToSegmentMap.keySet()) {
 				for (int i : memberToSegmentMap.get(m)) {
@@ -287,14 +287,14 @@ public class LumongoIndex {
 		indexLock.writeLock().lock();
 		try {
 			Member self = hazelcastManager.getSelf();
-			this.memberToSegmentMap = new HashMap<Member, Set<Integer>>();
-			this.memberToSegmentMap.put(self, new HashSet<Integer>());
+			this.memberToSegmentMap = new HashMap<>();
+			this.memberToSegmentMap.put(self, new HashSet<>());
 			for (int segmentNumber = 0; segmentNumber < numberOfSegments; segmentNumber++) {
 				loadSegment(segmentNumber);
 				this.memberToSegmentMap.get(self).add(segmentNumber);
 			}
 			
-			this.segmentToMemberMap = new HashMap<Integer, Member>();
+			this.segmentToMemberMap = new HashMap<>();
 			
 			for (Member m : memberToSegmentMap.keySet()) {
 				for (int i : memberToSegmentMap.get(m)) {
@@ -1159,7 +1159,7 @@ public class LumongoIndex {
 			GetTermsResponse.Builder responseBuilder = GetTermsResponse.newBuilder();
 			
 			//not threaded but atomic long is convenient
-			TreeMap<String, AtomicLong> terms = new TreeMap<String, AtomicLong>();
+			TreeMap<String, AtomicLong> terms = new TreeMap<>();
 			
 			for (Future<GetTermsResponse> response : responses) {
 				try {
