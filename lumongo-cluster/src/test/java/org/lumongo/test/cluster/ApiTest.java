@@ -151,7 +151,7 @@ public class ApiTest {
 		
 		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
 		resultDocumentBuilder1.setDocument(dbObject);
-		resultDocumentBuilder1.addMetaData("test1", "val1");
+		resultDocumentBuilder1.addMetaData("testFieldExtraction", "val1");
 		resultDocumentBuilder1.addMetaData("test2", "val2");
 		
 		s1.setResultDocument(resultDocumentBuilder1);

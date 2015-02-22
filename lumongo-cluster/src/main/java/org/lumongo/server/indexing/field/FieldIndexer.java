@@ -1,7 +1,9 @@
 package org.lumongo.server.indexing.field;
 
+import java.util.Arrays;
 import java.util.Collection;
 
+import com.mongodb.DBObject;
 import org.apache.lucene.document.Document;
 
 public abstract class FieldIndexer {
@@ -23,6 +25,8 @@ public abstract class FieldIndexer {
 		}
 		
 	}
+
+
 	
 	protected abstract void handleValue(Document d, String storedFieldName, Object value, String indexedFieldName) throws Exception;
 	

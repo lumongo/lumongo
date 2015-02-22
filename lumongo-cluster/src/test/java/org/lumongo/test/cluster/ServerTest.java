@@ -22,15 +22,15 @@ import org.lumongo.util.properties.PropertiesReader.PropertyException;
 
 import com.mongodb.Mongo;
 
-public class SetupSuite {
-	private static Logger log = Logger.getLogger(SetupSuite.class);
+public class ServerTest {
+	private static Logger log = Logger.getLogger(ServerTest.class);
 	
-	private static LumongoWorkPool lumongoWorkPool;
-	private static List<LuceneNode> luceneNodes;
+	private LumongoWorkPool lumongoWorkPool;
+	private List<LuceneNode> luceneNodes;
 	
-	public static void startSuite() throws Exception {
+	public void startSuite(int instanceCount) throws Exception {
 		
-		luceneNodes = new ArrayList<LuceneNode>();
+		luceneNodes = new ArrayList<>();
 		
 		Thread.currentThread().setName("Test");
 		
@@ -45,15 +45,15 @@ public class SetupSuite {
 		mongo.getDB(TestHelper.TEST_DATABASE_NAME + "_" + SingleNodeTest.FACET_TEST_INDEX).dropDatabase();
 		mongo.getDB(TestHelper.TEST_DATABASE_NAME + "_" + SingleNodeTest.FACET_TEST_INDEX + LumongoIndex.STORAGE_DB_SUFFIX).dropDatabase();
 		
-		startServer();
+		startServer(instanceCount);
 	}
 	
-	public static void stopSuite() throws Exception {
+	public void stopSuite() throws Exception {
 		stopClient();
 		stopServer();
 	}
 	
-	public static void startServer() throws Exception {
+	public void startServer(int instanceCount) throws Exception {
 		
 		log.info("Starting server for single node test");
 		
@@ -63,9 +63,8 @@ public class SetupSuite {
 		ClusterHelper.saveClusterConfig(mongoConfig, clusterConfig);
 		
 		String localServer = ServerNameHelper.getLocalServer();
-		
-		int instances = 1;
-		for (int i = 0; i < instances; i++) {
+
+		for (int i = 0; i < instanceCount; i++) {
 			LuceneNode ln = createLuceneNode(mongoConfig, localServer, i);
 			ln.start();
 			luceneNodes.add(ln);
@@ -75,20 +74,20 @@ public class SetupSuite {
 		
 	}
 	
-	public static LuceneNode createLuceneNode(MongoConfig mongoConfig, String localServer, int instance) throws PropertyException, Exception {
+	public LuceneNode createLuceneNode(MongoConfig mongoConfig, String localServer, int instance) throws PropertyException, Exception {
 		LocalNodeConfig localNodeConfig = getTestLocalNodeConfig(instance);
 		ClusterHelper.registerNode(mongoConfig, localNodeConfig, localServer);
 		return new LuceneNode(mongoConfig, localServer, localNodeConfig.getHazelcastPort());
 	}
 	
-	public static void stopServer() throws Exception {
-		log.info("Stopping server for single node test");
+	public void stopServer() throws Exception {
+		log.info("Stopping server");
 		for (LuceneNode ln : luceneNodes) {
 			ln.shutdown();
 		}
 	}
 	
-	public static ClusterConfig getTestClusterConfig() throws PropertyException {
+	public  ClusterConfig getTestClusterConfig() throws PropertyException {
 		HashMap<String, String> settings = new HashMap<String, String>();
 		
 		settings.put(ClusterConfig.SHARDED, "false");
@@ -104,7 +103,7 @@ public class SetupSuite {
 		return clusterConfig;
 	}
 	
-	public static LocalNodeConfig getTestLocalNodeConfig(int instance) throws PropertyException {
+	public LocalNodeConfig getTestLocalNodeConfig(int instance) throws PropertyException {
 		int offset = instance * 10;
 		
 		HashMap<String, String> settings = new HashMap<String, String>();
@@ -117,7 +116,7 @@ public class SetupSuite {
 		return localNodeConfig;
 	}
 	
-	public static MongoConfig getTestMongoConfig() throws PropertyException {
+	public MongoConfig getTestMongoConfig() throws PropertyException {
 		HashMap<String, String> settings = new HashMap<String, String>();
 		
 		settings.put(MongoConfig.DATABASE_NAME, TestHelper.TEST_DATABASE_NAME);
@@ -128,7 +127,7 @@ public class SetupSuite {
 		return mongoConfig;
 	}
 	
-	public static void startClient() throws Exception {
+	public void startClient() throws Exception {
 		System.out.println("starting client");
 		LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 		lumongoPoolConfig.addMember("localhost");
@@ -136,11 +135,11 @@ public class SetupSuite {
 		lumongoWorkPool.updateMembers();
 	}
 	
-	public static void stopClient() throws Exception {
+	public void stopClient() throws Exception {
 		lumongoWorkPool.shutdown();
 	}
 	
-	public static LumongoWorkPool getLumongoWorkPool() {
+	public LumongoWorkPool getLumongoWorkPool() {
 		return lumongoWorkPool;
 	}
 	

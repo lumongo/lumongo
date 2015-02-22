@@ -8,14 +8,14 @@ task generateJaxbMedline(type: project.ext.generateJaxbType) {
 	jaxbPackage = 'org.lumongo.example.medline.schema'
 	schema = file('src/main/schemas/nlmmedlinecitationset_130101.dtd')
 	dtd = true
-	outputDir = file("${buildDir}/generated-sources/")
+	outputDir = file("generated-sources/")
 }
 
 task generateJaxbWikipedia(type: project.ext.generateJaxbType) {
 	jaxbPackage = 'org.lumongo.example.wikipedia.schema'
 	schema = file('src/main/schemas/mediawiki-export-0.8.xsd')
 	dtd = false	
-	outputDir = file("${buildDir}/generated-sources/")
+	outputDir = file("generated-sources/")
 }
 
 compileJava.dependsOn generateJaxbMedline

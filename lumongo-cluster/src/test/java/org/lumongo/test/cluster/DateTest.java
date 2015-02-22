@@ -21,9 +21,11 @@ import com.mongodb.DBObject;
 
 public class DateTest {
 	public static void main(String[] args) {
+		ServerTest serverTest = new ServerTest();
+
 		try {
 			LogUtil.loadLogConfig();
-			SetupSuite.startSuite();
+			serverTest.startSuite(1);
 			Thread.sleep(1000);
 		}
 		catch (Exception e1) {
@@ -31,7 +33,7 @@ public class DateTest {
 		}
 		
 		//create the connection pool
-		LumongoWorkPool lumongoWorkPool = SetupSuite.getLumongoWorkPool();
+		LumongoWorkPool lumongoWorkPool = serverTest.getLumongoWorkPool();
 		
 		try {
 			
@@ -67,7 +69,7 @@ public class DateTest {
 		}
 		finally {
 			try {
-				SetupSuite.stopSuite();
+				serverTest.stopSuite();
 			}
 			catch (Exception e) {
 				e.printStackTrace();

@@ -10,7 +10,6 @@ import com.mongodb.DBObject;
 public class SavedFieldInfo<T> {
 	private final String fieldName;
 	private final Field field;
-	private boolean compressed;
 	private boolean fieldIsList;
 	
 	public SavedFieldInfo(Field field, String fieldName) {
@@ -21,10 +20,6 @@ public class SavedFieldInfo<T> {
 	
 	public String getFieldName() {
 		return fieldName;
-	}
-	
-	public boolean isCompressed() {
-		return compressed;
 	}
 	
 	public Object getValue(T object) throws Exception {

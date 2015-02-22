@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
+import com.mongodb.DBObject;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -150,7 +151,7 @@ public class LumongoSegment {
 		
 		this.uniqueIdField = indexConfig.getUniqueIdField();
 		
-		this.fetchSet = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(uniqueIdField, LumongoConstants.TIMESTAMP_FIELD)));
+		this.fetchSet = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(uniqueIdField, LumongoConstants.TIMESTAMP_FIELD)));
 		
 		this.counter = new AtomicLong();
 		this.lastCommit = null;
@@ -356,7 +357,7 @@ public class LumongoSegment {
 	}
 	
 	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i)
-					throws CorruptIndexException, IOException {
+					throws IOException {
 		int docId = results[i].doc;
 		Document d = is.doc(docId, fetchSet);
 		ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
@@ -437,7 +438,7 @@ public class LumongoSegment {
 		return srBuilder;
 	}
 	
-	private void possibleCommit() throws CorruptIndexException, IOException {
+	private void possibleCommit() throws IOException {
 		lastChange = System.currentTimeMillis();
 		
 		long count = counter.incrementAndGet();
@@ -453,7 +454,7 @@ public class LumongoSegment {
 		}
 	}
 	
-	public void forceCommit() throws CorruptIndexException, IOException {
+	public void forceCommit() throws IOException {
 		long currentTime = System.currentTimeMillis();
 		
 		taxonomyWriter.commit();
@@ -468,7 +469,7 @@ public class LumongoSegment {
 		
 	}
 	
-	public void doCommit() throws CorruptIndexException, IOException {
+	public void doCommit() throws IOException {
 		
 		long currentTime = System.currentTimeMillis();
 		
@@ -485,7 +486,7 @@ public class LumongoSegment {
 		}
 	}
 	
-	public void close() throws CorruptIndexException, IOException {
+	public void close() throws IOException {
 		forceCommit();
 		
 		taxonomyWriter.close();
@@ -501,8 +502,9 @@ public class LumongoSegment {
 			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
 			
 			if (fc != null) {
-				Object o = document.get(storedFieldName);
-				
+
+				Object o = getValueFromDocument(document, storedFieldName);
+
 				if (o != null) {
 					handleFacetsForStoredField(facetFields, fc, o);
 					
@@ -553,6 +555,34 @@ public class LumongoSegment {
 		Term term = new Term(indexConfig.getUniqueIdField(), uniqueId);
 		indexWriter.updateDocument(term, d, analyzer);
 		possibleCommit();
+	}
+
+	public static Object getValueFromDocument(BSONObject document, String storedFieldName) {
+		Object o;
+		if (storedFieldName.contains(".")) {
+			o = document;
+			String[] fields = storedFieldName.split("\\.");
+			for (String field : fields) {
+				if (o instanceof DBObject) {
+					DBObject dbObj = (DBObject) o;
+					if (dbObj != null) {
+						o = dbObj.get(field);
+					}
+					else {
+						o = null;
+						break;
+					}
+				}
+				else {
+					o = null;
+					break;
+				}
+			}
+		}
+		else {
+			o = document.get(storedFieldName);
+		}
+		return o;
 	}
 	
 	private void handleFacetsForStoredField(List<FacetField> facetFields, FieldConfig fc, Object o) throws Exception {

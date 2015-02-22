@@ -26,19 +26,19 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.TestHelper;
 
 import com.mongodb.MongoClient;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+import static org.testng.AssertJUnit.*;
+
+
 public class BasicStorageTest {
 	private static final String STORAGE_TEST_INDEX = "storageTest";
 	private static Directory directory;
@@ -82,7 +82,7 @@ public class BasicStorageTest {
 	}
 	
 	@Test
-	public void test2Query() throws CorruptIndexException, ParseException, IOException {
+	public void test2Query() throws ParseException, IOException {
 		IndexReader indexReader = DirectoryReader.open(directory);
 		
 		StandardAnalyzer analyzer = new StandardAnalyzer();
@@ -116,23 +116,23 @@ public class BasicStorageTest {
 		int hits = 0;
 		
 		hits = runQuery(indexReader, qp, "java", 10);
-		Assert.assertEquals("Expected 2 hits", 2, hits);
+		assertEquals("Expected 2 hits", 2, hits);
 		hits = runQuery(indexReader, qp, "perl", 10);
-		Assert.assertEquals("Expected 0 hits", 0, hits);
+		assertEquals("Expected 0 hits", 0, hits);
 		hits = runQuery(indexReader, qp, "treatment", 10);
-		Assert.assertEquals("Expected 0 hits", 0, hits);
+		assertEquals("Expected 0 hits", 0, hits);
 		hits = runQuery(indexReader, qp, "long", 10);
-		Assert.assertEquals("Expected 2 hits", 2, hits);
+		assertEquals("Expected 2 hits", 2, hits);
 		hits = runQuery(indexReader, qp, "MongoDB", 10);
-		Assert.assertEquals("Expected 1 hit", 1, hits);
+		assertEquals("Expected 1 hit", 1, hits);
 		hits = runQuery(indexReader, qp, "java AND awesome", 10);
-		Assert.assertEquals("Expected 1 hit", 1, hits);
+		assertEquals("Expected 1 hit", 1, hits);
 		hits = runQuery(indexReader, qp, "testIntField:[1 TO 10]", 10);
-		Assert.assertEquals("Expected 5 hits", 5, hits);
+		assertEquals("Expected 5 hits", 5, hits);
 		hits = runQuery(indexReader, qp, "testIntField:1", 10);
-		Assert.assertEquals("Expected 0 hits", 0, hits);
+		assertEquals("Expected 0 hits", 0, hits);
 		hits = runQuery(indexReader, qp, "testIntField:3", 10);
-		Assert.assertEquals("Expected 5 hits", 5, hits);
+		assertEquals("Expected 5 hits", 5, hits);
 		
 		indexReader.close();
 	}

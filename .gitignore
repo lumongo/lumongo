@@ -11,6 +11,8 @@ archives
 /.gradle
 /lumongo-common/gen-src/*
 
+/lumongo-example/generated-sources
+
 */.settings
 */.classpath
 */.project
