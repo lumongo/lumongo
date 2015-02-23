@@ -45,7 +45,7 @@ public class SavedFieldsMapper<T> {
 
 		}
 		else {
-			savedFields.add(new SavedFieldInfo<T>(f, fieldName));
+			savedFields.add(new SavedFieldInfo<>(f, fieldName));
 		}
 
 	}

@@ -5,6 +5,8 @@ import org.lumongo.fields.annotations.*;
 import org.lumongo.util.AnnotationUtil;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +52,15 @@ public class FieldConfigMapper<T> {
 			}
 
 			Class<?> type = f.getType();
+
+			if (List.class.isAssignableFrom(type)) {
+				Type genericType = f.getGenericType();
+				if (genericType instanceof ParameterizedType) {
+					ParameterizedType pType = (ParameterizedType)genericType;
+					type = (Class<?>)pType.getActualTypeArguments()[0];
+				}
+			}
+
 			FieldConfigMapper fieldConfigMapper = new FieldConfigMapper<>(type, fieldName);
 
 			List<Field> allFields = AnnotationUtil.getNonStaticFields(type, true);
@@ -116,6 +127,8 @@ public class FieldConfigMapper<T> {
 		for (FieldConfigMapper fcm : embeddedFieldConfigMappers) {
 			configs.addAll(fcm.getFieldConfigs());
 		}
+		System.out.println(configs);
+		System.out.println();
 		return configs;
 	}
 

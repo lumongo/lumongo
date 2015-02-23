@@ -45,7 +45,7 @@ public class ServerTest {
 	public void stopSuite() throws Exception {
 		stopClient();
 		stopServer();
-		removeTestDBs();
+		//removeTestDBs();
 	}
 
 	private void removeTestDBs() throws UnknownHostException {

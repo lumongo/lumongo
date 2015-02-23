@@ -1,10 +1,8 @@
 package org.lumongo.server.indexing.field;
 
-import java.util.Arrays;
-import java.util.Collection;
-
-import com.mongodb.DBObject;
 import org.apache.lucene.document.Document;
+
+import java.util.Collection;
 
 public abstract class FieldIndexer {
 	
@@ -20,14 +18,18 @@ public abstract class FieldIndexer {
 				handleValue(document, storedFieldName, co, indexedFieldName);
 			}
 		}
+		else if (storedValue instanceof Object[]) {
+			Object[] arr = (Object[]) storedValue;
+			for (Object co : arr) {
+				handleValue(document, storedFieldName, co, indexedFieldName);
+			}
+		}
 		else {
 			handleValue(document, storedFieldName, storedValue, indexedFieldName);
 		}
 		
 	}
 
-
-	
 	protected abstract void handleValue(Document d, String storedFieldName, Object value, String indexedFieldName) throws Exception;
 	
 }

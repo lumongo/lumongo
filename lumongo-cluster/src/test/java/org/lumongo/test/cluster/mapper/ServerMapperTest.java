@@ -10,6 +10,7 @@ import org.lumongo.test.cluster.ServerTest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import static org.testng.AssertJUnit.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,7 @@ public class ServerMapperTest extends ServerTest {
 		LumongoWorkPool lumongoWorkPool = getLumongoWorkPool();
 
 		lumongoWorkPool.createOrUpdateIndex(mapper.createOrUpdateIndex());
+
 	}
 
 	@Test
@@ -49,8 +51,13 @@ public class ServerMapperTest extends ServerTest {
 			PhoneNumber phoneNumber = new PhoneNumber();
 			phoneNumber.number = "123-333-2222";
 			phoneNumber.type = "Mobile";
+			PhoneNumber phoneNumber2 = new PhoneNumber();
+			phoneNumber2.number = "111-111-2222";
+			phoneNumber2.type = "Home";
+
 			List<PhoneNumber> phoneNumbers = new ArrayList<>();
 			phoneNumbers.add(phoneNumber);
+			phoneNumbers.add(phoneNumber2);
 			person.phoneNumbers = phoneNumbers;
 			Store store = mapper.createStore(person);
 			lumongoWorkPool.store(store);
@@ -85,12 +92,16 @@ public class ServerMapperTest extends ServerTest {
 			assertEquals(1, qr.getTotalHits());
 		}
 
-		System.out.println(lumongoWorkPool.getFields(new GetFields("person")).getFieldNames());
-
 		{
-			Query query = new Query("person", "phoneNumber.type:Mobile", 10);
+			Query query = new Query("person", "phoneNumbers.type:Mobile", 10);
 			QueryResult qr = lumongoWorkPool.query(query);
 			assertEquals(1, qr.getTotalHits());
+		}
+
+		{
+			Query query = new Query("person", "phoneNumbers.type:Home", 10);
+			QueryResult qr = lumongoWorkPool.query(query);
+			assertEquals(2, qr.getTotalHits());
 		}
 	}
 

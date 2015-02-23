@@ -38,12 +38,12 @@ public class Mapper<T> {
 
 		this.clazz = clazz;
 
-		this.savedFieldsMapper = new SavedFieldsMapper<T>(clazz);
+		this.savedFieldsMapper = new SavedFieldsMapper<>(clazz);
 
-		this.fieldConfigMapper = new FieldConfigMapper<T>(clazz, "");
+		this.fieldConfigMapper = new FieldConfigMapper<>(clazz, "");
 
 
-		HashSet<String> fields = new HashSet<String>();
+		HashSet<String> fields = new HashSet<>();
 
 		List<Field> allFields = AnnotationUtil.getNonStaticFields(clazz, true);
 

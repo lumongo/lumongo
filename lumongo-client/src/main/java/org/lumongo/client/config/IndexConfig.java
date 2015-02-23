@@ -159,7 +159,11 @@ public class IndexConfig {
 	public FieldConfig getFieldConfig(String fieldName) {
 		return this.fieldMap.get(fieldName);
 	}
-	
+
+	public TreeMap<String, FieldConfig> getFieldConfigMap() {
+		return fieldMap;
+	}
+
 	public IndexSettings getIndexSettings() {
 		IndexSettings.Builder isb = IndexSettings.newBuilder();
 		if (defaultSearchField != null) {
@@ -217,7 +221,7 @@ public class IndexConfig {
 		this.segmentTolerance = indexSettings.getSegmentTolerance();
 		this.segmentQueryCacheSize = indexSettings.getSegmentQueryCacheSize();
 		this.segmentQueryCacheMaxAmount = indexSettings.getSegmentQueryCacheMaxAmount();
-		this.fieldMap = new TreeMap<String, FieldConfig>();
+		this.fieldMap = new TreeMap<>();
 		
 		for (FieldConfig fc : indexSettings.getFieldConfigList()) {
 			fieldMap.put(fc.getStoredFieldName(), fc);
