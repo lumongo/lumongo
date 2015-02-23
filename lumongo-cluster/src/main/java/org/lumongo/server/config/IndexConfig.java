@@ -3,7 +3,8 @@ package org.lumongo.server.config;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.lumongo.cluster.message.Lumongo.FacetAs;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
@@ -56,8 +57,8 @@ public class IndexConfig {
 	
 	private boolean blockCompression;
 	private double segmentTolerance;
-	private TreeMap<String, FieldConfig> fieldConfigMap;
-	private TreeMap<String, IndexAs> indexAsMap;
+	private ConcurrentHashMap<String, FieldConfig> fieldConfigMap;
+	private ConcurrentHashMap<String, IndexAs> indexAsMap;
 	
 	protected IndexConfig() {
 		
@@ -85,14 +86,16 @@ public class IndexConfig {
 		this.segmentTolerance = indexSettings.getSegmentTolerance();
 		this.segmentQueryCacheSize = indexSettings.getSegmentQueryCacheSize();
 		this.segmentQueryCacheMaxAmount = indexSettings.getSegmentQueryCacheMaxAmount();
-		
-		this.fieldConfigMap = new TreeMap<String, FieldConfig>();
+
+		ConcurrentHashMap<String, FieldConfig> fieldConfigMap = new ConcurrentHashMap<>();
 		
 		for (FieldConfig fc : indexSettings.getFieldConfigList()) {
 			fieldConfigMap.put(fc.getStoredFieldName(), fc);
 		}
-		
-		buildIndexAndFacetConfig();
+
+		this.fieldConfigMap = fieldConfigMap;
+
+		this.indexAsMap = buildIndexConfig();
 		
 	}
 	
@@ -113,14 +116,15 @@ public class IndexConfig {
 		return isb.build();
 	}
 	
-	private void buildIndexAndFacetConfig() {
-		indexAsMap = new TreeMap<>();
+	private ConcurrentHashMap<String, IndexAs> buildIndexConfig() {
+		ConcurrentHashMap<String, IndexAs> indexAsMap = new ConcurrentHashMap<>();
 		for (String storedFieldName : fieldConfigMap.keySet()) {
 			FieldConfig fc = fieldConfigMap.get(storedFieldName);
 			for (IndexAs indexAs : fc.getIndexAsList()) {
 				indexAsMap.put(indexAs.getIndexFieldName(), indexAs);
 			}
 		}
+		return indexAsMap;
 	}
 	
 	public boolean isNumericOrDateField(String fieldName) {
@@ -162,6 +166,10 @@ public class IndexConfig {
 	
 	public FieldConfig getFieldConfig(String storedFieldName) {
 		return fieldConfigMap.get(storedFieldName);
+	}
+
+	public Set<String> getIndexedStoredFieldNames() {
+		return fieldConfigMap.keySet();
 	}
 	
 	public String getDefaultSearchField() {
@@ -237,12 +245,12 @@ public class IndexConfig {
 		dbObject.put(SEGMENT_QUERY_CACHE_SIZE, segmentQueryCacheSize);
 		dbObject.put(SEGMENT_QUERY_CACHE_MAX_AMOUNT, segmentQueryCacheMaxAmount);
 		
-		List<DBObject> fieldConfigs = new ArrayList<DBObject>();
+		List<DBObject> fieldConfigs = new ArrayList<>();
 		for (FieldConfig fc : fieldConfigMap.values()) {
 			BasicDBObject fieldConfig = new BasicDBObject();
 			fieldConfig.put(STORED_FIELD_NAME, fc.getStoredFieldName());
 			{
-				List<DBObject> indexAsObjList = new ArrayList<DBObject>();
+				List<DBObject> indexAsObjList = new ArrayList<>();
 				for (IndexAs indexAs : fc.getIndexAsList()) {
 					DBObject indexAsObj = new BasicDBObject();
 					indexAsObj.put(ANALYZER, indexAs.getAnalyzer().name());
@@ -252,7 +260,7 @@ public class IndexConfig {
 				fieldConfig.put(INDEX_AS, indexAsObjList);
 			}
 			{
-				List<DBObject> facetAsObjList = new ArrayList<DBObject>();
+				List<DBObject> facetAsObjList = new ArrayList<>();
 				for (FacetAs facetAs : fc.getFacetAsList()) {
 					DBObject facetAsObj = new BasicDBObject();
 					facetAsObj.put(FACET_TYPE, facetAs.getFacetType().name());
@@ -293,7 +301,7 @@ public class IndexConfig {
 			indexConfig.segmentQueryCacheMaxAmount = (int) settings.get(SEGMENT_QUERY_CACHE_MAX_AMOUNT);
 		}
 		
-		indexConfig.fieldConfigMap = new TreeMap<String, FieldConfig>();
+		indexConfig.fieldConfigMap = new ConcurrentHashMap<>();
 		
 		if (settings.containsField(SEGMENT_FLUSH_INTERVAL)) {
 			indexConfig.segmentFlushInterval = (int) settings.get(SEGMENT_FLUSH_INTERVAL);
@@ -330,7 +338,7 @@ public class IndexConfig {
 			
 			indexConfig.fieldConfigMap.put(storedFieldName, fcBuilder.build());
 		}
-		indexConfig.buildIndexAndFacetConfig();
+		indexConfig.indexAsMap = indexConfig.buildIndexConfig();
 		
 		return indexConfig;
 	}

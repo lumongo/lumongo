@@ -20,8 +20,8 @@ public class SavedFieldsMapper<T> {
 
 	public SavedFieldsMapper(Class<T> clazz) {
 		this.clazz = clazz;
-		this.savedFields = new HashSet<SavedFieldInfo<T>>();
-		this.savedEmbeddedFields = new HashSet<SavedEmbeddedFieldInfo<T>>();
+		this.savedFields = new HashSet<>();
+		this.savedEmbeddedFields = new HashSet<>();
 
 	}
 

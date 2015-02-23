@@ -495,15 +495,21 @@ public class LumongoSegment {
 	
 	public void index(String uniqueId, BSONObject document, long timestamp) throws Exception {
 		Document d = new Document();
-		
-		List<FacetField> facetFields = new ArrayList<FacetField>();
-		for (String storedFieldName : document.keySet()) {
+
+		System.out.println(document);
+
+		List<FacetField> facetFields = new ArrayList<>();
+		for (String storedFieldName : indexConfig.getIndexedStoredFieldNames()) {
 			
 			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
-			
+
+
+
 			if (fc != null) {
 
 				Object o = getValueFromDocument(document, storedFieldName);
+
+				System.out.println(storedFieldName + ":" + o);
 
 				if (o != null) {
 					handleFacetsForStoredField(facetFields, fc, o);
@@ -563,8 +569,9 @@ public class LumongoSegment {
 			o = document;
 			String[] fields = storedFieldName.split("\\.");
 			for (String field : fields) {
-				if (o instanceof DBObject) {
-					DBObject dbObj = (DBObject) o;
+				System.out.print(o.getClass());
+				if (o instanceof BSONObject) {
+					BSONObject dbObj = (BSONObject) o;
 					if (dbObj != null) {
 						o = dbObj.get(field);
 					}

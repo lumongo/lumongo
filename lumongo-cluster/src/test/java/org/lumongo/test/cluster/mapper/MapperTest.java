@@ -1,12 +1,19 @@
 package org.lumongo.test.cluster.mapper;
 
+import org.lumongo.client.command.GetFields;
+import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.pool.LumongoWorkPool;
+import org.lumongo.client.result.QueryResult;
 import org.lumongo.fields.Mapper;
 import org.lumongo.test.cluster.ServerTest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import static org.testng.AssertJUnit.*;
+import static org.testng.AssertJUnit.*;
+
 
 public class MapperTest extends ServerTest {
 
@@ -58,6 +65,25 @@ public class MapperTest extends ServerTest {
 			lumongoWorkPool.store(store);
 		}
 
+	}
+
+	@Test
+	public void test04Search() throws Exception {
+		LumongoWorkPool lumongoWorkPool = getLumongoWorkPool();
+
+		{
+			Query query = new Query("person", "firstName:Bob", 10);
+			QueryResult qr = lumongoWorkPool.query(query);
+			assertEquals(1, qr.getTotalHits());
+		}
+
+		System.out.println(lumongoWorkPool.getFields(new GetFields("person")).getFieldNames());
+
+		{
+			Query query = new Query("person", "phoneNumber.type:Mobile", 10);
+			QueryResult qr = lumongoWorkPool.query(query);
+			assertEquals(1, qr.getTotalHits());
+		}
 	}
 
 	@AfterClass
