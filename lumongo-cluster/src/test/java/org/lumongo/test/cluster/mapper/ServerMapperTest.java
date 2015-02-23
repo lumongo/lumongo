@@ -11,11 +11,14 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.testng.AssertJUnit.*;
 import static org.testng.AssertJUnit.*;
 
 
-public class MapperTest extends ServerTest {
+public class ServerMapperTest extends ServerTest {
 
 	private Mapper<Person> mapper;
 
@@ -46,7 +49,9 @@ public class MapperTest extends ServerTest {
 			PhoneNumber phoneNumber = new PhoneNumber();
 			phoneNumber.number = "123-333-2222";
 			phoneNumber.type = "Mobile";
-			person.phoneNumber = phoneNumber;
+			List<PhoneNumber> phoneNumbers = new ArrayList<>();
+			phoneNumbers.add(phoneNumber);
+			person.phoneNumbers = phoneNumbers;
 			Store store = mapper.createStore(person);
 			lumongoWorkPool.store(store);
 		}
@@ -60,7 +65,10 @@ public class MapperTest extends ServerTest {
 			PhoneNumber phoneNumber = new PhoneNumber();
 			phoneNumber.number = "222-222-2222";
 			phoneNumber.type = "Home";
-			person.phoneNumber = phoneNumber;
+
+			List<PhoneNumber> phoneNumbers = new ArrayList<>();
+			phoneNumbers.add(phoneNumber);
+			person.phoneNumbers = phoneNumbers;
 			Store store = mapper.createStore(person);
 			lumongoWorkPool.store(store);
 		}

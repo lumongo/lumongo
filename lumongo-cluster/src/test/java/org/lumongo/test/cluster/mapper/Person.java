@@ -3,6 +3,8 @@ package org.lumongo.test.cluster.mapper;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.fields.annotations.*;
 
+import java.util.List;
+
 @Settings(indexName = "person", numberOfSegments = 1)
 public class Person {
 
@@ -25,10 +27,8 @@ public class Person {
 	@Indexed(analyzer = Lumongo.LMAnalyzer.STANDARD)
 	protected String address;
 
-
-
 	@Embedded
-	protected PhoneNumber phoneNumber;
+	protected List<PhoneNumber> phoneNumbers;
 
 
 	@Override
@@ -38,7 +38,7 @@ public class Person {
 						", firstName='" + firstName + '\'' +
 						", lastName='" + lastName + '\'' +
 						", address='" + address + '\'' +
-						", phoneNumber=" + phoneNumber +
+						", phoneNumbers=" + phoneNumbers +
 						'}';
 	}
 

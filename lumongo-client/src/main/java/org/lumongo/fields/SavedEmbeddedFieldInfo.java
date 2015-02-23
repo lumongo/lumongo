@@ -28,7 +28,7 @@ public class SavedEmbeddedFieldInfo<T> {
 			Type genericType = field.getGenericType();
 			if (genericType instanceof ParameterizedType) {
 				ParameterizedType pType = (ParameterizedType)genericType;
-				type = pType.getActualTypeArguments()[0].getClass();
+				type = (Class<?>)pType.getActualTypeArguments()[0];
 			}
 		}
 
@@ -53,7 +53,7 @@ public class SavedEmbeddedFieldInfo<T> {
 			Object o = field.get(object);
 			List<?> l = (List<?>) o;
 
-			List<DBObject> retValues = new ArrayList<DBObject>();
+			List<DBObject> retValues = new ArrayList<>();
 			for (Object o2 : l) {
 				DBObject retVal = savedFieldMapper.toDbObject(o2);
 				retValues.add(retVal);
@@ -77,7 +77,7 @@ public class SavedEmbeddedFieldInfo<T> {
 			List<DBObject> embeddedValues = (List<DBObject>)value;
 			if (fieldIsList) {
 
-				List<Object> objs = new ArrayList<Object>();
+				List<Object> objs = new ArrayList<>();
 				for (DBObject embeddedValue : embeddedValues) {
 					objs.add(savedFieldMapper.fromDBObject(embeddedValue));
 				}
