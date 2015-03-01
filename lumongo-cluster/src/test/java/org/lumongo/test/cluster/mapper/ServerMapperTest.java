@@ -5,7 +5,7 @@ import org.lumongo.client.command.Store;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.fields.Mapper;
-import org.lumongo.test.cluster.ServerTest;
+import org.lumongo.test.cluster.ServerTestBase;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.testng.AssertJUnit.assertEquals;
 
-public class ServerMapperTest extends ServerTest {
+public class ServerMapperTest extends ServerTestBase {
 
 	private Mapper<Person> mapper;
 

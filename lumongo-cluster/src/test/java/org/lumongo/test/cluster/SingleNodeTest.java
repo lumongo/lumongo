@@ -34,7 +34,7 @@ import java.util.Date;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
 
-public class SingleNodeTest extends ServerTest {
+public class SingleNodeTest extends ServerTestBase {
 	public static final String MY_TEST_INDEX = "myTestIndex";
 	
 	public static final String FACET_TEST_INDEX = "facetTestIndex";

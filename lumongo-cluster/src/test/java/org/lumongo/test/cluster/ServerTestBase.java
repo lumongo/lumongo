@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class ServerTest {
-	private static Logger log = Logger.getLogger(ServerTest.class);
+public class ServerTestBase {
+	private static Logger log = Logger.getLogger(ServerTestBase.class);
 	
 	private LumongoWorkPool lumongoWorkPool;
 	private List<LuceneNode> luceneNodes;
@@ -35,15 +35,19 @@ public class ServerTest {
 		
 		LogUtil.loadLogConfig();
 
+
 		removeTestDBs();
 
 		startServer(instanceCount);
+		startClient();
 	}
 
 	public void stopSuite() throws Exception {
 		stopClient();
 		stopServer();
-		//removeTestDBs();
+
+		removeTestDBs();
+
 	}
 
 	private void removeTestDBs() throws UnknownHostException {
@@ -74,7 +78,7 @@ public class ServerTest {
 			luceneNodes.add(ln);
 		}
 		
-		startClient();
+
 		
 	}
 	

@@ -20,7 +20,7 @@ import java.util.Date;
 
 public class DateTest {
 	public static void main(String[] args) {
-		ServerTest serverTest = new ServerTest();
+		ServerTestBase serverTest = new ServerTestBase();
 
 		try {
 			LogUtil.loadLogConfig();
