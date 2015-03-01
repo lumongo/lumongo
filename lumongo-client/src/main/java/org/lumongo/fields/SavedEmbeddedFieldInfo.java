@@ -20,15 +20,14 @@ public class SavedEmbeddedFieldInfo<T> {
 		this.fieldName = fieldName;
 		this.field = field;
 
-
 		Class<?> type = field.getType();
 		this.fieldIsList = List.class.isAssignableFrom(type);
 
 		if (fieldIsList) {
 			Type genericType = field.getGenericType();
 			if (genericType instanceof ParameterizedType) {
-				ParameterizedType pType = (ParameterizedType)genericType;
-				type = (Class<?>)pType.getActualTypeArguments()[0];
+				ParameterizedType pType = (ParameterizedType) genericType;
+				type = (Class<?>) pType.getActualTypeArguments()[0];
 			}
 		}
 
@@ -74,7 +73,7 @@ public class SavedEmbeddedFieldInfo<T> {
 		boolean valuesIsList = value instanceof List;
 		
 		if (valuesIsList) {
-			List<DBObject> embeddedValues = (List<DBObject>)value;
+			List<DBObject> embeddedValues = (List<DBObject>) value;
 			if (fieldIsList) {
 
 				List<Object> objs = new ArrayList<>();
@@ -88,7 +87,7 @@ public class SavedEmbeddedFieldInfo<T> {
 				if (valueList.size() == 1) {
 					Object first = valueList.iterator().next();
 					if (first != null) {
-						field.set(newInstance, savedFieldMapper.fromDBObject((DBObject)first));
+						field.set(newInstance, savedFieldMapper.fromDBObject((DBObject) first));
 					}
 				}
 				else if (valueList.isEmpty()) {

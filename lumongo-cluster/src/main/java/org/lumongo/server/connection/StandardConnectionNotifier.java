@@ -1,9 +1,8 @@
 package org.lumongo.server.connection;
 
-import org.apache.log4j.Logger;
-
 import com.googlecode.protobuf.pro.duplex.RpcClientChannel;
 import com.googlecode.protobuf.pro.duplex.listener.TcpConnectionEventListener;
+import org.apache.log4j.Logger;
 
 public class StandardConnectionNotifier implements TcpConnectionEventListener {
 

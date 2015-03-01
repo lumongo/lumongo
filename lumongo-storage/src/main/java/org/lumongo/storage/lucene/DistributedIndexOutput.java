@@ -17,9 +17,9 @@ package org.lumongo.storage.lucene;
  * limitations under the License.
  */
 
-import java.io.IOException;
-
 import org.apache.lucene.store.IndexOutput;
+
+import java.io.IOException;
 
 public class DistributedIndexOutput extends IndexOutput {
 	

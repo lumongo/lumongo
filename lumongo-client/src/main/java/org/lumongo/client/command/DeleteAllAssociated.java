@@ -1,6 +1,5 @@
 package org.lumongo.client.command;
 
-
 /**
  *  Removes all associated documents for the unique id given
  * @author mdavis

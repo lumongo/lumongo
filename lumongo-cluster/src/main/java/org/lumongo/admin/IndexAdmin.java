@@ -1,12 +1,9 @@
 package org.lumongo.admin;
 
-import java.util.Arrays;
-
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.admin.help.RequiredOptionException;
 import org.lumongo.client.command.ClearIndex;
@@ -30,6 +27,8 @@ import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.util.LogUtil;
 
+import java.util.Arrays;
+
 public class IndexAdmin {
 
 	public static enum Command {
@@ -49,10 +48,10 @@ public class IndexAdmin {
 		OptionParser parser = new OptionParser();
 		OptionSpec<String> addressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
 		OptionSpec<Integer> portArg = parser.accepts(AdminConstants.PORT).withRequiredArg().ofType(Integer.class).defaultsTo(32191)
-				.describedAs("Lumongo external port");
+						.describedAs("Lumongo external port");
 		OptionSpec<String> indexArg = parser.accepts(AdminConstants.INDEX).withRequiredArg().describedAs("Index to perform action");
 		OptionSpec<Command> commandArg = parser.accepts(AdminConstants.COMMAND).withRequiredArg().ofType(Command.class).required()
-				.describedAs("Command to run " + Arrays.toString(Command.values()));
+						.describedAs("Command to run " + Arrays.toString(Command.values()));
 
 		LumongoBaseWorkPool lumongoWorkPool = null;
 

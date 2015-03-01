@@ -1,13 +1,13 @@
 package org.lumongo.fields;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.lumongo.cluster.message.Lumongo.FacetAs;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.IndexAs;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class FieldConfigBuilder {
 	private String storedFieldName;

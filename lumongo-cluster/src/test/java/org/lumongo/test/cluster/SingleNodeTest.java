@@ -1,10 +1,8 @@
 package org.lumongo.test.cluster;
 
-import java.io.ByteArrayOutputStream;
-import java.util.Date;
-
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import org.joda.time.DateTime;
-
 import org.lumongo.client.command.DeleteAllAssociated;
 import org.lumongo.client.command.DeleteAssociated;
 import org.lumongo.client.command.DeleteFull;
@@ -26,15 +24,15 @@ import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.doc.AssociatedBuilder;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.FieldConfigBuilder;
-
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import static org.testng.AssertJUnit.*;
+import java.io.ByteArrayOutputStream;
+import java.util.Date;
 
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertTrue;
 
 public class SingleNodeTest extends ServerTest {
 	public static final String MY_TEST_INDEX = "myTestIndex";

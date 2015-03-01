@@ -1,12 +1,5 @@
 package org.lumongo.example.medline;
 
-import java.text.DateFormatSymbols;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
-import javax.xml.bind.JAXBException;
-
 import org.joda.time.DateTime;
 import org.lumongo.example.medline.schema.Article;
 import org.lumongo.example.medline.schema.Author;
@@ -25,6 +18,12 @@ import org.lumongo.example.medline.schema.PubDate;
 import org.lumongo.example.medline.schema.Suffix;
 import org.lumongo.example.medline.schema.Year;
 import org.lumongo.xml.StaxJAXBReader;
+
+import javax.xml.bind.JAXBException;
+import java.text.DateFormatSymbols;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> {
 	

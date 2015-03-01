@@ -17,9 +17,6 @@ package org.lumongo.analyzer;
  * limitations under the License.
  */
 
-import java.io.IOException;
-import java.io.Reader;
-
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopAnalyzer;
@@ -30,6 +27,9 @@ import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.analysis.util.StopwordAnalyzerBase;
 import org.apache.lucene.analysis.util.WordlistLoader;
+
+import java.io.IOException;
+import java.io.Reader;
 
 public final class StandardFoldingAnalyzer extends StopwordAnalyzerBase {
 	

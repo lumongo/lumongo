@@ -1,12 +1,12 @@
 package org.lumongo.example.twitter;
 
-import java.util.Date;
-
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.fields.Mapper;
 import org.lumongo.util.LogUtil;
+
+import java.util.Date;
 
 public class TwitterIndexer {
 	

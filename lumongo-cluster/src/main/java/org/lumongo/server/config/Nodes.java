@@ -1,11 +1,11 @@
 package org.lumongo.server.config;
 
+import com.hazelcast.core.Member;
+
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.hazelcast.core.Member;
 
 public class Nodes {
 	
@@ -37,21 +37,26 @@ public class Nodes {
 		
 		@Override
 		public boolean equals(Object obj) {
-			if (this == obj)
+			if (this == obj) {
 				return true;
-			if (obj == null || !(obj instanceof HazelcastNode))
+			}
+			if (obj == null || !(obj instanceof HazelcastNode)) {
 				return false;
+			}
 			
 			HazelcastNode other = (HazelcastNode) obj;
 			
 			if (address == null) {
-				if (other.address != null)
+				if (other.address != null) {
 					return false;
+				}
 			}
-			else if (!address.equals(other.address))
+			else if (!address.equals(other.address)) {
 				return false;
-			if (hazelcastPort != other.hazelcastPort)
+			}
+			if (hazelcastPort != other.hazelcastPort) {
 				return false;
+			}
 			return true;
 		}
 		

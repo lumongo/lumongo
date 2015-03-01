@@ -1,18 +1,17 @@
 package org.lumongo.admin;
 
-import java.io.File;
-
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.server.LuceneNode;
 import org.lumongo.server.config.MongoConfig;
 import org.lumongo.util.LogUtil;
 import org.lumongo.util.ServerNameHelper;
+
+import java.io.File;
 
 public class StartNode {
 
@@ -21,10 +20,10 @@ public class StartNode {
 
 		OptionParser parser = new OptionParser();
 		OptionSpec<File> mongoConfigArg = parser.accepts(AdminConstants.MONGO_CONFIG).withRequiredArg().ofType(File.class).describedAs("Mongo properties file")
-				.required();
+						.required();
 		OptionSpec<String> serverAddressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().describedAs("Specific Server Address Manually");
 		OptionSpec<Integer> hazelcastPortArg = parser.accepts(AdminConstants.HAZELCAST_PORT).withRequiredArg().ofType(Integer.class)
-				.describedAs("Hazelcast port if multiple instances on one server (expert)");
+						.describedAs("Hazelcast port if multiple instances on one server (expert)");
 
 		try {
 			OptionSet options = parser.parse(args);

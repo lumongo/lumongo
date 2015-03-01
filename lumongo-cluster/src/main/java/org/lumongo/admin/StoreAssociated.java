@@ -1,16 +1,15 @@
 package org.lumongo.admin;
 
-import java.io.File;
-
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.LumongoRestClient;
 import org.lumongo.util.LogUtil;
+
+import java.io.File;
 
 public class StoreAssociated {
 
@@ -20,12 +19,12 @@ public class StoreAssociated {
 		OptionParser parser = new OptionParser();
 		OptionSpec<String> addressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
 		OptionSpec<Integer> restPortArg = parser.accepts(AdminConstants.REST_PORT).withRequiredArg().ofType(Integer.class)
-				.defaultsTo(LumongoConstants.DEFAULT_REST_SERVICE_PORT).describedAs("Lumongo rest port");
+						.defaultsTo(LumongoConstants.DEFAULT_REST_SERVICE_PORT).describedAs("Lumongo rest port");
 		OptionSpec<String> uniqueIdArg = parser.accepts(AdminConstants.UNIQUE_ID).withRequiredArg().required().describedAs("Unique Id");
 		OptionSpec<String> indexArg = parser.accepts(AdminConstants.INDEX).withRequiredArg().required().describedAs("Index");
 		OptionSpec<String> fileNameArg = parser.accepts(AdminConstants.FILE_NAME).withRequiredArg().required().describedAs("Associated File Name");
 		OptionSpec<File> fileToStoreArg = parser.accepts(AdminConstants.FILE_TO_STORE).withRequiredArg().ofType(File.class).required()
-				.describedAs("Associated File to Store");
+						.describedAs("Associated File to Store");
 
 		try {
 			OptionSet options = parser.parse(args);

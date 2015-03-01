@@ -1,7 +1,7 @@
 package org.lumongo.test.cluster;
 
-import java.util.Date;
-
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
@@ -16,8 +16,7 @@ import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.FieldConfigBuilder;
 import org.lumongo.util.LogUtil;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import java.util.Date;
 
 public class DateTest {
 	public static void main(String[] args) {

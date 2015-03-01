@@ -1,14 +1,13 @@
 package org.lumongo.admin.help;
 
+import joptsimple.HelpFormatter;
+import joptsimple.OptionDescriptor;
+import org.lumongo.admin.ClusterAdmin;
+import org.lumongo.admin.IndexAdmin;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import joptsimple.HelpFormatter;
-import joptsimple.OptionDescriptor;
-
-import org.lumongo.admin.ClusterAdmin;
-import org.lumongo.admin.IndexAdmin;
 
 public class LumongoHelpFormatter implements HelpFormatter {
 	

@@ -1,10 +1,10 @@
 package org.lumongo.client.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.LMMember;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LumongoPoolConfig {
 
@@ -38,11 +38,9 @@ public class LumongoPoolConfig {
 		return addMember(serverAddress, LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
 	}
 
-
 	public LumongoPoolConfig addMember(String serverAddress, int externalPort) {
 		return addMember(serverAddress, externalPort, LumongoConstants.DEFAULT_REST_SERVICE_PORT);
 	}
-
 
 	public LumongoPoolConfig addMember(String serverAddress, int externalPort, int restPort) {
 		LMMember member = LMMember.newBuilder().setServerAddress(serverAddress).setExternalPort(externalPort).setRestPort(restPort).build();
@@ -50,12 +48,10 @@ public class LumongoPoolConfig {
 		return this;
 	}
 
-
 	public LumongoPoolConfig addMember(LMMember member) {
 		members.add(member);
 		return this;
 	}
-
 
 	public LumongoPoolConfig clearMembers() {
 		members.clear();
@@ -93,11 +89,9 @@ public class LumongoPoolConfig {
 		return this;
 	}
 
-
 	public String getPoolName() {
 		return poolName;
 	}
-
 
 	public LumongoPoolConfig setPoolName(String poolName) {
 		this.poolName = poolName;

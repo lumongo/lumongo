@@ -1,10 +1,10 @@
 package org.lumongo.util;
 
+import org.lumongo.LumongoConstants;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
-
-import org.lumongo.LumongoConstants;
 
 public class HttpHelper {
 	public static String createQuery(HashMap<String, String> parameters) {

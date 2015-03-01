@@ -1,11 +1,11 @@
 package org.lumongo.client.command;
 
-import java.io.File;
-import java.io.OutputStream;
-
 import org.lumongo.client.LumongoRestClient;
 import org.lumongo.client.command.base.RestCommand;
 import org.lumongo.client.result.FetchLargeAssociatedResult;
+
+import java.io.File;
+import java.io.OutputStream;
 
 public class FetchLargeAssociated extends RestCommand<FetchLargeAssociatedResult> {
 

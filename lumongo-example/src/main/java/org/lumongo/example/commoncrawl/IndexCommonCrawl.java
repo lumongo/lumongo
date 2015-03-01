@@ -1,16 +1,7 @@
 package org.lumongo.example.commoncrawl;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import org.apache.log4j.Logger;
 import org.jets3t.service.S3ServiceException;
 import org.jets3t.service.ServiceException;
@@ -35,8 +26,16 @@ import org.lumongo.fields.FieldConfigBuilder;
 import org.lumongo.util.LogUtil;
 import org.lumongo.util.properties.PropertiesReader;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class IndexCommonCrawl {
 	//fields

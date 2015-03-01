@@ -1,10 +1,10 @@
 package org.lumongo.client.result;
 
-import java.util.List;
-
 import org.lumongo.cluster.message.Lumongo.GetMembersResponse;
 import org.lumongo.cluster.message.Lumongo.IndexMapping;
 import org.lumongo.cluster.message.Lumongo.LMMember;
+
+import java.util.List;
 
 public class GetMembersResult extends Result {
 

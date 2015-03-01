@@ -1,10 +1,5 @@
 package org.apache.lucene.facet.taxonomy.directory;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.lucene.document.Document;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.FacetLabel;
@@ -20,6 +15,11 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.IOUtils;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -47,8 +47,8 @@ import org.apache.lucene.util.IOUtils;
  * results, while other methods prefetch all the data into memory and then
  * provide answers directly from in-memory tables. See the documentation of
  * individual methods for comments on their performance.
- * 
- * 
+ *
+ *
  */
 public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	
@@ -125,7 +125,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 	/**
 	 * Implements the opening of a new {@link LumongoDirectoryTaxonomyReader} instance if
 	 * the taxonomy has changed.
-	 * 
+	 *
 	 * <p>
 	 * <b>NOTE:</b> the returned {@link LumongoDirectoryTaxonomyReader} shares the
 	 * ordinal and category caches with this reader. This is not expected to cause

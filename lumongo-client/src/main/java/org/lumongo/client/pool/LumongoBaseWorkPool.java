@@ -1,15 +1,14 @@
 package org.lumongo.client.pool;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.google.common.util.concurrent.ListenableFuture;
 import org.lumongo.client.command.base.CallableCommand;
 import org.lumongo.client.command.base.Command;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.result.Result;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class LumongoBaseWorkPool extends WorkPool {
 
@@ -19,7 +18,7 @@ public class LumongoBaseWorkPool extends WorkPool {
 
 	public LumongoBaseWorkPool(LumongoPoolConfig lumongoPoolConfig) throws Exception {
 		this(new LumongoPool(lumongoPoolConfig), lumongoPoolConfig.getPoolName() != null ? lumongoPoolConfig.getPoolName() : "lumongoPool-"
-				+ counter.getAndIncrement());
+						+ counter.getAndIncrement());
 	}
 
 	public LumongoBaseWorkPool(LumongoPool lumongoPool) {

@@ -1,10 +1,10 @@
 package org.lumongo.test.cluster;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.CreateIndex;
 import org.lumongo.client.command.CreateOrUpdateIndex;
@@ -47,11 +47,10 @@ import org.lumongo.doc.AssociatedBuilder;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.FieldConfigBuilder;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class ApiTest {
 	public static final String MY_INDEX_NAME = SingleNodeTest.MY_TEST_INDEX;

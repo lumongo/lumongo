@@ -1,9 +1,9 @@
 package org.lumongo.util;
 
-import java.net.UnknownHostException;
-
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
+
+import java.net.UnknownHostException;
 
 public class TestHelper {
 	public static final String MONGO_SERVER_PROPERTY = "mongoServer";

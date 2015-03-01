@@ -34,7 +34,6 @@ public class FacetCountResult implements Comparable<FacetCountResult> {
 		return -1 * compareCount;
 	}
 
-
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof FacetCountResult) {
@@ -45,6 +44,6 @@ public class FacetCountResult implements Comparable<FacetCountResult> {
 
 	@Override
 	public int hashCode() {
-		return facet.hashCode() + (int)count;
+		return facet.hashCode() + (int) count;
 	}
 }

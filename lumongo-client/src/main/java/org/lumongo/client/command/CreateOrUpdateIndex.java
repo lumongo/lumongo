@@ -1,5 +1,6 @@
 package org.lumongo.client.command;
 
+import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.Command;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.pool.LumongoConnection;
@@ -7,8 +8,6 @@ import org.lumongo.client.result.CreateIndexResult;
 import org.lumongo.client.result.CreateOrUpdateIndexResult;
 import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.UpdateIndexResult;
-
-import com.google.protobuf.ServiceException;
 
 /**
  * Creates a new index with all settings given or updates the IndexSettings on an existing index

@@ -1,9 +1,7 @@
 package org.lumongo.client.command;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.BatchFetchResult;
@@ -14,8 +12,9 @@ import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Fetches multiple documents in a single call

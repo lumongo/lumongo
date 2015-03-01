@@ -1,8 +1,6 @@
 package org.lumongo.client.result;
 
-
 public class CreateOrUpdateIndexResult extends Result {
-
 
 	private UpdateIndexResult updateIndexResult;
 	private CreateIndexResult createIndexResult;

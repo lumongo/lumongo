@@ -1,9 +1,9 @@
 package org.lumongo.storage.constants;
 
+import com.mongodb.gridfs.GridFSDBFile;
+
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-
-import com.mongodb.gridfs.GridFSDBFile;
 
 public interface MongoConstants {
 	public static interface StandardDBs {

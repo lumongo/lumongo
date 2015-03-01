@@ -1,13 +1,9 @@
 package org.lumongo.admin;
 
-import java.text.DecimalFormat;
-import java.util.List;
-
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.command.BatchFetch;
@@ -23,6 +19,9 @@ import org.lumongo.cluster.message.Lumongo.FacetGroup;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.util.LogUtil;
+
+import java.text.DecimalFormat;
+import java.util.List;
 
 public class Search {
 	

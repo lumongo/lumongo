@@ -1,13 +1,7 @@
 package org.lumongo.client.command;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.QueryResult;
@@ -22,8 +16,13 @@ import org.lumongo.cluster.message.Lumongo.QueryRequest.Operator;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Runs a query on one of more LuMongo indexes.

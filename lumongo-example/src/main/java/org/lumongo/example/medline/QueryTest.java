@@ -1,8 +1,5 @@
 package org.lumongo.example.medline;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.lumongo.client.cache.DocumentCache;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.command.Query;
@@ -15,6 +12,9 @@ import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.fields.Mapper;
 import org.lumongo.util.LogUtil;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class QueryTest {
 	public static void main(String[] args) throws Exception {

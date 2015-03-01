@@ -1,14 +1,7 @@
 package org.lumongo.server.rest;
 
-import java.util.List;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-
+import com.cedarsoftware.util.io.JsonWriter;
+import com.googlecode.protobuf.format.JsonFormat;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
@@ -17,8 +10,13 @@ import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.server.indexing.LumongoIndexManager;
 
-import com.cedarsoftware.util.io.JsonWriter;
-import com.googlecode.protobuf.format.JsonFormat;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import java.util.List;
 
 @Path(LumongoConstants.QUERY_URL)
 public class QueryResource {
@@ -33,16 +31,16 @@ public class QueryResource {
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String get(
-			@QueryParam(LumongoConstants.INDEX) List<String> indexName,
-			@QueryParam(LumongoConstants.QUERY) String query,
-			@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields,
-			@QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
-			@QueryParam(LumongoConstants.AMOUNT) int amount,
-			@QueryParam(LumongoConstants.FACET) List<String> facet,
-			@QueryParam(LumongoConstants.PRETTY) boolean pretty) {
+					@QueryParam(LumongoConstants.INDEX) List<String> indexName,
+					@QueryParam(LumongoConstants.QUERY) String query,
+					@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields,
+					@QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
+					@QueryParam(LumongoConstants.AMOUNT) int amount,
+					@QueryParam(LumongoConstants.FACET) List<String> facet,
+					@QueryParam(LumongoConstants.PRETTY) boolean pretty) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(
-				indexName);
+						indexName);
 		qrBuilder.setQuery(query);
 		qrBuilder.setAmount(amount);
 		
@@ -76,10 +74,11 @@ public class QueryResource {
 				response = JsonWriter.formatJson(response);
 			}
 			return response;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new WebApplicationException(LumongoConstants.UNIQUE_ID
-					+ " and " + LumongoConstants.FILE_NAME + " are required",
-					LumongoConstants.INTERNAL_ERROR);
+							+ " and " + LumongoConstants.FILE_NAME + " are required",
+							LumongoConstants.INTERNAL_ERROR);
 		}
 
 	}

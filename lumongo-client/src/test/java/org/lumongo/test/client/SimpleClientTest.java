@@ -1,7 +1,11 @@
 package org.lumongo.test.client;
 
 import com.mongodb.DBObject;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.config.IndexConfig;
@@ -50,11 +54,11 @@ public class SimpleClientTest {
 		Person to = new Person();
 		to.firstName = "Matt";
 		to.lastName = "Jones";
-		to.address ="133 White Horse Lane";
+		to.address = "133 White Horse Lane";
 
 		PhoneNumber phoneNumber = new PhoneNumber();
 		phoneNumber.type = "Home";
-		phoneNumber.number= "444-444-4444";
+		phoneNumber.number = "444-444-4444";
 		phoneNumber.otherStuff = "This is not saved";
 		to.phoneNumber = phoneNumber;
 

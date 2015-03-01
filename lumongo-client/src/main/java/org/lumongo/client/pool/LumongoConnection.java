@@ -1,22 +1,20 @@
 package org.lumongo.client.pool;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import org.lumongo.client.LumongoRestClient;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
-import org.lumongo.cluster.message.Lumongo.LMMember;
-
 import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.pro.duplex.CleanShutdownHandler;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
 import com.googlecode.protobuf.pro.duplex.RpcClient;
 import com.googlecode.protobuf.pro.duplex.client.DuplexTcpClientPipelineFactory;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import org.lumongo.client.LumongoRestClient;
+import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.Lumongo.LMMember;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class LumongoConnection {
 	

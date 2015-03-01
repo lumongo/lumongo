@@ -1,13 +1,13 @@
 package org.lumongo.client.pool;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.lumongo.cluster.message.Lumongo.IndexMapping;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.SegmentMapping;
 import org.lumongo.util.SegmentUtil;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class IndexRouting {
 	private Map<String, Map<Integer, LMMember>> indexMapping = new HashMap<String, Map<Integer, LMMember>>();

@@ -4,7 +4,6 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.command.GetAllTerms;
 import org.lumongo.client.config.LumongoPoolConfig;

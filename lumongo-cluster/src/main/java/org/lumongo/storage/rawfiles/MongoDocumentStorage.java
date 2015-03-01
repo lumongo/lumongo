@@ -1,13 +1,15 @@
 package org.lumongo.storage.rawfiles;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.zip.DeflaterInputStream;
-import java.util.zip.InflaterInputStream;
-
+import com.google.protobuf.ByteString;
+import com.mongodb.BasicDBObject;
+import com.mongodb.CommandResult;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
+import com.mongodb.MongoClient;
+import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.gridfs.GridFSFile;
 import org.apache.log4j.Logger;
 import org.bson.BSON;
 import org.bson.BSONObject;
@@ -19,16 +21,13 @@ import org.lumongo.storage.constants.MongoConstants;
 import org.lumongo.util.CommonCompression;
 import org.lumongo.util.CommonCompression.CompressionLevel;
 
-import com.google.protobuf.ByteString;
-import com.mongodb.BasicDBObject;
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
-import com.mongodb.gridfs.GridFS;
-import com.mongodb.gridfs.GridFSDBFile;
-import com.mongodb.gridfs.GridFSFile;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.zip.DeflaterInputStream;
+import java.util.zip.InflaterInputStream;
 
 public class MongoDocumentStorage implements DocumentStorage {
 	@SuppressWarnings("unused")

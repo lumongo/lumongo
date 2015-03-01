@@ -1,7 +1,5 @@
 package org.lumongo.example.wikipedia;
 
-import java.util.Date;
-
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Faceted;
@@ -9,11 +7,13 @@ import org.lumongo.fields.annotations.Indexed;
 import org.lumongo.fields.annotations.Settings;
 import org.lumongo.fields.annotations.UniqueId;
 
+import java.util.Date;
+
 @Settings(
-	indexName = "wikipedia",
-	numberOfSegments = 16,
-	segmentFlushInterval = 1000,
-	segmentCommitInterval = 6000)
+				indexName = "wikipedia",
+				numberOfSegments = 16,
+				segmentFlushInterval = 1000,
+				segmentCommitInterval = 6000)
 public class Article {
 	
 	public Article() {
@@ -24,11 +24,11 @@ public class Article {
 	private String id;
 	
 	@Indexed(
-		analyzer = LMAnalyzer.STANDARD)
+					analyzer = LMAnalyzer.STANDARD)
 	private String title;
 	
 	@Indexed(
-		analyzer = LMAnalyzer.NUMERIC_INT)
+					analyzer = LMAnalyzer.NUMERIC_INT)
 	private Integer namespace;
 	
 	@DefaultSearch
@@ -37,7 +37,7 @@ public class Article {
 	private String text;
 	
 	@Indexed(
-		analyzer = LMAnalyzer.NUMERIC_LONG)
+					analyzer = LMAnalyzer.NUMERIC_LONG)
 	private Long revision;
 	
 	@Indexed(
@@ -50,7 +50,7 @@ public class Article {
 	private String user;
 	
 	@Indexed(
-		analyzer = LMAnalyzer.NUMERIC_LONG)
+					analyzer = LMAnalyzer.NUMERIC_LONG)
 	private Date revisionDate;
 	
 	public String getTitle() {

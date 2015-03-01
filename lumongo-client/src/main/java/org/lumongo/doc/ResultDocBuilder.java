@@ -1,13 +1,12 @@
 package org.lumongo.doc;
 
-import java.util.HashMap;
-
+import com.google.protobuf.ByteString;
+import com.mongodb.DBObject;
 import org.bson.BSON;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 
-import com.google.protobuf.ByteString;
-import com.mongodb.DBObject;
+import java.util.HashMap;
 
 public class ResultDocBuilder {
 	private ResultDocument.Builder resultDocumentBuilder;

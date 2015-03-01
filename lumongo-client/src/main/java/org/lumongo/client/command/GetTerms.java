@@ -1,14 +1,13 @@
 package org.lumongo.client.command;
 
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
-
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 
 public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 	

@@ -1,16 +1,5 @@
 package org.lumongo.server.searching;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.log4j.Logger;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
@@ -27,6 +16,17 @@ import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
 import org.lumongo.server.indexing.LumongoIndex;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class QueryCombiner {
 	
@@ -310,7 +310,8 @@ public class QueryCombiner {
 				lastForSegmentArr[sr.getSegment()] = sr;
 			}
 			
-			outside: for (String indexName : usedIndexMap.keySet()) {
+			outside:
+			for (String indexName : usedIndexMap.keySet()) {
 				ScoredResult[] lastForSegmentArr = lastIndexResultMap.get(indexName);
 				ScoredResult lastForIndex = null;
 				for (ScoredResult sr : lastForSegmentArr) {

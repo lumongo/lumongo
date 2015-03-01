@@ -1,14 +1,13 @@
 package org.lumongo.client.command;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
+import com.google.protobuf.ServiceException;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 
-import com.google.protobuf.ServiceException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class GetAllTerms extends GetTerms {
 	public static final int FETCH_SIZE = 64 * 1024;

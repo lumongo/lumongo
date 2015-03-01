@@ -1,11 +1,11 @@
 package org.lumongo.client.result;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.lumongo.cluster.message.Lumongo.BatchFetchResponse;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.fields.Mapper;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BatchFetchResult extends Result {
 	

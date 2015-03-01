@@ -1,10 +1,6 @@
 package org.lumongo.fields;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-
+import com.mongodb.DBObject;
 import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Store;
@@ -15,10 +11,19 @@ import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.doc.ResultDocBuilder;
-import org.lumongo.fields.annotations.*;
+import org.lumongo.fields.annotations.AsField;
+import org.lumongo.fields.annotations.DefaultSearch;
+import org.lumongo.fields.annotations.Embedded;
+import org.lumongo.fields.annotations.Indexed;
+import org.lumongo.fields.annotations.IndexedFields;
+import org.lumongo.fields.annotations.Settings;
+import org.lumongo.fields.annotations.UniqueId;
 import org.lumongo.util.AnnotationUtil;
 
-import com.mongodb.DBObject;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 public class Mapper<T> {
 	
@@ -41,7 +46,6 @@ public class Mapper<T> {
 		this.savedFieldsMapper = new SavedFieldsMapper<>(clazz);
 
 		this.fieldConfigMapper = new FieldConfigMapper<>(clazz, "");
-
 
 		HashSet<String> fields = new HashSet<>();
 
@@ -122,8 +126,6 @@ public class Mapper<T> {
 		}
 		
 	}
-
-
 
 	public CreateOrUpdateIndex createOrUpdateIndex() {
 		
@@ -208,6 +210,4 @@ public class Mapper<T> {
 		return newInstance;
 	}
 
-
-	
 }

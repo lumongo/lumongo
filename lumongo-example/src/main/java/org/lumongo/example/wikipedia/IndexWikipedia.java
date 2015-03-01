@@ -2,11 +2,6 @@ package org.lumongo.example.wikipedia;
 
 import info.bliki.wiki.filter.PlainTextConverter;
 import info.bliki.wiki.model.WikiModel;
-
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.Future;
-
 import org.apache.log4j.Logger;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.LumongoPoolConfig;
@@ -22,6 +17,9 @@ import org.lumongo.fields.Mapper;
 import org.lumongo.util.LogUtil;
 import org.lumongo.xml.StaxJAXBReader;
 
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.Future;
 
 public class IndexWikipedia {
 
@@ -57,8 +55,6 @@ public class IndexWikipedia {
 
 		LogUtil.loadLogConfig();
 
-
-
 		LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 		lumongoPoolConfig.setDefaultRetries(servers.length - 1); //?
 		for (String server : servers) {
@@ -66,7 +62,6 @@ public class IndexWikipedia {
 		}
 		lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 		lumongoWorkPool.updateMembers();
-
 
 		mapper = new Mapper<Article>(Article.class);
 
@@ -120,8 +115,6 @@ public class IndexWikipedia {
 
 		List<Object> revUploadList = page.getRevisionOrUpload();
 
-
-
 		for (Object o : revUploadList) {
 			if (o instanceof RevisionType) {
 				RevisionType revisionType = (RevisionType) o;
@@ -152,8 +145,5 @@ public class IndexWikipedia {
 		}
 		return article;
 	}
-
-
-
 
 }

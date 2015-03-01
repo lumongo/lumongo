@@ -7,7 +7,6 @@ package org.lumongo.client.command;
  */
 public class DeleteAssociated extends Delete {
 
-
 	public DeleteAssociated(String uniqueId, String indexName, String fileName) {
 		super(uniqueId, indexName);
 		setDeleteDocument(false);

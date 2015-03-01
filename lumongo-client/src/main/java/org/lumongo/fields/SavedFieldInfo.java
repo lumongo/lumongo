@@ -1,11 +1,11 @@
 package org.lumongo.fields;
 
+import com.mongodb.DBObject;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import com.mongodb.DBObject;
 
 public class SavedFieldInfo<T> {
 	private final String fieldName;

@@ -1,13 +1,12 @@
 package org.lumongo.server.config;
 
-import java.io.File;
-import java.io.IOException;
-
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import org.lumongo.util.properties.PropertiesReader;
 import org.lumongo.util.properties.PropertiesReader.PropertyException;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import java.io.File;
+import java.io.IOException;
 
 public class LocalNodeConfig {
 	
@@ -94,7 +93,7 @@ public class LocalNodeConfig {
 	@Override
 	public String toString() {
 		return "LocalNodeConfig [hazelcastPort=" + hazelcastPort + ", internalServicePort=" + internalServicePort + ", externalServicePort="
-				+ externalServicePort + ", restPort=" + restPort + "]";
+						+ externalServicePort + ", restPort=" + restPort + "]";
 	}
 	
 }

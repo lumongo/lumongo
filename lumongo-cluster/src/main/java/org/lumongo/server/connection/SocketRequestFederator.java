@@ -1,15 +1,14 @@
 package org.lumongo.server.connection;
 
+import com.hazelcast.core.Member;
+import org.lumongo.server.hazelcast.HazelcastManager;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import org.lumongo.server.hazelcast.HazelcastManager;
-
-import com.hazelcast.core.Member;
 
 public abstract class SocketRequestFederator<I, O> {
 	

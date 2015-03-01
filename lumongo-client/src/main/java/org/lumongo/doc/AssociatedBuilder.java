@@ -1,11 +1,10 @@
 package org.lumongo.doc;
 
+import com.google.protobuf.ByteString;
+import com.mongodb.DBObject;
 import org.bson.BSON;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.Metadata;
-
-import com.google.protobuf.ByteString;
-import com.mongodb.DBObject;
 
 public class AssociatedBuilder {
 
@@ -72,7 +71,5 @@ public class AssociatedBuilder {
 	public AssociatedDocument getAssociatedDocument() {
 		return adBuilder.build();
 	}
-
-
 
 }

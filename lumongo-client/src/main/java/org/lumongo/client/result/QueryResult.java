@@ -1,12 +1,12 @@
 package org.lumongo.client.result;
 
-import java.util.List;
-
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetGroup;
 import org.lumongo.cluster.message.Lumongo.LastResult;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
+
+import java.util.List;
 
 public class QueryResult extends Result {
 	private QueryResponse queryResponse;

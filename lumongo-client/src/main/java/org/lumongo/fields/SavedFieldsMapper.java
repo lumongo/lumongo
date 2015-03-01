@@ -2,13 +2,17 @@ package org.lumongo.fields;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import org.lumongo.fields.annotations.*;
-import org.lumongo.util.AnnotationUtil;
+import org.lumongo.fields.annotations.AsField;
+import org.lumongo.fields.annotations.DefaultSearch;
+import org.lumongo.fields.annotations.Embedded;
+import org.lumongo.fields.annotations.Faceted;
+import org.lumongo.fields.annotations.Indexed;
+import org.lumongo.fields.annotations.IndexedFields;
+import org.lumongo.fields.annotations.NotSaved;
+import org.lumongo.fields.annotations.UniqueId;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 public class SavedFieldsMapper<T> {
 
@@ -35,8 +39,6 @@ public class SavedFieldsMapper<T> {
 			AsField as = f.getAnnotation(AsField.class);
 			fieldName = as.value();
 		}
-
-
 
 		if (f.isAnnotationPresent(Embedded.class)) {
 			savedEmbeddedFields.add(new SavedEmbeddedFieldInfo(f, fieldName));

@@ -1,11 +1,7 @@
 package org.lumongo.server.config;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import org.lumongo.cluster.message.Lumongo.FacetAs;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
@@ -14,8 +10,11 @@ import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class IndexConfig {
 	

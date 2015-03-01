@@ -1,15 +1,15 @@
 package org.lumongo.example.medline;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Faceted;
 import org.lumongo.fields.annotations.Indexed;
 import org.lumongo.fields.annotations.Settings;
 import org.lumongo.fields.annotations.UniqueId;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Settings(
 				indexName = "medline",
@@ -28,12 +28,12 @@ public class MedlineDocument {
 	private String journalTitle;
 	
 	@Indexed(
-		analyzer = LMAnalyzer.STANDARD)
+					analyzer = LMAnalyzer.STANDARD)
 	private String abstractText;
 	
 	@Faceted
 	@Indexed(
-		analyzer = LMAnalyzer.NUMERIC_LONG)
+					analyzer = LMAnalyzer.NUMERIC_LONG)
 	private Date publicationDate;
 	
 	@Indexed(
@@ -41,12 +41,12 @@ public class MedlineDocument {
 	private String journalVolume;
 	
 	@Indexed(
-		analyzer = LMAnalyzer.LC_KEYWORD)
+					analyzer = LMAnalyzer.LC_KEYWORD)
 	private String journalIssue;
 	
 	@Faceted
 	@Indexed(
-		analyzer = LMAnalyzer.LC_KEYWORD)
+					analyzer = LMAnalyzer.LC_KEYWORD)
 	private String journalCountry;
 	
 	@Faceted
@@ -55,7 +55,7 @@ public class MedlineDocument {
 	private String issn;
 	
 	@Indexed(
-		analyzer = LMAnalyzer.STANDARD)
+					analyzer = LMAnalyzer.STANDARD)
 	private List<String> authors;
 	
 	@Faceted

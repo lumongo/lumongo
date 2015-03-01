@@ -1,14 +1,12 @@
 package org.lumongo.server.connection;
 
+import com.google.protobuf.RpcController;
+import com.googlecode.protobuf.pro.duplex.RpcClient;
 import io.netty.bootstrap.Bootstrap;
+import org.lumongo.cluster.message.Lumongo.InternalService;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-
-import org.lumongo.cluster.message.Lumongo.InternalService;
-
-import com.google.protobuf.RpcController;
-import com.googlecode.protobuf.pro.duplex.RpcClient;
 
 public class InternalRpcConnection {
 	

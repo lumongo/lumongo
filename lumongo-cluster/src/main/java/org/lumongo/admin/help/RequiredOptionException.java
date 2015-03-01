@@ -1,7 +1,8 @@
 package org.lumongo.admin.help;
 
-import static java.util.Collections.singletonList;
 import joptsimple.OptionException;
+
+import static java.util.Collections.singletonList;
 
 public class RequiredOptionException extends OptionException {
 	

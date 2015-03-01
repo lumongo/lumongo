@@ -17,9 +17,9 @@ package org.lumongo.storage.lucene;
  * limitations under the License.
  */
 
-import java.io.IOException;
-
 import org.apache.lucene.store.IndexInput;
+
+import java.io.IOException;
 
 public class DistributedIndexInput extends IndexInput {
 	private final NosqlFile nosqlFile;

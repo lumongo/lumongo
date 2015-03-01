@@ -1,7 +1,11 @@
 package org.lumongo.test.client;
 
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.fields.annotations.*;
+import org.lumongo.fields.annotations.DefaultSearch;
+import org.lumongo.fields.annotations.Faceted;
+import org.lumongo.fields.annotations.Indexed;
+import org.lumongo.fields.annotations.Settings;
+import org.lumongo.fields.annotations.UniqueId;
 
 @Settings(indexName = "test", numberOfSegments = 1)
 public class MapperTest {
@@ -17,6 +21,5 @@ public class MapperTest {
 
 	@UniqueId
 	private String id;
-
 
 }

@@ -1,6 +1,5 @@
 package org.lumongo.client.command;
 
-
 /**
  * Deletes a document from the LuMongo index specified without
  * removing associated documents
@@ -14,6 +13,5 @@ public class DeleteFromIndex extends Delete {
 		setDeleteDocument(true);
 		setDeleteAllAssociated(false);
 	}
-
 
 }

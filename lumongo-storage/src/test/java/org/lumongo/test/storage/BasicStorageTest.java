@@ -1,10 +1,6 @@
 package org.lumongo.test.storage;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.mongodb.MongoClient;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -26,18 +22,19 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
-
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.TestHelper;
-
-import com.mongodb.MongoClient;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import static org.testng.AssertJUnit.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import static org.testng.AssertJUnit.assertEquals;
 
 public class BasicStorageTest {
 	private static final String STORAGE_TEST_INDEX = "storageTest";
@@ -89,7 +86,8 @@ public class BasicStorageTest {
 		QueryParser qp = new QueryParser("title", analyzer) {
 			
 			@Override
-			protected Query getRangeQuery(final String fieldName, final String start, final String end, final boolean startInclusive, final boolean endInclusive)
+			protected Query getRangeQuery(final String fieldName, final String start, final String end, final boolean startInclusive,
+							final boolean endInclusive)
 							throws ParseException {
 				
 				if ("testIntField".equals(fieldName)) {

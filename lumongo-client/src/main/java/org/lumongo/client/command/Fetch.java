@@ -1,9 +1,7 @@
 package org.lumongo.client.command;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.FetchResult;
@@ -12,8 +10,9 @@ import org.lumongo.cluster.message.Lumongo.FetchRequest;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.FetchType;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class Fetch extends SimpleCommand<FetchRequest, FetchResult> {
 	

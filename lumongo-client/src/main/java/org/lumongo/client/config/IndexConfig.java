@@ -1,10 +1,10 @@
 package org.lumongo.client.config;
 
-import java.util.TreeMap;
-
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.fields.FieldConfigBuilder;
+
+import java.util.TreeMap;
 
 public class IndexConfig {
 	

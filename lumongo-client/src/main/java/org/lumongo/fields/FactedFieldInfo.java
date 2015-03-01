@@ -1,5 +1,7 @@
 package org.lumongo.fields;
 
+import org.lumongo.cluster.message.Lumongo.LMFacet;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -7,8 +9,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
-import org.lumongo.cluster.message.Lumongo.LMFacet;
 
 public class FactedFieldInfo<T> {
 	private final String facetPrefix;

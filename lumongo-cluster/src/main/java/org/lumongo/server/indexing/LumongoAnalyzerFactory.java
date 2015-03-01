@@ -1,7 +1,5 @@
 package org.lumongo.server.indexing;
 
-import java.util.HashMap;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
@@ -15,6 +13,8 @@ import org.lumongo.analyzer.StandardNoStopAnalyzer;
 import org.lumongo.cluster.message.Lumongo.IndexAs;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.server.config.IndexConfig;
+
+import java.util.HashMap;
 
 public class LumongoAnalyzerFactory {
 	public static Analyzer getAnalyzer(LMAnalyzer lmAnalyzer) throws Exception {

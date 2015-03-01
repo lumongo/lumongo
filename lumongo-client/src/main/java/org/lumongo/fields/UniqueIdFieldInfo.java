@@ -1,8 +1,8 @@
 package org.lumongo.fields;
 
-import java.lang.reflect.Field;
-
 import com.mongodb.DBObject;
+
+import java.lang.reflect.Field;
 
 public class UniqueIdFieldInfo<T> {
 	private final String fieldName;

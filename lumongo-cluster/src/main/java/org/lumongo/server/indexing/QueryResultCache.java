@@ -1,9 +1,8 @@
 package org.lumongo.server.indexing;
 
-import org.lumongo.cluster.message.Lumongo.SegmentResponse;
-
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 
 public class QueryResultCache {
 	private Cache<QueryCacheKey, SegmentResponse> queryResultCache;

@@ -1,11 +1,8 @@
 package org.lumongo.client.result;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.google.protobuf.ByteString;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import org.bson.BSON;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
@@ -13,9 +10,11 @@ import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.fields.Mapper;
 
-import com.google.protobuf.ByteString;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class FetchResult extends Result {
 	

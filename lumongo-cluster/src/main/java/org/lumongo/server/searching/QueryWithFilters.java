@@ -1,10 +1,10 @@
 package org.lumongo.server.searching;
 
+import org.apache.lucene.search.Query;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.apache.lucene.search.Query;
 
 public class QueryWithFilters {
 	private Query query;

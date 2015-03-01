@@ -1,7 +1,5 @@
 package org.lumongo.example.wikipedia;
 
-import java.util.List;
-
 import org.lumongo.client.cache.DocumentCache;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.config.LumongoPoolConfig;
@@ -11,7 +9,7 @@ import org.lumongo.client.result.QueryResult;
 import org.lumongo.fields.Mapper;
 import org.lumongo.util.LogUtil;
 
-
+import java.util.List;
 
 public class SearchWikipedia {
 	private static LumongoWorkPool lumongoWorkPool;
@@ -20,23 +18,21 @@ public class SearchWikipedia {
 	public static void main(String[] args) throws Exception {
 		LogUtil.loadLogConfig();
 
-        lumongoWorkPool = new LumongoWorkPool(new LumongoPoolConfig().addMember("localhost"));
-        mapper = new Mapper<Article>(Article.class);
+		lumongoWorkPool = new LumongoWorkPool(new LumongoPoolConfig().addMember("localhost"));
+		mapper = new Mapper<Article>(Article.class);
 
+		int maxSize = 2000;
+		DocumentCache documentCache = new DocumentCache(lumongoWorkPool, maxSize);
 
+		Query query = new Query("wikipedia", "title:a*", 10);
+		QueryResult queryResult = lumongoWorkPool.query(query);
 
-        int maxSize = 2000;
-        DocumentCache documentCache = new DocumentCache(lumongoWorkPool, maxSize);
+		BatchFetchResult batchFetchResult = documentCache.fetch(queryResult);
 
-        Query query = new Query("wikipedia", "title:a*", 10);
-        QueryResult queryResult = lumongoWorkPool.query(query);
+		List<Article> articles = mapper.fromBatchFetchResult(batchFetchResult);
 
-        BatchFetchResult batchFetchResult = documentCache.fetch(queryResult);
+		System.out.println(articles);
 
-        List<Article> articles = mapper.fromBatchFetchResult(batchFetchResult);
-
-        System.out.println(articles);
-
-        lumongoWorkPool.shutdown();
+		lumongoWorkPool.shutdown();
 	}
 }

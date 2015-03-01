@@ -1,10 +1,12 @@
 package org.lumongo.example.twitter;
 
-import java.io.IOException;
-
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
+import com.mongodb.MongoClient;
 import org.apache.log4j.Logger;
 import org.lumongo.util.LogUtil;
-
 import twitter4j.StallWarning;
 import twitter4j.Status;
 import twitter4j.StatusDeletionNotice;
@@ -16,11 +18,7 @@ import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.auth.AccessToken;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
+import java.io.IOException;
 
 public class TwitterCrawler {
 	@SuppressWarnings("unused")

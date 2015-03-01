@@ -1,7 +1,13 @@
 package org.lumongo.fields;
 
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.fields.annotations.*;
+import org.lumongo.fields.annotations.AsField;
+import org.lumongo.fields.annotations.DefaultSearch;
+import org.lumongo.fields.annotations.Embedded;
+import org.lumongo.fields.annotations.Faceted;
+import org.lumongo.fields.annotations.Indexed;
+import org.lumongo.fields.annotations.IndexedFields;
+import org.lumongo.fields.annotations.UniqueId;
 import org.lumongo.util.AnnotationUtil;
 
 import java.lang.reflect.Field;
@@ -31,17 +37,14 @@ public class FieldConfigMapper<T> {
 	public void setupField(Field f) {
 		String fieldName = f.getName();
 
-
 		if (f.isAnnotationPresent(AsField.class)) {
 			AsField as = f.getAnnotation(AsField.class);
 			fieldName = as.value();
 		}
 
-
 		if (!prefix.isEmpty()) {
 			fieldName = prefix + "." + fieldName;
 		}
-
 
 		if (f.isAnnotationPresent(Embedded.class)) {
 			if (f.isAnnotationPresent(IndexedFields.class) || f.isAnnotationPresent(Indexed.class) || f.isAnnotationPresent(Faceted.class) || f
@@ -56,8 +59,8 @@ public class FieldConfigMapper<T> {
 			if (List.class.isAssignableFrom(type)) {
 				Type genericType = f.getGenericType();
 				if (genericType instanceof ParameterizedType) {
-					ParameterizedType pType = (ParameterizedType)genericType;
-					type = (Class<?>)pType.getActualTypeArguments()[0];
+					ParameterizedType pType = (ParameterizedType) genericType;
+					type = (Class<?>) pType.getActualTypeArguments()[0];
 				}
 			}
 
@@ -101,9 +104,6 @@ public class FieldConfigMapper<T> {
 			}
 			fieldConfigMap.put(fieldName, fieldConfigBuilder.build());
 		}
-
-
-
 
 	}
 

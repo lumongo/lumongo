@@ -1,12 +1,12 @@
 package org.lumongo.client.command;
 
-import java.io.File;
-import java.io.InputStream;
-
 import org.lumongo.client.LumongoRestClient;
 import org.lumongo.client.command.base.RestCommand;
 import org.lumongo.client.command.base.RoutableCommand;
 import org.lumongo.client.result.StoreLargeAssociatedResult;
+
+import java.io.File;
+import java.io.InputStream;
 
 public class StoreLargeAssociated extends RestCommand<StoreLargeAssociatedResult> implements RoutableCommand {
 
@@ -53,7 +53,5 @@ public class StoreLargeAssociated extends RestCommand<StoreLargeAssociatedResult
 		}
 		return new StoreLargeAssociatedResult();
 	}
-
-
 
 }

@@ -1,6 +1,5 @@
 package org.lumongo.test.cluster.mapper;
 
-import org.lumongo.client.command.GetFields;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.pool.LumongoWorkPool;
@@ -10,14 +9,11 @@ import org.lumongo.test.cluster.ServerTest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import static org.testng.AssertJUnit.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.testng.AssertJUnit.*;
-import static org.testng.AssertJUnit.*;
-
+import static org.testng.AssertJUnit.assertEquals;
 
 public class ServerMapperTest extends ServerTest {
 

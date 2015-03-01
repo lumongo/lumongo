@@ -1,13 +1,9 @@
 package org.lumongo.admin;
 
-import java.io.File;
-import java.util.Arrays;
-
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.admin.help.RequiredOptionException;
@@ -17,6 +13,9 @@ import org.lumongo.server.config.MongoConfig;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LogUtil;
 import org.lumongo.util.ServerNameHelper;
+
+import java.io.File;
+import java.util.Arrays;
 
 public class ClusterAdmin {
 	private static final String MONGO_CONFIG = "mongoConfig";
@@ -45,10 +44,9 @@ public class ClusterAdmin {
 		OptionSpec<File> clusterConfigArg = parser.accepts(CLUSTER_CONFIG).withRequiredArg().ofType(File.class).describedAs("Cluster properties file");
 		OptionSpec<String> serverAddressArg = parser.accepts(ADDRESS).withRequiredArg().describedAs("Specific server address manually for node commands");
 		OptionSpec<Integer> hazelcastPortArg = parser.accepts(HAZELCAST_PORT).withRequiredArg().ofType(Integer.class)
-				.describedAs("Hazelcast port if multiple instances on one server for node commands");
+						.describedAs("Hazelcast port if multiple instances on one server for node commands");
 		OptionSpec<Command> commandArg = parser.accepts(COMMAND).withRequiredArg().ofType(Command.class).required()
-				.describedAs("Command to run " + Arrays.toString(Command.values()));
-
+						.describedAs("Command to run " + Arrays.toString(Command.values()));
 
 		try {
 			OptionSet options = parser.parse(args);
@@ -94,7 +92,7 @@ public class ClusterAdmin {
 			}
 			else if (Command.removeCluster.equals(command)) {
 				System.out.println("Removing cluster from database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost()
-						+ ">");
+								+ ">");
 				ClusterHelper.removeClusterConfig(mongoConfig);
 			}
 			else if (Command.showCluster.equals(command)) {

@@ -1,18 +1,5 @@
 package org.lumongo.storage.lucene;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.zip.CRC32;
-
-import org.lumongo.util.Compression;
-import org.lumongo.util.Compression.CompressionLevel;
-
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -23,6 +10,18 @@ import com.google.common.cache.RemovalNotification;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import org.lumongo.util.Compression;
+import org.lumongo.util.Compression.CompressionLevel;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.zip.CRC32;
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE
@@ -166,7 +165,7 @@ public class MongoFile implements NosqlFile {
 	
 	@Override
 	public byte readByte(long position) throws IOException {
-		try {			
+		try {
 			int block = (int) (position / mongoDirectory.getBlockSize());
 			int blockOffset = (int) (position - (block * mongoDirectory.getBlockSize()));
 			

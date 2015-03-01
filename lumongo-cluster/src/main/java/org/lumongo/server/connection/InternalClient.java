@@ -1,9 +1,7 @@
 package org.lumongo.server.connection;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
+import com.google.protobuf.RpcController;
+import com.hazelcast.core.Member;
 import org.apache.log4j.Logger;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
@@ -27,8 +25,9 @@ import org.lumongo.server.config.MongoConfig;
 import org.lumongo.server.config.Nodes;
 import org.lumongo.util.ClusterHelper;
 
-import com.google.protobuf.RpcController;
-import com.hazelcast.core.Member;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class InternalClient {
 	private final static Logger log = Logger.getLogger(InternalClient.class);

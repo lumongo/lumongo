@@ -1,13 +1,5 @@
 package org.lumongo.example.medline;
 
-import java.io.File;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.log4j.Logger;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.LumongoPoolConfig;
@@ -18,6 +10,14 @@ import org.lumongo.example.medline.schema.MedlineCitation;
 import org.lumongo.fields.Mapper;
 import org.lumongo.util.LogUtil;
 import org.lumongo.xml.StaxJAXBReader;
+
+import java.io.File;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class IndexMedline {
 	

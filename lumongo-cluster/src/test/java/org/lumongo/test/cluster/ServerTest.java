@@ -1,10 +1,6 @@
 package org.lumongo.test.cluster;
 
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
+import com.mongodb.Mongo;
 import org.apache.log4j.Logger;
 import org.lumongo.LumongoConstants;
 import org.lumongo.client.config.LumongoPoolConfig;
@@ -13,7 +9,6 @@ import org.lumongo.server.LuceneNode;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
-import org.lumongo.server.indexing.LumongoIndex;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LogUtil;
 import org.lumongo.util.ServerNameHelper;
@@ -21,7 +16,10 @@ import org.lumongo.util.TestHelper;
 import org.lumongo.util.properties.FakePropertiesReader;
 import org.lumongo.util.properties.PropertiesReader.PropertyException;
 
-import com.mongodb.Mongo;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class ServerTest {
 	private static Logger log = Logger.getLogger(ServerTest.class);
@@ -93,7 +91,7 @@ public class ServerTest {
 		}
 	}
 	
-	public  ClusterConfig getTestClusterConfig() throws PropertyException {
+	public ClusterConfig getTestClusterConfig() throws PropertyException {
 		HashMap<String, String> settings = new HashMap<String, String>();
 		
 		settings.put(ClusterConfig.SHARDED, "false");

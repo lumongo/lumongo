@@ -1,16 +1,15 @@
 package org.lumongo.test.cluster;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-
+import com.google.common.util.concurrent.ListenableFuture;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.result.QueryResult;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class QueryTest {
 	public static void main(String[] args) throws Exception {

@@ -4,9 +4,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 
+ *
  * Very similar to NamedThreadFactory in lucene but keeps the client from depending on lucene
- * 
+ *
  */
 public class LumongoThreadFactory implements ThreadFactory {
 	

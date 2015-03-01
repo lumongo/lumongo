@@ -1,5 +1,9 @@
 package org.lumongo.client;
 
+import org.lumongo.LumongoConstants;
+import org.lumongo.util.HttpHelper;
+import org.lumongo.util.StreamHelper;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -11,10 +15,6 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.util.HashMap;
-
-import org.lumongo.LumongoConstants;
-import org.lumongo.util.HttpHelper;
-import org.lumongo.util.StreamHelper;
 
 public class LumongoRestClient {
 	private String server;

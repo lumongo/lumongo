@@ -1,14 +1,13 @@
 package org.lumongo.client.command;
 
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.GetNumberOfDocsResult;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsRequest;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
-
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 
 public class GetNumberOfDocs extends SimpleCommand<GetNumberOfDocsRequest, GetNumberOfDocsResult> {
 
@@ -43,7 +42,5 @@ public class GetNumberOfDocs extends SimpleCommand<GetNumberOfDocsRequest, GetNu
 
 		return new GetNumberOfDocsResult(getNumberOfDocsResponse);
 	}
-
-
 
 }

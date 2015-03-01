@@ -5,6 +5,7 @@ import java.net.UnknownHostException;
 
 public class ConnectionHelper {
 	private final static String myHostName;
+
 	static {
 		
 		try {

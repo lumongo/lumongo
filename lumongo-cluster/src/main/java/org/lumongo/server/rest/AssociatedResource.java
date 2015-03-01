@@ -1,8 +1,8 @@
 package org.lumongo.server.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import org.lumongo.LumongoConstants;
+import org.lumongo.server.indexing.LumongoIndexManager;
+import org.lumongo.util.StreamHelper;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -14,10 +14,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-
-import org.lumongo.LumongoConstants;
-import org.lumongo.server.indexing.LumongoIndexManager;
-import org.lumongo.util.StreamHelper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 @Path(LumongoConstants.ASSOCIATED_DOCUMENTS_URL)
 public class AssociatedResource {
@@ -77,7 +76,8 @@ public class AssociatedResource {
 			}
 		}
 		else {
-			throw new WebApplicationException(LumongoConstants.UNIQUE_ID + " and " + LumongoConstants.FILE_NAME + " are required", LumongoConstants.BAD_REQUEST);
+			throw new WebApplicationException(LumongoConstants.UNIQUE_ID + " and " + LumongoConstants.FILE_NAME + " are required",
+							LumongoConstants.BAD_REQUEST);
 		}
 
 	}

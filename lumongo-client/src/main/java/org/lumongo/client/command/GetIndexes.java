@@ -1,5 +1,7 @@
 package org.lumongo.client.command;
 
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.GetIndexesResult;
@@ -7,11 +9,7 @@ import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.GetIndexesRequest;
 import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
-
 public class GetIndexes extends SimpleCommand<GetIndexesRequest, GetIndexesResult> {
-
 
 	public GetIndexes() {
 
@@ -32,10 +30,5 @@ public class GetIndexes extends SimpleCommand<GetIndexesRequest, GetIndexesResul
 
 		return new GetIndexesResult(getIndexesResponse);
 	}
-
-
-
-
-
 
 }

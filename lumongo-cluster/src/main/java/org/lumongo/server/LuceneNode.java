@@ -1,7 +1,6 @@
 package org.lumongo.server;
 
-import java.io.IOException;
-
+import com.mongodb.MongoException;
 import org.apache.log4j.Logger;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
@@ -16,7 +15,7 @@ import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LogUtil;
 
-import com.mongodb.MongoException;
+import java.io.IOException;
 
 public class LuceneNode {
 	private final static Logger log = Logger.getLogger(LuceneNode.class);
@@ -61,7 +60,7 @@ public class LuceneNode {
 
 		Nodes nodes = ClusterHelper.getNodes(mongoConfig);
 		this.hazelcastManager = HazelcastManager
-				.createHazelcastManager(localNodeConfig, indexManager, nodes.getHazelcastNodes(), mongoConfig.getDatabaseName());
+						.createHazelcastManager(localNodeConfig, indexManager, nodes.getHazelcastNodes(), mongoConfig.getDatabaseName());
 
 	}
 

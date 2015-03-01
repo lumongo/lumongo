@@ -1,8 +1,6 @@
 package org.lumongo.client.command;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.google.protobuf.RpcController;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.BatchDeleteResult;
@@ -12,7 +10,8 @@ import org.lumongo.cluster.message.Lumongo.BatchDeleteResponse;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 
-import com.google.protobuf.RpcController;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BatchDelete extends SimpleCommand<BatchDeleteRequest, BatchDeleteResult> {
 	

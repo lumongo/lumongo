@@ -17,14 +17,14 @@ package org.lumongo.analyzer;
  * limitations under the License.
  */
 
-import java.io.IOException;
-import java.io.Reader;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.standard.StandardFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
+
+import java.io.IOException;
+import java.io.Reader;
 
 public final class StandardNoStopAnalyzer extends Analyzer {
 	

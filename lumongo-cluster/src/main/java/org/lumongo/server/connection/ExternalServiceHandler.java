@@ -1,14 +1,16 @@
 package org.lumongo.server.connection;
 
+import com.google.protobuf.RpcCallback;
+import com.google.protobuf.RpcController;
+import com.googlecode.protobuf.pro.duplex.PeerInfo;
+import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
+import com.googlecode.protobuf.pro.duplex.execute.ThreadPoolCallExecutor;
+import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerPipelineFactory;
+import com.googlecode.protobuf.pro.duplex.util.RenamingThreadFactoryProxy;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-
-import java.net.UnknownHostException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.log4j.Logger;
 import org.lumongo.cluster.message.Lumongo.BatchDeleteRequest;
 import org.lumongo.cluster.message.Lumongo.BatchDeleteResponse;
@@ -47,13 +49,9 @@ import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.indexing.LumongoIndexManager;
 
-import com.google.protobuf.RpcCallback;
-import com.google.protobuf.RpcController;
-import com.googlecode.protobuf.pro.duplex.PeerInfo;
-import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
-import com.googlecode.protobuf.pro.duplex.execute.ThreadPoolCallExecutor;
-import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerPipelineFactory;
-import com.googlecode.protobuf.pro.duplex.util.RenamingThreadFactoryProxy;
+import java.net.UnknownHostException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class ExternalServiceHandler extends ExternalService {
 	private final static Logger log = Logger.getLogger(ExternalServiceHandler.class);
@@ -85,7 +83,7 @@ public class ExternalServiceHandler extends ExternalService {
 		
 		bootstrap = new ServerBootstrap();
 		bootstrap.group(new NioEventLoopGroup(0, new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-"
-						+ localNodeConfig.getHazelcastPort() + "-Boss", Executors.defaultThreadFactory())),
+										+ localNodeConfig.getHazelcastPort() + "-Boss", Executors.defaultThreadFactory())),
 						new NioEventLoopGroup(0, new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-"
 										+ localNodeConfig.getHazelcastPort() + "-Worker", Executors.defaultThreadFactory())));
 		bootstrap.channel(NioServerSocketChannel.class);

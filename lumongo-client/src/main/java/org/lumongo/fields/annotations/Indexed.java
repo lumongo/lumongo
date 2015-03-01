@@ -1,13 +1,19 @@
 package org.lumongo.fields.annotations;
 
-import java.lang.annotation.*;
-
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Specifics a field should be indexed
- * 
- * 
+ *
+ *
  */
 @Documented
 @Inherited
@@ -17,7 +23,7 @@ import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 public @interface Indexed {
 	/**
 	 * Sets the analyzer to use to index the field
-	 * 
+	 *
 	 */
 	LMAnalyzer analyzer();
 	

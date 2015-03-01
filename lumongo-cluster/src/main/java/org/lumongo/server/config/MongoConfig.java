@@ -1,10 +1,10 @@
 package org.lumongo.server.config;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.lumongo.util.properties.PropertiesReader;
 import org.lumongo.util.properties.PropertiesReader.PropertyException;
+
+import java.io.File;
+import java.io.IOException;
 
 public class MongoConfig {
 	

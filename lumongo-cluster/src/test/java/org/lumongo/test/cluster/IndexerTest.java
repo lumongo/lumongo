@@ -2,7 +2,6 @@ package org.lumongo.test.cluster;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.lumongo.server.indexing.LumongoSegment;
@@ -15,7 +14,6 @@ public class IndexerTest {
 
 	@Test
 	public void testFieldExtraction() throws Exception {
-
 
 		DBObject testObject = new BasicDBObject();
 		testObject.put("field1", "someVal");
@@ -40,7 +38,6 @@ public class IndexerTest {
 		objs.add(embeddedObject4);
 		testObject.put("thisfield", objs);
 
-
 		Assert.assertEquals(Arrays.asList("val1", "someval"), LumongoSegment.getValueFromDocument(testObject, "thisfield.key1"));
 		Assert.assertEquals(Arrays.asList("val2"), LumongoSegment.getValueFromDocument(testObject, "thisfield.key2"));
 
@@ -51,8 +48,6 @@ public class IndexerTest {
 		Assert.assertEquals("someVal", LumongoSegment.getValueFromDocument(testObject, "field1"));
 		Assert.assertEquals("val2", LumongoSegment.getValueFromDocument(testObject, "field2.subfield1"));
 		Assert.assertEquals(40, LumongoSegment.getValueFromDocument(testObject, "myfield"));
-
-
 
 	}
 }

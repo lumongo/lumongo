@@ -1,6 +1,5 @@
 package org.lumongo.util;
 
-
 public class StringUtil {
 	private StringUtil() {
 

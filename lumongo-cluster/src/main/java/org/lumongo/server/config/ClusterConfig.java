@@ -1,13 +1,12 @@
 package org.lumongo.server.config;
 
-import java.io.File;
-import java.io.IOException;
-
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import org.lumongo.util.properties.PropertiesReader;
 import org.lumongo.util.properties.PropertiesReader.PropertyException;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import java.io.File;
+import java.io.IOException;
 
 public class ClusterConfig {
 	
@@ -128,7 +127,8 @@ public class ClusterConfig {
 	@Override
 	public String toString() {
 		return "ClusterConfig [sharded=" + sharded + ", indexBlockSize=" + indexBlockSize + ", maxIndexBlocks=" + maxIndexBlocks
-				+ ", maxInternalClientConnections=" + maxInternalClientConnections + ", internalWorkers=" + internalWorkers + ", externalWorkers="
-				+ externalWorkers + ", internalShutdownTimeout=" + internalShutdownTimeout + ", externalShutdownTimeout=" + externalShutdownTimeout + "]";
+						+ ", maxInternalClientConnections=" + maxInternalClientConnections + ", internalWorkers=" + internalWorkers + ", externalWorkers="
+						+ externalWorkers + ", internalShutdownTimeout=" + internalShutdownTimeout + ", externalShutdownTimeout=" + externalShutdownTimeout
+						+ "]";
 	}
 }

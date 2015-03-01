@@ -1,7 +1,5 @@
 package org.lumongo.example.twitter;
 
-import java.util.Date;
-
 import org.apache.solr.client.solrj.beans.Field;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.fields.annotations.AsField;
@@ -10,11 +8,13 @@ import org.lumongo.fields.annotations.Indexed;
 import org.lumongo.fields.annotations.Settings;
 import org.lumongo.fields.annotations.UniqueId;
 
+import java.util.Date;
+
 @Settings(
-	indexName = Tweet.INDEX_NAME,
-	numberOfSegments = 4,
-	segmentFlushInterval = 3000,
-	segmentCommitInterval = 6000)
+				indexName = Tweet.INDEX_NAME,
+				numberOfSegments = 4,
+				segmentFlushInterval = 3000,
+				segmentCommitInterval = 6000)
 public class Tweet {
 	
 	public static final String INDEX_NAME = "twitter";
@@ -41,7 +41,7 @@ public class Tweet {
 	private String id;
 	
 	@Indexed(
-		analyzer = LMAnalyzer.NUMERIC_INT)
+					analyzer = LMAnalyzer.NUMERIC_INT)
 	@Field(FAVORITE_COUNT)
 	private Integer favoriteCount;
 	
@@ -51,7 +51,7 @@ public class Tweet {
 	private Integer retweetCount;
 	
 	@Indexed(
-		analyzer = LMAnalyzer.LC_KEYWORD)
+					analyzer = LMAnalyzer.LC_KEYWORD)
 	@Field(USER_NAME)
 	private String username;
 	

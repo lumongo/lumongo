@@ -1,11 +1,11 @@
 package org.lumongo.analyzer;
 
-import java.io.Reader;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+
+import java.io.Reader;
 
 public class LowercaseWhitespaceAnalyzer extends Analyzer {
 	public LowercaseWhitespaceAnalyzer() {

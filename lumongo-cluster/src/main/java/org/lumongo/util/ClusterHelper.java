@@ -1,12 +1,5 @@
 package org.lumongo.util;
 
-import java.net.UnknownHostException;
-
-import org.lumongo.server.config.ClusterConfig;
-import org.lumongo.server.config.LocalNodeConfig;
-import org.lumongo.server.config.MongoConfig;
-import org.lumongo.server.config.Nodes;
-
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -15,6 +8,12 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.WriteConcern;
+import org.lumongo.server.config.ClusterConfig;
+import org.lumongo.server.config.LocalNodeConfig;
+import org.lumongo.server.config.MongoConfig;
+import org.lumongo.server.config.Nodes;
+
+import java.net.UnknownHostException;
 
 public class ClusterHelper {
 	

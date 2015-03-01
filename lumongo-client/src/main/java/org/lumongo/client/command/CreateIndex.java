@@ -1,5 +1,7 @@
 package org.lumongo.client.command;
 
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.pool.LumongoConnection;
@@ -8,14 +10,11 @@ import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
 import org.lumongo.cluster.message.Lumongo.IndexCreateResponse;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
-
 /**
  * Creates a new index with the name, number of segments, unique id field, and IndexSettings given.  Whether the index supports faceting
  * or not is also configurable.  However, only the IndexConfig cannot be changed after the index is created.  If index already exists an exception will be thrown.
  * See @CreateOrUpdateIndex
- * 
+ *
  * @author mdavis
  *
  */

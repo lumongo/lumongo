@@ -1,19 +1,17 @@
 package org.lumongo.server.connection;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
-
-import org.apache.commons.pool.BasePoolableObjectFactory;
-import org.apache.log4j.Logger;
-import org.lumongo.cluster.message.Lumongo.InternalService;
-import org.lumongo.cluster.message.Lumongo.InternalService.BlockingInterface;
-
 import com.googlecode.protobuf.pro.duplex.CleanShutdownHandler;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
 import com.googlecode.protobuf.pro.duplex.RpcClient;
 import com.googlecode.protobuf.pro.duplex.client.DuplexTcpClientPipelineFactory;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import org.apache.commons.pool.BasePoolableObjectFactory;
+import org.apache.log4j.Logger;
+import org.lumongo.cluster.message.Lumongo.InternalService;
+import org.lumongo.cluster.message.Lumongo.InternalService.BlockingInterface;
 
 public class InternalRpcConnectionFactory extends BasePoolableObjectFactory<InternalRpcConnection> {
 	private static CleanShutdownHandler shutdownHandler = new CleanShutdownHandler();

@@ -1,14 +1,13 @@
 package org.lumongo.client.command;
 
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.OptimizeIndexResult;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.OptimizeRequest;
 import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
-
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 
 /**
  * Optimizes a given index
@@ -17,28 +16,26 @@ import com.google.protobuf.ServiceException;
  */
 public class OptimizeIndex extends SimpleCommand<OptimizeRequest, OptimizeIndexResult> {
 
-    private String indexName;
+	private String indexName;
 
-    public OptimizeIndex(String indexName) {
-        this.indexName = indexName;
-    }
+	public OptimizeIndex(String indexName) {
+		this.indexName = indexName;
+	}
 
-    @Override
-    public OptimizeRequest getRequest() {
-        return OptimizeRequest.newBuilder().setIndexName(indexName).build();
-    }
+	@Override
+	public OptimizeRequest getRequest() {
+		return OptimizeRequest.newBuilder().setIndexName(indexName).build();
+	}
 
-    @Override
-    public OptimizeIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-        ExternalService.BlockingInterface service = lumongoConnection.getService();
+	@Override
+	public OptimizeIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+		ExternalService.BlockingInterface service = lumongoConnection.getService();
 
-        RpcController controller = lumongoConnection.getController();
+		RpcController controller = lumongoConnection.getController();
 
-        OptimizeResponse optimizeResponse = service.optimize(controller, getRequest());
+		OptimizeResponse optimizeResponse = service.optimize(controller, getRequest());
 
-        return new OptimizeIndexResult(optimizeResponse);
-    }
-
-
+		return new OptimizeIndexResult(optimizeResponse);
+	}
 
 }

@@ -1,9 +1,7 @@
 package org.lumongo.client.cache;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.pool.LumongoWorkPool;
@@ -12,8 +10,9 @@ import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Caches lumongo result documents.  Timestamp associated with the result document can be used to match searches with result documents

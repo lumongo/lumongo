@@ -1,5 +1,6 @@
 package org.lumongo.client.pool;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.lumongo.client.command.BatchDelete;
 import org.lumongo.client.command.BatchFetch;
 import org.lumongo.client.command.ClearIndex;
@@ -42,8 +43,6 @@ import org.lumongo.client.result.StoreLargeAssociatedResult;
 import org.lumongo.client.result.StoreResult;
 import org.lumongo.client.result.UpdateIndexResult;
 
-import com.google.common.util.concurrent.ListenableFuture;
-
 public class LumongoWorkPool extends LumongoBaseWorkPool {
 	
 	public LumongoWorkPool(LumongoPoolConfig lumongoPoolConfig) throws Exception {
@@ -78,7 +77,8 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
 		return executeAsync(createIndex);
 	}
 	
-	public ListenableFuture<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig) throws Exception {
+	public ListenableFuture<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig)
+					throws Exception {
 		return executeAsync(new CreateIndex(indexName, segments, uniqueIdField, indexConfig));
 	}
 	

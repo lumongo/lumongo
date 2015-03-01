@@ -1,12 +1,10 @@
 package org.lumongo.admin;
 
-import java.util.List;
-
+import com.mongodb.DBObject;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.command.FetchDocument;
@@ -16,7 +14,7 @@ import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.util.LogUtil;
 
-import com.mongodb.DBObject;
+import java.util.List;
 
 public class Fetch {
 	

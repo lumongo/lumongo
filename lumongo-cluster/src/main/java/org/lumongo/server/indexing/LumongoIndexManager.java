@@ -1,27 +1,10 @@
 package org.lumongo.server.indexing;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.Member;
+import com.mongodb.DB;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoException;
 import org.apache.log4j.Logger;
 import org.apache.lucene.facet.DrillDownQuery;
 import org.apache.lucene.facet.FacetsConfig;
@@ -87,11 +70,27 @@ import org.lumongo.server.searching.QueryWithFilters;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LumongoThreadFactory;
 
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
-import com.mongodb.DB;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LumongoIndexManager {
 	private final static Logger log = Logger.getLogger(LumongoIndexManager.class);
@@ -420,7 +419,8 @@ public class LumongoIndexManager {
 		
 	}
 	
-	public IndexSettingsResponse updateIndex(String indexName, IndexSettings request) throws IndexDoesNotExist, InvalidIndexConfig, MongoException, IOException {
+	public IndexSettingsResponse updateIndex(String indexName, IndexSettings request)
+					throws IndexDoesNotExist, InvalidIndexConfig, MongoException, IOException {
 		globalLock.readLock().lock();
 		try {
 			
@@ -660,7 +660,7 @@ public class LumongoIndexManager {
 				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 				
 				for (String filter : queryRequest.getFilterQueryList()) {
-					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.<String> emptyList(), 0, operator));
+					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.<String>emptyList(), 0, operator));
 				}
 				
 				queryMap.put(indexName, queryWithFilters);
@@ -1047,7 +1047,7 @@ public class LumongoIndexManager {
 			String value = null;
 			Long frequency = null;
 			
-			for (int i = 0; (i < amountToReturn) && !terms.isEmpty();) {
+			for (int i = 0; (i < amountToReturn) && !terms.isEmpty(); ) {
 				value = terms.firstKey();
 				AtomicLong docFreq = terms.remove(value);
 				frequency = docFreq.get();

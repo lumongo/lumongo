@@ -1,5 +1,10 @@
 package org.lumongo.client.pool;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import org.lumongo.util.LumongoThreadFactory;
+
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -7,12 +12,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.lumongo.util.LumongoThreadFactory;
-
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 
 public class WorkPool {
 	
@@ -40,7 +39,9 @@ public class WorkPool {
 					throw new RuntimeException(e1);
 				}
 				return true;
-			};
+			}
+
+			;
 		};
 		
 		pool = MoreExecutors.listeningDecorator(new ThreadPoolExecutor(threads, threads, 0L, TimeUnit.MILLISECONDS, workQueue, new LumongoThreadFactory(
