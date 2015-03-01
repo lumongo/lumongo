@@ -24,6 +24,8 @@ public interface NosqlFile {
 	public int getFileNumber();
 	
 	public String getFileName();
+
+	public void setFileName(String fileName);
 	
 	public long getFileLength();
 	

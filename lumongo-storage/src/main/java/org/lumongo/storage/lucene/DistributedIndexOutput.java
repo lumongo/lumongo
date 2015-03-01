@@ -29,6 +29,7 @@ public class DistributedIndexOutput extends IndexOutput {
 	private long position;
 	
 	public DistributedIndexOutput(NosqlFile nosqlFile) throws IOException {
+		super(nosqlFile.getFileName());
 		this.nosqlFile = nosqlFile;
 		nosqlFile.resetChecksum();
 		this.isOpen = true;
@@ -41,12 +42,11 @@ public class DistributedIndexOutput extends IndexOutput {
 			isOpen = false;
 		}
 	}
-	
-	@Override
+
 	public void flush() throws IOException {
 		nosqlFile.flush();
 	}
-	
+
 	@Override
 	public long getFilePointer() {
 		return position;

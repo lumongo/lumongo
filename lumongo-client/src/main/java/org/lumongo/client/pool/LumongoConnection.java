@@ -39,12 +39,12 @@ public class LumongoConnection {
 		DuplexTcpClientPipelineFactory clientFactory = new DuplexTcpClientPipelineFactory();
 		clientFactory.setCompression(compressedConnection);
 		clientFactory.setRpcLogger(null);
-		
+
 		this.bootstrap = new Bootstrap();
 		bootstrap.group(new NioEventLoopGroup());
 		bootstrap.handler(clientFactory);
 		bootstrap.channel(NioSocketChannel.class);
-		
+
 		//TODO check this options
 		bootstrap.option(ChannelOption.TCP_NODELAY, true);
 		bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);

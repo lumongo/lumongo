@@ -1,13 +1,13 @@
 package org.lumongo.util;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
-import com.mongodb.WriteConcern;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.CreateIndexOptions;
+import com.mongodb.client.model.UpdateOptions;
+import org.bson.Document;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
@@ -32,15 +32,18 @@ public class ClusterHelper {
 		
 		try {
 			
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			
-			DBCollection configCollection = db.getCollection(CLUSTER_CONFIG);
-			
-			BasicDBObject config = new BasicDBObject();
+			MongoCollection<Document> configCollection = db.getCollection(CLUSTER_CONFIG);
+
+			Document query = new Document();
+			query.put(_ID, CLUSTER);
+
+			Document config = new Document();
 			config.put(_ID, CLUSTER);
-			config.put(DATA, clusterConfig.toDBObject());
-			
-			configCollection.save(config, WriteConcern.SAFE);
+			config.put(DATA, clusterConfig.toDocument());
+
+			configCollection.replaceOne(query, config, new UpdateOptions().upsert(true));
 		}
 		finally {
 			mongo.close();
@@ -54,14 +57,14 @@ public class ClusterHelper {
 		
 		try {
 			
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			
-			DBCollection configCollection = db.getCollection(CLUSTER_CONFIG);
+			MongoCollection<Document> configCollection = db.getCollection(CLUSTER_CONFIG);
 			
-			BasicDBObject search = new BasicDBObject();
+			Document search = new Document();
 			search.put(_ID, CLUSTER);
 			
-			configCollection.remove(search, WriteConcern.SAFE);
+			configCollection.deleteOne(search);
 		}
 		finally {
 			mongo.close();
@@ -73,20 +76,20 @@ public class ClusterHelper {
 		
 		try {
 			
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			
-			DBCollection configCollection = db.getCollection(CLUSTER_CONFIG);
+			MongoCollection<Document> configCollection = db.getCollection(CLUSTER_CONFIG);
 			
-			BasicDBObject search = new BasicDBObject();
+			Document search = new Document();
 			search.put(_ID, CLUSTER);
 			
-			DBObject result = configCollection.findOne(search);
+			Document result = configCollection.find(search).first();
 			
 			if (result == null) {
 				throw new Exception("Create the cluster first using cluster admin tool");
 			}
 			else {
-				DBObject object = (DBObject) result.get(DATA);
+				Document object = (Document) result.get(DATA);
 				return ClusterConfig.fromDBObject(object);
 			}
 		}
@@ -101,29 +104,27 @@ public class ClusterHelper {
 		
 		try {
 			
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			
-			DBCollection membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
+			MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
 			
-			DBObject index = new BasicDBObject();
+			Document index = new Document();
 			index.put(SERVER_ADDRESS, 1);
 			index.put(INSTANCE, 1);
 			
-			DBObject options = new BasicDBObject();
-			options.put("unique", true);
-			
+			CreateIndexOptions options = new CreateIndexOptions().unique(true);
 			membershipCollection.createIndex(index, options);
 			
-			BasicDBObject search = new BasicDBObject();
+			Document search = new Document();
 			search.put(SERVER_ADDRESS, serverAddress);
 			search.put(INSTANCE, localNodeConfig.getHazelcastPort());
 			
-			BasicDBObject object = new BasicDBObject();
+			Document object = new Document();
 			object.put(SERVER_ADDRESS, serverAddress);
 			object.put(INSTANCE, localNodeConfig.getHazelcastPort());
-			object.put(DATA, localNodeConfig.toDBObject());
-			
-			membershipCollection.update(search, object, true, false, WriteConcern.SAFE);
+			object.put(DATA, localNodeConfig.toDocument());
+
+			membershipCollection.replaceOne(search, object, new UpdateOptions().upsert(true));
 		}
 		finally {
 			mongo.close();
@@ -136,15 +137,15 @@ public class ClusterHelper {
 		
 		try {
 			
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			
-			DBCollection membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
+			MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
 			
-			BasicDBObject search = new BasicDBObject();
+			Document search = new Document();
 			search.put(SERVER_ADDRESS, serverAddress);
 			search.put(INSTANCE, hazelcastPort);
 			
-			membershipCollection.remove(search, WriteConcern.SAFE);
+			membershipCollection.deleteMany(search);
 			
 		}
 		finally {
@@ -158,24 +159,24 @@ public class ClusterHelper {
 		
 		try {
 			
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			
-			DBCollection membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
+			MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
 			
-			BasicDBObject search = new BasicDBObject();
+			Document search = new Document();
 			search.put(SERVER_ADDRESS, serverAddress);
 			search.put(INSTANCE, instance);
 			
-			DBObject result = membershipCollection.findOne(search);
+			Document result = membershipCollection.find(search).first();
 			
 			if (result == null) {
 				throw new Exception("No node found with address <" + serverAddress + "> and hazelcast port <" + instance
 								+ ">.  Please register the node with cluster admin tool");
 			}
 			
-			DBObject dataObject = (DBObject) result.get(DATA);
+			Document dataObject = (Document) result.get(DATA);
 			
-			return LocalNodeConfig.fromDBObject(dataObject);
+			return LocalNodeConfig.fromDocument(dataObject);
 			
 		}
 		finally {
@@ -188,17 +189,16 @@ public class ClusterHelper {
 		
 		try {
 			
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			
-			DBCollection membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
+			MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
 			
-			DBCursor results = membershipCollection.find();
+			FindIterable<Document> results = membershipCollection.find();
 			
 			Nodes nodes = new Nodes();
 			
-			while (results.hasNext()) {
-				DBObject object = results.next();
-				LocalNodeConfig lnc = LocalNodeConfig.fromDBObject((DBObject) object.get(DATA));
+			for (Document object : results) {
+				LocalNodeConfig lnc = LocalNodeConfig.fromDocument((Document) object.get(DATA));
 				
 				String serverAddress = (String) object.get(SERVER_ADDRESS);
 				nodes.add(serverAddress, lnc);

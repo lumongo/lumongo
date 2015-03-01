@@ -12,8 +12,8 @@ public class LowercaseKeywordAnalyzer extends Analyzer {
 	}
 	
 	@Override
-	protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
-		KeywordTokenizer src = new KeywordTokenizer(reader);
+	protected TokenStreamComponents createComponents(final String fieldName) {
+		KeywordTokenizer src = new KeywordTokenizer();
 		TokenStream tok = new LowerCaseFilter(src);
 		
 		return new TokenStreamComponents(src, tok);

@@ -4,12 +4,11 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.Member;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
-import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
@@ -24,9 +23,9 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.util.Version;
 import org.bson.BSON;
-import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
@@ -92,104 +91,104 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LumongoIndex {
 	public static final String STORAGE_DB_SUFFIX = "_rs";
-	
+
 	private static final String RESULT_STORAGE_COLLECTION = "resultStorage";
 	private static final String FACETS_SUFFIX = "facets";
 	private final static Logger log = Logger.getLogger(LumongoIndex.class);
 	private static final String SETTINGS_ID = "settings";
 	public static final String CONFIG_SUFFIX = "_config";
-	
+
 	private final IndexConfig indexConfig;
 	private final MongoConfig mongoConfig;
 	private final ClusterConfig clusterConfig;
-	
+
 	private final MongoClient mongo;
 	private MongoClient storageMongoClient;
-	
+
 	private final GenericObjectPool<LumongoQueryParser> parsers;
-	
+
 	private Map<Member, Set<Integer>> memberToSegmentMap;
 	private Map<Integer, Member> segmentToMemberMap;
-	
+
 	private final ConcurrentHashMap<Integer, LumongoSegment> segmentMap;
 	private final ConcurrentHashMap<Integer, ILock> hazelLockMap;
-	
+
 	private final ReadWriteLock indexLock;
-	
+
 	private Timer commitTimer;
-	
+
 	private final ExecutorService segmentPool;
-	
+
 	private final int numberOfSegments;
 	private final String indexName;
-	
+
 	private TimerTask commitTask;
-	
+
 	private final HazelcastManager hazelcastManager;
-	
+
 	private final DocumentStorage documentStorage;
-	
+
 	private LumongoAnalyzerFactory lumongoAnalyzerFactory;
-	
+
 	private LockHandler documentLockHandler;
-	
+
 	private LumongoIndex(HazelcastManager hazelcastManger, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig)
 					throws UnknownHostException, MongoException {
-		
+
 		this.documentLockHandler = new LockHandler();
-		
+
 		this.hazelcastManager = hazelcastManger;
-		
+
 		this.mongoConfig = mongoConfig;
 		this.clusterConfig = clusterConfig;
-		
+
 		this.indexConfig = indexConfig;
 		this.indexName = indexConfig.getIndexName();
 		this.numberOfSegments = indexConfig.getNumberOfSegments();
-		
+
 		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
-		
+
 		this.storageMongoClient = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
-		
+
 		String rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + STORAGE_DB_SUFFIX;
-		
+
 		this.documentStorage = new MongoDocumentStorage(storageMongoClient, indexName, rawStorageDb, RESULT_STORAGE_COLLECTION, clusterConfig.isSharded());
-		
+
 		this.segmentPool = Executors.newCachedThreadPool(new LumongoThreadFactory(indexName + "-segments"));
-		
+
 		this.parsers = new GenericObjectPool<>(new BasePoolableObjectFactory<LumongoQueryParser>() {
-			
+
 			@Override
 			public LumongoQueryParser makeObject() throws Exception {
 				return new LumongoQueryParser(lumongoAnalyzerFactory.getAnalyzer(), LumongoIndex.this.indexConfig);
 			}
-			
+
 		});
-		
+
 		this.indexLock = new ReentrantReadWriteLock(true);
 		this.segmentMap = new ConcurrentHashMap<>();
 		this.hazelLockMap = new ConcurrentHashMap<>();
-		
+
 		commitTimer = new Timer(indexName + "-CommitTimer", true);
-		
+
 		commitTask = new TimerTask() {
-			
+
 			@Override
 			public void run() {
 				if (LumongoIndex.this.indexConfig.getIdleTimeWithoutCommit() != 0) {
 					doCommit(false);
 				}
-				
+
 			}
-			
+
 		};
-		
+
 		commitTimer.scheduleAtFixedRate(commitTask, 1000, 1000);
-		
+
 		this.lumongoAnalyzerFactory = new LumongoAnalyzerFactory(indexConfig);
-		
+
 	}
-	
+
 	public void updateIndexSettings(IndexSettings request) {
 		indexLock.writeLock().lock();
 		try {
@@ -201,11 +200,11 @@ public class LumongoIndex {
 			indexLock.writeLock().unlock();
 		}
 	}
-	
+
 	public LMAnalyzer getLMAnalyzer(String fieldName) {
 		return indexConfig.getAnalyzer(fieldName);
 	}
-	
+
 	private void doCommit(boolean force) {
 		indexLock.readLock().lock();
 		try {
@@ -228,29 +227,29 @@ public class LumongoIndex {
 		finally {
 			indexLock.readLock().unlock();
 		}
-		
+
 	}
-	
+
 	public void updateSegmentMap(Map<Member, Set<Integer>> newMemberToSegmentMap) {
 		indexLock.writeLock().lock();
 		try {
 			log.info("Updating segments map");
-			
+
 			this.memberToSegmentMap = newMemberToSegmentMap;
 			this.segmentToMemberMap = new HashMap<>();
-			
+
 			for (Member m : memberToSegmentMap.keySet()) {
 				for (int i : memberToSegmentMap.get(m)) {
 					segmentToMemberMap.put(i, m);
 				}
 			}
-			
+
 			Member self = hazelcastManager.getSelf();
-			
+
 			Set<Integer> newSegments = memberToSegmentMap.get(self);
-			
+
 			log.info("Settings segments for this node <" + self + "> to <" + newSegments + ">");
-			
+
 			for (Integer segmentNumber : segmentMap.keySet()) {
 				if (!newSegments.contains(segmentNumber)) {
 					try {
@@ -262,7 +261,7 @@ public class LumongoIndex {
 					}
 				}
 			}
-			
+
 			for (Integer segmentNumber : newSegments) {
 				if (!segmentMap.containsKey(segmentNumber)) {
 					try {
@@ -274,14 +273,14 @@ public class LumongoIndex {
 					}
 				}
 			}
-			
+
 		}
 		finally {
 			indexLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	public void loadAllSegments() throws Exception {
 		indexLock.writeLock().lock();
 		try {
@@ -305,7 +304,7 @@ public class LumongoIndex {
 			indexLock.writeLock().unlock();
 		}
 	}
-	
+
 	public void unload() throws CorruptIndexException, IOException {
 		indexLock.writeLock().lock();
 		try {
@@ -314,10 +313,10 @@ public class LumongoIndex {
 			commitTimer.cancel();
 			log.info("Commiting <" + indexName + ">");
 			doCommit(true);
-			
+
 			log.info("Shutting segment pool for <" + indexName + ">");
 			segmentPool.shutdownNow();
-			
+
 			for (Integer segmentNumber : segmentMap.keySet()) {
 				unloadSegment(segmentNumber);
 			}
@@ -326,7 +325,7 @@ public class LumongoIndex {
 			indexLock.writeLock().unlock();
 		}
 	}
-	
+
 	public FacetsConfig getFacetsConfig() {
 		//only need to be done once but no harm
 		FacetsConfig.DEFAULT_DIM_CONFIG.hierarchical = true;
@@ -341,7 +340,7 @@ public class LumongoIndex {
 			}
 		};
 	}
-	
+
 	private void loadSegment(int segmentNumber) throws Exception {
 		indexLock.writeLock().lock();
 		try {
@@ -352,63 +351,59 @@ public class LumongoIndex {
 				log.info("Waiting for lock for index <" + indexName + "> segment <" + segmentNumber + ">");
 				hzLock.lock();
 				log.info("Obtained lock for index <" + indexName + "> segment <" + segmentNumber + ">");
-				
-				String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
-				String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
-				
-				MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
-								indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
-				DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
-				
-				IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, null);
-				//use flush interval to flush
-				config.setMaxBufferedDocs(Integer.MAX_VALUE);
-				config.setRAMBufferSizeMB(IndexWriterConfig.DISABLE_AUTO_FLUSH);
-				
-				LumongoIndexWriter indexWriter = new LumongoIndexWriter(dd, config);
-				
-				LumongoDirectoryTaxonomyWriter taxonomyWriter = null;
-				FacetsConfig facetsConfig = null;
-				
-				MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName + "_" + FACETS_SUFFIX,
-								clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
-				DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
-				taxonomyWriter = new LumongoDirectoryTaxonomyWriter(ddFacet);
-				facetsConfig = getFacetsConfig();
-				
-				LumongoSegment s = new LumongoSegment(segmentNumber, indexWriter, taxonomyWriter, indexConfig, facetsConfig,
-								lumongoAnalyzerFactory.getAnalyzer());
+
+				LumongoIndexWriter indexWriter = getLumongoIndexWriter(segmentNumber);
+
+				LumongoDirectoryTaxonomyWriter taxonomyWriter = getLumongoDirectoryTaxonomyWriter(segmentNumber);
+
+				LumongoSegment s = new LumongoSegment(segmentNumber, indexWriter, taxonomyWriter, indexConfig);
 				segmentMap.put(segmentNumber, s);
-				
+
 				log.info("Loaded segment <" + segmentNumber + "> for index <" + indexName + ">");
-				log.info("Current segments <" + (new TreeSet<Integer>(segmentMap.keySet())) + "> for index <" + indexName + ">");
-				
+				log.info("Current segments <" + (new TreeSet<>(segmentMap.keySet())) + "> for index <" + indexName + ">");
+
 			}
 		}
 		finally {
 			indexLock.writeLock().unlock();
 		}
 	}
-	
+
+	private LumongoDirectoryTaxonomyWriter getLumongoDirectoryTaxonomyWriter(int segmentNumber) throws IOException {
+		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
+		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
+
+		MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName + "_" + FACETS_SUFFIX,
+						clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
+		DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
+		return new LumongoDirectoryTaxonomyWriter(ddFacet);
+	}
+
+	private LumongoIndexWriter getLumongoIndexWriter(int segmentNumber) throws Exception {
+		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
+		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
+		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
+						indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
+		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
+
+		IndexWriterConfig config = new IndexWriterConfig(lumongoAnalyzerFactory.getAnalyzer());
+		//use flush interval to flush
+		config.setMaxBufferedDocs(Integer.MAX_VALUE);
+		config.setRAMBufferSizeMB(IndexWriterConfig.DISABLE_AUTO_FLUSH);
+
+		return new LumongoIndexWriter(dd, config);
+	}
+
 	private String getIndexSegmentCollectionName(int segmentNumber) {
 		String indexSegmentCollectionName = indexName + "_" + segmentNumber;
 		return indexSegmentCollectionName;
 	}
-	
+
 	private String getIndexSegmentDbName(int segmentNumber) {
-		String indexSegmentDbName;
-		
-		boolean databasePerIndexSegment = false;
-		if (databasePerIndexSegment) {
-			indexSegmentDbName = mongoConfig.getDatabaseName() + "_" + indexName + "_" + segmentNumber;
-		}
-		else {
-			indexSegmentDbName = mongoConfig.getDatabaseName() + "_" + indexName;
-		}
-		return indexSegmentDbName;
+		return mongoConfig.getDatabaseName() + "_" + indexName;
 	}
-	
-	public void unloadSegment(int segmentNumber) throws CorruptIndexException, IOException {
+
+	public void unloadSegment(int segmentNumber) throws IOException {
 		indexLock.writeLock().lock();
 		try {
 			ILock hzLock = hazelLockMap.get(segmentNumber);
@@ -419,10 +414,10 @@ public class LumongoIndex {
 						log.info("Commiting and closing segment <" + segmentNumber + "> for index <" + indexName + ">");
 						s.close();
 						log.info("Removed segment <" + segmentNumber + "> for index <" + indexName + ">");
-						log.info("Current segments <" + (new TreeSet<Integer>(segmentMap.keySet())) + "> for index <" + indexName + ">");
+						log.info("Current segments <" + (new TreeSet<>(segmentMap.keySet())) + "> for index <" + indexName + ">");
 					}
 				}
-				
+
 			}
 			finally {
 				try {
@@ -437,9 +432,9 @@ public class LumongoIndex {
 		finally {
 			indexLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	/**
 	 * called on older cluster node when a new member is added
 	 *
@@ -456,21 +451,21 @@ public class LumongoIndex {
 		finally {
 			indexLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	public void forceBalance(Set<Member> currentMembers) {
 		indexLock.writeLock().lock();
 		try {
 			mapSanityCheck(currentMembers);
 			balance(currentMembers);
-			
+
 			IExecutorService executorService = hazelcastManager.getExecutorService();
-			
+
 			List<Future<Void>> results = new ArrayList<Future<Void>>();
-			
+
 			for (Member m : currentMembers) {
-				
+
 				try {
 					UpdateSegmentsTask ust = new UpdateSegmentsTask(m.getSocketAddress().getPort(), indexName, memberToSegmentMap);
 					if (!m.localMember()) {
@@ -481,9 +476,9 @@ public class LumongoIndex {
 				catch (Exception e) {
 					log.error(e.getClass().getSimpleName() + ": ", e);
 				}
-				
+
 			}
-			
+
 			try {
 				UpdateSegmentsTask ust = new UpdateSegmentsTask(hazelcastManager.getHazelcastPort(), indexName, memberToSegmentMap);
 				ust.call();
@@ -503,9 +498,9 @@ public class LumongoIndex {
 		finally {
 			indexLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	/**
 	 * Called on older cluster node when member is removed
 	 *
@@ -522,15 +517,15 @@ public class LumongoIndex {
 				Member first = currentMembers.iterator().next();
 				memberToSegmentMap.get(first).addAll(segmentsToRedist);
 			}
-			
+
 			forceBalance(currentMembers);
 		}
 		finally {
 			indexLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	private void balance(Set<Member> currentMembers) {
 		indexLock.writeLock().lock();
 		try {
@@ -555,41 +550,41 @@ public class LumongoIndex {
 						maxMember = m;
 					}
 				}
-				
+
 				if ((maxSegmentsForMember - minSegmentsForMember) > 1) {
 					int valueToMove = memberToSegmentMap.get(maxMember).iterator().next();
-					
+
 					log.info("Moving segment <" + valueToMove + "> from <" + maxMember + "> to <" + minMember + "> of Index <" + indexName + ">");
 					memberToSegmentMap.get(maxMember).remove(valueToMove);
-					
+
 					if (!memberToSegmentMap.containsKey(minMember)) {
 						memberToSegmentMap.put(minMember, new HashSet<Integer>());
 					}
-					
+
 					memberToSegmentMap.get(minMember).add(valueToMove);
 				}
 				else {
 					balanced = true;
 				}
-				
+
 			}
 			while (!balanced);
 		}
 		finally {
 			indexLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	private void mapSanityCheck(Set<Member> currentMembers) {
 		indexLock.writeLock().lock();
 		try {
 			// add all segments to a set
-			Set<Integer> allSegments = new HashSet<Integer>();
+			Set<Integer> allSegments = new HashSet<>();
 			for (int segment = 0; segment < indexConfig.getNumberOfSegments(); segment++) {
 				allSegments.add(segment);
 			}
-			
+
 			// ensure all members are in the map and contain an empty set
 			for (Member m : currentMembers) {
 				if (!memberToSegmentMap.containsKey(m)) {
@@ -599,15 +594,15 @@ public class LumongoIndex {
 					memberToSegmentMap.put(m, new HashSet<Integer>());
 				}
 			}
-			
+
 			// get all members of the map
 			Set<Member> mapMembers = memberToSegmentMap.keySet();
 			for (Member m : mapMembers) {
-				
+
 				// get current segments
 				Set<Integer> segments = memberToSegmentMap.get(m);
-				
-				Set<Integer> invalidSegments = new HashSet<Integer>();
+
+				Set<Integer> invalidSegments = new HashSet<>();
 				for (int segment : segments) {
 					// check if valid segment
 					if (!allSegments.contains(segment)) {
@@ -618,7 +613,7 @@ public class LumongoIndex {
 							log.error("Segment <" + segment + "> is duplicated in node <" + m + ">");
 						}
 						invalidSegments.add(segment);
-						
+
 					}
 				}
 				// remove any invalid segments for the cluster
@@ -626,7 +621,7 @@ public class LumongoIndex {
 				// remove from all segments to keep track of segments already used
 				allSegments.removeAll(segments);
 			}
-			
+
 			// adds any segments that are missing back to the first node
 			if (!allSegments.isEmpty()) {
 				log.error("Segments <" + allSegments + "> are missing from the cluster. Adding back in.");
@@ -636,9 +631,9 @@ public class LumongoIndex {
 		finally {
 			indexLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	public LumongoSegment findSegmentFromUniqueId(String uniqueId) throws SegmentDoesNotExist {
 		indexLock.readLock().lock();
 		try {
@@ -653,7 +648,7 @@ public class LumongoIndex {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public Member findMember(String uniqueId) {
 		indexLock.readLock().lock();
 		try {
@@ -665,66 +660,66 @@ public class LumongoIndex {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public Map<Integer, Member> getSegmentToMemberMap() {
 		return new HashMap<Integer, Member>(segmentToMemberMap);
 	}
-	
+
 	private int getSegmentNumberForUniqueId(String uniqueId) {
 		int numSegments = indexConfig.getNumberOfSegments();
 		return SegmentUtil.findSegmentForUniqueId(uniqueId, numSegments);
 	}
-	
+
 	public void deleteIndex() throws Exception {
-		
+
 		{
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
-			DBCollection dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
-			dbCollection.drop();
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
+			MongoCollection<Document> dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
+			dbCollection.dropCollection();
 		}
 		for (int i = 0; i < numberOfSegments; i++) {
-			
+
 			String dbName = getIndexSegmentDbName(i);
 			String collectionName = getIndexSegmentCollectionName(i);
 			MongoDirectory.dropIndex(mongo, dbName, collectionName);
 			MongoDirectory.dropIndex(mongo, dbName, collectionName + "_" + FACETS_SUFFIX);
-			
+
 			documentStorage.drop();
 		}
-		
+
 		for (int i = 0; i < numberOfSegments; i++) {
 			String dbName = getIndexSegmentDbName(i);
-			DB db = mongo.getDB(dbName);
+			MongoDatabase db = mongo.getDatabase(dbName);
 			db.dropDatabase();
 		}
-		
+
 	}
-	
+
 	public void storeInternal(StoreRequest storeRequest) throws Exception {
 		indexLock.readLock().lock();
-		
+
 		try {
-			
+
 			long timestamp = hazelcastManager.getClusterTime();
-			
+
 			String uniqueId = storeRequest.getUniqueId();
 			ReadWriteLock documentLock = documentLockHandler.getLock(uniqueId);
 			try {
 				documentLock.writeLock().lock();
-				
+
 				if (storeRequest.hasResultDocument()) {
-					BSONObject document = BSON.decode(storeRequest.getResultDocument().getDocument().toByteArray());
-					
+					BasicBSONObject document = (BasicBSONObject) BSON.decode(storeRequest.getResultDocument().getDocument().toByteArray());
+
 					LumongoSegment s = findSegmentFromUniqueId(uniqueId);
 					s.index(uniqueId, document, timestamp);
-					
+
 					documentStorage.storeSourceDocument(storeRequest.getUniqueId(), timestamp, document, storeRequest.getResultDocument().getMetadataList());
 				}
-				
+
 				if (storeRequest.getClearExistingAssociated()) {
 					documentStorage.deleteAssociatedDocuments(uniqueId);
 				}
-				
+
 				for (AssociatedDocument ad : storeRequest.getAssociatedDocumentList()) {
 					ad = AssociatedDocument.newBuilder(ad).setTimestamp(timestamp).build();
 					documentStorage.storeAssociatedDocument(ad);
@@ -733,32 +728,32 @@ public class LumongoIndex {
 			finally {
 				documentLock.writeLock().unlock();
 			}
-			
+
 		}
 		finally {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public void deleteDocument(DeleteRequest deleteRequest) throws Exception {
-		
+
 		indexLock.readLock().lock();
-		
+
 		try {
-			
+
 			String uniqueId = deleteRequest.getUniqueId();
-			
+
 			ReadWriteLock documentLock = documentLockHandler.getLock(uniqueId);
-			
+
 			try {
 				documentLock.writeLock().lock();
-				
+
 				if (deleteRequest.getDeleteDocument()) {
 					LumongoSegment s = findSegmentFromUniqueId(deleteRequest.getUniqueId());
 					s.deleteDocument(uniqueId);
 					documentStorage.deleteSourceDocument(uniqueId);
 				}
-				
+
 				if (deleteRequest.getDeleteAllAssociated()) {
 					documentStorage.deleteAssociatedDocuments(uniqueId);
 				}
@@ -770,17 +765,17 @@ public class LumongoIndex {
 			finally {
 				documentLock.writeLock().unlock();
 			}
-			
+
 		}
 		finally {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public Query getQuery(String query, List<String> queryFields, int minimumShouldMatchNumber, Operator defaultOperator) throws Exception {
 		indexLock.readLock().lock();
 		try {
-			
+
 			LumongoQueryParser qp = null;
 			if (query == null || query.isEmpty()) {
 				return new MatchAllDocsQuery();
@@ -789,7 +784,7 @@ public class LumongoIndex {
 				qp = parsers.borrowObject();
 				qp.setMinimumNumberShouldMatch(minimumShouldMatchNumber);
 				qp.setDefaultOperator(defaultOperator);
-				
+
 				if (queryFields.isEmpty()) {
 					qp.setField(indexConfig.getDefaultSearchField());
 					return qp.parse(query);
@@ -806,18 +801,18 @@ public class LumongoIndex {
 					}
 					return bQuery;
 				}
-				
+
 			}
 			finally {
 				parsers.returnObject(qp);
 			}
-			
+
 		}
 		finally {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public IndexSegmentResponse queryInternal(final QueryWithFilters queryWithFilters, final QueryRequest queryRequest) throws Exception {
 		indexLock.readLock().lock();
 		try {
@@ -825,12 +820,12 @@ public class LumongoIndex {
 			if (!queryRequest.getFetchFull() && (amount > 0)) {
 				amount = (int) (((queryRequest.getAmount() / numberOfSegments) + indexConfig.getMinSegmentRequest()) * indexConfig.getRequestFactor());
 			}
-			
+
 			final int requestedAmount = amount;
-			
+
 			final HashMap<Integer, FieldDoc> lastScoreDocMap = new HashMap<Integer, FieldDoc>();
 			FieldDoc after = null;
-			
+
 			LastResult lr = queryRequest.getLastResult();
 			if (lr != null) {
 				for (LastIndexResult lir : lr.getLastIndexResultList()) {
@@ -838,11 +833,11 @@ public class LumongoIndex {
 						for (ScoredResult sr : lir.getLastForSegmentList()) {
 							int docId = sr.getDocId();
 							float score = sr.getScore();
-							
+
 							SortRequest sortRequest = queryRequest.getSortRequest();
-							
+
 							Object[] sortTerms = new Object[sortRequest.getFieldSortCount()];
-							
+
 							int sortTermsIndex = 0;
 							int stringIndex = 0;
 							int intIndex = 0;
@@ -850,11 +845,11 @@ public class LumongoIndex {
 							int floatIndex = 0;
 							int doubleIndex = 0;
 							int dateIndex = 0;
-							
+
 							for (FieldSort fs : sortRequest.getFieldSortList()) {
-								
+
 								String sortField = fs.getSortField();
-								
+
 								if (indexConfig.isNumericOrDateField(sortField)) {
 									if (indexConfig.isNumericIntField(sortField)) {
 										sortTerms[sortTermsIndex] = sr.getSortInteger(intIndex++);
@@ -877,34 +872,35 @@ public class LumongoIndex {
 								}
 								sortTermsIndex++;
 							}
-							
+
 							after = new FieldDoc(docId, score, sortTerms, sr.getSegment());
 							lastScoreDocMap.put(sr.getSegment(), after);
 						}
 					}
 				}
 			}
-			
+
 			IndexSegmentResponse.Builder builder = IndexSegmentResponse.newBuilder();
-			
-			List<Future<SegmentResponse>> responses = new ArrayList<Future<SegmentResponse>>();
-			
+
+			List<Future<SegmentResponse>> responses = new ArrayList<>();
+
 			for (final LumongoSegment segment : segmentMap.values()) {
-				
+
 				Future<SegmentResponse> response = segmentPool.submit(new Callable<SegmentResponse>() {
-					
+
 					@Override
 					public SegmentResponse call() throws Exception {
-						return segment.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest
-										.getFacetRequest(), queryRequest.getSortRequest(), queryRequest.getRealTime(), new QueryCacheKey(queryRequest));
+						return segment.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()),
+										queryRequest.getFacetRequest(), queryRequest.getSortRequest(), queryRequest.getRealTime(),
+										new QueryCacheKey(queryRequest));
 					}
-					
+
 				});
-				
+
 				responses.add(response);
-				
+
 			}
-			
+
 			for (Future<SegmentResponse> response : responses) {
 				try {
 					SegmentResponse rs = response.get();
@@ -912,109 +908,116 @@ public class LumongoIndex {
 				}
 				catch (ExecutionException e) {
 					Throwable t = e.getCause();
-					
+
 					if (t instanceof OutOfMemoryError) {
 						throw (OutOfMemoryError) t;
 					}
-					
+
 					throw ((Exception) e.getCause());
 				}
 			}
-			
+
 			builder.setIndexName(indexName);
 			return builder.build();
 		}
 		finally {
 			indexLock.readLock().unlock();
 		}
-		
+
 	}
-	
+
 	public Integer getNumberOfSegments() {
 		return numberOfSegments;
 	}
-	
+
 	public double getSegmentTolerance() {
 		return indexConfig.getSegmentTolerance();
 	}
-	
+
 	private void storeIndexSettings() {
 		indexLock.writeLock().lock();
 		try {
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
-			DBCollection dbCollection = db.getCollection(indexConfig.getIndexName() + CONFIG_SUFFIX);
-			DBObject settings = indexConfig.toDBObject();
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
+			MongoCollection<Document> dbCollection = db.getCollection(indexConfig.getIndexName() + CONFIG_SUFFIX);
+			Document settings = indexConfig.toDocument();
 			settings.put(MongoConstants.StandardFields._ID, SETTINGS_ID);
-			dbCollection.save(settings);
+
+			Document query = new Document();
+			query.put(MongoConstants.StandardFields._ID, SETTINGS_ID);
+
+			dbCollection.replaceOne(query, settings, new UpdateOptions().upsert(true));
 		}
 		finally {
 			indexLock.writeLock().unlock();
 		}
-		
+
 	}
-	
+
 	public void reloadIndexSettings() throws Exception {
 		indexLock.writeLock().lock();
 		try {
-			
+
 			IndexConfig newIndexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
-			
+
 			IndexSettings indexSettings = newIndexConfig.getIndexSettings();
 			indexConfig.configure(indexSettings);
-			
+
 			parsers.clear();
-			
+
 			//force analyzer to be fetched first so it doesn't fail only on one segment below
 			lumongoAnalyzerFactory.getAnalyzer();
 			for (LumongoSegment s : segmentMap.values()) {
 				try {
-					s.updateIndexSettings(indexSettings, lumongoAnalyzerFactory.getAnalyzer());
+					LumongoIndexWriter indexWriter = getLumongoIndexWriter(s.getSegmentNumber());
+					LumongoDirectoryTaxonomyWriter taxonomyWriter = getLumongoDirectoryTaxonomyWriter(s.getSegmentNumber());
+
+					s.updateIndexSettings(indexSettings, indexWriter, taxonomyWriter);
 				}
 				catch (Exception e) {
 				}
 			}
-			
+
 		}
 		finally {
 			indexLock.writeLock().unlock();
 		}
 	}
-	
+
 	public void optimize() throws Exception {
 		indexLock.readLock().lock();
 		try {
 			for (final LumongoSegment segment : segmentMap.values()) {
 				segment.optimize();
 			}
-			
+
 		}
 		finally {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public GetNumberOfDocsResponse getNumberOfDocs(final boolean realTime) throws Exception {
 		indexLock.readLock().lock();
 		try {
-			List<Future<SegmentCountResponse>> responses = new ArrayList<Future<SegmentCountResponse>>();
-			
+			List<Future<SegmentCountResponse>> responses = new ArrayList<>();
+
 			for (final LumongoSegment segment : segmentMap.values()) {
-				
+
 				Future<SegmentCountResponse> response = segmentPool.submit(new Callable<SegmentCountResponse>() {
-					
+
 					@Override
 					public SegmentCountResponse call() throws Exception {
 						return segment.getNumberOfDocs(realTime);
 					}
-					
+
 				});
-				
+
 				responses.add(response);
-				
+
 			}
-			
+
 			GetNumberOfDocsResponse.Builder responseBuilder = GetNumberOfDocsResponse.newBuilder();
-			
+
 			responseBuilder.setNumberOfDocs(0);
 			for (Future<SegmentCountResponse> response : responses) {
 				try {
@@ -1030,41 +1033,41 @@ public class LumongoIndex {
 					if (cause instanceof Exception) {
 						throw e;
 					}
-					
+
 					throw e;
 				}
 			}
-			
+
 			return responseBuilder.build();
 		}
 		finally {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public GetFieldNamesResponse getFieldNames() throws Exception {
 		indexLock.readLock().lock();
 		try {
 			List<Future<GetFieldNamesResponse>> responses = new ArrayList<Future<GetFieldNamesResponse>>();
-			
+
 			for (final LumongoSegment segment : segmentMap.values()) {
-				
+
 				Future<GetFieldNamesResponse> response = segmentPool.submit(new Callable<GetFieldNamesResponse>() {
-					
+
 					@Override
 					public GetFieldNamesResponse call() throws Exception {
 						return segment.getFieldNames();
 					}
-					
+
 				});
-				
+
 				responses.add(response);
-				
+
 			}
-			
+
 			GetFieldNamesResponse.Builder responseBuilder = GetFieldNamesResponse.newBuilder();
-			
-			Set<String> fields = new HashSet<String>();
+
+			Set<String> fields = new HashSet<>();
 			for (Future<GetFieldNamesResponse> response : responses) {
 				try {
 					GetFieldNamesResponse gfnr = response.get();
@@ -1080,7 +1083,7 @@ public class LumongoIndex {
 					}
 				}
 			}
-			
+
 			fields.remove(LumongoConstants.TIMESTAMP_FIELD);
 			fields.remove(LumongoConstants.LUCENE_FACET_FIELD);
 			responseBuilder.addAllFieldName(fields);
@@ -1090,28 +1093,28 @@ public class LumongoIndex {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public void clear() throws Exception {
 		indexLock.writeLock().lock();
 		try {
-			List<Future<Void>> responses = new ArrayList<Future<Void>>();
-			
+			List<Future<Void>> responses = new ArrayList<>();
+
 			for (final LumongoSegment segment : segmentMap.values()) {
-				
+
 				Future<Void> response = segmentPool.submit(new Callable<Void>() {
-					
+
 					@Override
 					public Void call() throws Exception {
 						segment.clear();
 						return null;
 					}
-					
+
 				});
-				
+
 				responses.add(response);
-				
+
 			}
-			
+
 			for (Future<Void> response : responses) {
 				try {
 					response.get();
@@ -1126,40 +1129,40 @@ public class LumongoIndex {
 					}
 				}
 			}
-			
+
 			documentStorage.deleteAllDocuments();
-			
+
 		}
 		finally {
 			indexLock.writeLock().unlock();
 		}
 	}
-	
+
 	public GetTermsResponse getTerms(final GetTermsRequest request) throws Exception {
 		indexLock.readLock().lock();
 		try {
-			List<Future<GetTermsResponse>> responses = new ArrayList<Future<GetTermsResponse>>();
-			
+			List<Future<GetTermsResponse>> responses = new ArrayList<>();
+
 			for (final LumongoSegment segment : segmentMap.values()) {
-				
+
 				Future<GetTermsResponse> response = segmentPool.submit(new Callable<GetTermsResponse>() {
-					
+
 					@Override
 					public GetTermsResponse call() throws Exception {
 						return segment.getTerms(request);
 					}
-					
+
 				});
-				
+
 				responses.add(response);
-				
+
 			}
-			
+
 			GetTermsResponse.Builder responseBuilder = GetTermsResponse.newBuilder();
-			
+
 			//not threaded but atomic long is convenient
 			TreeMap<String, AtomicLong> terms = new TreeMap<>();
-			
+
 			for (Future<GetTermsResponse> response : responses) {
 				try {
 					GetTermsResponse gtr = response.get();
@@ -1180,7 +1183,7 @@ public class LumongoIndex {
 					}
 				}
 			}
-			
+
 			int amountToReturn = Math.min(request.getAmount(), terms.size());
 			for (int i = 0; i < amountToReturn; i++) {
 				String value = terms.firstKey();
@@ -1193,37 +1196,36 @@ public class LumongoIndex {
 			indexLock.readLock().unlock();
 		}
 	}
-	
-	private static IndexConfig loadIndexSettings(Mongo mongo, String database, String indexName) throws InvalidIndexConfig {
-		DB db = mongo.getDB(database);
-		DBCollection dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
-		DBObject settings = dbCollection.findOne(new BasicDBObject(MongoConstants.StandardFields._ID, SETTINGS_ID));
+
+	private static IndexConfig loadIndexSettings(MongoClient mongo, String database, String indexName) throws InvalidIndexConfig {
+		MongoDatabase db = mongo.getDatabase(database);
+		MongoCollection<Document> dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
+		Document settings = dbCollection.find(new BasicDBObject(MongoConstants.StandardFields._ID, SETTINGS_ID)).first();
 		if (settings == null) {
 			throw new InvalidIndexConfig(indexName, "Index settings not found");
 		}
-		IndexConfig indexConfig = IndexConfig.fromDBObject(settings);
-		return indexConfig;
+		return IndexConfig.fromDocument(settings);
 	}
-	
-	public static LumongoIndex loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, Mongo mongo, ClusterConfig clusterConfig, String indexName)
+
+	public static LumongoIndex loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, MongoClient mongo, ClusterConfig clusterConfig,
+					String indexName)
 					throws InvalidIndexConfig, UnknownHostException, MongoException {
 		IndexConfig indexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
 		log.info("Loading index <" + indexName + ">");
-		
-		LumongoIndex i = new LumongoIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
-		return i;
-		
+
+		return new LumongoIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
+
 	}
-	
+
 	public static LumongoIndex createIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig)
 					throws UnknownHostException, MongoException {
 		log.info("Creating index <" + indexConfig.getIndexName() + ">: " + indexConfig);
 		LumongoIndex i = new LumongoIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
 		i.storeIndexSettings();
 		return i;
-		
+
 	}
-	
+
 	//handle forwarding, and locking here like other store requests
 	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long clusterTime,
 					HashMap<String, String> metadataMap) throws Exception {
@@ -1235,7 +1237,7 @@ public class LumongoIndex {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public InputStream getAssociatedDocumentStream(String uniqueId, String fileName) throws IOException {
 		indexLock.readLock().lock();
 		try {
@@ -1245,7 +1247,7 @@ public class LumongoIndex {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public ResultDocument getSourceDocument(String uniqueId, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
 					throws Exception {
 		indexLock.readLock().lock();
@@ -1256,7 +1258,7 @@ public class LumongoIndex {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public AssociatedDocument getAssociatedDocument(String uniqueId, String fileName, FetchType associatedFetchType) throws Exception {
 		indexLock.readLock().lock();
 		try {
@@ -1266,7 +1268,7 @@ public class LumongoIndex {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 	public List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType associatedFetchType) throws Exception {
 		indexLock.readLock().lock();
 		try {
@@ -1276,5 +1278,5 @@ public class LumongoIndex {
 			indexLock.readLock().unlock();
 		}
 	}
-	
+
 }

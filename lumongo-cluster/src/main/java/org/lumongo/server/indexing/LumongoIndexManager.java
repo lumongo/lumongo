@@ -2,9 +2,10 @@ package org.lumongo.server.indexing;
 
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
-import com.mongodb.DB;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoIterable;
 import org.apache.log4j.Logger;
 import org.apache.lucene.facet.DrillDownQuery;
 import org.apache.lucene.facet.FacetsConfig;
@@ -177,8 +178,8 @@ public class LumongoIndexManager {
 		try {
 			ArrayList<String> indexNames = new ArrayList<String>();
 			log.info("Searching database <" + mongoConfig.getDatabaseName() + "> for indexes");
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
-			Set<String> allCollections = db.getCollectionNames();
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
+			MongoIterable<String> allCollections = db.listCollectionNames();
 			
 			for (String collection : allCollections) {
 				if (collection.endsWith(LumongoIndex.CONFIG_SUFFIX)) {

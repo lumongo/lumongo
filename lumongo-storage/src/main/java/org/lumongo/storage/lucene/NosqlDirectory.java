@@ -34,5 +34,6 @@ public interface NosqlDirectory {
 	public void deleteFile(NosqlFile nosqlFile) throws IOException;
 	
 	public void close();
-	
+
+	public void rename(String source, String dest) throws IOException;
 }

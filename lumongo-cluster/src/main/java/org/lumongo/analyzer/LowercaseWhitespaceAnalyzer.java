@@ -12,9 +12,9 @@ public class LowercaseWhitespaceAnalyzer extends Analyzer {
 	}
 	
 	@Override
-	protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
+	protected TokenStreamComponents createComponents(final String fieldName) {
 		
-		WhitespaceTokenizer src = new WhitespaceTokenizer(reader);
+		WhitespaceTokenizer src = new WhitespaceTokenizer();
 		TokenStream tok = new LowerCaseFilter(src);
 		
 		return new TokenStreamComponents(src, tok);

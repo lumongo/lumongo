@@ -54,8 +54,8 @@ public final class StandardNoStopAnalyzer extends Analyzer {
 	}
 	
 	@Override
-	protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
-		final StandardTokenizer src = new StandardTokenizer(reader);
+	protected TokenStreamComponents createComponents(final String fieldName) {
+		final StandardTokenizer src = new StandardTokenizer();
 		src.setMaxTokenLength(maxTokenLength);
 		TokenStream tok = new StandardFilter(src);
 		tok = new LowerCaseFilter(tok);

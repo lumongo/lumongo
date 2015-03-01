@@ -7,7 +7,6 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -21,7 +20,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.util.Version;
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.TestHelper;
@@ -42,12 +40,13 @@ public class BasicStorageTest {
 	
 	@BeforeClass
 	public static void cleanDatabaseAndInit() throws Exception {
+
 		MongoClient mongo = TestHelper.getMongo();
 		mongo.dropDatabase(TestHelper.TEST_DATABASE_NAME);
 		directory = new DistributedDirectory(new MongoDirectory(mongo, TestHelper.TEST_DATABASE_NAME, STORAGE_TEST_INDEX, false, false));
 		
 		StandardAnalyzer analyzer = new StandardAnalyzer();
-		IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, analyzer);
+		IndexWriterConfig config = new IndexWriterConfig(analyzer);
 		
 		IndexWriter w = new IndexWriter(directory, config);
 		
@@ -78,27 +77,59 @@ public class BasicStorageTest {
 		w.updateDocument(uidTerm, doc);
 	}
 	
+	private static int runQuery(IndexReader indexReader, QueryParser qp, String queryStr, int count) throws IOException, ParseException {
+		Query q = qp.parse(queryStr);
+
+		return runQuery(indexReader, count, q);
+
+	}
+	
+	private static int runQuery(IndexReader indexReader, int count, Query q) throws IOException {
+		long start = System.currentTimeMillis();
+		IndexSearcher searcher = new IndexSearcher(indexReader);
+		TopScoreDocCollector collector = TopScoreDocCollector.create(count);
+
+		searcher.search(q, collector);
+		ScoreDoc[] hits = collector.topDocs().scoreDocs;
+		int totalHits = collector.getTotalHits();
+		@SuppressWarnings("unused")
+		long searchTime = System.currentTimeMillis() - start;
+
+		start = System.currentTimeMillis();
+
+		List<String> ids = new ArrayList<String>();
+		for (ScoreDoc hit : hits) {
+			int docId = hit.doc;
+			Document d = searcher.doc(docId);
+			ids.add(d.get("uid"));
+		}
+		@SuppressWarnings("unused")
+		long fetchTime = System.currentTimeMillis() - start;
+
+		return totalHits;
+	}
+	
 	@Test
-	public void test2Query() throws ParseException, IOException {
+	public void test2Query() throws IOException, ParseException {
 		IndexReader indexReader = DirectoryReader.open(directory);
-		
+
 		StandardAnalyzer analyzer = new StandardAnalyzer();
 		QueryParser qp = new QueryParser("title", analyzer) {
-			
+
 			@Override
 			protected Query getRangeQuery(final String fieldName, final String start, final String end, final boolean startInclusive,
 							final boolean endInclusive)
 							throws ParseException {
-				
+
 				if ("testIntField".equals(fieldName)) {
 					return NumericRangeQuery.newIntRange(fieldName, Integer.parseInt(start), Integer.parseInt(end), startInclusive, endInclusive);
 				}
-				
+
 				// return default
 				return super.getRangeQuery(fieldName, start, end, startInclusive, endInclusive);
-				
+
 			}
-			
+
 			@Override
 			protected Query newTermQuery(org.apache.lucene.index.Term term) {
 				String field = term.field();
@@ -110,9 +141,9 @@ public class BasicStorageTest {
 				return super.newTermQuery(term);
 			}
 		};
-		
+
 		int hits = 0;
-		
+
 		hits = runQuery(indexReader, qp, "java", 10);
 		assertEquals("Expected 2 hits", 2, hits);
 		hits = runQuery(indexReader, qp, "perl", 10);
@@ -131,40 +162,8 @@ public class BasicStorageTest {
 		assertEquals("Expected 0 hits", 0, hits);
 		hits = runQuery(indexReader, qp, "testIntField:3", 10);
 		assertEquals("Expected 5 hits", 5, hits);
-		
+
 		indexReader.close();
-	}
-	
-	private static int runQuery(IndexReader indexReader, QueryParser qp, String queryStr, int count) throws ParseException, CorruptIndexException, IOException {
-		Query q = qp.parse(queryStr);
-		
-		return runQuery(indexReader, count, q);
-		
-	}
-	
-	private static int runQuery(IndexReader indexReader, int count, Query q) throws IOException, CorruptIndexException {
-		long start = System.currentTimeMillis();
-		IndexSearcher searcher = new IndexSearcher(indexReader);
-		TopScoreDocCollector collector = TopScoreDocCollector.create(count, true);
-		
-		searcher.search(q, collector);
-		ScoreDoc[] hits = collector.topDocs().scoreDocs;
-		int totalHits = collector.getTotalHits();
-		@SuppressWarnings("unused")
-		long searchTime = System.currentTimeMillis() - start;
-		
-		start = System.currentTimeMillis();
-		
-		List<String> ids = new ArrayList<String>();
-		for (ScoreDoc hit : hits) {
-			int docId = hit.doc;
-			Document d = searcher.doc(docId);
-			ids.add(d.get("uid"));
-		}
-		@SuppressWarnings("unused")
-		long fetchTime = System.currentTimeMillis() - start;
-		
-		return totalHits;
 	}
 	
 	@Test
@@ -178,7 +177,7 @@ public class BasicStorageTest {
 			Directory directory = new DistributedDirectory(new MongoDirectory(mongo, databaseName, STORAGE_TEST_INDEX));
 			
 			StandardAnalyzer analyzer = new StandardAnalyzer();
-			IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, analyzer);
+			IndexWriterConfig config = new IndexWriterConfig(analyzer);
 			IndexWriter w = new IndexWriter(directory, config);
 			
 			boolean applyDeletes = true;
@@ -207,8 +206,11 @@ public class BasicStorageTest {
 		{
 			MongoClient mongo = new MongoClient(hostName);
 			DistributedDirectory d = new DistributedDirectory(new MongoDirectory(mongo, databaseName, STORAGE_TEST_INDEX));
-			
-			d.copyToFSDirectory(new File("/tmp/fsdirectory"));
+
+			File f = new File("/tmp/fsdirectory");
+			f.mkdirs();
+
+			d.copyToFSDirectory(f.toPath());
 			
 			d.close();
 		}

@@ -2,17 +2,19 @@ package org.lumongo.storage.rawfiles;
 
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
-import com.mongodb.CommandResult;
 import com.mongodb.DB;
-import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSFile;
 import org.apache.log4j.Logger;
 import org.bson.BSON;
-import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.Metadata;
@@ -56,49 +58,43 @@ public class MongoDocumentStorage implements DocumentStorage {
 		this.database = dbName;
 		this.rawCollectionName = rawCollectionName;
 		
-		DB storageDb = pool.getDB(database);
-		DBCollection coll = storageDb.getCollection(ASSOCIATED_FILES + "." + FILES);
-		coll.createIndex(new BasicDBObject(ASSOCIATED_METADATA + "." + DOCUMENT_UNIQUE_ID_KEY, 1));
+		MongoDatabase storageDb = pool.getDatabase(database);
+		MongoCollection<Document> coll = storageDb.getCollection(ASSOCIATED_FILES + "." + FILES);
+		coll.createIndex(new Document(ASSOCIATED_METADATA + "." + DOCUMENT_UNIQUE_ID_KEY, 1));
 		
 		if (sharded) {
 			
-			DB adminDb = pool.getDB(MongoConstants.StandardDBs.ADMIN);
+			MongoDatabase adminDb = pool.getDatabase(MongoConstants.StandardDBs.ADMIN);
 			DBObject enableCommand = new BasicDBObject();
 			enableCommand.put(MongoConstants.Commands.ENABLE_SHARDING, database);
-			CommandResult cr = adminDb.command(enableCommand);
-			if (cr.getErrorMessage() != null) {
-				System.err.println("Failed to enable sharding on the database <" + database + "> because <" + cr.getErrorMessage() + ">");
-			}
-			
+			adminDb.executeCommand(enableCommand);
+
 			shardCollection(storageDb, adminDb, rawCollectionName);
 			shardCollection(storageDb, adminDb, ASSOCIATED_FILES + "." + CHUNKS);
 		}
 	}
 	
-	private void shardCollection(DB db, DB adminDb, String collectionName) {
-		CommandResult cr;
-		DBObject shardCommand = new BasicDBObject();
-		DBCollection collection = db.getCollection(collectionName);
-		shardCommand.put(MongoConstants.Commands.SHARD_COLLECTION, collection.getFullName());
+	private void shardCollection(MongoDatabase db, MongoDatabase adminDb, String collectionName) {
+		Document shardCommand = new Document();
+		MongoCollection<Document> collection = db.getCollection(collectionName);
+		shardCommand.put(MongoConstants.Commands.SHARD_COLLECTION, collection.getNamespace().getFullName());
 		shardCommand.put(MongoConstants.Commands.SHARD_KEY, new BasicDBObject(MongoConstants.StandardFields._ID, 1));
-		cr = adminDb.command(shardCommand);
-		if (cr.getErrorMessage() != null) {
-			System.err.println("Failed to shard the collection <" + collectionName + "> because <" + cr.getErrorMessage() + ">");
-		}
+		adminDb.executeCommand(shardCommand);
 	}
 	
 	private GridFS createGridFSConnection() {
+		//Grid FS does not use the new api yet as of java driver 3.0-beta-2
 		DB db = pool.getDB(database);
 		return new GridFS(db, ASSOCIATED_FILES);
 	}
 	
 	@Override
-	public void storeSourceDocument(String uniqueId, long timeStamp, BSONObject document, List<Metadata> metaDataList) throws Exception {
-		DB db = pool.getDB(database);
-		DBCollection coll = db.getCollection(rawCollectionName);
-		DBObject object = new BasicDBObject();
+	public void storeSourceDocument(String uniqueId, long timeStamp, BasicBSONObject document, List<Metadata> metaDataList) throws Exception {
+		MongoDatabase db = pool.getDatabase(database);
+		MongoCollection<Document> coll = db.getCollection(rawCollectionName);
+		Document object = new Document();
 		object.putAll(document);
-		
+
 		if (!metaDataList.isEmpty()) {
 			DBObject metadata = new BasicDBObject();
 			for (Metadata meta : metaDataList) {
@@ -110,23 +106,23 @@ public class MongoDocumentStorage implements DocumentStorage {
 		object.put(TIMESTAMP, timeStamp);
 		object.put(MongoConstants.StandardFields._ID, uniqueId);
 		
-		DBObject query = new BasicDBObject(MongoConstants.StandardFields._ID, uniqueId);
+		Document query = new Document(MongoConstants.StandardFields._ID, uniqueId);
 		
-		coll.update(query, object, true, false);
+		coll.replaceOne(query, object, new UpdateOptions().upsert(true));
 	}
 	
 	@Override
 	public ResultDocument getSourceDocument(String uniqueId, FetchType fetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception {
 		if (!FetchType.NONE.equals(fetchType)) {
-			DB db = pool.getDB(database);
-			DBCollection coll = db.getCollection(rawCollectionName);
-			DBObject search = new BasicDBObject(MongoConstants.StandardFields._ID, uniqueId);
+			MongoDatabase db = pool.getDatabase(database);
+			MongoCollection<Document> coll = db.getCollection(rawCollectionName);
+			Document search = new Document(MongoConstants.StandardFields._ID, uniqueId);
 			
-			DBObject fields = null;
+			Document fields = null;
 			
 			if (FetchType.FULL.equals(fetchType)) {
 				if (!fieldsToReturn.isEmpty() || !fieldsToMask.isEmpty()) {
-					fields = new BasicDBObject();
+					fields = new Document();
 					
 					if (!fieldsToReturn.isEmpty()) {
 						for (String fieldToReturn : fieldsToReturn) {
@@ -140,9 +136,9 @@ public class MongoDocumentStorage implements DocumentStorage {
 						for (String fieldToMask : fieldsToMask) {
 							fields.put(fieldToMask, 0);
 						}
-						fields.removeField(TIMESTAMP);
-						fields.removeField(METADATA);
-						fields.removeField(MongoConstants.StandardFields._ID);
+						fields.remove(TIMESTAMP);
+						fields.remove(METADATA);
+						fields.remove(MongoConstants.StandardFields._ID);
 					}
 					
 					if (!fieldsToReturn.isEmpty() && !fieldsToMask.isEmpty()) {
@@ -151,32 +147,33 @@ public class MongoDocumentStorage implements DocumentStorage {
 				}
 			}
 			else if (FetchType.META.equals(fetchType)) {
-				fields = new BasicDBObject();
+				fields = new Document();
 				fields.put(MongoConstants.StandardFields._ID, 1);
 				fields.put(TIMESTAMP, 1);
 				fields.put(METADATA, 1);
 			}
 			
-			DBObject result = coll.findOne(search, fields);
+			Document result = coll.find(search).projection(fields).first();
 			
 			if (null != result) {
 				
-				long timestamp = (long) result.removeField(TIMESTAMP);
+				long timestamp = (long) result.remove(TIMESTAMP);
 				
 				ResultDocument.Builder dBuilder = ResultDocument.newBuilder();
 				dBuilder.setUniqueId(uniqueId);
 				dBuilder.setTimestamp(timestamp);
 				
-				if (result.containsField(METADATA)) {
-					DBObject metadata = (DBObject) result.removeField(METADATA);
+				if (result.containsKey(METADATA)) {
+					DBObject metadata = (DBObject) result.remove(METADATA);
 					for (String key : metadata.keySet()) {
 						dBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue((String) metadata.get(key)));
 					}
 				}
 				
 				if (FetchType.FULL.equals(fetchType)) {
-					
-					ByteString document = ByteString.copyFrom(BSON.encode(result));
+					BasicDBObject resultObj = new BasicDBObject();
+					resultObj.putAll(result);
+					ByteString document = ByteString.copyFrom(BSON.encode(resultObj));
 					dBuilder.setDocument(document);
 				}
 				
@@ -189,10 +186,10 @@ public class MongoDocumentStorage implements DocumentStorage {
 	
 	@Override
 	public void deleteSourceDocument(String uniqueId) throws Exception {
-		DB db = pool.getDB(database);
-		DBCollection coll = db.getCollection(rawCollectionName);
+		MongoDatabase db = pool.getDatabase(database);
+		MongoCollection<Document> coll = db.getCollection(rawCollectionName);
 		DBObject search = new BasicDBObject(MongoConstants.StandardFields._ID, uniqueId);
-		coll.remove(search);
+		coll.deleteOne(search);
 	}
 	
 	@Override
@@ -200,14 +197,14 @@ public class MongoDocumentStorage implements DocumentStorage {
 		GridFS gridFS = createGridFSConnection();
 		gridFS.remove(new BasicDBObject());
 		
-		DB db = pool.getDB(database);
-		DBCollection coll = db.getCollection(rawCollectionName);
-		coll.remove(new BasicDBObject());
+		MongoDatabase db = pool.getDatabase(database);
+		MongoCollection<Document> coll = db.getCollection(rawCollectionName);
+		coll.deleteMany(new Document());
 	}
 	
 	@Override
 	public void drop() {
-		DB db = pool.getDB(database);
+		MongoDatabase db = pool.getDatabase(database);
 		db.dropDatabase();
 	}
 	

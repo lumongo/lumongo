@@ -1,7 +1,6 @@
 package org.lumongo.server.config;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.lumongo.util.properties.PropertiesReader;
 import org.lumongo.util.properties.PropertiesReader.PropertyException;
 
@@ -64,13 +63,13 @@ public class LocalNodeConfig {
 		return restPort;
 	}
 	
-	public DBObject toDBObject() {
-		DBObject dbObject = new BasicDBObject();
-		dbObject.put(HAZELCAST_PORT, hazelcastPort);
-		dbObject.put(INTERNAL_SERVICE_PORT, internalServicePort);
-		dbObject.put(EXTERNAL_SERVICE_PORT, externalServicePort);
-		dbObject.put(REST_PORT, restPort);
-		return dbObject;
+	public Document toDocument() {
+		Document document = new Document();
+		document.put(HAZELCAST_PORT, hazelcastPort);
+		document.put(INTERNAL_SERVICE_PORT, internalServicePort);
+		document.put(EXTERNAL_SERVICE_PORT, externalServicePort);
+		document.put(REST_PORT, restPort);
+		return document;
 		
 	}
 	
@@ -78,12 +77,12 @@ public class LocalNodeConfig {
 		return (restPort != -1);
 	}
 	
-	public static LocalNodeConfig fromDBObject(DBObject settings) {
+	public static LocalNodeConfig fromDocument(Document settings) {
 		LocalNodeConfig localNodeConfig = new LocalNodeConfig();
 		localNodeConfig.hazelcastPort = (int) settings.get(HAZELCAST_PORT);
 		localNodeConfig.internalServicePort = (int) settings.get(INTERNAL_SERVICE_PORT);
 		localNodeConfig.externalServicePort = (int) settings.get(EXTERNAL_SERVICE_PORT);
-		if (settings.containsField(REST_PORT)) {
+		if (settings.containsKey(REST_PORT)) {
 			localNodeConfig.restPort = (int) settings.get(REST_PORT);
 		}
 		

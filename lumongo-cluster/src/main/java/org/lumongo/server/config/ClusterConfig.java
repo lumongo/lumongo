@@ -1,7 +1,6 @@
 package org.lumongo.server.config;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.lumongo.util.properties.PropertiesReader;
 import org.lumongo.util.properties.PropertiesReader.PropertyException;
 
@@ -97,21 +96,21 @@ public class ClusterConfig {
 		return externalShutdownTimeout;
 	}
 	
-	public DBObject toDBObject() {
-		DBObject dbObject = new BasicDBObject();
-		dbObject.put(SHARDED, sharded);
-		dbObject.put(INDEX_BLOCK_SIZE, indexBlockSize);
-		dbObject.put(MAX_INDEX_BLOCKS, maxIndexBlocks);
-		dbObject.put(MAX_INTERNAL_CLIENT_CONNECTIONS, maxInternalClientConnections);
-		dbObject.put(INTERNAL_WORKERS, internalWorkers);
-		dbObject.put(EXTERNAL_WORKERS, externalWorkers);
-		dbObject.put(INTERNAL_SHUTDOWN_TIMEOUT, internalShutdownTimeout);
-		dbObject.put(EXTERNAL_SHUTDOWN_TIMEOUT, externalShutdownTimeout);
-		return dbObject;
+	public Document toDocument() {
+		Document document = new Document();
+		document.put(SHARDED, sharded);
+		document.put(INDEX_BLOCK_SIZE, indexBlockSize);
+		document.put(MAX_INDEX_BLOCKS, maxIndexBlocks);
+		document.put(MAX_INTERNAL_CLIENT_CONNECTIONS, maxInternalClientConnections);
+		document.put(INTERNAL_WORKERS, internalWorkers);
+		document.put(EXTERNAL_WORKERS, externalWorkers);
+		document.put(INTERNAL_SHUTDOWN_TIMEOUT, internalShutdownTimeout);
+		document.put(EXTERNAL_SHUTDOWN_TIMEOUT, externalShutdownTimeout);
+		return document;
 		
 	}
 	
-	public static ClusterConfig fromDBObject(DBObject settings) {
+	public static ClusterConfig fromDBObject(Document settings) {
 		ClusterConfig clusterConfig = new ClusterConfig();
 		clusterConfig.sharded = (boolean) settings.get(SHARDED);
 		clusterConfig.indexBlockSize = (int) settings.get(INDEX_BLOCK_SIZE);

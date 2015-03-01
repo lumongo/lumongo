@@ -147,7 +147,7 @@ public class IndexConfig {
 	public void setSegmentQueryCacheMaxAmount(Integer segmentQueryCacheMaxAmount) {
 		this.segmentQueryCacheMaxAmount = segmentQueryCacheMaxAmount;
 	}
-	
+
 	public void addFieldConfig(FieldConfigBuilder FieldConfigBuilder) {
 		addFieldConfig(FieldConfigBuilder.build());
 	}
