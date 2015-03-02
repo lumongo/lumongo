@@ -38,8 +38,7 @@ public class SingleNodeTest extends ServerTestBase {
 	public static final String MY_TEST_INDEX = "myTestIndex";
 	
 	public static final String FACET_TEST_INDEX = "facetTestIndex";
-	
-	private LumongoWorkPool lumongoWorkPool;
+
 	
 	@BeforeClass
 	public void test01Start() throws Exception {

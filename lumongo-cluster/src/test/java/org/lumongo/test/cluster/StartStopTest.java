@@ -36,9 +36,9 @@ import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
 
 public class StartStopTest extends ServerTestBase {
-	public static final String MY_TEST_INDEX = "myTestIndexStartStop";
-	
-	public static final String FACET_TEST_INDEX = "facetTestIndexStartStop";
+
+	//public static final String FACET_TEST_INDEX = "plugged-54a725bc148f6dd7d62bc600";
+	public static final String FACET_TEST_INDEX = "plugged";
 
 
 	private final int COUNT_PER_ISSN = 10;
@@ -68,8 +68,7 @@ public class StartStopTest extends ServerTestBase {
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("country").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("date").indexAs(LMAnalyzer.DATE).facetAs(LMFacetType.DATE_YYYY_MM_DD));
-		
-		lumongoWorkPool.createIndex(MY_TEST_INDEX, 16, "uid", indexConfig);
+
 		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, "uid", indexConfig);
 	}
 	
@@ -134,7 +133,7 @@ public class StartStopTest extends ServerTestBase {
 
 
 	@Test
-	public void test04ConfirmCounts() throws Exception {
+	public void test05ConfirmCounts() throws Exception {
 		LumongoWorkPool lumongoWorkPool = getLumongoWorkPool();
 		{
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "issn");
