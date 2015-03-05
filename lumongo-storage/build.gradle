@@ -6,7 +6,7 @@ configurations { luceneTestFramework }
 
 dependencies {
 
-	compile 'org.mongodb:mongo-java-driver:3.0.0-beta2'
+	compile 'org.mongodb:mongo-java-driver:3.0.0-beta3'
 	compile 'com.google.guava:guava:18.0'
 	compile 'log4j:log4j:1.2.17'
 	compile 'org.apache.lucene:lucene-core:5.0.0'
