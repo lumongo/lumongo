@@ -176,6 +176,7 @@ message FieldConfig {
 	required string storedFieldName = 1;
 	repeated IndexAs indexAs = 2;
 	repeated FacetAs facetAs = 3;
+    optional SortAs sortAs = 4;
 }
 
 message IndexAs {
@@ -191,6 +192,17 @@ message FacetAs {
 	}
 	required string facetName = 1;
 	required LMFacetType facetType = 2;
+}
+
+message SortAs {
+    enum SortType {
+        STRING = 1;
+        STRING_SET = 2;
+        NUMERIC = 3;
+        NUMERIC_SET = 4;
+    }
+    required string sortFieldName = 1;
+    required SortType sortType = 2;
 }
 
 message IndexSettingsResponse {

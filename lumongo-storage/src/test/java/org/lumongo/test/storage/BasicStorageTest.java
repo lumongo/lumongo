@@ -5,8 +5,14 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.NumericDocValuesField;
+import org.apache.lucene.document.SortedDocValuesField;
+import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -18,8 +24,13 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.SortedSetSortField;
+import org.apache.lucene.search.TopFieldCollector;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.BytesRef;
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.TestHelper;
@@ -30,6 +41,7 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import static org.testng.AssertJUnit.assertEquals;
@@ -72,12 +84,19 @@ public class BasicStorageTest {
 		doc.add(new TextField("uid", uid, Field.Store.YES));
 		doc.add(new StringField("uid", uid, Field.Store.YES));
 		doc.add(new IntField("testIntField", 3, Field.Store.YES));
-		
+		long date = System.currentTimeMillis();
+		doc.add(new LongField("date", date, Field.Store.YES));
+		doc.add(new NumericDocValuesField("date", date));
+		doc.add(new SortedSetDocValuesField("category", new BytesRef("Anything")));
 		Term uidTerm = new Term("uid", uid);
+
+
+
 		w.updateDocument(uidTerm, doc);
 	}
 	
 	private static int runQuery(IndexReader indexReader, QueryParser qp, String queryStr, int count) throws IOException, ParseException {
+
 		Query q = qp.parse(queryStr);
 
 		return runQuery(indexReader, count, q);
@@ -87,9 +106,16 @@ public class BasicStorageTest {
 	private static int runQuery(IndexReader indexReader, int count, Query q) throws IOException {
 		long start = System.currentTimeMillis();
 		IndexSearcher searcher = new IndexSearcher(indexReader);
-		TopScoreDocCollector collector = TopScoreDocCollector.create(count);
+		
+		Sort sort = new Sort();
 
+		sort.setSort(new SortedSetSortField("category", false));
+		
+		TopFieldCollector collector = TopFieldCollector.create(sort, 10, null, true, true, true);
+		
 		searcher.search(q, collector);
+		
+		
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
 		int totalHits = collector.getTotalHits();
 		@SuppressWarnings("unused")
@@ -102,6 +128,7 @@ public class BasicStorageTest {
 			int docId = hit.doc;
 			Document d = searcher.doc(docId);
 			ids.add(d.get("uid"));
+
 		}
 		@SuppressWarnings("unused")
 		long fetchTime = System.currentTimeMillis() - start;
@@ -141,6 +168,7 @@ public class BasicStorageTest {
 				return super.newTermQuery(term);
 			}
 		};
+		qp.setAllowLeadingWildcard(true);
 
 		int hits = 0;
 
@@ -161,6 +189,8 @@ public class BasicStorageTest {
 		hits = runQuery(indexReader, qp, "testIntField:1", 10);
 		assertEquals("Expected 0 hits", 0, hits);
 		hits = runQuery(indexReader, qp, "testIntField:3", 10);
+		assertEquals("Expected 5 hits", 5, hits);
+		hits = runQuery(indexReader, qp, "date:*", 10);
 		assertEquals("Expected 5 hits", 5, hits);
 
 		indexReader.close();

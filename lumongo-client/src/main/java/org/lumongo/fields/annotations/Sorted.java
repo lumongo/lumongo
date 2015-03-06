@@ -1,5 +1,6 @@
 package org.lumongo.fields.annotations;
 
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 
 import java.lang.annotation.Documented;
@@ -15,7 +16,7 @@ import java.lang.annotation.Target;
 @Target({ ElementType.FIELD })
 public @interface Sorted {
 	
-	LMFacetType type() default LMFacetType.STANDARD;
+	Lumongo.SortAs.SortType type();
 	
-	String name() default "";
+	String fieldName() default "";
 }

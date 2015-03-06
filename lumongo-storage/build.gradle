@@ -13,6 +13,7 @@ dependencies {
     compile 'org.apache.lucene:lucene-backward-codecs:5.0.0'
 	testCompile 'org.apache.lucene:lucene-analyzers-common:5.0.0'
     testCompile 'org.apache.lucene:lucene-queryparser:5.0.0'
+    testCompile 'org.apache.lucene:lucene-facet:5.0.0'
 	testCompile 'org.apache.lucene:lucene-test-framework:5.0.0'
 	luceneTestFramework 'org.apache.lucene:lucene-test-framework:5.0.0'
 }

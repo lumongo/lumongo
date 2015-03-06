@@ -7,6 +7,7 @@ import org.lumongo.fields.annotations.Embedded;
 import org.lumongo.fields.annotations.Faceted;
 import org.lumongo.fields.annotations.Indexed;
 import org.lumongo.fields.annotations.IndexedFields;
+import org.lumongo.fields.annotations.Sorted;
 import org.lumongo.fields.annotations.UniqueId;
 import org.lumongo.util.AnnotationUtil;
 
@@ -102,6 +103,16 @@ public class FieldConfigMapper<T> {
 
 				fieldConfigBuilder.addFacetAs(Lumongo.FacetAs.newBuilder().setFacetName(facetName).setFacetType(facetType));
 			}
+
+			if (f.isAnnotationPresent(Sorted.class)) {
+				Sorted sorted = f.getAnnotation(Sorted.class);
+				String sortFieldName = fieldName;
+				if (!sorted.fieldName().isEmpty()) {
+					sortFieldName = sorted.fieldName();
+				}
+				fieldConfigBuilder.setSortAs(Lumongo.SortAs.newBuilder().setSortType(sorted.type()).setSortFieldName(sortFieldName));
+			}
+
 			fieldConfigMap.put(fieldName, fieldConfigBuilder.build());
 		}
 

@@ -1,6 +1,7 @@
 package org.lumongo.server.config;
 
 import org.bson.Document;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FacetAs;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
@@ -36,10 +37,13 @@ public class IndexConfig {
 	public static final String INDEXED_FIELD_NAME = "indexedFieldName";
 	public static final String INDEX_AS = "indexAs";
 	public static final String FACET_AS = "facetAs";
+	public static final String SORT_AS = "sortAs";
 	public static final String FACET_NAME = "facetName";
 	public static final String ANALYZER = "analyzer";
 	public static final String FACET_TYPE = "facetType";
-	
+	public static final String SORT_TYPE = "sortType";
+	public static final String SORT_FIELD_NAME = "sortFieldName";
+
 	private String defaultSearchField;
 	private boolean applyUncommitedDeletes;
 	private double requestFactor;
@@ -56,7 +60,8 @@ public class IndexConfig {
 	private boolean blockCompression;
 	private double segmentTolerance;
 	private ConcurrentHashMap<String, FieldConfig> fieldConfigMap;
-	private ConcurrentHashMap<String, IndexAs> indexAsMap;
+	private ConcurrentHashMap<String, Lumongo.IndexAs> indexAsMap;
+	private ConcurrentHashMap<String, Lumongo.SortAs> sortAsMap;
 	
 	protected IndexConfig() {
 		
@@ -94,6 +99,7 @@ public class IndexConfig {
 		this.fieldConfigMap = fieldConfigMap;
 
 		this.indexAsMap = buildIndexConfig();
+		this.sortAsMap = buildSortConfig();
 		
 	}
 	
@@ -124,6 +130,19 @@ public class IndexConfig {
 		}
 		return indexAsMap;
 	}
+
+	private ConcurrentHashMap<String, Lumongo.SortAs> buildSortConfig() {
+		ConcurrentHashMap<String, Lumongo.SortAs> sortAsMap = new ConcurrentHashMap<>();
+		for (String storedFieldName : fieldConfigMap.keySet()) {
+			FieldConfig fc = fieldConfigMap.get(storedFieldName);
+			Lumongo.SortAs sortAs = fc.getSortAs();
+			if (sortAs != null) {
+				sortAsMap.put(sortAs.getSortFieldName(), sortAs);
+			}
+		}
+		return sortAsMap;
+	}
+
 	
 	public boolean isNumericOrDateField(String fieldName) {
 		return isNumericIntField(fieldName) || isNumericLongField(fieldName) || isNumericFloatField(fieldName) || isNumericDoubleField(fieldName)
@@ -149,7 +168,7 @@ public class IndexConfig {
 	public boolean isDateField(String fieldName) {
 		return LMAnalyzer.DATE.equals(getAnalyzer(fieldName));
 	}
-	
+
 	public LMAnalyzer getAnalyzer(String fieldName) {
 		IndexAs indexAs = indexAsMap.get(fieldName);
 		if (indexAs != null) {
@@ -243,12 +262,12 @@ public class IndexConfig {
 		dbObject.put(SEGMENT_QUERY_CACHE_SIZE, segmentQueryCacheSize);
 		dbObject.put(SEGMENT_QUERY_CACHE_MAX_AMOUNT, segmentQueryCacheMaxAmount);
 		
-		List<Document> fieldConfigs = new ArrayList<Document>();
+		List<Document> fieldConfigs = new ArrayList<>();
 		for (FieldConfig fc : fieldConfigMap.values()) {
 			Document fieldConfig = new Document();
 			fieldConfig.put(STORED_FIELD_NAME, fc.getStoredFieldName());
 			{
-				List<Document> indexAsObjList = new ArrayList<Document>();
+				List<Document> indexAsObjList = new ArrayList<>();
 				for (IndexAs indexAs : fc.getIndexAsList()) {
 					Document indexAsObj = new Document();
 					indexAsObj.put(ANALYZER, indexAs.getAnalyzer().name());
@@ -258,7 +277,7 @@ public class IndexConfig {
 				fieldConfig.put(INDEX_AS, indexAsObjList);
 			}
 			{
-				List<Document> facetAsObjList = new ArrayList<Document>();
+				List<Document> facetAsObjList = new ArrayList<>();
 				for (FacetAs facetAs : fc.getFacetAsList()) {
 					Document facetAsObj = new Document();
 					facetAsObj.put(FACET_TYPE, facetAs.getFacetType().name());
@@ -266,6 +285,15 @@ public class IndexConfig {
 					facetAsObjList.add(facetAsObj);
 				}
 				fieldConfig.put(FACET_AS, facetAsObjList);
+			}
+			{
+				Lumongo.SortAs sortAs = fc.getSortAs();
+				if (sortAs != null) {
+					Document sortAsObj = new Document();
+					sortAsObj.put(SORT_TYPE, sortAs.getSortType().name());
+					sortAsObj.put(SORT_FIELD_NAME, sortAs.getSortFieldName());
+					fieldConfig.put(SORT_AS, sortAs);
+				}
 			}
 			
 			fieldConfigs.add(fieldConfig);
@@ -299,7 +327,7 @@ public class IndexConfig {
 			indexConfig.segmentQueryCacheMaxAmount = (int) settings.get(SEGMENT_QUERY_CACHE_MAX_AMOUNT);
 		}
 		
-		indexConfig.fieldConfigMap = new ConcurrentHashMap<>();
+
 		
 		if (settings.containsKey(SEGMENT_FLUSH_INTERVAL)) {
 			indexConfig.segmentFlushInterval = (int) settings.get(SEGMENT_FLUSH_INTERVAL);
@@ -308,7 +336,8 @@ public class IndexConfig {
 			//make flush interval equal to segment commit interval divided by 2 if not defined (for old indexes)
 			indexConfig.segmentFlushInterval = (indexConfig.segmentCommitInterval / 2);
 		}
-		
+
+		indexConfig.fieldConfigMap = new ConcurrentHashMap<>();
 		List<Document> fieldConfigs = (List<Document>) settings.get(FIELD_CONFIGS);
 		for (Document fieldConfig : fieldConfigs) {
 			
@@ -333,10 +362,21 @@ public class IndexConfig {
 					fcBuilder.addFacetAs(FacetAs.newBuilder().setFacetType(facetType).setFacetName(facetName));
 				}
 			}
+			{
+				Document sortAsDoc = (Document) fieldConfig.get(SORT_AS);
+				if (sortAsDoc != null) {
+					String sortFieldName = (String)sortAsDoc.get(SORT_FIELD_NAME);
+					Lumongo.SortAs.SortType sortType = Lumongo.SortAs.SortType.valueOf((String) sortAsDoc.get(SORT_TYPE));
+					Lumongo.SortAs sortAs = Lumongo.SortAs.newBuilder().setSortFieldName(sortFieldName).setSortType(sortType).build();
+					fcBuilder.setSortAs(sortAs);
+				}
+			}
 			
 			indexConfig.fieldConfigMap.put(storedFieldName, fcBuilder.build());
 		}
+
 		indexConfig.indexAsMap = indexConfig.buildIndexConfig();
+		indexConfig.sortAsMap = indexConfig.buildSortConfig();
 		
 		return indexConfig;
 	}

@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.DrillDownQuery;
@@ -47,6 +48,7 @@ import org.apache.lucene.search.TopDocsCollector;
 import org.apache.lucene.search.TopFieldCollector;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.NumericUtils;
 import org.bson.BSONObject;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -147,7 +149,7 @@ public class LumongoSegment {
 
 		this.uniqueIdField = indexConfig.getUniqueIdField();
 
-		this.fetchSet = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(uniqueIdField, LumongoConstants.TIMESTAMP_FIELD)));
+		this.fetchSet = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(uniqueIdField, LumongoConstants.TIMESTAMP_FIELD)));
 
 		this.counter = new AtomicLong();
 		this.lastCommit = null;
@@ -560,7 +562,30 @@ public class LumongoSegment {
 				if (o != null) {
 					handleFacetsForStoredField(facetFields, fc, o);
 
+					Lumongo.SortAs sortAs = fc.getSortAs();
+					if (sortAs != null) {
+						String sortFieldName = sortAs.getSortFieldName();
+						if (Lumongo.SortAs.SortType.NUMERIC.equals(sortAs.getSortType())) {
+							if (o instanceof Integer) {
+								SortedNumericDocValuesField docValue = new SortedNumericDocValuesField(sortFieldName, );
+							}
+							else {
+								throw new Exception("Expecting integer, long, float, or double for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">, found <" + o.getClass() + ">");
+							}
+						}
+						else if (Lumongo.SortAs.SortType.NUMERIC_SET.equals(sortAs.getSortType())) {
+
+						}
+						else if (Lumongo.SortAs.SortType.STRING.equals(sortAs.getSortType())) {
+
+						}
+						else if (Lumongo.SortAs.SortType.STRING_SET.equals(sortAs.getSortType())) {
+
+						}
+					}
+
 					for (IndexAs indexAs : fc.getIndexAsList()) {
+
 						String indexedFieldName = indexAs.getIndexFieldName();
 						LMAnalyzer indexFieldAnalyzer = indexAs.getAnalyzer();
 						if (LMAnalyzer.NUMERIC_INT.equals(indexFieldAnalyzer)) {
