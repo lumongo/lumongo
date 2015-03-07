@@ -684,7 +684,7 @@ public class LumongoIndexManager {
 			
 			final Map<String, QueryWithFilters> queryMap = getQueryMap(request);
 			
-			final Map<String, LumongoIndex> indexSegmentMap = new HashMap<String, LumongoIndex>();
+			final Map<String, LumongoIndex> indexSegmentMap = new HashMap<>();
 			for (String indexName : request.getIndexList()) {
 				LumongoIndex i = indexMap.get(indexName);
 				if (i == null) {

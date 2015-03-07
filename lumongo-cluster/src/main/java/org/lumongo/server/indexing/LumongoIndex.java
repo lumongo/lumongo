@@ -27,6 +27,7 @@ import org.bson.BSON;
 import org.bson.BasicBSONObject;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.FetchType;
@@ -250,29 +251,25 @@ public class LumongoIndex {
 
 			log.info("Settings segments for this node <" + self + "> to <" + newSegments + ">");
 
-			for (Integer segmentNumber : segmentMap.keySet()) {
-				if (!newSegments.contains(segmentNumber)) {
-					try {
-						unloadSegment(segmentNumber);
-					}
-					catch (Exception e) {
-						log.error("Error unloading segment <" + segmentNumber + "> for index <" + indexName + ">");
-						log.error(e.getClass().getSimpleName() + ": ", e);
-					}
+			segmentMap.keySet().stream().filter(segmentNumber -> !newSegments.contains(segmentNumber)).forEach(segmentNumber -> {
+				try {
+					unloadSegment(segmentNumber);
 				}
-			}
+				catch (Exception e) {
+					log.error("Error unloading segment <" + segmentNumber + "> for index <" + indexName + ">");
+					log.error(e.getClass().getSimpleName() + ": ", e);
+				}
+			});
 
-			for (Integer segmentNumber : newSegments) {
-				if (!segmentMap.containsKey(segmentNumber)) {
-					try {
-						loadSegment(segmentNumber);
-					}
-					catch (Exception e) {
-						log.error("Error loading segment <" + segmentNumber + "> for index <" + indexName + ">");
-						log.error(e.getClass().getSimpleName() + ": ", e);
-					}
+			newSegments.stream().filter(segmentNumber -> !segmentMap.containsKey(segmentNumber)).forEach(segmentNumber -> {
+				try {
+					loadSegment(segmentNumber);
 				}
-			}
+				catch (Exception e) {
+					log.error("Error loading segment <" + segmentNumber + "> for index <" + indexName + ">");
+					log.error(e.getClass().getSimpleName() + ": ", e);
+				}
+			});
 
 		}
 		finally {
@@ -305,7 +302,7 @@ public class LumongoIndex {
 		}
 	}
 
-	public void unload() throws CorruptIndexException, IOException {
+	public void unload() throws IOException {
 		indexLock.writeLock().lock();
 		try {
 			log.info("Canceling timers for <" + indexName + ">");
@@ -395,8 +392,7 @@ public class LumongoIndex {
 	}
 
 	private String getIndexSegmentCollectionName(int segmentNumber) {
-		String indexSegmentCollectionName = indexName + "_" + segmentNumber;
-		return indexSegmentCollectionName;
+		return indexName + "_" + segmentNumber;
 	}
 
 	private String getIndexSegmentDbName(int segmentNumber) {
@@ -462,7 +458,7 @@ public class LumongoIndex {
 
 			IExecutorService executorService = hazelcastManager.getExecutorService();
 
-			List<Future<Void>> results = new ArrayList<Future<Void>>();
+			List<Future<Void>> results = new ArrayList<>();
 
 			for (Member m : currentMembers) {
 
@@ -558,7 +554,7 @@ public class LumongoIndex {
 					memberToSegmentMap.get(maxMember).remove(valueToMove);
 
 					if (!memberToSegmentMap.containsKey(minMember)) {
-						memberToSegmentMap.put(minMember, new HashSet<Integer>());
+						memberToSegmentMap.put(minMember, new HashSet<>());
 					}
 
 					memberToSegmentMap.get(minMember).add(valueToMove);
@@ -588,10 +584,10 @@ public class LumongoIndex {
 			// ensure all members are in the map and contain an empty set
 			for (Member m : currentMembers) {
 				if (!memberToSegmentMap.containsKey(m)) {
-					memberToSegmentMap.put(m, new HashSet<Integer>());
+					memberToSegmentMap.put(m, new HashSet<>());
 				}
 				if (memberToSegmentMap.get(m) == null) {
-					memberToSegmentMap.put(m, new HashSet<Integer>());
+					memberToSegmentMap.put(m, new HashSet<>());
 				}
 			}
 
@@ -603,19 +599,17 @@ public class LumongoIndex {
 				Set<Integer> segments = memberToSegmentMap.get(m);
 
 				Set<Integer> invalidSegments = new HashSet<>();
-				for (int segment : segments) {
-					// check if valid segment
-					if (!allSegments.contains(segment)) {
-						if ((segment < 0) || (segment >= indexConfig.getNumberOfSegments())) {
-							log.error("Segment <" + segment + "> should not exist for cluster");
-						}
-						else {
-							log.error("Segment <" + segment + "> is duplicated in node <" + m + ">");
-						}
-						invalidSegments.add(segment);
-
+				// check if valid segment
+				segments.stream().filter(segment -> !allSegments.contains(segment)).forEach(segment -> {
+					if ((segment < 0) || (segment >= indexConfig.getNumberOfSegments())) {
+						log.error("Segment <" + segment + "> should not exist for cluster");
 					}
-				}
+					else {
+						log.error("Segment <" + segment + "> is duplicated in node <" + m + ">");
+					}
+					invalidSegments.add(segment);
+
+				});
 				// remove any invalid segments for the cluster
 				segments.removeAll(invalidSegments);
 				// remove from all segments to keep track of segments already used
@@ -653,8 +647,7 @@ public class LumongoIndex {
 		indexLock.readLock().lock();
 		try {
 			int segmentNumber = getSegmentNumberForUniqueId(uniqueId);
-			Member owner = segmentToMemberMap.get(segmentNumber);
-			return owner;
+			return segmentToMemberMap.get(segmentNumber);
 		}
 		finally {
 			indexLock.readLock().unlock();
@@ -662,7 +655,7 @@ public class LumongoIndex {
 	}
 
 	public Map<Integer, Member> getSegmentToMemberMap() {
-		return new HashMap<Integer, Member>(segmentToMemberMap);
+		return new HashMap<>(segmentToMemberMap);
 	}
 
 	private int getSegmentNumberForUniqueId(String uniqueId) {
@@ -823,8 +816,8 @@ public class LumongoIndex {
 
 			final int requestedAmount = amount;
 
-			final HashMap<Integer, FieldDoc> lastScoreDocMap = new HashMap<Integer, FieldDoc>();
-			FieldDoc after = null;
+			final HashMap<Integer, FieldDoc> lastScoreDocMap = new HashMap<>();
+			FieldDoc after;
 
 			LastResult lr = queryRequest.getLastResult();
 			if (lr != null) {
@@ -849,22 +842,26 @@ public class LumongoIndex {
 							for (FieldSort fs : sortRequest.getFieldSortList()) {
 
 								String sortField = fs.getSortField();
+								Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
 
-								if (indexConfig.isNumericOrDateField(sortField)) {
-									if (indexConfig.isNumericIntField(sortField)) {
+								if (IndexConfig.isNumericOrDateSortType(sortType)) {
+									if (IndexConfig.isNumericIntSortType(sortType)) {
 										sortTerms[sortTermsIndex] = sr.getSortInteger(intIndex++);
 									}
-									else if (indexConfig.isNumericLongField(sortField)) {
+									else if (IndexConfig.isNumericLongSortType(sortType)) {
 										sortTerms[sortTermsIndex] = sr.getSortLong(longIndex++);
 									}
-									else if (indexConfig.isNumericFloatField(sortField)) {
+									else if (IndexConfig.isNumericFloatSortType(sortType)) {
 										sortTerms[sortTermsIndex] = sr.getSortFloat(floatIndex++);
 									}
-									else if (indexConfig.isNumericDoubleField(sortField)) {
+									else if (IndexConfig.isNumericDoubleSortType(sortType)) {
 										sortTerms[sortTermsIndex] = sr.getSortDouble(doubleIndex++);
 									}
-									else if (indexConfig.isDateField(sortField)) {
+									else if (IndexConfig.isNumericDateSortType(sortType)) {
 										sortTerms[sortTermsIndex] = sr.getSortDate(dateIndex++);
+									}
+									else {
+										throw new Exception ("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
 									}
 								}
 								else { //string
@@ -886,16 +883,10 @@ public class LumongoIndex {
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<SegmentResponse> response = segmentPool.submit(new Callable<SegmentResponse>() {
-
-					@Override
-					public SegmentResponse call() throws Exception {
-						return segment.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()),
-										queryRequest.getFacetRequest(), queryRequest.getSortRequest(), queryRequest.getRealTime(),
-										new QueryCacheKey(queryRequest));
-					}
-
-				});
+				Future<SegmentResponse> response = segmentPool.submit(
+								() -> segment.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()),
+												queryRequest.getFacetRequest(), queryRequest.getSortRequest(), queryRequest.getRealTime(),
+												new QueryCacheKey(queryRequest)));
 
 				responses.add(response);
 
@@ -973,7 +964,7 @@ public class LumongoIndex {
 
 					s.updateIndexSettings(indexSettings, indexWriter, taxonomyWriter);
 				}
-				catch (Exception e) {
+				catch (Exception ignored) {
 				}
 			}
 
@@ -1003,14 +994,7 @@ public class LumongoIndex {
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<SegmentCountResponse> response = segmentPool.submit(new Callable<SegmentCountResponse>() {
-
-					@Override
-					public SegmentCountResponse call() throws Exception {
-						return segment.getNumberOfDocs(realTime);
-					}
-
-				});
+				Future<SegmentCountResponse> response = segmentPool.submit(() -> segment.getNumberOfDocs(realTime));
 
 				responses.add(response);
 
@@ -1048,18 +1032,11 @@ public class LumongoIndex {
 	public GetFieldNamesResponse getFieldNames() throws Exception {
 		indexLock.readLock().lock();
 		try {
-			List<Future<GetFieldNamesResponse>> responses = new ArrayList<Future<GetFieldNamesResponse>>();
+			List<Future<GetFieldNamesResponse>> responses = new ArrayList<>();
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<GetFieldNamesResponse> response = segmentPool.submit(new Callable<GetFieldNamesResponse>() {
-
-					@Override
-					public GetFieldNamesResponse call() throws Exception {
-						return segment.getFieldNames();
-					}
-
-				});
+				Future<GetFieldNamesResponse> response = segmentPool.submit(segment::getFieldNames);
 
 				responses.add(response);
 
@@ -1101,14 +1078,9 @@ public class LumongoIndex {
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<Void> response = segmentPool.submit(new Callable<Void>() {
-
-					@Override
-					public Void call() throws Exception {
-						segment.clear();
-						return null;
-					}
-
+				Future<Void> response = segmentPool.submit(() -> {
+					segment.clear();
+					return null;
 				});
 
 				responses.add(response);
@@ -1145,14 +1117,7 @@ public class LumongoIndex {
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<GetTermsResponse> response = segmentPool.submit(new Callable<GetTermsResponse>() {
-
-					@Override
-					public GetTermsResponse call() throws Exception {
-						return segment.getTerms(request);
-					}
-
-				});
+				Future<GetTermsResponse> response = segmentPool.submit(() -> segment.getTerms(request));
 
 				responses.add(response);
 

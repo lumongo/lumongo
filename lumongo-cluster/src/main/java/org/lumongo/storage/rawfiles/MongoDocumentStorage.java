@@ -65,7 +65,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		if (sharded) {
 			
 			MongoDatabase adminDb = pool.getDatabase(MongoConstants.StandardDBs.ADMIN);
-			DBObject enableCommand = new BasicDBObject();
+			Document enableCommand = new Document();
 			enableCommand.put(MongoConstants.Commands.ENABLE_SHARDING, database);
 			adminDb.executeCommand(enableCommand);
 
@@ -188,7 +188,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	public void deleteSourceDocument(String uniqueId) throws Exception {
 		MongoDatabase db = pool.getDatabase(database);
 		MongoCollection<Document> coll = db.getCollection(rawCollectionName);
-		DBObject search = new BasicDBObject(MongoConstants.StandardFields._ID, uniqueId);
+		Document search = new Document(MongoConstants.StandardFields._ID, uniqueId);
 		coll.deleteOne(search);
 	}
 	

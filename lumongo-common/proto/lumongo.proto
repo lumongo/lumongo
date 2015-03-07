@@ -197,9 +197,11 @@ message FacetAs {
 message SortAs {
     enum SortType {
         STRING = 1;
-        STRING_SET = 2;
-        NUMERIC = 3;
-        NUMERIC_SET = 4;
+        NUMERIC_INT = 2;
+        NUMERIC_LONG = 3;
+        NUMERIC_FLOAT = 4;
+        NUMERIC_DOUBLE = 5;
+        DATE = 6;
     }
     required string sortFieldName = 1;
     required SortType sortType = 2;

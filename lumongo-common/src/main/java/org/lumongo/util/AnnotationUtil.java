@@ -7,7 +7,7 @@ import java.util.List;
 
 public class AnnotationUtil {
 	public static List<Field> getNonStaticFields(final Class<?> clazz, boolean deep) {
-		List<Field> fields = new ArrayList<Field>();
+		List<Field> fields = new ArrayList<>();
 		for (Field f : clazz.getDeclaredFields()) {
 			if (!Modifier.isStatic(f.getModifiers())) {
 				fields.add(f);

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 public class QueryCombiner {
 	
@@ -55,8 +56,8 @@ public class QueryCombiner {
 		this.usedIndexMap = usedIndexMap;
 		this.responses = responses;
 		this.amount = request.getAmount();
-		this.indexToSegmentResponseMap = new HashMap<String, Map<Integer, SegmentResponse>>();
-		this.segmentResponses = new ArrayList<SegmentResponse>();
+		this.indexToSegmentResponseMap = new HashMap<>();
+		this.segmentResponses = new ArrayList<>();
 		this.lastResult = request.getLastResult();
 		this.sortRequest = request.getSortRequest();
 		
@@ -72,7 +73,7 @@ public class QueryCombiner {
 			for (IndexSegmentResponse isr : iqr.getIndexSegmentResponseList()) {
 				String indexName = isr.getIndexName();
 				if (!indexToSegmentResponseMap.containsKey(indexName)) {
-					indexToSegmentResponseMap.put(indexName, new HashMap<Integer, SegmentResponse>());
+					indexToSegmentResponseMap.put(indexName, new HashMap<>());
 				}
 				
 				for (SegmentResponse sr : isr.getSegmentReponseList()) {
@@ -131,7 +132,7 @@ public class QueryCombiner {
 		
 		results = Collections.emptyList();
 		
-		Map<String, ScoredResult[]> lastIndexResultMap = new HashMap<String, ScoredResult[]>();
+		Map<String, ScoredResult[]> lastIndexResultMap = new HashMap<>();
 		
 		for (String indexName : indexToSegmentResponseMap.keySet()) {
 			int numberOfSegments = usedIndexMap.get(indexName).getNumberOfSegments();
@@ -146,14 +147,14 @@ public class QueryCombiner {
 			}
 		}
 		
-		Map<CountRequest, Map<String, AtomicLong>> totalFacetCounts = new HashMap<CountRequest, Map<String, AtomicLong>>();
+		Map<CountRequest, Map<String, AtomicLong>> totalFacetCounts = new HashMap<>();
 		for (SegmentResponse sr : segmentResponses) {
 			for (FacetGroup fg : sr.getFacetGroupList()) {
 				
 				Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(fg.getCountRequest());
 				
 				if (fieldCounts == null) {
-					fieldCounts = new HashMap<String, AtomicLong>();
+					fieldCounts = new HashMap<>();
 					totalFacetCounts.put(fg.getCountRequest(), fieldCounts);
 				}
 				
@@ -174,15 +175,14 @@ public class QueryCombiner {
 			FacetGroup.Builder fg = FacetGroup.newBuilder();
 			fg.setCountRequest(countRequest);
 			Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(countRequest);
-			SortedSet<FacetCountResult> sortedFacetResuls = new TreeSet<FacetCountResult>();
-			for (String facet : fieldCounts.keySet()) {
-				sortedFacetResuls.add(new FacetCountResult(facet, fieldCounts.get(facet).get()));
-			}
+			SortedSet<FacetCountResult> sortedFacetResults = fieldCounts.keySet().stream()
+							.map(facet -> new FacetCountResult(facet, fieldCounts.get(facet).get()))
+							.collect(Collectors.toCollection(TreeSet::new));
 			
 			Integer maxCount = countRequest.getMaxFacets();
 			
 			int count = 0;
-			for (FacetCountResult facet : sortedFacetResuls) {
+			for (FacetCountResult facet : sortedFacetResults) {
 				fg.addFacetCount(FacetCount.newBuilder().setFacet(facet.getFacet()).setCount(facet.getCount()));
 				count++;
 				if (maxCount > 0 && count >= maxCount) {
@@ -192,7 +192,7 @@ public class QueryCombiner {
 			builder.addFacetGroup(fg);
 		}
 		
-		List<ScoredResult> mergedResults = new ArrayList<ScoredResult>((int) returnedHits);
+		List<ScoredResult> mergedResults = new ArrayList<>((int) returnedHits);
 		for (SegmentResponse sr : segmentResponses) {
 			mergedResults.addAll(sr.getScoredResultList());
 		}
@@ -227,78 +227,72 @@ public class QueryCombiner {
 				}
 			}
 			
-			Comparator<ScoredResult> sortCompare = new Comparator<ScoredResult>() {
-				
-				@Override
-				public int compare(ScoredResult o1, ScoredResult o2) {
-					int compare = 0;
-					
-					int stringIndex = 0;
-					int intIndex = 0;
-					int longIndex = 0;
-					int floatIndex = 0;
-					int doubleIndex = 0;
-					int dateIndex = 0;
-					
-					for (FieldSort fs : fieldSortList) {
-						String sortField = fs.getSortField();
-						LMAnalyzer lmAnalyzer = analyzerMap.get(sortField);
-						
-						if (LMAnalyzer.NUMERIC_INT.equals(lmAnalyzer)) {
-							int a = o1.getSortIntegerList().get(intIndex);
-							int b = o2.getSortIntegerList().get(intIndex);
-							compare = Integer.compare(a, b);
-							intIndex++;
-						}
-						else if (LMAnalyzer.NUMERIC_LONG.equals(lmAnalyzer)) {
-							long a = o1.getSortLongList().get(longIndex);
-							long b = o2.getSortLongList().get(longIndex);
-							compare = Long.compare(a, b);
-							longIndex++;
-						}
-						else if (LMAnalyzer.NUMERIC_FLOAT.equals(lmAnalyzer)) {
-							float a = o1.getSortFloatList().get(floatIndex);
-							float b = o2.getSortFloatList().get(floatIndex);
-							compare = Float.compare(a, b);
-							floatIndex++;
-						}
-						else if (LMAnalyzer.NUMERIC_DOUBLE.equals(lmAnalyzer)) {
-							double a = o1.getSortFloatList().get(doubleIndex);
-							double b = o2.getSortFloatList().get(doubleIndex);
-							compare = Double.compare(a, b);
-							doubleIndex++;
-						}
-						else if (LMAnalyzer.DATE.equals(lmAnalyzer)) {
-							long a = o1.getSortDateList().get(dateIndex);
-							long b = o2.getSortDateList().get(dateIndex);
-							compare = Long.compare(a, b);
-							dateIndex++;
-						}
-						else if (LMAnalyzer.KEYWORD.equals(lmAnalyzer) || LMAnalyzer.LC_KEYWORD.equals(lmAnalyzer)) {
-							String a = o1.getSortTermList().get(stringIndex);
-							String b = o2.getSortTermList().get(stringIndex);
-							compare = a.compareTo(b);
-							stringIndex++;
-						}
-						else {
-							throw new RuntimeException("Unsupported analyzer <" + lmAnalyzer + "> for sort field <" + sortField + ">");
-						}
-						
-						if (FieldSort.Direction.DESCENDING.equals(fs.getDirection())) {
-							compare *= -1;
-						}
-						
-						if (compare != 0) {
-							return compare;
-						}
-						
+			myCompare = (o1, o2) -> {
+				int compare = 0;
+
+				int stringIndex = 0;
+				int intIndex = 0;
+				int longIndex = 0;
+				int floatIndex = 0;
+				int doubleIndex = 0;
+				int dateIndex = 0;
+
+				for (FieldSort fs : fieldSortList) {
+					String sortField = fs.getSortField();
+					LMAnalyzer lmAnalyzer = analyzerMap.get(sortField);
+
+					if (LMAnalyzer.NUMERIC_INT.equals(lmAnalyzer)) {
+						int a = o1.getSortIntegerList().get(intIndex);
+						int b = o2.getSortIntegerList().get(intIndex);
+						compare = Integer.compare(a, b);
+						intIndex++;
 					}
-					
-					return compare;
+					else if (LMAnalyzer.NUMERIC_LONG.equals(lmAnalyzer)) {
+						long a = o1.getSortLongList().get(longIndex);
+						long b = o2.getSortLongList().get(longIndex);
+						compare = Long.compare(a, b);
+						longIndex++;
+					}
+					else if (LMAnalyzer.NUMERIC_FLOAT.equals(lmAnalyzer)) {
+						float a = o1.getSortFloatList().get(floatIndex);
+						float b = o2.getSortFloatList().get(floatIndex);
+						compare = Float.compare(a, b);
+						floatIndex++;
+					}
+					else if (LMAnalyzer.NUMERIC_DOUBLE.equals(lmAnalyzer)) {
+						double a = o1.getSortFloatList().get(doubleIndex);
+						double b = o2.getSortFloatList().get(doubleIndex);
+						compare = Double.compare(a, b);
+						doubleIndex++;
+					}
+					else if (LMAnalyzer.DATE.equals(lmAnalyzer)) {
+						long a = o1.getSortDateList().get(dateIndex);
+						long b = o2.getSortDateList().get(dateIndex);
+						compare = Long.compare(a, b);
+						dateIndex++;
+					}
+					else if (LMAnalyzer.KEYWORD.equals(lmAnalyzer) || LMAnalyzer.LC_KEYWORD.equals(lmAnalyzer)) {
+						String a = o1.getSortTermList().get(stringIndex);
+						String b = o2.getSortTermList().get(stringIndex);
+						compare = a.compareTo(b);
+						stringIndex++;
+					}
+					else {
+						throw new RuntimeException("Unsupported analyzer <" + lmAnalyzer + "> for sort field <" + sortField + ">");
+					}
+
+					if (FieldSort.Direction.DESCENDING.equals(fs.getDirection())) {
+						compare *= -1;
+					}
+
+					if (compare != 0) {
+						return compare;
+					}
+
 				}
-				
+
+				return compare;
 			};
-			myCompare = sortCompare;
 		}
 		
 		if (!mergedResults.isEmpty()) {
@@ -391,7 +385,7 @@ public class QueryCombiner {
 		for (String indexName : lastIndexResultMap.keySet()) {
 			ScoredResult[] lastForSegmentArr = lastIndexResultMap.get(indexName);
 			int numberOfSegments = usedIndexMap.get(indexName).getNumberOfSegments();
-			List<ScoredResult> indexList = new ArrayList<ScoredResult>();
+			List<ScoredResult> indexList = new ArrayList<>();
 			for (int i = 0; i < numberOfSegments; i++) {
 				if (lastForSegmentArr[i] != null) {
 					indexList.add(lastForSegmentArr[i]);

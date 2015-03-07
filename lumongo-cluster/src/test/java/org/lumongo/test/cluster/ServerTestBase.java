@@ -1,6 +1,7 @@
 package org.lumongo.test.cluster;
 
 import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import org.apache.log4j.Logger;
 import org.lumongo.LumongoConstants;
 import org.lumongo.client.config.LumongoPoolConfig;
@@ -52,11 +53,11 @@ public class ServerTestBase {
 
 	private void removeTestDBs() throws UnknownHostException {
 		log.info("Removing test databases");
-		Mongo mongo = TestHelper.getMongo();
+		MongoClient mongo = TestHelper.getMongo();
 
-		for (String dbName : mongo.getDatabaseNames()) {
+		for (String dbName : mongo.listDatabaseNames()) {
 			if (dbName.startsWith(TestHelper.TEST_DATABASE_NAME)) {
-				mongo.getDB(dbName).dropDatabase();
+				mongo.getDatabase(dbName).dropDatabase();
 			}
 		}
 	}
@@ -82,7 +83,7 @@ public class ServerTestBase {
 		
 	}
 	
-	public LuceneNode createLuceneNode(MongoConfig mongoConfig, String localServer, int instance) throws PropertyException, Exception {
+	public LuceneNode createLuceneNode(MongoConfig mongoConfig, String localServer, int instance) throws Exception {
 		LocalNodeConfig localNodeConfig = getTestLocalNodeConfig(instance);
 		ClusterHelper.registerNode(mongoConfig, localNodeConfig, localServer);
 		return new LuceneNode(mongoConfig, localServer, localNodeConfig.getHazelcastPort());
@@ -96,7 +97,7 @@ public class ServerTestBase {
 	}
 	
 	public ClusterConfig getTestClusterConfig() throws PropertyException {
-		HashMap<String, String> settings = new HashMap<String, String>();
+		HashMap<String, String> settings = new HashMap<>();
 		
 		settings.put(ClusterConfig.SHARDED, "false");
 		settings.put(ClusterConfig.INDEX_BLOCK_SIZE, "131072");
@@ -114,7 +115,7 @@ public class ServerTestBase {
 	public LocalNodeConfig getTestLocalNodeConfig(int instance) throws PropertyException {
 		int offset = instance * 10;
 		
-		HashMap<String, String> settings = new HashMap<String, String>();
+		HashMap<String, String> settings = new HashMap<>();
 		
 		settings.put(LocalNodeConfig.HAZELCAST_PORT, (LumongoConstants.DEFAULT_HAZELCAST_PORT + offset) + "");
 		settings.put(LocalNodeConfig.INTERNAL_SERVICE_PORT, (LumongoConstants.DEFAULT_INTERNAL_SERVICE_PORT + offset) + "");

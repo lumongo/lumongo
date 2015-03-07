@@ -181,7 +181,7 @@ public class Mapper<T> {
 	}
 	
 	public List<T> fromBatchFetchResult(BatchFetchResult batchFetchResult) throws Exception {
-		List<T> results = new ArrayList<T>();
+		List<T> results = new ArrayList<>();
 		for (FetchResult fr : batchFetchResult.getFetchResults()) {
 			results.add(fr.getDocument(this));
 		}

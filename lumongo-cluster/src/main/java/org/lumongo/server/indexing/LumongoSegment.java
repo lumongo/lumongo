@@ -1,10 +1,12 @@
 package org.lumongo.server.indexing;
 
+import com.google.protobuf.ProtocolStringList;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.SortedNumericDocValuesField;
+import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.DrillDownQuery;
@@ -19,7 +21,6 @@ import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
-import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
@@ -44,6 +45,8 @@ import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.SortedNumericSortField;
+import org.apache.lucene.search.SortedSetSortField;
 import org.apache.lucene.search.TopDocsCollector;
 import org.apache.lucene.search.TopFieldCollector;
 import org.apache.lucene.search.TopScoreDocCollector;
@@ -83,11 +86,11 @@ import org.lumongo.server.indexing.field.IntFieldIndexer;
 import org.lumongo.server.indexing.field.LongFieldIndexer;
 import org.lumongo.server.indexing.field.StringFieldIndexer;
 import org.lumongo.server.searching.QueryWithFilters;
+import org.lumongo.util.LumongoUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -107,22 +110,16 @@ public class LumongoSegment {
 	private final int segmentNumber;
 
 	private final LumongoIndexWriter indexWriter;
-	private LumongoDirectoryTaxonomyWriter taxonomyWriter;
-	private LumongoDirectoryTaxonomyReader taxonomyReader;
-
 	private final IndexConfig indexConfig;
 	private final FacetsConfig facetsConfig;
-
 	private final String uniqueIdField;
-
 	private final AtomicLong counter;
-
+	private final Set<String> fetchSet;
+	private LumongoDirectoryTaxonomyWriter taxonomyWriter;
+	private LumongoDirectoryTaxonomyReader taxonomyReader;
 	private Long lastCommit;
 	private Long lastChange;
 	private String indexName;
-
-	private final Set<String> fetchSet;
-
 	private QueryResultCache queryResultCache;
 	private QueryResultCache queryResultCacheRealtime;
 
@@ -158,6 +155,42 @@ public class LumongoSegment {
 
 	}
 
+	public static Object getValueFromDocument(BSONObject document, String storedFieldName) {
+
+		Object o;
+		if (storedFieldName.contains(".")) {
+			o = document;
+			String[] fields = storedFieldName.split("\\.");
+			for (String field : fields) {
+				if (o instanceof List) {
+					List<?> list = (List<?>) o;
+					List<Object> values = new ArrayList<>();
+					list.stream().filter(item -> item instanceof BSONObject).forEach(item -> {
+						BSONObject dbObj = (BSONObject) item;
+						Object object = dbObj.get(field);
+						if (object != null) {
+							values.add(object);
+						}
+					});
+					o = values;
+				}
+				else if (o instanceof BSONObject) {
+					BSONObject dbObj = (BSONObject) o;
+					o = dbObj.get(field);
+				}
+				else {
+					o = null;
+					break;
+				}
+			}
+		}
+		else {
+			o = document.get(storedFieldName);
+		}
+
+		return o;
+	}
+	
 	protected FacetsConfig getFacetsConfig() {
 		//only need to be done once but no harm
 		FacetsConfig.DEFAULT_DIM_CONFIG.hierarchical = true;
@@ -171,50 +204,6 @@ public class LumongoSegment {
 				return dc;
 			}
 		};
-	}
-	
-	public static Object getValueFromDocument(BSONObject document, String storedFieldName) {
-
-		Object o;
-		if (storedFieldName.contains(".")) {
-			o = document;
-			String[] fields = storedFieldName.split("\\.");
-			for (String field : fields) {
-				if (o instanceof List) {
-					List list = (List) o;
-					List<Object> values = new ArrayList<>();
-					for (Object item : list) {
-						if (item instanceof BSONObject) {
-							BSONObject dbObj = (BSONObject) item;
-							Object object = dbObj.get(field);
-							if (object != null) {
-								values.add(object);
-							}
-						}
-					}
-					o = values;
-				}
-				else if (o instanceof BSONObject) {
-					BSONObject dbObj = (BSONObject) o;
-					if (dbObj != null) {
-						o = dbObj.get(field);
-					}
-					else {
-						o = null;
-						break;
-					}
-				}
-				else {
-					o = null;
-					break;
-				}
-			}
-		}
-		else {
-			o = document.get(storedFieldName);
-		}
-
-		return o;
 	}
 	
 	private void setupQueryCache(IndexConfig indexConfig) {
@@ -276,7 +265,7 @@ public class LumongoSegment {
 
 			TopDocsCollector<?> collector;
 
-			List<SortField> sortFields = new ArrayList<SortField>();
+			List<SortField> sortFields = new ArrayList<>();
 			boolean sorting = (sortRequest != null) && !sortRequest.getFieldSortList().isEmpty();
 			if (sorting) {
 
@@ -284,34 +273,39 @@ public class LumongoSegment {
 					boolean reverse = Direction.DESCENDING.equals(fs.getDirection());
 
 					String sortField = fs.getSortField();
+					Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
 
-					SortField.Type type = SortField.Type.STRING;
-					if (indexConfig.isNumericOrDateField(sortField)) {
-						if (indexConfig.isNumericIntField(sortField)) {
+					if (indexConfig.isNumericOrDateSortType(sortType)) {
+						SortField.Type type;
+						if (IndexConfig.isNumericIntSortType(sortType)) {
 							type = SortField.Type.INT;
 						}
-						else if (indexConfig.isNumericLongField(sortField)) {
+						else if (IndexConfig.isNumericLongSortType(sortType)) {
 							type = SortField.Type.LONG;
 						}
-						else if (indexConfig.isNumericFloatField(sortField)) {
+						else if (IndexConfig.isNumericFloatSortType(sortType)) {
 							type = SortField.Type.FLOAT;
 						}
-						else if (indexConfig.isNumericDoubleField(sortField)) {
+						else if (IndexConfig.isNumericDoubleSortType(sortType)) {
 							type = SortField.Type.DOUBLE;
 						}
-						else if (indexConfig.isDateField(sortField)) {
+						else if (IndexConfig.isNumericDateSortType(sortType)) {
 							type = SortField.Type.LONG;
 						}
+						else {
+							throw new Exception ("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
+						}
+						sortFields.add(new SortedNumericSortField(sortField, type, reverse));
+					}
+					else {
+						sortFields.add(new SortedSetSortField(sortField, reverse));
 					}
 
-					sortFields.add(new SortField(sortField, type, reverse));
 				}
 				Sort sort = new Sort();
-				sort.setSort(sortFields.toArray(new SortField[0]));
-				boolean fillFields = true;
-				boolean trackDocScores = true;
-				boolean trackMaxScore = true;
-				collector = TopFieldCollector.create(sort, hasMoreAmount, after, fillFields, trackDocScores, trackMaxScore);
+				sort.setSort(sortFields.toArray(new SortField[sortFields.size()]));
+
+				collector = TopFieldCollector.create(sort, hasMoreAmount, after, true, true, true);
 			}
 			else {
 				collector = TopScoreDocCollector.create(hasMoreAmount, after);
@@ -329,8 +323,9 @@ public class LumongoSegment {
 					DrillSideways ds = new DrillSideways(is, facetsConfig, taxonomyReader);
 					DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
+						ProtocolStringList pathList = countRequest.getFacetField().getPathList();
 						FacetResult facetResult = ddsr.facets.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(),
-										countRequest.getFacetField().getPathList().toArray(new String[0]));
+										pathList.toArray(new String[pathList.size()]));
 
 						handleFacetResult(builder, facetResult, countRequest);
 
@@ -343,8 +338,9 @@ public class LumongoSegment {
 					is.search(q, MultiCollector.wrap(collector, fc));
 					Facets facets = new FastTaxonomyFacetCounts(taxonomyReader, facetsConfig, fc);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
+						ProtocolStringList pathList = countRequest.getFacetField().getPathList();
 						FacetResult facetResult = facets.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(),
-										countRequest.getFacetField().getPathList().toArray(new String[0]));
+										pathList.toArray(new String[pathList.size()]));
 						handleFacetResult(builder, facetResult, countRequest);
 					}
 				}
@@ -411,7 +407,7 @@ public class LumongoSegment {
 	}
 
 	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i)
-					throws CorruptIndexException, IOException {
+					throws IOException {
 		int docId = results[i].doc;
 		Document d = is.doc(docId, fetchSet);
 		ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
@@ -432,8 +428,10 @@ public class LumongoSegment {
 			for (Object o : result.fields) {
 				FieldSort fieldSort = sortRequest.getFieldSort(c);
 				String sortField = fieldSort.getSortField();
-				if (indexConfig.isNumericOrDateField(sortField)) {
-					if (indexConfig.isNumericIntField(sortField)) {
+
+				Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
+				if (IndexConfig.isNumericOrDateSortType(sortType)) {
+					if (IndexConfig.isNumericIntSortType(sortType)) {
 						if (o == null) {
 							srBuilder.addSortInteger(0); // TODO what should nulls value be?
 						}
@@ -441,7 +439,7 @@ public class LumongoSegment {
 							srBuilder.addSortInteger((Integer) o);
 						}
 					}
-					else if (indexConfig.isNumericLongField(sortField)) {
+					else if (IndexConfig.isNumericLongSortType(sortType)) {
 						if (o == null) {
 							srBuilder.addSortLong(0L);// TODO what should nulls value be?
 						}
@@ -449,7 +447,7 @@ public class LumongoSegment {
 							srBuilder.addSortLong((Long) o);
 						}
 					}
-					else if (indexConfig.isNumericFloatField(sortField)) {
+					else if (IndexConfig.isNumericFloatSortType(sortType)) {
 						if (o == null) {
 							srBuilder.addSortFloat(0f);// TODO what should nulls value be?
 							// value be?
@@ -458,7 +456,7 @@ public class LumongoSegment {
 							srBuilder.addSortFloat((Float) o);
 						}
 					}
-					else if (indexConfig.isNumericDoubleField(sortField)) {
+					else if (IndexConfig.isNumericDoubleSortType(sortType)) {
 						if (o == null) {
 							srBuilder.addSortDouble(0);// TODO what should nulls value be?
 						}
@@ -466,16 +464,15 @@ public class LumongoSegment {
 							srBuilder.addSortDouble((Double) o);
 						}
 					}
-					else if (indexConfig.isDateField(sortField)) {
+					else if (IndexConfig.isNumericDateSortType(sortType)) {
 						if (o == null) {
 							srBuilder.addSortDate(0L);// TODO what should nulls value be?
 						}
 						else {
-							srBuilder.addSortDate((Long) o);
+							srBuilder.addSortDate(((Date) o).getTime());
 						}
 					}
 				}
-
 				else {
 					if (o == null) {
 						srBuilder.addSortTerm(""); // TODO what should nulls value be?
@@ -562,27 +559,7 @@ public class LumongoSegment {
 				if (o != null) {
 					handleFacetsForStoredField(facetFields, fc, o);
 
-					Lumongo.SortAs sortAs = fc.getSortAs();
-					if (sortAs != null) {
-						String sortFieldName = sortAs.getSortFieldName();
-						if (Lumongo.SortAs.SortType.NUMERIC.equals(sortAs.getSortType())) {
-							if (o instanceof Integer) {
-								SortedNumericDocValuesField docValue = new SortedNumericDocValuesField(sortFieldName, );
-							}
-							else {
-								throw new Exception("Expecting integer, long, float, or double for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">, found <" + o.getClass() + ">");
-							}
-						}
-						else if (Lumongo.SortAs.SortType.NUMERIC_SET.equals(sortAs.getSortType())) {
-
-						}
-						else if (Lumongo.SortAs.SortType.STRING.equals(sortAs.getSortType())) {
-
-						}
-						else if (Lumongo.SortAs.SortType.STRING_SET.equals(sortAs.getSortType())) {
-
-						}
-					}
+					handleSortForStoredField(d, storedFieldName, fc, o);
 
 					for (IndexAs indexAs : fc.getIndexAsList()) {
 
@@ -634,82 +611,98 @@ public class LumongoSegment {
 		possibleCommit();
 	}
 
+	private void handleSortForStoredField(Document d, String storedFieldName, FieldConfig fc, Object o) {
+		Lumongo.SortAs sortAs = fc.getSortAs();
+		if (sortAs != null) {
+			String sortFieldName = sortAs.getSortFieldName();
+
+			if (IndexConfig.isNumericOrDateSortType(sortAs.getSortType())) {
+				LumongoUtil.handleLists(o, obj -> {
+					if (obj instanceof Number) {
+
+						Number number = (Number) obj;
+						SortedNumericDocValuesField docValue = null;
+						if (Lumongo.SortAs.SortType.NUMERIC_INT.equals(sortAs.getSortType())) {
+							docValue = new SortedNumericDocValuesField(sortFieldName, number.intValue());
+						}
+						else if (Lumongo.SortAs.SortType.NUMERIC_LONG.equals(sortAs.getSortType())) {
+							docValue = new SortedNumericDocValuesField(sortFieldName, number.longValue());
+						}
+						else if (Lumongo.SortAs.SortType.NUMERIC_FLOAT.equals(sortAs.getSortType())) {
+							docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.floatToSortableInt(number.floatValue()));
+						}
+						else if (Lumongo.SortAs.SortType.NUMERIC_DOUBLE.equals(sortAs.getSortType())) {
+							docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.doubleToSortableLong(number.doubleValue()));
+						}
+						else if (Lumongo.SortAs.SortType.DATE.equals(sortAs.getSortType())) {
+							docValue = new SortedNumericDocValuesField(sortFieldName, number.longValue());
+						}
+						else {
+							throw new RuntimeException("Not handled numeric sort type <" + sortAs.getSortType() + "> for document field <" + storedFieldName
+											+ "> / sort field <"
+											+ sortFieldName + ">");
+						}
+
+						d.add(docValue);
+					}
+					else {
+						throw new RuntimeException("Expecting number for document field <" + storedFieldName + "> / sort field <"
+										+ sortFieldName + ">, found <" + o.getClass() + ">");
+					}
+				});
+			}
+			else if (Lumongo.SortAs.SortType.STRING.equals(sortAs.getSortType())) {
+				LumongoUtil.handleLists(o, obj -> {
+					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(o.toString()));
+					d.add(docValue);
+				});
+			}
+			else {
+				throw new RuntimeException("Not handled sort type <" + sortAs.getSortType() + "> for document field <" + storedFieldName + "> / sort field <"
+								+ sortFieldName + ">");
+			}
+
+		}
+	}
+
 	private void handleFacetsForStoredField(List<FacetField> facetFields, FieldConfig fc, Object o) throws Exception {
 		for (FacetAs fa : fc.getFacetAsList()) {
 			if (LMFacetType.STANDARD.equals(fa.getFacetType())) {
-				if (o instanceof Collection) {
-					Collection<?> c = (Collection<?>) o;
-					for (Object obj : c) {
-						facetFields.add(new FacetField(fa.getFacetName(), obj.toString()));
-					}
+				LumongoUtil.handleLists(o, obj -> facetFields.add(new FacetField(fa.getFacetName(), obj.toString())));
+			}
+			else if (IndexConfig.isDateFacetType(fa.getFacetType())) {
+				LumongoUtil.handleLists(o, obj -> {
+					if (obj instanceof Date) {
+						DateTime dt = new DateTime(obj).withZone(DateTimeZone.UTC);
 
-				}
-				else if (o instanceof Object[]) {
-					Object[] arr = (Object[]) o;
-					for (Object obj : arr) {
-						facetFields.add(new FacetField(fa.getFacetName(), obj.toString()));
-					}
-				}
-				else {
-					facetFields.add(new FacetField(fa.getFacetName(), o.toString()));
-				}
-			}
-			else if (LMFacetType.DATE_YYYY_MM_DD.equals(fa.getFacetType())) {
-				if (o instanceof Date) {
-					Date da = (Date) o;
-					DateTime dt = new DateTime(da);
-					facetFields.add(new FacetField(fa.getFacetName(), String.format("%04d", dt.getYear()), String.format("%02d", dt.getMonthOfYear()),
-									String.format("%02d", dt.getDayOfMonth())));
-				}
-				else if (o instanceof Collection) {
-					Collection<?> c = (Collection<?>) o;
-					for (Object obj : c) {
-						if (obj instanceof Date) {
-							Date da = (Date) o;
-							DateTime dt = new DateTime(da);
-							facetFields.add(new FacetField(fa.getFacetName(), String.format("%04d", dt.getYear()), String.format("%02d", dt.getMonthOfYear()),
-											String.format("%02d", dt.getDayOfMonth())));
+						FacetField facetField;
+						if (LMFacetType.DATE_YYYYMMDD.equals(fa.getFacetType())) {
+							String facetValue = FORMATTER_YYYY_MM_DD.print(dt);
+							facetField = new FacetField(fa.getFacetName(), facetValue);
+						}
+						else if (LMFacetType.DATE_YYYY_MM_DD.equals(fa.getFacetType())) {
+							facetField = new FacetField(fa.getFacetName(), String.format("%04d", dt.getYear()), String.format("%02d", dt.getMonthOfYear()),
+											String.format("%02d", dt.getDayOfMonth()));
 						}
 						else {
-							throw new Exception(
-											"Cannot facet date for field <" + fc.getStoredFieldName() + ">: excepted collection of Date, found Collection of <"
-															+ obj.getClass().getSimpleName() + ">");
+							throw new RuntimeException("Not handled date facet type <" + fa.getFacetType() + "> for facet <" + fa.getFacetName() + ">");
 						}
+
+						facetFields.add(facetField);
+
 					}
-				}
-				else {
-					throw new Exception(
-									"Cannot facet date for field <" + fc.getStoredFieldName() + ">: excepted Date or Collection of Date, found <" + o.getClass()
-													.getSimpleName() + ">");
-				}
+					else {
+						throw new RuntimeException(
+										"Cannot facet date for document field <" + fc.getStoredFieldName() + "> / facet <" + fa.getFacetName()
+														+ ">: excepted Date or Collection of Date, found <" + o
+														.getClass()
+														.getSimpleName() + ">");
+					}
+				});
 			}
-			else if (LMFacetType.DATE_YYYYMMDD.equals(fa.getFacetType())) {
-				if (o instanceof Date) {
-					Date da = (Date) o;
-					DateTime dt = new DateTime(da).withZone(DateTimeZone.UTC);
-					String facetValue = FORMATTER_YYYY_MM_DD.print(dt);
-					facetFields.add(new FacetField(fa.getFacetName(), facetValue));
-				}
-				else if (o instanceof Collection) {
-					Collection<?> c = (Collection<?>) o;
-					for (Object obj : c) {
-						if (obj instanceof Date) {
-							Date da = (Date) o;
-							DateTime dt = new DateTime(da);
-							facetFields.add(new FacetField(fa.getFacetName(), dt.getYear() + "" + dt.getMonthOfYear() + "" + dt.getDayOfMonth() + ""));
-						}
-						else {
-							throw new Exception(
-											"Cannot facet date for field <" + fc.getStoredFieldName() + ">: excepted collection of Date, found Collection of <"
-															+ obj.getClass().getSimpleName() + ">");
-						}
-					}
-				}
-				else {
-					throw new Exception(
-									"Cannot facet date for field <" + fc.getStoredFieldName() + ">: excepted Date or Collection of Date, found <" + o.getClass()
-													.getSimpleName() + ">");
-				}
+			else {
+				throw new Exception("Not handled facet type <" + fa.getFacetType() + "> for document field <" + fc.getStoredFieldName() + "> / facet <" + fa
+								.getFacetName() + ">");
 			}
 
 		}
@@ -722,18 +715,18 @@ public class LumongoSegment {
 
 	}
 
-	public void optimize() throws CorruptIndexException, IOException {
+	public void optimize() throws IOException {
 		lastChange = System.currentTimeMillis();
 		indexWriter.forceMerge(1);
 		forceCommit();
 	}
 
-	public GetFieldNamesResponse getFieldNames() throws CorruptIndexException, IOException {
+	public GetFieldNamesResponse getFieldNames() throws IOException {
 		GetFieldNamesResponse.Builder builder = GetFieldNamesResponse.newBuilder();
 
 		DirectoryReader ir = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
 
-		Set<String> fields = new HashSet<String>();
+		Set<String> fields = new HashSet<>();
 
 		for (LeafReaderContext subreaderContext : ir.leaves()) {
 			FieldInfos fieldInfos = subreaderContext.reader().getFieldInfos();
@@ -743,9 +736,7 @@ public class LumongoSegment {
 			}
 		}
 
-		for (String fieldName : fields) {
-			builder.addFieldName(fieldName);
-		}
+		fields.forEach(builder::addFieldName);
 
 		return builder.build();
 	}
@@ -782,7 +773,7 @@ public class LumongoSegment {
 			
 			BytesRef startTermBytes = new BytesRef(startTerm);
 
-			SortedMap<String, AtomicLong> termsMap = new TreeMap<String, AtomicLong>();
+			SortedMap<String, AtomicLong> termsMap = new TreeMap<>();
 
 			for (LeafReaderContext subreaderContext : ir.leaves()) {
 				Fields fields = subreaderContext.reader().fields();
@@ -856,7 +847,7 @@ public class LumongoSegment {
 		termsMap.get(textStr).addAndGet(termsEnum.docFreq());
 	}
 
-	public SegmentCountResponse getNumberOfDocs(boolean realTime) throws CorruptIndexException, IOException {
+	public SegmentCountResponse getNumberOfDocs(boolean realTime) throws IOException {
 		IndexReader ir = null;
 
 		try {
