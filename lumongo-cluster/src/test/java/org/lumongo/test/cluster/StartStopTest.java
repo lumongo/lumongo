@@ -1,5 +1,6 @@
 package org.lumongo.test.cluster;
 
+import com.hazelcast.core.Hazelcast;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.joda.time.DateTime;
@@ -37,8 +38,8 @@ import static org.testng.AssertJUnit.assertTrue;
 
 public class StartStopTest extends ServerTestBase {
 
-	//public static final String FACET_TEST_INDEX = "plugged-54a725bc148f6dd7d62bc600";
-	public static final String FACET_TEST_INDEX = "plugged";
+	public static final String FACET_TEST_INDEX = "plugged-54a725bc148f6dd7d62bc600";
+	//public static final String FACET_TEST_INDEX = "plugged";
 
 
 	private final int COUNT_PER_ISSN = 10;
@@ -126,9 +127,11 @@ public class StartStopTest extends ServerTestBase {
 
 	@Test
 	public void test04Restart() throws Exception {
+		stopClient();
 		stopServer();
-		Thread.sleep(1000);
+		Thread.sleep(20000);
 		startServer(1);
+		startClient();
 	}
 
 

@@ -78,7 +78,7 @@ public class Nodes {
 	}
 	
 	public Set<HazelcastNode> getHazelcastNodes() {
-		return new HashSet<HazelcastNode>(nodes.keySet());
+		return new HashSet<>(nodes.keySet());
 	}
 	
 	public LocalNodeConfig find(Member member) throws Exception {
@@ -89,14 +89,13 @@ public class Nodes {
 		
 		int hazelcastPort = member.getSocketAddress().getPort();
 		
-		Set<HazelcastNode> matches = new HashSet<HazelcastNode>();
+		Set<HazelcastNode> matches = new HashSet<>();
 		matches.add(new HazelcastNode(memberIp, hazelcastPort));
 		matches.add(new HazelcastNode(fullHostName, hazelcastPort));
 		
 		for (HazelcastNode node : nodes.keySet()) {
 			if (matches.contains(node)) {
-				LocalNodeConfig localNodeConfig = nodes.get(node);
-				return localNodeConfig;
+				return nodes.get(node);
 			}
 			
 		}

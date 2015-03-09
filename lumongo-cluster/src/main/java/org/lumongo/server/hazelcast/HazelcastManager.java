@@ -38,8 +38,8 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 	
 	private HazelcastInstance hazelcastInstance;
 	private Member self;
-	
-	private final static Map<Integer, HazelcastManager> portToHazelcastManagerMap = new HashMap<Integer, HazelcastManager>();
+
+	private final static Map<Integer, HazelcastManager> portToHazelcastManagerMap = new HashMap<>();
 	
 	public static HazelcastManager createHazelcastManager(LocalNodeConfig localNodeConfig, LumongoIndexManager indexManager, Set<HazelcastNode> nodes,
 					String hazelcastName) throws Exception {
@@ -79,12 +79,10 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		System.setProperty(GroupProperties.PROP_REST_ENABLED, "false");
 		
 		int hazelcastPort = localNodeConfig.getHazelcastPort();
-		String groupName = hazelcastName;
-		String groupPassword = hazelcastName;
 		
 		Config cfg = new Config();
-		cfg.getGroupConfig().setName(groupName);
-		cfg.getGroupConfig().setPassword(groupPassword);
+		cfg.getGroupConfig().setName(hazelcastName);
+		cfg.getGroupConfig().setPassword(hazelcastName);
 		cfg.getNetworkConfig().setPortAutoIncrement(false);
 		cfg.getNetworkConfig().setPort(hazelcastPort);
 		cfg.setInstanceName("" + hazelcastPort);
@@ -126,6 +124,8 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 	public void shutdown() {
 		//TODO should this be shutdown?
 		hazelcastInstance.getLifecycleService().terminate();
+		portToHazelcastManagerMap.remove(getHazelcastPort());
+
 	}
 	
 	@Override
@@ -197,7 +197,7 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 		return hazelcastInstance.getExecutorService("default");
 	}
 	
-	public void unloadIndex(String indexName) throws CorruptIndexException, IndexDoesNotExist, IOException {
+	public void unloadIndex(String indexName) throws IOException {
 		indexManager.unloadIndex(indexName);
 		
 	}

@@ -94,6 +94,7 @@ public class ServerTestBase {
 		for (LuceneNode ln : luceneNodes) {
 			ln.shutdown();
 		}
+		luceneNodes.clear();
 	}
 	
 	public ClusterConfig getTestClusterConfig() throws PropertyException {

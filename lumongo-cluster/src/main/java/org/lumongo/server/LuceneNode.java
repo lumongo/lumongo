@@ -94,5 +94,6 @@ public class LuceneNode {
 
 		hazelcastManager.shutdown();
 
+
 	}
 }
