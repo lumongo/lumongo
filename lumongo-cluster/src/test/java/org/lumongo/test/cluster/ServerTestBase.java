@@ -114,7 +114,7 @@ public class ServerTestBase {
 	}
 	
 	public LocalNodeConfig getTestLocalNodeConfig(int instance) throws PropertyException {
-		int offset = instance * 10;
+		int offset = (instance * 10) + 30;
 		
 		HashMap<String, String> settings = new HashMap<>();
 		
