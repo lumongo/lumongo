@@ -114,7 +114,7 @@ public class ServerTestBase {
 	}
 	
 	public LocalNodeConfig getTestLocalNodeConfig(int instance) throws PropertyException {
-		int offset = (instance * 10) + 30;
+		int offset = (instance * 10);
 		
 		HashMap<String, String> settings = new HashMap<>();
 		
@@ -127,7 +127,7 @@ public class ServerTestBase {
 	}
 	
 	public MongoConfig getTestMongoConfig() throws PropertyException {
-		HashMap<String, String> settings = new HashMap<String, String>();
+		HashMap<String, String> settings = new HashMap<>();
 		
 		settings.put(MongoConfig.DATABASE_NAME, TestHelper.TEST_DATABASE_NAME);
 		settings.put(MongoConfig.MONGO_HOST, TestHelper.getMongoServer());
