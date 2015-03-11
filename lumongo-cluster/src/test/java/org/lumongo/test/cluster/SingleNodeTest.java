@@ -17,6 +17,7 @@ import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.QueryResult;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
@@ -58,10 +59,11 @@ public class SingleNodeTest extends ServerTestBase {
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("eissn").indexAs(LMAnalyzer.LC_KEYWORD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("uid").indexAs(LMAnalyzer.LC_KEYWORD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT).sortAs("an", Lumongo.SortAs.SortType.NUMERIC_INT));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("country").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("date").indexAs(LMAnalyzer.DATE).facetAs(LMFacetType.DATE_YYYY_MM_DD));
-		
+
+
 		lumongoWorkPool.createIndex(MY_TEST_INDEX, 16, "uid", indexConfig);
 		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, "uid", indexConfig);
 	}
@@ -272,6 +274,14 @@ public class SingleNodeTest extends ServerTestBase {
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "an:{1 TO 3}", 10));
 			assertEquals("Total hits is not 1", 1, qr.getTotalHits());
+
+
+			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "an:[1 TO 5]", 10).addFieldSort("an"));
+			assertEquals("Unique id does not match expected", "someUniqueId-1", qr.getResults().get(0).getUniqueId());
+
+
+			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "an:[1 TO 4]", 10).addFieldSort("an", Lumongo.FieldSort.Direction.DESCENDING));
+			assertEquals("Unique id does not match expected", "someUniqueId-4", qr.getResults().get(0).getUniqueId());
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "title:distributed", 300));
 			assertEquals("Total hits is not " + DOCUMENTS_LOADED, DOCUMENTS_LOADED, qr.getTotalHits());
