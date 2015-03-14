@@ -634,15 +634,17 @@ public class LumongoSegment {
 						else if (Lumongo.SortAs.SortType.NUMERIC_DOUBLE.equals(sortAs.getSortType())) {
 							docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.doubleToSortableLong(number.doubleValue()));
 						}
-						else if (Lumongo.SortAs.SortType.DATE.equals(sortAs.getSortType())) {
-							docValue = new SortedNumericDocValuesField(sortFieldName, number.longValue());
-						}
 						else {
 							throw new RuntimeException("Not handled numeric sort type <" + sortAs.getSortType() + "> for document field <" + storedFieldName
 											+ "> / sort field <"
 											+ sortFieldName + ">");
 						}
 
+						d.add(docValue);
+					}
+					else if (obj instanceof Date) {
+						Date date = (Date) obj;
+						SortedNumericDocValuesField docValue = new SortedNumericDocValuesField(sortFieldName, date.getTime());
 						d.add(docValue);
 					}
 					else {
