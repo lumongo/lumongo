@@ -469,7 +469,7 @@ public class LumongoSegment {
 							srBuilder.addSortDate(0L);// TODO what should nulls value be?
 						}
 						else {
-							srBuilder.addSortDate(((Date) o).getTime());
+							srBuilder.addSortDate(((Long) o));
 						}
 					}
 				}
