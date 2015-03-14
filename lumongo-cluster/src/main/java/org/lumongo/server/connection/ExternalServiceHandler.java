@@ -12,6 +12,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.apache.log4j.Logger;
+import org.bson.BSON;
+import org.bson.BasicBSONObject;
 import org.lumongo.cluster.message.Lumongo.BatchDeleteRequest;
 import org.lumongo.cluster.message.Lumongo.BatchDeleteResponse;
 import org.lumongo.cluster.message.Lumongo.BatchFetchRequest;
@@ -141,7 +143,17 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(sr);
 		}
 		catch (Exception e) {
-			log.error("Failed to store: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
+			log.error("Failed to store: <" + request.getUniqueId() + "> in index <" + request.getIndexName() + ">: " + e.getClass().getSimpleName() + ": ", e);
+			if (request.hasResultDocument()) {
+				try {
+					BasicBSONObject document = (BasicBSONObject) BSON.decode(request.getResultDocument().getDocument().toByteArray());
+					log.error(document.toString());
+				}
+				catch (Exception e2) {
+
+				}
+			}
+
 			controller.setFailed(e.getMessage());
 			done.run(null);
 		}
