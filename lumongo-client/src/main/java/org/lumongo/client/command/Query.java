@@ -209,26 +209,29 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return countRequests;
 	}
 	
-	public void addFieldSort(String sort) {
+	public Query addFieldSort(String sort) {
 		if (fieldSorts.isEmpty()) {
 			this.fieldSorts = new ArrayList<FieldSort>();
 		}
 		fieldSorts.add(FieldSort.newBuilder().setSortField(sort).setDirection(Direction.ASCENDING).build());
+		return this;
 	}
 	
-	public void addFieldSort(String sort, Direction direction) {
+	public Query addFieldSort(String sort, Direction direction) {
 		if (fieldSorts.isEmpty()) {
 			this.fieldSorts = new ArrayList<FieldSort>();
 		}
 		fieldSorts.add(FieldSort.newBuilder().setSortField(sort).setDirection(direction).build());
+		return this;
 	}
 	
 	public Operator getDefaultOperator() {
 		return defaultOperator;
 	}
 	
-	public void setDefaultOperator(Operator defaultOperator) {
+	public Query setDefaultOperator(Operator defaultOperator) {
 		this.defaultOperator = defaultOperator;
+		return this;
 	}
 	
 	@Override
