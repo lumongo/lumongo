@@ -399,8 +399,8 @@ public class IndexConfig {
 				fieldConfig.put(FACET_AS, facetAsObjList);
 			}
 			{
-				Lumongo.SortAs sortAs = fc.getSortAs();
-				if (sortAs != null) {
+				if (fc.hasSortAs()) {
+					Lumongo.SortAs sortAs = fc.getSortAs();
 					Document sortAsObj = new Document();
 					sortAsObj.put(SORT_TYPE, sortAs.getSortType().name());
 					sortAsObj.put(SORT_FIELD_NAME, sortAs.getSortFieldName());

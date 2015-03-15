@@ -612,8 +612,8 @@ public class LumongoSegment {
 	}
 
 	private void handleSortForStoredField(Document d, String storedFieldName, FieldConfig fc, Object o) {
-		Lumongo.SortAs sortAs = fc.getSortAs();
-		if (sortAs != null) {
+		if (fc.hasSortAs()) {
+			Lumongo.SortAs sortAs = fc.getSortAs();
 			String sortFieldName = sortAs.getSortFieldName();
 
 			if (IndexConfig.isNumericOrDateSortType(sortAs.getSortType())) {
