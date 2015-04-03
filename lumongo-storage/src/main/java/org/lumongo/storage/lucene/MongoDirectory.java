@@ -73,9 +73,9 @@ public class MongoDirectory implements NosqlDirectory {
 	 */
 	public static void dropIndex(MongoClient mongo, String dbname, String indexName) {
 		MongoDatabase db = mongo.getDatabase(dbname);
-		db.getCollection(indexName + MongoDirectory.BLOCKS_SUFFIX).dropCollection();
-		db.getCollection(indexName + MongoDirectory.COUNTER_SUFFIX).dropCollection();
-		db.getCollection(indexName + MongoDirectory.FILES_SUFFIX).dropCollection();
+		db.getCollection(indexName + MongoDirectory.BLOCKS_SUFFIX).drop();
+		db.getCollection(indexName + MongoDirectory.COUNTER_SUFFIX).drop();
+		db.getCollection(indexName + MongoDirectory.FILES_SUFFIX).drop();
 	}
 
 	public static void setMaxIndexBlocks(int blocks) {
@@ -145,7 +145,7 @@ public class MongoDirectory implements NosqlDirectory {
 			Document shardCommand = new Document();
 			shardCommand.put(MongoConstants.Commands.SHARD_COLLECTION, blockCollectionName);
 			shardCommand.put(MongoConstants.Commands.SHARD_KEY, indexes);
-			db.executeCommand(shardCommand);
+			db.runCommand(shardCommand);
 		}
 
 		Document counter = new Document();

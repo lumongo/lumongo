@@ -5,7 +5,7 @@ import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.CreateIndexOptions;
+import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.Document;
 import org.lumongo.server.config.ClusterConfig;
@@ -105,20 +105,20 @@ public class ClusterHelper {
 		try {
 			
 			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
-			
+
 			MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
-			
+
 			Document index = new Document();
 			index.put(SERVER_ADDRESS, 1);
 			index.put(INSTANCE, 1);
-			
-			CreateIndexOptions options = new CreateIndexOptions().unique(true);
+
+			IndexOptions options = new IndexOptions().unique(true);
 			membershipCollection.createIndex(index, options);
-			
+
 			Document search = new Document();
 			search.put(SERVER_ADDRESS, serverAddress);
 			search.put(INSTANCE, localNodeConfig.getHazelcastPort());
-			
+
 			Document object = new Document();
 			object.put(SERVER_ADDRESS, serverAddress);
 			object.put(INSTANCE, localNodeConfig.getHazelcastPort());

@@ -668,7 +668,7 @@ public class LumongoIndex {
 		{
 			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			MongoCollection<Document> dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
-			dbCollection.dropCollection();
+			dbCollection.drop();
 		}
 		for (int i = 0; i < numberOfSegments; i++) {
 
@@ -683,7 +683,7 @@ public class LumongoIndex {
 		for (int i = 0; i < numberOfSegments; i++) {
 			String dbName = getIndexSegmentDbName(i);
 			MongoDatabase db = mongo.getDatabase(dbName);
-			db.dropDatabase();
+			db.drop();
 		}
 
 	}

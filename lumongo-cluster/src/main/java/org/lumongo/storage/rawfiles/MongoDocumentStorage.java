@@ -67,7 +67,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 			MongoDatabase adminDb = pool.getDatabase(MongoConstants.StandardDBs.ADMIN);
 			Document enableCommand = new Document();
 			enableCommand.put(MongoConstants.Commands.ENABLE_SHARDING, database);
-			adminDb.executeCommand(enableCommand);
+			adminDb.runCommand(enableCommand);
 
 			shardCollection(storageDb, adminDb, rawCollectionName);
 			shardCollection(storageDb, adminDb, ASSOCIATED_FILES + "." + CHUNKS);
@@ -79,7 +79,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		MongoCollection<Document> collection = db.getCollection(collectionName);
 		shardCommand.put(MongoConstants.Commands.SHARD_COLLECTION, collection.getNamespace().getFullName());
 		shardCommand.put(MongoConstants.Commands.SHARD_KEY, new BasicDBObject(MongoConstants.StandardFields._ID, 1));
-		adminDb.executeCommand(shardCommand);
+		adminDb.runCommand(shardCommand);
 	}
 	
 	private GridFS createGridFSConnection() {
@@ -205,7 +205,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	@Override
 	public void drop() {
 		MongoDatabase db = pool.getDatabase(database);
-		db.dropDatabase();
+		db.drop();
 	}
 	
 	@Override

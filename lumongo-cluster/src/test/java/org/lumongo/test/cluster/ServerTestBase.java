@@ -57,7 +57,7 @@ public class ServerTestBase {
 
 		for (String dbName : mongo.listDatabaseNames()) {
 			if (dbName.startsWith(TestHelper.TEST_DATABASE_NAME)) {
-				mongo.getDatabase(dbName).dropDatabase();
+				mongo.getDatabase(dbName).drop();
 			}
 		}
 	}
