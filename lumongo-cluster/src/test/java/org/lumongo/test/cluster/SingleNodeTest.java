@@ -264,7 +264,7 @@ public class SingleNodeTest extends ServerTestBase {
 			}
 		}
 		{
-			QueryResult qr = null;
+			QueryResult qr;
 			
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "an:3", 10));
 			assertEquals("Total hits is not 1", 1, qr.getTotalHits());

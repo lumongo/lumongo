@@ -14,41 +14,16 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
-import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.FieldDoc;
-import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.Query;
+import org.apache.lucene.search.*;
 import org.bson.BSON;
 import org.bson.BasicBSONObject;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
-import org.lumongo.cluster.message.Lumongo.DeleteRequest;
-import org.lumongo.cluster.message.Lumongo.FetchType;
-import org.lumongo.cluster.message.Lumongo.FieldSort;
-import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
-import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
-import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
-import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
-import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
-import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
-import org.lumongo.cluster.message.Lumongo.LastIndexResult;
-import org.lumongo.cluster.message.Lumongo.LastResult;
-import org.lumongo.cluster.message.Lumongo.QueryRequest;
-import org.lumongo.cluster.message.Lumongo.ResultDocument;
-import org.lumongo.cluster.message.Lumongo.ScoredResult;
-import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
-import org.lumongo.cluster.message.Lumongo.SegmentResponse;
-import org.lumongo.cluster.message.Lumongo.SortRequest;
-import org.lumongo.cluster.message.Lumongo.StoreRequest;
-import org.lumongo.cluster.message.Lumongo.Term;
+import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.MongoConfig;
@@ -69,23 +44,8 @@ import org.lumongo.util.SegmentUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -288,9 +248,9 @@ public class LumongoIndex {
 				loadSegment(segmentNumber);
 				this.memberToSegmentMap.get(self).add(segmentNumber);
 			}
-			
+
 			this.segmentToMemberMap = new HashMap<>();
-			
+
 			for (Member m : memberToSegmentMap.keySet()) {
 				for (int i : memberToSegmentMap.get(m)) {
 					segmentToMemberMap.put(i, m);
@@ -861,7 +821,7 @@ public class LumongoIndex {
 										sortTerms[sortTermsIndex] = sr.getSortDate(dateIndex++);
 									}
 									else {
-										throw new Exception ("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
+										throw new Exception("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
 									}
 								}
 								else { //string
@@ -883,10 +843,10 @@ public class LumongoIndex {
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<SegmentResponse> response = segmentPool.submit(
-								() -> segment.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()),
-												queryRequest.getFacetRequest(), queryRequest.getSortRequest(), queryRequest.getRealTime(),
-												new QueryCacheKey(queryRequest)));
+				Future<SegmentResponse> response = segmentPool
+								.submit(() -> segment.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()),
+																queryRequest.getFacetRequest(), queryRequest.getSortRequest(), queryRequest.getRealTime(),
+																new QueryCacheKey(queryRequest)));
 
 				responses.add(response);
 
@@ -1036,7 +996,12 @@ public class LumongoIndex {
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<GetFieldNamesResponse> response = segmentPool.submit(segment::getFieldNames);
+				Future<GetFieldNamesResponse> response = segmentPool.submit(new Callable<GetFieldNamesResponse>() {
+					@Override
+					public GetFieldNamesResponse call() throws Exception {
+						return segment.getFieldNames();
+					}
+				});
 
 				responses.add(response);
 
@@ -1173,8 +1138,7 @@ public class LumongoIndex {
 	}
 
 	public static LumongoIndex loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, MongoClient mongo, ClusterConfig clusterConfig,
-					String indexName)
-					throws InvalidIndexConfig, UnknownHostException, MongoException {
+					String indexName) throws InvalidIndexConfig, UnknownHostException, MongoException {
 		IndexConfig indexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
 		log.info("Loading index <" + indexName + ">");
 

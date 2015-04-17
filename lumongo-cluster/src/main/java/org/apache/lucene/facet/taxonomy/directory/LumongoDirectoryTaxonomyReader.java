@@ -6,11 +6,7 @@ import org.apache.lucene.facet.taxonomy.FacetLabel;
 import org.apache.lucene.facet.taxonomy.LRUHashMap;
 import org.apache.lucene.facet.taxonomy.ParallelTaxonomyArrays;
 import org.apache.lucene.facet.taxonomy.TaxonomyReader;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.DocsEnum;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.LumongoIndexWriter;
-import org.apache.lucene.index.MultiFields;
+import org.apache.lucene.index.*;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
@@ -190,7 +186,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		ensureOpen();
 		return indexReader;
 	}
-	
+
 	@Override
 	public ParallelTaxonomyArrays getParallelTaxonomyArrays() throws IOException {
 		ensureOpen();
@@ -199,20 +195,20 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		}
 		return taxoArrays;
 	}
-	
+
 	@Override
 	public Map<String, String> getCommitUserData() throws IOException {
 		ensureOpen();
 		return indexReader.getIndexCommit().getUserData();
 	}
-	
+
 	@Override
 	public int getOrdinal(FacetLabel cp) throws IOException {
 		ensureOpen();
 		if (cp.length == 0) {
 			return ROOT_ORDINAL;
 		}
-		
+
 		// First try to find the answer in the LRU cache:
 		synchronized (ordinalCache) {
 			Integer res = ordinalCache.get(cp);
@@ -222,8 +218,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 					// doOpenIfChanged, we need to ensure that the ordinal is one that
 					// this DTR instance recognizes.
 					return res.intValue();
-				}
-				else {
+				} else {
 					// if we get here, it means that the category was found in the cache,
 					// but is not recognized by this TR instance. Therefore there's no
 					// need to continue search for the path on disk, because we won't find
@@ -232,14 +227,14 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 				}
 			}
 		}
-		
+
 		// If we're still here, we have a cache miss. We need to fetch the
 		// value from disk, and then also put it in the cache:
 		int ret = TaxonomyReader.INVALID_ORDINAL;
-		DocsEnum docs = MultiFields.getTermDocsEnum(indexReader, null, Consts.FULL, new BytesRef(FacetsConfig.pathToString(cp.components, cp.length)), 0);
+		PostingsEnum docs = MultiFields.getTermDocsEnum(indexReader, null, Consts.FULL, new BytesRef(FacetsConfig.pathToString(cp.components, cp.length)), 0);
 		if (docs != null && docs.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
 			ret = docs.docID();
-			
+
 			// we only store the fact that a category exists, not its inexistence.
 			// This is required because the caches are shared with new DTR instances
 			// that are allocated from doOpenIfChanged. Therefore, if we only store
@@ -252,11 +247,10 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		
 		return ret;
 	}
-	
 	@Override
 	public FacetLabel getPath(int ordinal) throws IOException {
 		ensureOpen();
-		
+
 		// Since the cache is shared with DTR instances allocated from
 		// doOpenIfChanged, we need to ensure that the ordinal is one that this DTR
 		// instance recognizes. Therefore we do this check up front, before we hit
@@ -264,7 +258,7 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		if (ordinal < 0 || ordinal >= indexReader.maxDoc()) {
 			return null;
 		}
-		
+
 		// TODO: can we use an int-based hash impl, such as IntToObjectMap,
 		// wrapped as LRU?
 		Integer catIDInteger = Integer.valueOf(ordinal);
@@ -274,22 +268,22 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 				return res;
 			}
 		}
-		
+
 		Document doc = indexReader.document(ordinal);
 		FacetLabel ret = new FacetLabel(FacetsConfig.stringToPath(doc.get(Consts.FULL)));
 		synchronized (categoryCache) {
 			categoryCache.put(catIDInteger, ret);
 		}
-		
+
 		return ret;
 	}
-	
+
 	@Override
 	public int getSize() {
 		ensureOpen();
 		return indexReader.numDocs();
 	}
-	
+
 	/**
 	 * setCacheSize controls the maximum allowed size of each of the caches
 	 * used by {@link #getPath(int)} and {@link #getOrdinal(FacetLabel)}.
@@ -308,8 +302,8 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 			ordinalCache.setMaxSize(size);
 		}
 	}
-	
-	/** Returns ordinal to label mapping, up to the provided
+
+	/** Returns ordinal -&gt; label mapping, up to the provided
 	 *  max ordinal or number of ordinals, whichever is
 	 *  smaller. */
 	public String toString(int max) {
@@ -327,9 +321,8 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 					sb.append(i + ": EMPTY STRING!! \n");
 					continue;
 				}
-				sb.append(i + ": " + category.toString() + "\n");
-			}
-			catch (IOException e) {
+				sb.append(i +": "+category.toString()+"\n");
+			} catch (IOException e) {
 				if (logger.isLoggable(Level.FINEST)) {
 					logger.log(Level.FINEST, e.getMessage(), e);
 				}
@@ -337,5 +330,6 @@ public class LumongoDirectoryTaxonomyReader extends TaxonomyReader {
 		}
 		return sb.toString();
 	}
-	
+
+
 }

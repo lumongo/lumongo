@@ -5,7 +5,11 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
 import org.apache.log4j.Logger;
+import org.bson.Document;
 import org.lumongo.util.LogUtil;
 import twitter4j.StallWarning;
 import twitter4j.Status;
@@ -38,13 +42,13 @@ public class TwitterCrawler {
 		twitter.setOAuthAccessToken(accessToken);
 		
 		MongoClient mongo = new MongoClient();
-		DB db = mongo.getDB("twitter");
-		final DBCollection collection = db.getCollection("sample");
+		MongoDatabase db = mongo.getDatabase("twitter");
+		final MongoCollection<Document> collection = db.getCollection("sample");
 		
 		StatusListener listener = new StatusListener() {
 			@Override
 			public void onStatus(Status status) {
-				DBObject tweet = new BasicDBObject();
+				Document tweet = new Document();
 				
 				tweet.put("_id", status.getId());
 				tweet.put("createdAt", status.getCreatedAt());
@@ -60,12 +64,12 @@ public class TwitterCrawler {
 				}
 				
 				tweet.put("text", status.getText());
-				
-				DBObject query = new BasicDBObject();
+
+				Document query = new Document();
 				
 				query.put("_id", status.getId());
-				
-				collection.update(query, tweet, true, false);
+
+				collection.replaceOne(query, tweet, new UpdateOptions().upsert(true));
 			}
 			
 			@Override

@@ -2,54 +2,17 @@ package org.lumongo.server.indexing;
 
 import com.google.protobuf.ProtocolStringList;
 import org.apache.log4j.Logger;
-import org.apache.lucene.document.Document;
+import org.apache.lucene.document.*;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.LongField;
-import org.apache.lucene.document.SortedNumericDocValuesField;
-import org.apache.lucene.document.SortedSetDocValuesField;
-import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
-import org.apache.lucene.facet.DrillDownQuery;
-import org.apache.lucene.facet.DrillSideways;
+import org.apache.lucene.facet.*;
 import org.apache.lucene.facet.DrillSideways.DrillSidewaysResult;
-import org.apache.lucene.facet.FacetField;
-import org.apache.lucene.facet.FacetResult;
-import org.apache.lucene.facet.Facets;
-import org.apache.lucene.facet.FacetsCollector;
-import org.apache.lucene.facet.FacetsConfig;
-import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.FieldInfo;
-import org.apache.lucene.index.FieldInfos;
-import org.apache.lucene.index.Fields;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexableField;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.LumongoIndexWriter;
+import org.apache.lucene.index.*;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.Terms;
-import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.index.TermsEnum.SeekStatus;
-import org.apache.lucene.queries.BooleanFilter;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.FieldDoc;
-import org.apache.lucene.search.Filter;
-import org.apache.lucene.search.FilteredQuery;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MultiCollector;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.QueryWrapperFilter;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.Sort;
-import org.apache.lucene.search.SortField;
-import org.apache.lucene.search.SortedNumericSortField;
-import org.apache.lucene.search.SortedSetSortField;
-import org.apache.lucene.search.TopDocsCollector;
-import org.apache.lucene.search.TopFieldCollector;
-import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.search.*;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.bson.BSONObject;
@@ -59,45 +22,16 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.CountRequest;
-import org.lumongo.cluster.message.Lumongo.FacetAs;
+import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
-import org.lumongo.cluster.message.Lumongo.FacetCount;
-import org.lumongo.cluster.message.Lumongo.FacetGroup;
-import org.lumongo.cluster.message.Lumongo.FacetRequest;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
-import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
-import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
-import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
-import org.lumongo.cluster.message.Lumongo.IndexAs;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
-import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
-import org.lumongo.cluster.message.Lumongo.ScoredResult;
-import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
-import org.lumongo.cluster.message.Lumongo.SegmentResponse;
-import org.lumongo.cluster.message.Lumongo.SortRequest;
 import org.lumongo.server.config.IndexConfig;
-import org.lumongo.server.indexing.field.DateFieldIndexer;
-import org.lumongo.server.indexing.field.DoubleFieldIndexer;
-import org.lumongo.server.indexing.field.FloatFieldIndexer;
-import org.lumongo.server.indexing.field.IntFieldIndexer;
-import org.lumongo.server.indexing.field.LongFieldIndexer;
-import org.lumongo.server.indexing.field.StringFieldIndexer;
+import org.lumongo.server.indexing.field.*;
 import org.lumongo.server.searching.QueryWithFilters;
 import org.lumongo.util.LumongoUtil;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
@@ -190,7 +124,7 @@ public class LumongoSegment {
 
 		return o;
 	}
-	
+
 	protected FacetsConfig getFacetsConfig() {
 		//only need to be done once but no harm
 		FacetsConfig.DEFAULT_DIM_CONFIG.hierarchical = true;
@@ -205,7 +139,7 @@ public class LumongoSegment {
 			}
 		};
 	}
-	
+
 	private void setupQueryCache(IndexConfig indexConfig) {
 		queryCacheEnabled = (indexConfig.getSegmentQueryCacheSize() > 0);
 		segmentQueryCacheMaxAmount = indexConfig.getSegmentQueryCacheMaxAmount();
@@ -247,14 +181,13 @@ public class LumongoSegment {
 			Query q = queryWithFilters.getQuery();
 
 			if (!queryWithFilters.getFilterQueries().isEmpty()) {
-				BooleanFilter bf = new BooleanFilter();
+				BooleanQuery booleanQuery = new BooleanQuery();
 
 				for (Query filterQuery : queryWithFilters.getFilterQueries()) {
-					Filter f = new QueryWrapperFilter(filterQuery);
-					bf.add(f, BooleanClause.Occur.MUST);
+					booleanQuery.add(filterQuery, BooleanClause.Occur.MUST);
 				}
 
-				q = new FilteredQuery(q, bf);
+				q = new QueryWrapperFilter(booleanQuery);
 			}
 
 			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
@@ -293,7 +226,7 @@ public class LumongoSegment {
 							type = SortField.Type.LONG;
 						}
 						else {
-							throw new Exception ("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
+							throw new Exception("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
 						}
 						sortFields.add(new SortedNumericSortField(sortField, type, reverse));
 					}
@@ -324,8 +257,8 @@ public class LumongoSegment {
 					DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 						ProtocolStringList pathList = countRequest.getFacetField().getPathList();
-						FacetResult facetResult = ddsr.facets.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(),
-										pathList.toArray(new String[pathList.size()]));
+						FacetResult facetResult = ddsr.facets
+										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(), pathList.toArray(new String[pathList.size()]));
 
 						handleFacetResult(builder, facetResult, countRequest);
 
@@ -339,8 +272,8 @@ public class LumongoSegment {
 					Facets facets = new FastTaxonomyFacetCounts(taxonomyReader, facetsConfig, fc);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 						ProtocolStringList pathList = countRequest.getFacetField().getPathList();
-						FacetResult facetResult = facets.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(),
-										pathList.toArray(new String[pathList.size()]));
+						FacetResult facetResult = facets
+										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(), pathList.toArray(new String[pathList.size()]));
 						handleFacetResult(builder, facetResult, countRequest);
 					}
 				}
@@ -406,8 +339,7 @@ public class LumongoSegment {
 		builder.addFacetGroup(fg);
 	}
 
-	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i)
-					throws IOException {
+	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i) throws IOException {
 		int docId = results[i].doc;
 		Document d = is.doc(docId, fetchSet);
 		ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
@@ -488,7 +420,7 @@ public class LumongoSegment {
 		}
 		return srBuilder;
 	}
-	
+
 	private void possibleCommit() throws IOException {
 		lastChange = System.currentTimeMillis();
 
@@ -504,7 +436,7 @@ public class LumongoSegment {
 			queryResultCacheRealtime.clear();
 		}
 	}
-	
+
 	public void forceCommit() throws IOException {
 		long currentTime = System.currentTimeMillis();
 
@@ -519,7 +451,7 @@ public class LumongoSegment {
 		lastCommit = currentTime;
 
 	}
-	
+
 	public void doCommit() throws IOException {
 
 		long currentTime = System.currentTimeMillis();
@@ -536,7 +468,7 @@ public class LumongoSegment {
 			}
 		}
 	}
-	
+
 	public void close() throws IOException {
 		forceCommit();
 
@@ -636,8 +568,7 @@ public class LumongoSegment {
 						}
 						else {
 							throw new RuntimeException("Not handled numeric sort type <" + sortAs.getSortType() + "> for document field <" + storedFieldName
-											+ "> / sort field <"
-											+ sortFieldName + ">");
+											+ "> / sort field <" + sortFieldName + ">");
 						}
 
 						d.add(docValue);
@@ -648,8 +579,9 @@ public class LumongoSegment {
 						d.add(docValue);
 					}
 					else {
-						throw new RuntimeException("Expecting number for document field <" + storedFieldName + "> / sort field <"
-										+ sortFieldName + ">, found <" + o.getClass() + ">");
+						throw new RuntimeException(
+										"Expecting number for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">, found <" + o
+														.getClass() + ">");
 					}
 				});
 			}
@@ -670,7 +602,12 @@ public class LumongoSegment {
 	private void handleFacetsForStoredField(List<FacetField> facetFields, FieldConfig fc, Object o) throws Exception {
 		for (FacetAs fa : fc.getFacetAsList()) {
 			if (LMFacetType.STANDARD.equals(fa.getFacetType())) {
-				LumongoUtil.handleLists(o, obj -> facetFields.add(new FacetField(fa.getFacetName(), obj.toString())));
+				LumongoUtil.handleLists(o, obj -> {
+					String string = obj.toString();
+					if (!string.isEmpty()) {
+						facetFields.add(new FacetField(fa.getFacetName(), string));
+					}
+				});
 			}
 			else if (IndexConfig.isDateFacetType(fa.getFacetType())) {
 				LumongoUtil.handleLists(o, obj -> {
@@ -694,11 +631,8 @@ public class LumongoSegment {
 
 					}
 					else {
-						throw new RuntimeException(
-										"Cannot facet date for document field <" + fc.getStoredFieldName() + "> / facet <" + fa.getFacetName()
-														+ ">: excepted Date or Collection of Date, found <" + o
-														.getClass()
-														.getSimpleName() + ">");
+						throw new RuntimeException("Cannot facet date for document field <" + fc.getStoredFieldName() + "> / facet <" + fa.getFacetName()
+										+ ">: excepted Date or Collection of Date, found <" + o.getClass().getSimpleName() + ">");
 					}
 				});
 			}
@@ -762,17 +696,17 @@ public class LumongoSegment {
 			if (request.hasStartingTerm()) {
 				startTerm = request.getStartingTerm();
 			}
-			
+
 			Pattern termFilter = null;
 			if (request.hasTermFilter()) {
 				termFilter = Pattern.compile(request.getTermFilter());
 			}
-			
+
 			Pattern termMatch = null;
 			if (request.hasTermMatch()) {
 				termMatch = Pattern.compile(request.getTermMatch());
 			}
-			
+
 			BytesRef startTermBytes = new BytesRef(startTerm);
 
 			SortedMap<String, AtomicLong> termsMap = new TreeMap<>();
@@ -809,7 +743,7 @@ public class LumongoSegment {
 			for (String term : termsMap.keySet()) {
 				AtomicLong docFreq = termsMap.get(term);
 				builder.addTerm(Lumongo.Term.newBuilder().setValue(term).setDocFreq(docFreq.get()));
-				
+
 				// TODO remove the limit and paging and just return all?
 				i++;
 				if (i > amount) {
