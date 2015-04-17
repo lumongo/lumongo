@@ -22,19 +22,19 @@ import org.apache.lucene.store.IndexOutput;
 import java.io.IOException;
 
 public class DistributedIndexOutput extends IndexOutput {
-	
+
 	private final NosqlFile nosqlFile;
-	
+
 	private boolean isOpen;
 	private long position;
-	
+
 	public DistributedIndexOutput(NosqlFile nosqlFile) throws IOException {
 		super(nosqlFile.getFileName());
 		this.nosqlFile = nosqlFile;
 		nosqlFile.resetChecksum();
 		this.isOpen = true;
 	}
-	
+
 	@Override
 	public void close() throws IOException {
 		if (isOpen) {
@@ -51,23 +51,23 @@ public class DistributedIndexOutput extends IndexOutput {
 	public long getFilePointer() {
 		return position;
 	}
-	
+
 	@Override
 	public void writeByte(byte b) throws IOException {
 		nosqlFile.write(position, b);
 		position += 1;
 	}
-	
+
 	@Override
 	public void writeBytes(byte[] b, int offset, int length) throws IOException {
 		nosqlFile.write(position, b, offset, length);
 		position += length;
 	}
-	
+
 	@Override
 	public long getChecksum() throws IOException {
 		flush();
 		return nosqlFile.getChecksum();
 	}
-	
+
 }

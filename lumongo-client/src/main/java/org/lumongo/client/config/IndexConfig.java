@@ -30,7 +30,7 @@ public class IndexConfig {
 	
 	public IndexConfig(String defaultSearchField) {
 		this.defaultSearchField = defaultSearchField;
-		this.fieldMap = new TreeMap<String, FieldConfig>();
+		this.fieldMap = new TreeMap<>();
 	}
 	
 	public String getDefaultSearchField() {

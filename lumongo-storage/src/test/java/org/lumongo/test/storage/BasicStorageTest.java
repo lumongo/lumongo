@@ -123,7 +123,7 @@ public class BasicStorageTest {
 
 		start = System.currentTimeMillis();
 
-		List<String> ids = new ArrayList<String>();
+		List<String> ids = new ArrayList<>();
 		for (ScoreDoc hit : hits) {
 			int docId = hit.doc;
 			Document d = searcher.doc(docId);

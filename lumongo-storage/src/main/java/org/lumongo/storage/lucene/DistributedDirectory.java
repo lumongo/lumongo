@@ -26,14 +26,14 @@ import java.nio.file.Path;
 import java.util.Collection;
 
 public class DistributedDirectory extends BaseDirectory {
-	
+
 	protected NosqlDirectory nosqlDirectory;
-	
+
 	public DistributedDirectory(NosqlDirectory nosqlDirectory) throws IOException {
 		super(new SingleInstanceLockFactory());
 		this.nosqlDirectory = nosqlDirectory;
 	}
-	
+
 	/**
 	 * ignore IOContext
 	 */
@@ -43,14 +43,14 @@ public class DistributedDirectory extends BaseDirectory {
 		NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name, true);
 		return new DistributedIndexOutput(nosqlFile);
 	}
-	
+
 	@Override
 	public void sync(Collection<String> names) throws IOException {
 		for (String name : names) {
 			NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name, true);
 			nosqlFile.flush();
 		}
-		
+
 	}
 
 	@Override
@@ -68,7 +68,7 @@ public class DistributedDirectory extends BaseDirectory {
 		NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name);
 		return new DistributedIndexInput(nosqlFile);
 	}
-	
+
 	@Override
 	public String[] listAll() throws IOException {
 		ensureOpen();
@@ -81,33 +81,33 @@ public class DistributedDirectory extends BaseDirectory {
 		NosqlFile nosqlFile = nosqlDirectory.getFileHandle(fileName);
 		return nosqlFile.getFileLength();
 	}
-	
+
 	@Override
 	public void deleteFile(String fileName) throws IOException {
 		ensureOpen();
 		NosqlFile nosqlFile = nosqlDirectory.getFileHandle(fileName);
 		nosqlDirectory.deleteFile(nosqlFile);
 	}
-	
+
 	public void copyToFSDirectory(Path path) throws IOException {
 		copyToDirectory(FSDirectory.open(path));
 	}
-	
+
 	public void copyToDirectory(Directory directory) throws IOException {
 		for (String file : this.listAll()) {
 			directory.copyFrom(this, file, file, IOContext.DEFAULT);
 		}
 	}
-	
+
 	@Override
 	public void close() throws IOException {
 		isOpen = false;
 		nosqlDirectory.close();
 	}
-	
+
 	@Override
 	public String toString() {
 		return nosqlDirectory.toString();
 	}
-	
+
 }

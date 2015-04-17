@@ -22,20 +22,20 @@ import java.util.List;
  *
  */
 public class BatchFetch extends SimpleCommand<BatchFetchRequest, BatchFetchResult> {
-	
+
 	private List<Fetch> fetchList;
-	
+
 	public BatchFetch() {
-		this.fetchList = new ArrayList<Fetch>();
+		this.fetchList = new ArrayList<>();
 	}
-	
+
 	public BatchFetch addFetches(Collection<? extends Fetch> fetches) {
 		this.fetchList.addAll(fetches);
 		return this;
 	}
-	
+
 	public BatchFetch addFetchDocumentsFromUniqueIds(Collection<String> uniqueIds, String indexName) {
-		
+
 		for (String uniqueId : uniqueIds) {
 			Fetch f = new Fetch(uniqueId, indexName);
 			f.setResultFetchType(FetchType.FULL);
@@ -44,13 +44,13 @@ public class BatchFetch extends SimpleCommand<BatchFetchRequest, BatchFetchResul
 		}
 		return this;
 	}
-	
+
 	public BatchFetch addFetchDocumentsFromResults(QueryResult qr) {
 		return addFetchDocumentsFromResults(qr.getResults());
 	}
-	
+
 	public BatchFetch addFetchDocumentsFromResults(Collection<ScoredResult> scoredResults) {
-		
+
 		for (ScoredResult scoredResult : scoredResults) {
 			Fetch f = new Fetch(scoredResult.getUniqueId(), scoredResult.getIndexName());
 			f.setResultFetchType(FetchType.FULL);
@@ -59,7 +59,7 @@ public class BatchFetch extends SimpleCommand<BatchFetchRequest, BatchFetchResul
 		}
 		return this;
 	}
-	
+
 	@Override
 	public BatchFetchRequest getRequest() {
 		BatchFetchRequest.Builder batchFetchRequestBuilder = BatchFetchRequest.newBuilder();
@@ -68,15 +68,15 @@ public class BatchFetch extends SimpleCommand<BatchFetchRequest, BatchFetchResul
 		}
 		return batchFetchRequestBuilder.build();
 	}
-	
+
 	@Override
 	public BatchFetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
 		ExternalService.BlockingInterface service = lumongoConnection.getService();
 		RpcController controller = lumongoConnection.getController();
-		
+
 		BatchFetchResponse batchFetchResponse = service.batchFetch(controller, getRequest());
-		
+
 		return new BatchFetchResult(batchFetchResponse);
 	}
-	
+
 }

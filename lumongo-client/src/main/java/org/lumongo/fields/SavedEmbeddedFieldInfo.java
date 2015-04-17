@@ -40,11 +40,11 @@ public class SavedEmbeddedFieldInfo<T> {
 			savedFieldMapper.setupField(f);
 		}
 	}
-	
+
 	public String getFieldName() {
 		return fieldName;
 	}
-	
+
 	public Object getValue(T object) throws Exception {
 
 		if (fieldIsList) {
@@ -65,13 +65,13 @@ public class SavedEmbeddedFieldInfo<T> {
 			return returnValue;
 		}
 	}
-	
+
 	public void populate(T newInstance, DBObject savedDBObject) throws Exception {
-		
+
 		Object value = savedDBObject.get(fieldName);
-		
+
 		boolean valuesIsList = value instanceof List;
-		
+
 		if (valuesIsList) {
 			List<DBObject> embeddedValues = (List<DBObject>) value;
 			if (fieldIsList) {
@@ -91,7 +91,7 @@ public class SavedEmbeddedFieldInfo<T> {
 					}
 				}
 				else if (valueList.isEmpty()) {
-					
+
 				}
 				else {
 					throw new Exception("Cannot assign multiple values <" + valueList + "> to field <" + field.getName() + "> with type <" + field.getType()
@@ -110,6 +110,6 @@ public class SavedEmbeddedFieldInfo<T> {
 				field.set(newInstance, obj);
 			}
 		}
-		
+
 	}
 }

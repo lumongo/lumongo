@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.Map;
 
 public class IndexRouting {
-	private Map<String, Map<Integer, LMMember>> indexMapping = new HashMap<String, Map<Integer, LMMember>>();
-	private Map<String, Integer> segmentCountMapping = new HashMap<String, Integer>();
+	private Map<String, Map<Integer, LMMember>> indexMapping = new HashMap<>();
+	private Map<String, Integer> segmentCountMapping = new HashMap<>();
 
 	public IndexRouting(List<IndexMapping> indexMappingList) {
 		for (IndexMapping im : indexMappingList) {
-			Map<Integer, LMMember> segmentMapping = new HashMap<Integer, LMMember>();
+			Map<Integer, LMMember> segmentMapping = new HashMap<>();
 			for (SegmentMapping sg : im.getSegmentMappingList()) {
 				segmentMapping.put(sg.getSegmentNumber(), sg.getMember());
 			}

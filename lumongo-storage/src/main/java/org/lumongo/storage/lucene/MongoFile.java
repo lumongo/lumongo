@@ -38,44 +38,44 @@ import java.util.zip.CRC32;
  */
 
 public class MongoFile implements NosqlFile {
-	
+
 	private final MongoDirectory mongoDirectory;
 
 	private final int fileNumber;
 	private final int blockSize;
-	
+
 	private long fileLength;
 	private long lastModified;
 	private String fileName;
 
 	private MongoBlock currentReadBlock;
 	private MongoBlock currentWriteBlock;
-	
+
 	private ConcurrentMap<Integer, Lock> blockLocks;
-	
+
 	private Cache<Integer, MongoBlock> dirtyBlocks;
 	private LoadingCache<Integer, MongoBlock> cache;
 	private boolean compressed;
-	
+
 	private final CRC32 crc;
-	
+
 	protected MongoFile(MongoDirectory mongoDirectory, String fileName, int fileNumber, int blockSize, boolean compressed) {
-		
+
 		this.crc = new CRC32();
-		
+
 		this.mongoDirectory = mongoDirectory;
 		this.fileName = fileName;
 		this.fileNumber = fileNumber;
 		this.fileLength = 0;
 		this.lastModified = System.currentTimeMillis();
-		
+
 		this.blockSize = blockSize;
 		this.compressed = compressed;
-		
+
 		this.blockLocks = new ConcurrentHashMap<Integer, Lock>();
-		
+
 		RemovalListener<Integer, MongoBlock> removalListener = new RemovalListener<Integer, MongoBlock>() {
-			
+
 			@Override
 			public void onRemoval(RemovalNotification<Integer, MongoBlock> notification) {
 				//Size based removal is handled in MongoDirectory
@@ -84,29 +84,29 @@ public class MongoFile implements NosqlFile {
 					Lock l = blockLocks.get(key);
 					l.lock();
 					try {
-						
+
 						MongoBlock mb = notification.getValue();
-						
+
 						if (mb.dirty) {
 							mb.storeBlock();
 						}
-						
+
 					}
 					finally {
 						l.unlock();
 					}
 				}
-				
+
 			}
 		};
-		
+
 		CacheLoader<Integer, MongoBlock> cacheLoader = new CacheLoader<Integer, MongoBlock>() {
 			@Override
 			public MongoBlock load(Integer key) throws Exception {
 				if (!blockLocks.containsKey(key)) {
 					blockLocks.putIfAbsent(key, new ReentrantLock());
 				}
-				
+
 				Lock l = blockLocks.get(key);
 				l.lock();
 				try {
@@ -128,17 +128,17 @@ public class MongoFile implements NosqlFile {
 				}
 			}
 		};
-		
+
 		this.dirtyBlocks = CacheBuilder.newBuilder().removalListener(removalListener).softValues().build();
-		
+
 		this.cache = CacheBuilder.newBuilder().softValues().build(cacheLoader);
-		
+
 	}
-	
+
 	public MongoDirectory getMongoDirectory() {
 		return mongoDirectory;
 	}
-	
+
 	@Override
 	public String getFileName() {
 		return fileName;
@@ -151,62 +151,62 @@ public class MongoFile implements NosqlFile {
 
 	@Override
 	public long getFileLength() {
-		
+
 		return fileLength;
 	}
-	
+
 	@Override
 	public void setFileLength(long fileLength) {
 		this.fileLength = fileLength;
 	}
-	
+
 	@Override
 	public long getLastModified() {
 		return lastModified;
 	}
-	
+
 	@Override
 	public void setLastModified(long lastModified) {
 		this.lastModified = lastModified;
 	}
-	
+
 	@Override
 	public byte readByte(long position) throws IOException {
 		try {
 			int block = (int) (position / mongoDirectory.getBlockSize());
 			int blockOffset = (int) (position - (block * mongoDirectory.getBlockSize()));
-			
+
 			MongoBlock mb = currentReadBlock;
-			
+
 			if (mb == null || block != mb.blockNumber) {
 				currentReadBlock = mb = cache.get(block);
 			}
-			
+
 			return mb.bytes[blockOffset];
 		}
 		catch (ExecutionException e) {
 			throw new IOException("Failed to read byte at position: " + position);
 		}
 	}
-	
+
 	@Override
 	public void readBytes(long position, byte[] b, int offset, int length) throws IOException {
 		try {
-			
+
 			while (length > 0) {
 				int block = (int) (position / blockSize);
 				int blockOffset = (int) (position - (block * blockSize));
-				
+
 				int readSize = Math.min(blockSize - blockOffset, length);
-				
+
 				MongoBlock mb = currentReadBlock;
-				
+
 				if (mb == null || block != mb.blockNumber) {
 					currentReadBlock = mb = cache.get(block);
 				}
-				
+
 				System.arraycopy(mb.bytes, blockOffset, b, offset, readSize);
-				
+
 				position += readSize;
 				offset += readSize;
 				length -= readSize;
@@ -216,53 +216,53 @@ public class MongoFile implements NosqlFile {
 			throw new IOException("Failed to read bytes at position: " + position);
 		}
 	}
-	
+
 	@Override
 	public void write(long position, byte b) throws IOException {
 		try {
 			int block = (int) (position / blockSize);
 			int blockOffset = (int) (position - (block * blockSize));
-			
+
 			crc.update(b);
-			
+
 			MongoBlock mb = currentWriteBlock;
-			
+
 			if (mb == null || block != mb.blockNumber) {
 				if (mb != null) {
 					markDirty(mb);
 				}
 				currentWriteBlock = mb = cache.get(block);
 			}
-			
+
 			mb.bytes[blockOffset] = b;
 			mb.dirty = true;
-			
+
 			fileLength = Math.max(position + 1, fileLength);
 		}
 		catch (ExecutionException e) {
 			throw new IOException("Failed to write byte at position: " + position);
 		}
 	}
-	
+
 	@Override
 	public void write(long position, byte[] b, int offset, int length) throws IOException {
 		try {
 			crc.update(b, offset, length);
-			
+
 			while (length > 0) {
 				int block = (int) (position / blockSize);
 				int blockOffset = (int) (position - (block * blockSize));
 				int writeSize = Math.min(blockSize - blockOffset, length);
-				
+
 				MongoBlock mb = currentWriteBlock;
-				
+
 				if (mb == null || block != mb.blockNumber) {
 					if (mb != null) {
 						markDirty(mb);
 					}
 					currentWriteBlock = mb = cache.get(block);
 				}
-				
+
 				System.arraycopy(b, offset, mb.bytes, blockOffset, writeSize);
 				mb.dirty = true;
 				position += writeSize;
@@ -275,7 +275,7 @@ public class MongoFile implements NosqlFile {
 			throw new IOException("Failed to write bytes at position: " + position);
 		}
 	}
-	
+
 	private void markDirty(MongoBlock mb) {
 		int blockNumber = mb.blockNumber;
 		Lock l = blockLocks.get(blockNumber);
@@ -288,31 +288,31 @@ public class MongoFile implements NosqlFile {
 			l.unlock();
 		}
 	}
-	
+
 	@Override
 	public void flush() throws IOException {
-		
+
 		if (currentWriteBlock != null) {
 			dirtyBlocks.put(currentWriteBlock.blockNumber, currentWriteBlock);
 		}
-		
+
 		Set<Integer> dirtyBlockKeys = new HashSet<Integer>(dirtyBlocks.asMap().keySet());
-		
+
 		dirtyBlocks.invalidateAll(dirtyBlockKeys);
-		
+
 		mongoDirectory.updateFileMetadata(this);
 	}
-	
+
 	private MongoBlock getBlock(Integer blockNumber, boolean createIfNotExist) throws IOException {
-		
+
 		MongoCollection<Document> c = mongoDirectory.getBlocksCollection();
-		
+
 		Document query = new Document();
 		query.put(MongoDirectory.FILE_NUMBER, fileNumber);
 		query.put(MongoDirectory.BLOCK_NUMBER, blockNumber);
-		
+
 		Document result = c.find(query).first();
-		
+
 		byte[] bytes = null;
 		if (result != null) {
 			bytes = ((Binary) result.get(MongoDirectory.BYTES)).getData();
@@ -320,30 +320,30 @@ public class MongoFile implements NosqlFile {
 			if (blockCompressed) {
 				bytes = Compression.uncompressZlib(bytes);
 			}
-			
+
 			return new MongoBlock(this, fileNumber, blockNumber, bytes);
 		}
-		
+
 		if (createIfNotExist) {
 			bytes = new byte[blockSize];
 			MongoBlock mongoBlock = new MongoBlock(this, fileNumber, blockNumber, bytes);
 			mongoBlock.storeBlock();
 			return mongoBlock;
 		}
-		
+
 		return null;
-		
+
 	}
-	
+
 	public void storeBlock(MongoBlock mongoBlock) {
 		// System.out.println("Store: " + mongoBlock.getBlockNumber());
-		
+
 		MongoCollection<Document> c = mongoDirectory.getBlocksCollection();
-		
+
 		Document query = new Document();
 		query.put(MongoDirectory.FILE_NUMBER, fileNumber);
 		query.put(MongoDirectory.BLOCK_NUMBER, mongoBlock.blockNumber);
-		
+
 		Document object = new Document();
 		object.put(MongoDirectory.FILE_NUMBER, fileNumber);
 		object.put(MongoDirectory.BLOCK_NUMBER, mongoBlock.blockNumber);
@@ -368,41 +368,41 @@ public class MongoFile implements NosqlFile {
 		}
 		object.put(MongoDirectory.BYTES, newBytes);
 		object.put(MongoDirectory.COMPRESSED, blockCompressed);
-		
+
 		c.replaceOne(query, object, new UpdateOptions().upsert(true));
 		mongoBlock.dirty = false;
-		
+
 	}
-	
+
 	@Override
 	public int getFileNumber() {
 		return fileNumber;
 	}
-	
+
 	@Override
 	public int getBlockSize() {
 		return blockSize;
 	}
-	
+
 	@Override
 	public boolean isCompressed() {
 		return compressed;
 	}
-	
+
 	@Override
 	public long getChecksum() {
 		return crc.getValue();
 	}
-	
+
 	@Override
 	public void resetChecksum() {
 		crc.reset();
 	}
-	
+
 	@Override
 	public String toString() {
 		return "MongoFile [fileName=" + fileName + ", fileNumber=" + fileNumber + ", blockSize=" + blockSize + ", fileLength=" + fileLength + ", lastModified="
 						+ lastModified + ", compressed=" + compressed + "]";
 	}
-	
+
 }

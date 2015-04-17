@@ -14,22 +14,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class WorkPool {
-	
+
 	private ListeningExecutorService pool;
 	private final static AtomicInteger threadNumber = new AtomicInteger(1);
-	
+
 	public WorkPool(int threads) {
 		this(threads, threads * 10);
 	}
-	
+
 	public WorkPool(int threads, int maxQueued) {
 		this(threads, maxQueued, "workPool-" + threadNumber.getAndIncrement());
 	}
-	
+
 	public WorkPool(int threads, int maxQueued, String poolName) {
 		BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(maxQueued) {
 			private static final long serialVersionUID = 1L;
-			
+
 			@Override
 			public boolean offer(Runnable e) {
 				try {
@@ -41,17 +41,16 @@ public class WorkPool {
 				return true;
 			}
 
-			;
 		};
-		
+
 		pool = MoreExecutors
 						.listeningDecorator(new ThreadPoolExecutor(threads, threads, 0L, TimeUnit.MILLISECONDS, workQueue, new LumongoThreadFactory(poolName)));
 	}
-	
+
 	public <T> ListenableFuture<T> executeAsync(Callable<T> task) {
 		return pool.submit(task);
 	}
-	
+
 	public <T> T execute(Callable<T> task) throws Exception {
 		try {
 			return executeAsync(task).get();
@@ -69,7 +68,7 @@ public class WorkPool {
 			throw e;
 		}
 	}
-	
+
 	public void shutdown() throws Exception {
 		pool.shutdown();
 		boolean terminated = false;

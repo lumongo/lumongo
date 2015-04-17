@@ -17,8 +17,8 @@ public class LumongoBaseWorkPool extends WorkPool {
 	private static AtomicInteger counter = new AtomicInteger(0);
 
 	public LumongoBaseWorkPool(LumongoPoolConfig lumongoPoolConfig) throws Exception {
-		this(new LumongoPool(lumongoPoolConfig), lumongoPoolConfig.getPoolName() != null ? lumongoPoolConfig.getPoolName() : "lumongoPool-"
-						+ counter.getAndIncrement());
+		this(new LumongoPool(lumongoPoolConfig),
+						lumongoPoolConfig.getPoolName() != null ? lumongoPoolConfig.getPoolName() : "lumongoPool-" + counter.getAndIncrement());
 	}
 
 	public LumongoBaseWorkPool(LumongoPool lumongoPool) {
@@ -31,12 +31,12 @@ public class LumongoBaseWorkPool extends WorkPool {
 	}
 
 	public <R extends Result> ListenableFuture<R> executeAsync(Command<R> command) {
-		CallableCommand<R> callableCommand = new CallableCommand<R>(lumongoPool, command);
+		CallableCommand<R> callableCommand = new CallableCommand<>(lumongoPool, command);
 		return executeAsync(callableCommand);
 	}
 
 	public <R extends Result> R execute(Command<R> command) throws Exception {
-		CallableCommand<R> callableCommand = new CallableCommand<R>(lumongoPool, command);
+		CallableCommand<R> callableCommand = new CallableCommand<>(lumongoPool, command);
 		return execute(callableCommand);
 	}
 

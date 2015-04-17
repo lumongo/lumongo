@@ -8,31 +8,31 @@ import java.util.zip.Inflater;
 
 public class Compression {
 	private Compression() {
-		
+
 	}
-	
+
 	public enum CompressionLevel {
 		BEST(Deflater.BEST_COMPRESSION),
 		NORMAL(Deflater.DEFAULT_COMPRESSION),
 		FASTEST(Deflater.BEST_SPEED);
-		
+
 		private int level;
-		
+
 		CompressionLevel(int level) {
 			this.level = level;
 		}
-		
+
 		public int getLevel() {
 			return level;
 		}
 	}
-	
+
 	public static byte[] compressZlib(byte[] bytes, CompressionLevel compressionLevel) {
 		Deflater compressor = new Deflater();
 		compressor.setLevel(compressionLevel.getLevel());
 		compressor.setInput(bytes);
 		compressor.finish();
-		
+
 		int bufferLength = Math.max(bytes.length / 10, 16);
 		byte[] buf = new byte[bufferLength];
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(bufferLength);
@@ -44,12 +44,12 @@ public class Compression {
 			bos.close();
 		}
 		catch (Exception e) {
-			
+
 		}
 		compressor.end();
 		return bos.toByteArray();
 	}
-	
+
 	public static byte[] uncompressZlib(byte[] bytes) throws IOException {
 		Inflater inflater = new Inflater();
 		inflater.setInput(bytes);
@@ -67,5 +67,5 @@ public class Compression {
 		inflater.end();
 		return bos.toByteArray();
 	}
-	
+
 }

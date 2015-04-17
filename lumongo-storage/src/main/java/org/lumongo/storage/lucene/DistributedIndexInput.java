@@ -23,60 +23,60 @@ import java.io.IOException;
 
 public class DistributedIndexInput extends IndexInput {
 	private final NosqlFile nosqlFile;
-	
+
 	protected long position;
 	protected long sliceOffset;
 	protected long length;
-	
+
 	public DistributedIndexInput(NosqlFile nosqlFile) {
 		this(nosqlFile, 0, nosqlFile.getFileLength());
 	}
-	
+
 	public DistributedIndexInput(NosqlFile nosqlFile, long sliceOffset, long length) {
 		super(DistributedIndexInput.class.getSimpleName() + "(" + nosqlFile.getFileName() + ")");
 		this.nosqlFile = nosqlFile;
 		this.sliceOffset = sliceOffset;
 		this.length = length;
 	}
-	
+
 	@Override
 	public void close() throws IOException {
 		//NO-OP
 	}
-	
+
 	@Override
 	public long getFilePointer() {
 		return position;
 	}
-	
+
 	@Override
 	public void seek(long pos) throws IOException {
 		this.position = pos;
-		
+
 	}
-	
+
 	@Override
 	public long length() {
 		return length;
 	}
-	
+
 	@Override
 	public byte readByte() throws IOException {
 		return nosqlFile.readByte(position++ + sliceOffset);
 	}
-	
+
 	@Override
 	public void readBytes(byte[] b, int offset, int length) throws IOException {
 		nosqlFile.readBytes(position + sliceOffset, b, offset, length);
 		position += length;
 	}
-	
+
 	@Override
 	public IndexInput slice(String sliceDescription, final long sliceOffset, final long length) throws IOException {
 		final DistributedIndexInput dii = new DistributedIndexInput(nosqlFile, this.sliceOffset + sliceOffset, length);
 		return dii;
 	}
-	
+
 	@Override
 	public IndexInput clone() {
 		IndexInput ii = new DistributedIndexInput(nosqlFile, sliceOffset, length);
@@ -86,7 +86,7 @@ public class DistributedIndexInput extends IndexInput {
 		catch (IOException ioe) {
 			throw new AssertionError(ioe);
 		}
-		
+
 		return ii;
 	}
 }

@@ -50,9 +50,8 @@ public class FieldConfigMapper<T> {
 		if (f.isAnnotationPresent(Embedded.class)) {
 			if (f.isAnnotationPresent(IndexedFields.class) || f.isAnnotationPresent(Indexed.class) || f.isAnnotationPresent(Faceted.class) || f
 							.isAnnotationPresent(UniqueId.class) || f.isAnnotationPresent(DefaultSearch.class)) {
-				throw new RuntimeException(
-								"Cannot use Indexed, Faceted, UniqueId, DefaultSearch on embedded field <" + f.getName() + "> for class <"
-												+ clazz.getSimpleName() + ">");
+				throw new RuntimeException("Cannot use Indexed, Faceted, UniqueId, DefaultSearch on embedded field <" + f.getName() + "> for class <" + clazz
+								.getSimpleName() + ">");
 			}
 
 			Class<?> type = f.getType();
