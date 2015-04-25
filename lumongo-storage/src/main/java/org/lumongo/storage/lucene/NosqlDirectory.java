@@ -21,19 +21,19 @@ import java.io.IOException;
 
 public interface NosqlDirectory {
 	
-	public String[] getFileNames() throws IOException;
+	String[] getFileNames() throws IOException;
 	
-	public NosqlFile getFileHandle(String fileName) throws IOException;
+	NosqlFile getFileHandle(String fileName) throws IOException;
 	
-	public NosqlFile getFileHandle(String fileName, boolean createIfNotFound) throws IOException;
+	NosqlFile getFileHandle(String fileName, boolean createIfNotFound) throws IOException;
 	
-	public int getBlockSize();
+	int getBlockSize();
 	
-	public void updateFileMetadata(NosqlFile nosqlFile) throws IOException;
+	void updateFileMetadata(NosqlFile nosqlFile) throws IOException;
 	
-	public void deleteFile(NosqlFile nosqlFile) throws IOException;
+	void deleteFile(NosqlFile nosqlFile) throws IOException;
 	
-	public void close();
+	void close();
 
-	public void rename(String source, String dest) throws IOException;
+	void rename(String source, String dest) throws IOException;
 }

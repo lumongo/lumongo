@@ -66,7 +66,7 @@ public class DistributedDirectory extends BaseDirectory {
 	public IndexInput openInput(String name, IOContext context) throws IOException {
 		ensureOpen();
 		NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name);
-		return new DistributedIndexInput(nosqlFile);
+		return new DistributedIndexInput(nosqlFile.getFileName(), nosqlFile);
 	}
 
 	@Override

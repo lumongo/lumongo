@@ -28,12 +28,12 @@ public class DistributedIndexInput extends IndexInput {
 	protected long sliceOffset;
 	protected long length;
 
-	public DistributedIndexInput(NosqlFile nosqlFile) {
-		this(nosqlFile, 0, nosqlFile.getFileLength());
+	public DistributedIndexInput(String name, NosqlFile nosqlFile) {
+		this(name, nosqlFile, 0, nosqlFile.getFileLength());
 	}
 
-	public DistributedIndexInput(NosqlFile nosqlFile, long sliceOffset, long length) {
-		super(DistributedIndexInput.class.getSimpleName() + "(" + nosqlFile.getFileName() + ")");
+	public DistributedIndexInput(String name, NosqlFile nosqlFile, long sliceOffset, long length) {
+		super(DistributedIndexInput.class.getSimpleName() + "(" + name + ")");
 		this.nosqlFile = nosqlFile;
 		this.sliceOffset = sliceOffset;
 		this.length = length;
@@ -73,13 +73,16 @@ public class DistributedIndexInput extends IndexInput {
 
 	@Override
 	public IndexInput slice(String sliceDescription, final long sliceOffset, final long length) throws IOException {
-		final DistributedIndexInput dii = new DistributedIndexInput(nosqlFile, this.sliceOffset + sliceOffset, length);
+		if (sliceOffset < 0 || length < 0 || sliceOffset + length > this.length) {
+			throw new IllegalArgumentException("slice() " + sliceDescription + " out of bounds: "  + this);
+		}
+		final DistributedIndexInput dii = new DistributedIndexInput(getFullSliceDescription(sliceDescription), nosqlFile, this.sliceOffset + sliceOffset, length);
 		return dii;
 	}
 
 	@Override
 	public IndexInput clone() {
-		IndexInput ii = new DistributedIndexInput(nosqlFile, sliceOffset, length);
+		IndexInput ii = new DistributedIndexInput(getFullSliceDescription(null), nosqlFile, sliceOffset, length);
 		try {
 			ii.seek(getFilePointer());
 		}
