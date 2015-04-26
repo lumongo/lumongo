@@ -19,6 +19,7 @@ package org.lumongo.storage.lucene;
 
 import org.apache.lucene.store.IndexInput;
 
+import java.io.EOFException;
 import java.io.IOException;
 
 public class DistributedIndexInput extends IndexInput {
@@ -62,11 +63,20 @@ public class DistributedIndexInput extends IndexInput {
 
 	@Override
 	public byte readByte() throws IOException {
+		if (position >= length) {
+			throw new EOFException("read past EOF: " + this);
+		}
+
 		return nosqlFile.readByte(position++ + sliceOffset);
 	}
 
 	@Override
 	public void readBytes(byte[] b, int offset, int length) throws IOException {
+
+		if (position + length > this.length) {
+			throw new EOFException("read past EOF: " + this);
+		}
+
 		nosqlFile.readBytes(position + sliceOffset, b, offset, length);
 		position += length;
 	}

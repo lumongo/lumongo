@@ -21,36 +21,36 @@ import java.io.IOException;
 
 public interface NosqlFile {
 
-	public int getFileNumber();
+	int getFileNumber();
 
-	public String getFileName();
+	String getFileName();
 
-	public void setFileName(String fileName);
+	void setFileName(String fileName);
 
-	public long getFileLength();
+	long getFileLength();
 
-	public void setFileLength(long fileLength);
+	void setFileLength(long fileLength);
 
-	public long getLastModified();
+	long getLastModified();
 
-	public void setLastModified(long currentTime);
+	void setLastModified(long currentTime);
 
-	public void write(long position, byte b) throws IOException;
+	void write(long position, byte b) throws IOException;
 
-	public void write(long position, byte[] b, int offset, int length) throws IOException;
+	void write(long position, byte[] b, int offset, int length) throws IOException;
 
-	public void flush() throws IOException;
+	void flush() throws IOException;
 
-	public byte readByte(long position) throws IOException;
+	byte readByte(long position) throws IOException;
 
-	public void readBytes(long position, byte[] b, int offset, int length) throws IOException;
+	void readBytes(long position, byte[] b, int offset, int length) throws IOException;
 
-	public int getBlockSize();
+	int getBlockSize();
 
-	public boolean isCompressed();
+	boolean isCompressed();
 
-	public long getChecksum();
+	long getChecksum();
 
-	public void resetChecksum();
+	void resetChecksum();
 
 }

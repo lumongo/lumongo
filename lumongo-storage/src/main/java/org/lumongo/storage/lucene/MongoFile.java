@@ -14,6 +14,7 @@ import org.bson.types.Binary;
 import org.lumongo.util.Compression;
 import org.lumongo.util.Compression.CompressionLevel;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -72,32 +73,28 @@ public class MongoFile implements NosqlFile {
 		this.blockSize = blockSize;
 		this.compressed = compressed;
 
-		this.blockLocks = new ConcurrentHashMap<Integer, Lock>();
+		this.blockLocks = new ConcurrentHashMap<>();
 
-		RemovalListener<Integer, MongoBlock> removalListener = new RemovalListener<Integer, MongoBlock>() {
+		RemovalListener<Integer, MongoBlock> removalListener = notification -> {
+			//Size based removal is handled in MongoDirectory
+			if (RemovalCause.EXPLICIT.equals(notification.getCause())) {
+				Integer key = notification.getKey();
+				Lock l = blockLocks.get(key);
+				l.lock();
+				try {
 
-			@Override
-			public void onRemoval(RemovalNotification<Integer, MongoBlock> notification) {
-				//Size based removal is handled in MongoDirectory
-				if (RemovalCause.EXPLICIT.equals(notification.getCause())) {
-					Integer key = notification.getKey();
-					Lock l = blockLocks.get(key);
-					l.lock();
-					try {
+					MongoBlock mb = notification.getValue();
 
-						MongoBlock mb = notification.getValue();
-
-						if (mb.dirty) {
-							mb.storeBlock();
-						}
-
+					if (mb.dirty) {
+						mb.storeBlock();
 					}
-					finally {
-						l.unlock();
-					}
+
 				}
-
+				finally {
+					l.unlock();
+				}
 			}
+
 		};
 
 		CacheLoader<Integer, MongoBlock> cacheLoader = new CacheLoader<Integer, MongoBlock>() {
@@ -191,6 +188,7 @@ public class MongoFile implements NosqlFile {
 
 	@Override
 	public void readBytes(long position, byte[] b, int offset, int length) throws IOException {
+
 		try {
 
 			while (length > 0) {
@@ -296,7 +294,7 @@ public class MongoFile implements NosqlFile {
 			dirtyBlocks.put(currentWriteBlock.blockNumber, currentWriteBlock);
 		}
 
-		Set<Integer> dirtyBlockKeys = new HashSet<Integer>(dirtyBlocks.asMap().keySet());
+		Set<Integer> dirtyBlockKeys = new HashSet<>(dirtyBlocks.asMap().keySet());
 
 		dirtyBlocks.invalidateAll(dirtyBlockKeys);
 
@@ -313,7 +311,7 @@ public class MongoFile implements NosqlFile {
 
 		Document result = c.find(query).first();
 
-		byte[] bytes = null;
+		byte[] bytes;
 		if (result != null) {
 			bytes = ((Binary) result.get(MongoDirectory.BYTES)).getData();
 			boolean blockCompressed = (boolean) result.get(MongoDirectory.COMPRESSED);
