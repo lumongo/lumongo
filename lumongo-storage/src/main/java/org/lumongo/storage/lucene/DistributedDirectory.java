@@ -19,6 +19,7 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
+import org.apache.lucene.store.LockFactory;
 import org.apache.lucene.store.SingleInstanceLockFactory;
 
 import java.io.IOException;
@@ -30,7 +31,11 @@ public class DistributedDirectory extends BaseDirectory {
 	protected NosqlDirectory nosqlDirectory;
 
 	public DistributedDirectory(NosqlDirectory nosqlDirectory) throws IOException {
-		super(new SingleInstanceLockFactory());
+		this(nosqlDirectory, new SingleInstanceLockFactory());
+	}
+
+	public DistributedDirectory(NosqlDirectory nosqlDirectory, LockFactory lockFactory) throws IOException {
+		super(lockFactory);
 		this.nosqlDirectory = nosqlDirectory;
 	}
 
