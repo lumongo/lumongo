@@ -7,7 +7,7 @@ description 'Lumongo Common'
 dependencies {
     compile 'org.mongodb:mongo-java-driver:3.0.0'
     compile 'com.google.guava:guava:18.0'
-    compile 'com.googlecode.protobuf-rpc-pro:protobuf-rpc-pro-duplex:3.3'
+    compile 'com.googlecode.protobuf-rpc-pro:protobuf-rpc-pro-duplex:3.3.1'
     compile 'log4j:log4j:1.2.17'
     compile 'org.slf4j:slf4j-log4j12:1.7.2'
     compile 'commons-pool:commons-pool:1.6'
