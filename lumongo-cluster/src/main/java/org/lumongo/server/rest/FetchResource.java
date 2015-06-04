@@ -3,6 +3,7 @@ package org.lumongo.server.rest;
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import org.apache.log4j.Logger;
 import org.bson.BSON;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
@@ -26,6 +27,7 @@ import java.io.OutputStream;
 @Path(LumongoConstants.FETCH_URL)
 public class FetchResource {
 
+
 	private LumongoIndexManager indexManager;
 
 	public FetchResource(LumongoIndexManager indexManager) {
@@ -33,9 +35,10 @@ public class FetchResource {
 	}
 
 	@GET
-	@Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON })
 	public Response get(@Context Response response, @QueryParam(LumongoConstants.UNIQUE_ID) final String uniqueId,
 					@QueryParam(LumongoConstants.INDEX) final String indexName) {
+
 
 		Lumongo.FetchRequest.Builder fetchRequest = Lumongo.FetchRequest.newBuilder();
 		fetchRequest.setIndexName(indexName);
@@ -62,7 +65,7 @@ public class FetchResource {
 
 		}
 		catch (Exception e) {
-			return Response.status(LumongoConstants.INTERNAL_ERROR).entity(e.getMessage()).build();
+			return Response.status(LumongoConstants.INTERNAL_ERROR).entity("Failed to fetch uniqueId <" + uniqueId + "> for index <" + indexName + ">: " + e.getMessage()).build();
 		}
 
 	}
