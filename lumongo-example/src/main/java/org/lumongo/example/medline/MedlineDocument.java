@@ -1,10 +1,12 @@
 package org.lumongo.example.medline;
 
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Faceted;
 import org.lumongo.fields.annotations.Indexed;
 import org.lumongo.fields.annotations.Settings;
+import org.lumongo.fields.annotations.Sorted;
 import org.lumongo.fields.annotations.UniqueId;
 
 import java.util.ArrayList;
@@ -14,8 +16,8 @@ import java.util.List;
 @Settings(
 				indexName = "medline",
 				numberOfSegments = 8,
-				segmentFlushInterval = 6000,
-				segmentCommitInterval = 24000)
+				segmentFlushInterval = 100,
+				segmentCommitInterval = 10000)
 public class MedlineDocument {
 	
 	@DefaultSearch
@@ -33,7 +35,7 @@ public class MedlineDocument {
 	
 	@Faceted
 	@Indexed(
-					analyzer = LMAnalyzer.NUMERIC_LONG)
+					analyzer = LMAnalyzer.DATE)
 	private Date publicationDate;
 	
 	@Indexed(
@@ -48,10 +50,12 @@ public class MedlineDocument {
 	@Indexed(
 					analyzer = LMAnalyzer.LC_KEYWORD)
 	private String journalCountry;
-	
+
+
 	@Faceted
 	@Indexed(
 					analyzer = LMAnalyzer.LC_KEYWORD)
+	@Sorted(type= Lumongo.SortAs.SortType.STRING)
 	private String issn;
 	
 	@Indexed(
