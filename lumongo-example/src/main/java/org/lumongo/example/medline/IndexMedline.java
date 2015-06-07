@@ -53,7 +53,7 @@ public class IndexMedline {
 		lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 		lumongoWorkPool.updateMembers();
 		
-		mapper = new Mapper<MedlineDocument>(MedlineDocument.class);
+		mapper = new Mapper<>(MedlineDocument.class);
 		
 		@SuppressWarnings("unused")
 		CreateOrUpdateIndexResult createOrUpdateResult = lumongoWorkPool.createOrUpdateIndex(mapper.createOrUpdateIndex());
