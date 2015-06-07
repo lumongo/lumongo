@@ -43,12 +43,15 @@ public class LumongoSegment {
 
 	private final int segmentNumber;
 
-	private final LumongoIndexWriter indexWriter;
+
 	private final IndexConfig indexConfig;
 	private final FacetsConfig facetsConfig;
 	private final String uniqueIdField;
 	private final AtomicLong counter;
 	private final Set<String> fetchSet;
+	private final IndexWriterManager indexWriterManager;
+
+	private LumongoIndexWriter indexWriter;
 	private LumongoDirectoryTaxonomyWriter taxonomyWriter;
 	private LumongoDirectoryTaxonomyReader taxonomyReader;
 	private Long lastCommit;
@@ -61,19 +64,17 @@ public class LumongoSegment {
 
 	private int segmentQueryCacheMaxAmount;
 
-	public LumongoSegment(int segmentNumber, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter, IndexConfig indexConfig)
-					throws IOException {
+	public LumongoSegment(int segmentNumber, IndexWriterManager indexWriterManager, IndexConfig indexConfig)
+					throws Exception {
 
 		setupQueryCache(indexConfig);
 
 		this.segmentNumber = segmentNumber;
 
-		this.indexWriter = indexWriter;
+		this.indexWriterManager = indexWriterManager;
+		
+		openIndexWriters();
 
-		this.taxonomyWriter = taxonomyWriter;
-		if (this.taxonomyWriter != null) {
-			this.taxonomyReader = new LumongoDirectoryTaxonomyReader(taxonomyWriter);
-		}
 
 		this.indexConfig = indexConfig;
 		this.facetsConfig = getFacetsConfig();
@@ -89,6 +90,44 @@ public class LumongoSegment {
 
 	}
 
+	private void reopenIndexWritersIfNecessary() throws Exception {
+		if (!indexWriter.isOpen()) {
+			synchronized (this) {
+				if (!indexWriter.isOpen()) {
+					this.indexWriter = this.indexWriterManager.getLumongoIndexWriter(segmentNumber);
+				}
+			}
+		}
+
+		if (!taxonomyWriter.getLumongoIndexWriter().isOpen()) {
+			synchronized (this) {
+				if (!taxonomyWriter.getLumongoIndexWriter().isOpen()) {
+					this.indexWriter = this.indexWriterManager.getLumongoIndexWriter(segmentNumber);
+					this.taxonomyReader = new LumongoDirectoryTaxonomyReader(taxonomyWriter);
+				}
+			}
+		}
+
+	}
+	
+	private void openIndexWriters() throws Exception {
+		if (this.indexWriter != null) {
+			indexWriter.close();
+		}
+		this.indexWriter = this.indexWriterManager.getLumongoIndexWriter(segmentNumber);
+
+		if (this.taxonomyWriter != null) {
+			taxonomyWriter.close();
+		}
+		this.taxonomyWriter = this.indexWriterManager.getLumongoDirectoryTaxonomyWriter(segmentNumber);
+
+		if (this.taxonomyReader != null) {
+			taxonomyReader.close();
+		}
+		this.taxonomyReader = new LumongoDirectoryTaxonomyReader(taxonomyWriter);
+
+	}
+	
 	public static Object getValueFromDocument(BSONObject document, String storedFieldName) {
 
 		Object o;
@@ -150,10 +189,14 @@ public class LumongoSegment {
 		}
 	}
 
-	public void updateIndexSettings(IndexSettings indexSettings, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter) {
+	public void updateIndexSettings(IndexSettings indexSettings) throws Exception {
 
 		this.indexConfig.configure(indexSettings);
 		setupQueryCache(indexConfig);
+
+		openIndexWriters();
+
+
 	}
 
 	public int getSegmentNumber() {
@@ -189,6 +232,8 @@ public class LumongoSegment {
 
 				q = new QueryWrapperFilter(booleanQuery);
 			}
+
+			reopenIndexWritersIfNecessary();
 
 			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
 
@@ -477,6 +522,8 @@ public class LumongoSegment {
 	}
 
 	public void index(String uniqueId, BSONObject document, long timestamp) throws Exception {
+		reopenIndexWritersIfNecessary();
+
 		Document d = new Document();
 
 		List<FacetField> facetFields = new ArrayList<>();
@@ -539,6 +586,9 @@ public class LumongoSegment {
 		d.add(new LongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
 
 		Term term = new Term(indexConfig.getUniqueIdField(), uniqueId);
+
+
+
 		indexWriter.updateDocument(term, d);
 		possibleCommit();
 	}
@@ -718,7 +768,7 @@ public class LumongoSegment {
 					Terms terms = fields.terms(fieldName);
 					if (terms != null) {
 						// TODO reuse?
-						TermsEnum termsEnum = terms.iterator(null);
+						TermsEnum termsEnum = terms.iterator();
 						SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
 
 						BytesRef text;

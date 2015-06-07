@@ -14,6 +14,7 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
@@ -31,6 +32,7 @@ import org.lumongo.server.exceptions.InvalidIndexConfig;
 import org.lumongo.server.exceptions.SegmentDoesNotExist;
 import org.lumongo.server.hazelcast.HazelcastManager;
 import org.lumongo.server.hazelcast.UpdateSegmentsTask;
+import org.lumongo.server.indexing.field.IndexWriterManager;
 import org.lumongo.server.searching.QueryWithFilters;
 import org.lumongo.storage.constants.MongoConstants;
 import org.lumongo.storage.lucene.DistributedDirectory;
@@ -50,7 +52,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class LumongoIndex {
+public class LumongoIndex implements IndexWriterManager {
 	public static final String STORAGE_DB_SUFFIX = "_rs";
 
 	private static final String RESULT_STORAGE_COLLECTION = "resultStorage";
@@ -309,11 +311,9 @@ public class LumongoIndex {
 				hzLock.lock();
 				log.info("Obtained lock for index <" + indexName + "> segment <" + segmentNumber + ">");
 
-				LumongoIndexWriter indexWriter = getLumongoIndexWriter(segmentNumber);
+				IndexWriterManager indexWriterManager = this;
 
-				LumongoDirectoryTaxonomyWriter taxonomyWriter = getLumongoDirectoryTaxonomyWriter(segmentNumber);
-
-				LumongoSegment s = new LumongoSegment(segmentNumber, indexWriter, taxonomyWriter, indexConfig);
+				LumongoSegment s = new LumongoSegment(segmentNumber, indexWriterManager, indexConfig);
 				segmentMap.put(segmentNumber, s);
 
 				log.info("Loaded segment <" + segmentNumber + "> for index <" + indexName + ">");
@@ -326,7 +326,7 @@ public class LumongoIndex {
 		}
 	}
 
-	private LumongoDirectoryTaxonomyWriter getLumongoDirectoryTaxonomyWriter(int segmentNumber) throws IOException {
+	public LumongoDirectoryTaxonomyWriter getLumongoDirectoryTaxonomyWriter(int segmentNumber) throws IOException {
 		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
 		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
 
@@ -336,7 +336,7 @@ public class LumongoIndex {
 		return new LumongoDirectoryTaxonomyWriter(ddFacet);
 	}
 
-	private LumongoIndexWriter getLumongoIndexWriter(int segmentNumber) throws Exception {
+	public LumongoIndexWriter getLumongoIndexWriter(int segmentNumber) throws Exception {
 		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
 		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
 		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
@@ -351,6 +351,7 @@ public class LumongoIndex {
 		return new LumongoIndexWriter(dd, config);
 	}
 
+
 	private String getIndexSegmentCollectionName(int segmentNumber) {
 		return indexName + "_" + segmentNumber;
 	}
@@ -358,6 +359,8 @@ public class LumongoIndex {
 	private String getIndexSegmentDbName(int segmentNumber) {
 		return mongoConfig.getDatabaseName() + "_" + indexName;
 	}
+
+
 
 	public void unloadSegment(int segmentNumber) throws IOException {
 		indexLock.writeLock().lock();
@@ -919,10 +922,7 @@ public class LumongoIndex {
 			lumongoAnalyzerFactory.getAnalyzer();
 			for (LumongoSegment s : segmentMap.values()) {
 				try {
-					LumongoIndexWriter indexWriter = getLumongoIndexWriter(s.getSegmentNumber());
-					LumongoDirectoryTaxonomyWriter taxonomyWriter = getLumongoDirectoryTaxonomyWriter(s.getSegmentNumber());
-
-					s.updateIndexSettings(indexSettings, indexWriter, taxonomyWriter);
+					s.updateIndexSettings(indexSettings);
 				}
 				catch (Exception ignored) {
 				}
