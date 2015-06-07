@@ -25,7 +25,6 @@ public class QueryResource {
 
 	public QueryResource(LumongoIndexManager indexManager) {
 		this.indexManager = indexManager;
-
 	}
 
 	@GET
