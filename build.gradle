@@ -20,9 +20,7 @@ subprojects {
 	
 	repositories {
 		mavenCentral()
-		maven {
-			url "https://dist.apache.org/repos/dist/dev/lucene/lucene-solr-5.2.0-RC4-rev1683206/lucene/maven/"
-		}
+
 	}
 
     dependencies {
