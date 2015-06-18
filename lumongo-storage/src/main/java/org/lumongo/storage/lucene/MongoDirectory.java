@@ -1,10 +1,5 @@
 package org.lumongo.storage.lucene;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalCause;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
@@ -16,8 +11,8 @@ import org.lumongo.storage.constants.MongoConstants;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE
@@ -34,36 +29,34 @@ import java.util.concurrent.ConcurrentMap;
 
 public class MongoDirectory implements NosqlDirectory {
 
-	private static final String $INC = "$inc";
-	private static final String _ID = "_id";
-	private static final String FILE_COUNTER = "fileCounter";
-	private static final String COUNTER = "counter";
-
 	public static final String BLOCK_SIZE = "blockSize";
 	public static final String BLOCK_NUMBER = "blockNumber";
 	public static final String LAST_MODIFIED = "lastModified";
 	public static final String LENGTH = "length";
 	public static final String FILE_NAME = "fileName";
 	public static final String FILE_NUMBER = "fileNumber";
-	public static final String COMPRESSED = "compressed";
 
 	public static String BYTES = "bytes";
 
 	public static final String FILES_SUFFIX = ".files";
 	public static final String BLOCKS_SUFFIX = ".blocks";
-	public static final String COUNTER_SUFFIX = ".counter";
-
-	private final MongoClient mongo;
-	private final String dbname;
-	private final String indexName;
-	private final int blockSize;
-	private final boolean compressed;
 
 	public static final int DEFAULT_BLOCK_SIZE = 1024 * 128;
 	public static final int DEFAULT_BLOCK_MAX = 12500;
 
+	private static short indexCount = 0;
+	private static final ConcurrentHashMap<String, Short> indexNameToNumberMap = new ConcurrentHashMap<>();
+
+	private final MongoClient mongo;
+	private final String dbname;
+	protected final String indexName;
+	private final int blockSize;
+	protected final short indexNumber;
 	private ConcurrentHashMap<String, MongoFile> nameToFileMap;
-	private static Cache<MongoBlock, MongoBlock> blockCache;
+
+	public static void setMaxIndexBlocks(int blocks) {
+		MongoFile.setMaxIndexBlocks(blocks);
+	}
 
 	/**
 	 * Removes an index from a database
@@ -74,62 +67,37 @@ public class MongoDirectory implements NosqlDirectory {
 	public static void dropIndex(MongoClient mongo, String dbname, String indexName) {
 		MongoDatabase db = mongo.getDatabase(dbname);
 		db.getCollection(indexName + MongoDirectory.BLOCKS_SUFFIX).drop();
-		db.getCollection(indexName + MongoDirectory.COUNTER_SUFFIX).drop();
 		db.getCollection(indexName + MongoDirectory.FILES_SUFFIX).drop();
 	}
 
-	public static void setMaxIndexBlocks(int blocks) {
-		ConcurrentMap<MongoBlock, MongoBlock> oldMap = null;
-		if (blockCache != null) {
-			oldMap = blockCache.asMap();
-		}
-		RemovalListener<MongoBlock, MongoBlock> listener = new RemovalListener<MongoBlock, MongoBlock>() {
-
-			@Override
-			public void onRemoval(RemovalNotification<MongoBlock, MongoBlock> notification) {
-				if (RemovalCause.SIZE.equals(notification.getCause())) {
-					MongoBlock mb = notification.getKey();
-
-					if (mb.dirty) {
-						mb.storeBlock();
-					}
-				}
-			}
-		};
-		blockCache = CacheBuilder.newBuilder().concurrencyLevel(16).maximumSize(blocks).removalListener(listener).build();
-		if (oldMap != null) {
-			blockCache.asMap().putAll(oldMap);
-			oldMap.clear();
-		}
-	}
-
-	static {
-		setMaxIndexBlocks(DEFAULT_BLOCK_MAX);
-	}
-
-	public static void cacheBlock(MongoBlock mb) {
-		blockCache.put(mb, mb);
-	}
-
-	public static void removeBlock(MongoBlock mb) {
-		blockCache.invalidate(mb);
-	}
-
 	public MongoDirectory(MongoClient mongo, String dbname, String indexName) throws MongoException, IOException {
-		this(mongo, dbname, indexName, false, false);
+		this(mongo, dbname, indexName, false);
 	}
 
-	public MongoDirectory(MongoClient mongo, String dbname, String indexName, boolean sharded, boolean compressed) throws MongoException, IOException {
-		this(mongo, dbname, indexName, sharded, compressed, DEFAULT_BLOCK_SIZE);
+	public MongoDirectory(MongoClient mongo, String dbname, String indexName, boolean sharded) throws MongoException, IOException {
+		this(mongo, dbname, indexName, sharded, DEFAULT_BLOCK_SIZE);
 	}
 
-	public MongoDirectory(MongoClient mongo, String dbname, String indexName, boolean sharded, boolean compressed, int blockSize)
+	public MongoDirectory(MongoClient mongo, String ddName, String indexName, boolean sharded, int blockSize)
 					throws MongoException, IOException {
-		this.compressed = compressed;
+
 		this.mongo = mongo;
-		this.dbname = dbname;
+		this.dbname = ddName;
 		this.indexName = indexName;
 		this.blockSize = blockSize;
+
+		synchronized (MongoDirectory.class) {
+			//get back a index number to use instead of the string
+			//this is not a persisted number and is just in memory
+			String key = ddName + "-" + indexName;
+			Short indexNumber = indexNameToNumberMap.get(key);
+			if (indexNumber == null) {
+				indexNameToNumberMap.put(key, indexCount);
+				indexCount++;
+				indexNumber = indexCount;
+			}
+			this.indexNumber = indexNumber;
+		}
 
 		getFilesCollection().createIndex(new Document(FILE_NUMBER, 1));
 		getBlocksCollection().createIndex(new Document(FILE_NUMBER, 1));
@@ -148,16 +116,7 @@ public class MongoDirectory implements NosqlDirectory {
 			db.runCommand(shardCommand);
 		}
 
-		Document counter = new Document();
-		counter.put(_ID, FILE_COUNTER);
-
-		MongoCollection<Document> counterCollection = getCounterCollection();
-		if (counterCollection.find(counter).first() == null) {
-			counter.put(COUNTER, 0);
-			counterCollection.insertOne(counter);
-		}
-
-		nameToFileMap = new ConcurrentHashMap<String, MongoFile>();
+		nameToFileMap = new ConcurrentHashMap<>();
 
 		fetchInitialContents();
 	}
@@ -175,12 +134,6 @@ public class MongoDirectory implements NosqlDirectory {
 			MongoFile mf = loadFileFromDBObject(d);
 			nameToFileMap.put(mf.getFileName(), mf);
 		}
-	}
-
-	public MongoCollection<Document> getCounterCollection() {
-		MongoDatabase db = mongo.getDatabase(dbname);
-		MongoCollection<Document> c = db.getCollection(indexName + COUNTER_SUFFIX);
-		return c;
 	}
 
 	public MongoCollection<Document> getFilesCollection() {
@@ -229,28 +182,33 @@ public class MongoDirectory implements NosqlDirectory {
 
 	}
 
-	private int getNewFileNumber() {
-		MongoCollection<Document> counterCollection = getCounterCollection();
-
-		Document query = new Document();
-		query.put(_ID, FILE_COUNTER);
-
-		Document update = new Document();
-		Document increment = new Document();
-		increment.put(COUNTER, 1);
-		update.put($INC, increment);
-
-		Document result = counterCollection.findOneAndUpdate(query, update);
-		int count = (int) result.get(COUNTER);
-
-		return count;
-	}
-
 	private MongoFile createFile(String fileName) throws IOException {
-		MongoFile mongoFile = new MongoFile(this, fileName, getNewFileNumber(), blockSize, compressed);
-		updateFileMetadata(mongoFile);
-		nameToFileMap.putIfAbsent(mongoFile.getFileName(), mongoFile);
-		return nameToFileMap.get(mongoFile.getFileName());
+		synchronized (this) {
+			TreeSet<Short> fileNumbers = new TreeSet<>();
+			FindIterable<Document> documents = getFilesCollection().find();
+			for (Document document : documents) {
+				fileNumbers.add(((Number) document.get(FILE_NUMBER)).shortValue());
+			}
+
+			Short fileNumber = null;
+			for (short i = 0; i < Short.MAX_VALUE; i++) {
+				if (!fileNumbers.contains(i)) {
+					fileNumber = i;
+					break;
+				}
+			}
+
+			if (fileNumber == null) {
+				throw new IOException("There are more than <" + Short.MAX_VALUE + "> files in the index");
+			}
+
+			MongoFile mongoFile = new MongoFile(this, fileName, fileNumber, blockSize);
+
+			updateFileMetadata(mongoFile);
+
+			nameToFileMap.putIfAbsent(mongoFile.getFileName(), mongoFile);
+			return nameToFileMap.get(mongoFile.getFileName());
+		}
 	}
 
 	private MongoFile loadFileFromDBObject(Document document) throws IOException {
@@ -261,10 +219,10 @@ public class MongoDirectory implements NosqlDirectory {
 
 	public MongoFile fromDocument(Document document) throws IOException {
 		try {
-			MongoFile mongoFile = new MongoFile(this, (String) document.get(FILE_NAME), (int) document.get(FILE_NUMBER), (int) document.get(BLOCK_SIZE),
-							(boolean) document.get(COMPRESSED));
-			mongoFile.setFileLength((long) document.get(LENGTH));
-			mongoFile.setLastModified((long) document.get(LAST_MODIFIED));
+			MongoFile mongoFile = new MongoFile(this, (String) document.get(FILE_NAME), ((Number) document.get(FILE_NUMBER)).shortValue(),
+							((Number) document.get(BLOCK_SIZE)).intValue());
+			mongoFile.setFileLength(((Number) document.get(LENGTH)).longValue());
+			mongoFile.setLastModified(((Number) document.get(LAST_MODIFIED)).longValue());
 			return mongoFile;
 		}
 		catch (Exception e) {
@@ -281,7 +239,6 @@ public class MongoDirectory implements NosqlDirectory {
 			document.put(LENGTH, nosqlFile.getFileLength());
 			document.put(LAST_MODIFIED, nosqlFile.getLastModified());
 			document.put(BLOCK_SIZE, nosqlFile.getBlockSize());
-			document.put(COMPRESSED, nosqlFile.isCompressed());
 			return document;
 		}
 		catch (Exception e) {

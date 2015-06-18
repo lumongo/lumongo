@@ -15,59 +15,68 @@ package org.lumongo.storage.lucene;
 
 public class MongoBlock {
 
-	private MongoFile mongoFile;
-	private final int fileNumber;
-	private String indexName;
-
-	protected final byte[] bytes;
-	protected boolean dirty;
+	protected final MongoFile mongoFile;
 	protected final int blockNumber;
+	protected final long blockKey;
 
-	public MongoBlock(MongoFile mongoFile, int fileNumber, int blockNumber, byte[] bytes) {
+	protected final Object lock;
+
+	protected byte[] bytes;
+
+	private boolean dirty;
+
+	public MongoBlock(MongoFile mongoFile, int blockNumber, byte[] bytes) {
 		this.mongoFile = mongoFile;
-		this.indexName = mongoFile.getMongoDirectory().getIndexName();
-		this.fileNumber = fileNumber;
 		this.blockNumber = blockNumber;
 		this.bytes = bytes;
-		dirty = false;
+		this.dirty = false;
+		this.blockKey = computeBlockKey(mongoFile, blockNumber);
+		this.lock = new Object();
 	}
 
-	protected void storeBlock() {
-		mongoFile.storeBlock(this);
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+
+		MongoBlock that = (MongoBlock) o;
+
+		if (blockKey != that.blockKey) {
+			return false;
+		}
+
+		return true;
+
+	}
+
+	public void markDirty() {
+		synchronized (lock) {
+			dirty = true;
+		}
+	}
+
+	public void flushIfDirty() {
+		synchronized (lock) {
+			if (dirty) {
+				mongoFile.storeBlock(this);
+				dirty = false;
+			}
+		}
 	}
 
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + blockNumber;
-		result = prime * result + fileNumber;
-		result = prime * result + indexName.hashCode();
-		return result;
+		return Long.hashCode(blockKey);
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		MongoBlock other = (MongoBlock) obj;
-		if (blockNumber != other.blockNumber) {
-			return false;
-		}
-		if (fileNumber != other.fileNumber) {
-			return false;
-		}
-		if (!indexName.equals(other.indexName)) {
-			return false;
-		}
-		return true;
+	protected static long computeBlockKey(MongoFile mongoFile, int blockNumber) {
+		return ((0xFFFF & (long)mongoFile.indexNumber)) << 48 | ((0xFFFF & (long) mongoFile.fileNumber)) << 32 | (blockNumber & 0xffffffffL);
 	}
+
+
 
 }

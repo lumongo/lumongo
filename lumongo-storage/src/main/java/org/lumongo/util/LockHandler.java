@@ -22,4 +22,16 @@ public class LockHandler {
 		int index = segmentIndexer.getIndex(h);
 		return readWriteLock[index];
 	}
+
+	public ReadWriteLock getLock(long uniqueId) {
+		int h = Long.hashCode(uniqueId);
+		int index = segmentIndexer.getIndex(h);
+		return readWriteLock[index];
+	}
+
+	public ReadWriteLock getLock(Long uniqueId) {
+		int h = uniqueId.hashCode();
+		int index = segmentIndexer.getIndex(h);
+		return readWriteLock[index];
+	}
 }

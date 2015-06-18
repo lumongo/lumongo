@@ -253,7 +253,7 @@ public class LumongoSegment {
 					String sortField = fs.getSortField();
 					Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
 
-					if (indexConfig.isNumericOrDateSortType(sortType)) {
+					if (IndexConfig.isNumericOrDateSortType(sortType)) {
 						SortField.Type type;
 						if (IndexConfig.isNumericIntSortType(sortType)) {
 							type = SortField.Type.INT;

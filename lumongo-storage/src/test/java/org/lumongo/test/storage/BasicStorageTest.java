@@ -55,7 +55,7 @@ public class BasicStorageTest {
 
 		MongoClient mongo = TestHelper.getMongo();
 		mongo.dropDatabase(TestHelper.TEST_DATABASE_NAME);
-		directory = new DistributedDirectory(new MongoDirectory(mongo, TestHelper.TEST_DATABASE_NAME, STORAGE_TEST_INDEX, false, false));
+		directory = new DistributedDirectory(new MongoDirectory(mongo, TestHelper.TEST_DATABASE_NAME, STORAGE_TEST_INDEX, false));
 		
 		StandardAnalyzer analyzer = new StandardAnalyzer();
 		IndexWriterConfig config = new IndexWriterConfig(analyzer);

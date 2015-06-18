@@ -21,11 +21,11 @@ import java.io.IOException;
 
 public interface NosqlFile {
 
-	int getFileNumber();
-
 	String getFileName();
 
 	void setFileName(String fileName);
+
+	short getFileNumber();
 
 	long getFileLength();
 
@@ -46,8 +46,6 @@ public interface NosqlFile {
 	void readBytes(long position, byte[] b, int offset, int length) throws IOException;
 
 	int getBlockSize();
-
-	boolean isCompressed();
 
 	long getChecksum();
 

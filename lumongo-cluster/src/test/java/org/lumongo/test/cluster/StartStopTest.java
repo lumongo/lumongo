@@ -25,6 +25,7 @@ import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.doc.AssociatedBuilder;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.FieldConfigBuilder;
+import org.lumongo.storage.lucene.MongoFile;
 import org.lumongo.test.cluster.ServerTestBase;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -129,6 +130,7 @@ public class StartStopTest extends ServerTestBase {
 	public void test04Restart() throws Exception {
 		stopClient();
 		stopServer();
+		MongoFile.clearCache();
 		Thread.sleep(20000);
 		startServer(1);
 		startClient();

@@ -331,7 +331,7 @@ public class LumongoIndex implements IndexWriterManager {
 		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
 
 		MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName + "_" + FACETS_SUFFIX,
-						clusterConfig.isSharded(), indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
+						clusterConfig.isSharded(), clusterConfig.getIndexBlockSize());
 		DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
 		return new LumongoDirectoryTaxonomyWriter(ddFacet);
 	}
@@ -339,14 +339,15 @@ public class LumongoIndex implements IndexWriterManager {
 	public LumongoIndexWriter getLumongoIndexWriter(int segmentNumber) throws Exception {
 		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
 		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
-		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
-						indexConfig.isBlockCompression(), clusterConfig.getIndexBlockSize());
+		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(), clusterConfig.getIndexBlockSize());
 		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 
 		IndexWriterConfig config = new IndexWriterConfig(lumongoAnalyzerFactory.getAnalyzer());
 		//use flush interval to flush
 		config.setMaxBufferedDocs(Integer.MAX_VALUE);
-		config.setRAMBufferSizeMB(IndexWriterConfig.DISABLE_AUTO_FLUSH);
+
+		//TODO:?
+		config.setRAMBufferSizeMB(IndexWriterConfig.DEFAULT_RAM_BUFFER_SIZE_MB);
 
 		return new LumongoIndexWriter(dd, config);
 	}

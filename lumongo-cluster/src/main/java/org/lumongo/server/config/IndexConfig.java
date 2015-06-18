@@ -20,7 +20,6 @@ public class IndexConfig {
 	
 	public static final String DEFAULT_SEARCH_FIELD = "defaultSearchField";
 	public static final String APPLY_UNCOMMITED_DELETES = "applyUncommitedDeletes";
-	public static final String BLOCK_COMPRESSION = "blockCompression";
 	public static final String REQUEST_FACTOR = "requestFactor";
 	public static final String MIN_SEGMENT_REQUEST = "minSegmentRequest";
 	public static final String NUMBER_OF_SEGMENTS = "numberOfSegments";
@@ -145,7 +144,6 @@ public class IndexConfig {
 		indexConfig.uniqueIdField = (String) settings.get(UNIQUE_ID_FIELD);
 		indexConfig.idleTimeWithoutCommit = (int) settings.get(IDLE_TIME_WITHOUT_COMMIT);
 		indexConfig.segmentCommitInterval = (int) settings.get(SEGMENT_COMMIT_INTERVAL);
-		indexConfig.blockCompression = (boolean) settings.get(BLOCK_COMPRESSION);
 		indexConfig.segmentTolerance = (double) settings.get(SEGMENT_TOLERANCE);
 
 		if (settings.get(SEGMENT_QUERY_CACHE_SIZE) != null) {
@@ -341,9 +339,6 @@ public class IndexConfig {
 		return segmentFlushInterval;
 	}
 
-	public boolean isBlockCompression() {
-		return blockCompression;
-	}
 
 	public double getSegmentTolerance() {
 		return segmentTolerance;
@@ -368,7 +363,6 @@ public class IndexConfig {
 		dbObject.put(UNIQUE_ID_FIELD, uniqueIdField);
 		dbObject.put(IDLE_TIME_WITHOUT_COMMIT, idleTimeWithoutCommit);
 		dbObject.put(SEGMENT_COMMIT_INTERVAL, segmentCommitInterval);
-		dbObject.put(BLOCK_COMPRESSION, blockCompression);
 		dbObject.put(SEGMENT_TOLERANCE, segmentTolerance);
 		dbObject.put(SEGMENT_FLUSH_INTERVAL, segmentFlushInterval);
 		dbObject.put(SEGMENT_QUERY_CACHE_SIZE, segmentQueryCacheSize);
@@ -423,7 +417,7 @@ public class IndexConfig {
 						+ requestFactor + ", minSegmentRequest=" + minSegmentRequest + ", numberOfSegments=" + numberOfSegments + ", indexName=" + indexName
 						+ ", uniqueIdField=" + uniqueIdField + ", idleTimeWithoutCommit=" + idleTimeWithoutCommit + ", segmentFlushInterval="
 						+ segmentFlushInterval + ", segmentCommitInterval=" + segmentCommitInterval + ", segmentQueryCacheSize=" + segmentQueryCacheSize
-						+ ", segmentQueryCacheMaxAmount=" + segmentQueryCacheMaxAmount + ", blockCompression=" + blockCompression + ", segmentTolerance="
+						+ ", segmentQueryCacheMaxAmount=" + segmentQueryCacheMaxAmount + ", segmentTolerance="
 						+ segmentTolerance + ", fieldConfigMap=" + fieldConfigMap + ", indexAsMap=" + indexAsMap + "]";
 	}
 	
