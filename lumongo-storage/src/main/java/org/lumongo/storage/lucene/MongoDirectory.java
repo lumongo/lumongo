@@ -13,6 +13,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE
@@ -52,7 +53,7 @@ public class MongoDirectory implements NosqlDirectory {
 	protected final String indexName;
 	private final int blockSize;
 	protected final short indexNumber;
-	private ConcurrentHashMap<String, MongoFile> nameToFileMap;
+	private final ConcurrentHashMap<String, MongoFile> nameToFileMap;
 
 	public static void setMaxIndexBlocks(int blocks) {
 		MongoFile.setMaxIndexBlocks(blocks);
@@ -100,7 +101,6 @@ public class MongoDirectory implements NosqlDirectory {
 		}
 
 		getFilesCollection().createIndex(new Document(FILE_NUMBER, 1));
-		getBlocksCollection().createIndex(new Document(FILE_NUMBER, 1));
 
 		Document indexes = new Document();
 		indexes.put(FILE_NUMBER, 1);
@@ -127,9 +127,9 @@ public class MongoDirectory implements NosqlDirectory {
 
 	private void fetchInitialContents() throws MongoException, IOException {
 		MongoCollection<Document> c = getFilesCollection();
-		Document query = new Document();
 
-		FindIterable<Document> cur = c.find(query);
+
+		FindIterable<Document> cur = c.find();
 		for (Document d : cur) {
 			MongoFile mf = loadFileFromDBObject(d);
 			nameToFileMap.put(mf.getFileName(), mf);
@@ -151,7 +151,8 @@ public class MongoDirectory implements NosqlDirectory {
 	@Override
 	public String[] getFileNames() throws IOException {
 
-		return nameToFileMap.keySet().toArray(new String[0]);
+		ConcurrentHashMap.KeySetView<String, MongoFile> strings = nameToFileMap.keySet();
+		return strings.toArray(new String[strings.size()]);
 	}
 
 	@Override
@@ -169,6 +170,7 @@ public class MongoDirectory implements NosqlDirectory {
 
 		Document query = new Document();
 		query.put(FILE_NAME, filename);
+
 		Document doc = c.find(query).first();
 
 		if (doc != null) {
@@ -184,7 +186,10 @@ public class MongoDirectory implements NosqlDirectory {
 
 	private MongoFile createFile(String fileName) throws IOException {
 		synchronized (this) {
-			TreeSet<Short> fileNumbers = new TreeSet<>();
+
+			TreeSet<Short> fileNumbers = nameToFileMap.values().stream().map(mongoFile -> mongoFile.fileNumber)
+							.collect(Collectors.toCollection(TreeSet::new));
+
 			FindIterable<Document> documents = getFilesCollection().find();
 			for (Document document : documents) {
 				fileNumbers.add(((Number) document.get(FILE_NUMBER)).shortValue());
@@ -213,8 +218,10 @@ public class MongoDirectory implements NosqlDirectory {
 
 	private MongoFile loadFileFromDBObject(Document document) throws IOException {
 		MongoFile mongoFile = fromDocument(document);
+
 		nameToFileMap.putIfAbsent(mongoFile.getFileName(), mongoFile);
 		return nameToFileMap.get(mongoFile.getFileName());
+
 	}
 
 	public MongoFile fromDocument(Document document) throws IOException {
@@ -273,7 +280,12 @@ public class MongoDirectory implements NosqlDirectory {
 
 		MongoCollection<Document> b = getBlocksCollection();
 		b.deleteMany(query);
+
+
 		nameToFileMap.remove(nosqlFile.getFileName());
+
+		nosqlFile.close();
+
 	}
 
 	@Override

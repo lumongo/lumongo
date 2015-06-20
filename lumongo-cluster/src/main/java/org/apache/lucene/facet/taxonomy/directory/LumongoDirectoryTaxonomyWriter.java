@@ -13,7 +13,7 @@ public class LumongoDirectoryTaxonomyWriter extends DirectoryTaxonomyWriter {
 
 	private LumongoIndexWriter myIndexWriter;
 
-	public LumongoDirectoryTaxonomyWriter(Directory d) throws CorruptIndexException, LockObtainFailedException, IOException {
+	public LumongoDirectoryTaxonomyWriter(Directory d) throws IOException {
 		super(d);
 
 	}
@@ -25,6 +25,9 @@ public class LumongoDirectoryTaxonomyWriter extends DirectoryTaxonomyWriter {
 		// index).
 
 		//use lumongo index writer to have control over real time flushes
+		config.setMaxBufferedDocs(Integer.MAX_VALUE);
+		config.setRAMBufferSizeMB(IndexWriterConfig.DISABLE_AUTO_FLUSH);
+
 		myIndexWriter = new LumongoIndexWriter(directory, config);
 		return myIndexWriter;
 	}

@@ -16,10 +16,14 @@ import java.util.List;
 @Settings(
 				indexName = "medline",
 				numberOfSegments = 8,
-				segmentFlushInterval = 100,
-				segmentCommitInterval = 10000)
+				segmentFlushInterval = 2000,
+				segmentCommitInterval = 4000)
 public class MedlineDocument {
-	
+
+
+	@UniqueId
+	private String pmid;
+
 	@DefaultSearch
 	@Indexed(
 					analyzer = LMAnalyzer.STANDARD)
@@ -57,18 +61,14 @@ public class MedlineDocument {
 					analyzer = LMAnalyzer.LC_KEYWORD)
 	@Sorted(type= Lumongo.SortAs.SortType.STRING)
 	private String issn;
-	
-	@Indexed(
-					analyzer = LMAnalyzer.STANDARD)
-	private List<String> authors;
-	
+
 	@Faceted
 	@Indexed(
-					analyzer = LMAnalyzer.LC_KEYWORD)
-	private List<String> authorsExact;
-	
-	@UniqueId
-	private String pmid;
+					analyzer = LMAnalyzer.STANDARD)
+	@Indexed(analyzer =  LMAnalyzer.LC_KEYWORD, fieldName = "authorsExact")
+	private List<String> authors;
+
+
 	
 	public String getPmid() {
 		return pmid;
@@ -146,20 +146,20 @@ public class MedlineDocument {
 		if (this.authors == null) {
 			this.authors = new ArrayList<String>();
 		}
-		if (this.authorsExact == null) {
-			this.authorsExact = new ArrayList<String>();
-		}
-		
+
 		this.authors.add(author);
-		this.authorsExact.add(author);
-		
+
+	}
+
+	public List<String> getAuthors() {
+		return authors;
 	}
 	
 	@Override
 	public String toString() {
 		return "Document [title=" + title + ", journalTitle=" + journalTitle + ", abstractText=" + abstractText + ", publicationDate=" + publicationDate
 						+ ", journalVolume=" + journalVolume + ", journalIssue=" + journalIssue + ", journalCountry=" + journalCountry + ", issn=" + issn
-						+ ", authors=" + authors + ", authorsExact=" + authorsExact + ", pmid=" + pmid + "]\n";
+						+ ", authors=" + authors + ", pmid=" + pmid + "]\n";
 	}
 	
 }

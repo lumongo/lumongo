@@ -51,4 +51,5 @@ public interface NosqlFile {
 
 	void resetChecksum();
 
+	void close();
 }

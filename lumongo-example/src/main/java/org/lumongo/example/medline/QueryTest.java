@@ -23,7 +23,7 @@ public class QueryTest {
 		LumongoWorkPool lumongoWorkPool = new LumongoWorkPool(new LumongoPoolConfig().addMember("localhost"));
 		
 		try {
-			Mapper<MedlineDocument> mapper = new Mapper<MedlineDocument>(MedlineDocument.class);
+			Mapper<MedlineDocument> mapper = new Mapper<>(MedlineDocument.class);
 			
 			for (String term : Arrays.asList("cancer", "molecular", "biology", "kinases", "DNA", "replication", "regulators", "neurons", "animals",
 							"depression", "serotonin", "rats", "male", "university", "nicotine", "France", "United States")) {

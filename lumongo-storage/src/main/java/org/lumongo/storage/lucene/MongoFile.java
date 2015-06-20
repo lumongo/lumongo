@@ -3,7 +3,6 @@ package org.lumongo.storage.lucene;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.Document;
@@ -57,6 +56,7 @@ public class MongoFile implements NosqlFile {
 	private final static LockHandler lockHandler;
 
 	private static Cache<Long, MongoBlock> cache;
+	private static RemovalListener<Long, MongoBlock> removalListener;
 
 	static {
 
@@ -67,22 +67,24 @@ public class MongoFile implements NosqlFile {
 	}
 
 	private static void createCache() {
+		removalListener = notification -> {
+			/*
+			ReadWriteLock lock = lockHandler.getLock(notification.getKey());
+			Lock wLock = lock.writeLock();
+			wLock.lock();
+			try {
+			*/
+				MongoBlock mongoBlock = notification.getValue();
+				mongoBlock.flushIfDirty();
+			/*
+			}
+			finally {
+				wLock.unlock();
+			}
+			*/
+		};
 		cache = CacheBuilder.newBuilder().concurrencyLevel(32).maximumSize(MongoDirectory.DEFAULT_BLOCK_MAX).removalListener(
-						new RemovalListener<Long, MongoBlock>() {
-							@Override
-							public void onRemoval(RemovalNotification<Long, MongoBlock> notification) {
-								ReadWriteLock lock = lockHandler.getLock(notification.getKey());
-								Lock wLock = lock.writeLock();
-								wLock.lock();
-								try {
-									MongoBlock mongoBlock = notification.getValue();
-									mongoBlock.flushIfDirty();
-								}
-								finally {
-									wLock.unlock();
-								}
-							}
-						}).build();
+						removalListener).build();
 	}
 
 	public static void clearCache() {
@@ -91,7 +93,7 @@ public class MongoFile implements NosqlFile {
 
 	public static void setMaxIndexBlocks(int blocks) {
 		Cache<Long, MongoBlock> oldCache = cache;
-		cache = CacheBuilder.newBuilder().concurrencyLevel(32).maximumSize(blocks).build();
+		cache = CacheBuilder.newBuilder().concurrencyLevel(32).maximumSize(blocks).removalListener(removalListener).build();
 		cache.putAll(oldCache.asMap());
 	}
 
@@ -110,7 +112,6 @@ public class MongoFile implements NosqlFile {
 		this.blockSize = blockSize;
 
 		this.dirtyBlocks = new ConcurrentHashMap<>();
-
 
 	}
 
@@ -168,27 +169,26 @@ public class MongoFile implements NosqlFile {
 
 		long blockKey = MongoBlock.computeBlockKey(this, block);
 
-		MongoBlock mb = cache.get(blockKey, new Callable<MongoBlock>() {
-			@Override
-			public MongoBlock call() throws Exception {
-				ReadWriteLock lock = lockHandler.getLock(blockKey);
-				Lock wLock = lock.writeLock();
-				wLock.lock();
-				try {
-					MongoBlock mb = fetchBlock(block, true);
-					cache.put(mb.blockKey, mb);
-					return mb;
-				}
-				finally {
-					wLock.unlock();
-				}
+		Callable<MongoBlock> loadBlockIfNeeded = () -> {
+			/*
+			ReadWriteLock lock = lockHandler.getLock(blockKey);
+			Lock wLock = lock.writeLock();
+			wLock.lock();
+			try {
+			*/
+				MongoBlock mb1 = fetchBlock(block, true);
+				return mb1;
+			/*
 			}
-		});
+			finally {
+				wLock.unlock();
+			}
 
-		return mb;
+			*/
+		};
+		return cache.get(blockKey, loadBlockIfNeeded);
 	}
 
-	@Override
 	public void readBytes(long position, byte[] b, int offset, int length) throws IOException {
 
 		try {
@@ -277,20 +277,9 @@ public class MongoFile implements NosqlFile {
 	}
 
 	private void markDirty(MongoBlock mb) {
-
-		ReadWriteLock lock = lockHandler.getLock(mb.blockKey);
-		Lock wLock = lock.writeLock();
-		wLock.lock();
-		try {
-			mb.markDirty();
-			cache.put(mb.blockKey, mb);
-			dirtyBlocks.put(mb.blockKey, true);
-		}
-		finally {
-			wLock.unlock();
-		}
-
-
+		mb.markDirty();
+		cache.put(mb.blockKey, mb);
+		dirtyBlocks.put(mb.blockKey, true);
 	}
 
 	@Override
@@ -304,11 +293,13 @@ public class MongoFile implements NosqlFile {
 			Set<Long> dirtyBlockKeys = new HashSet<>(dirtyBlocks.keySet());
 
 			for (Long key : dirtyBlockKeys) {
+				/*
 				ReadWriteLock lock = lockHandler.getLock(key);
 				Lock wLock = lock.writeLock();
 				wLock.lock();
 				try {
 
+*/
 					dirtyBlocks.remove(key);
 
 					MongoBlock mb = cache.getIfPresent(key);
@@ -316,19 +307,17 @@ public class MongoFile implements NosqlFile {
 						mb.flushIfDirty();
 					}
 
-
-
+				/*
 				}
 				finally {
 					wLock.unlock();
 				}
+				*/
 			}
 
 		}
 
-
 		mongoDirectory.updateFileMetadata(this);
-
 
 	}
 
@@ -371,7 +360,7 @@ public class MongoFile implements NosqlFile {
 		Document object = new Document();
 		object.put(MongoDirectory.FILE_NUMBER, mongoBlock.mongoFile.fileNumber);
 		object.put(MongoDirectory.BLOCK_NUMBER, mongoBlock.blockNumber);
-		object.put(MongoDirectory.BYTES, mongoBlock.bytes);
+		object.put(MongoDirectory.BYTES, new Binary(mongoBlock.bytes));
 
 		c.replaceOne(query, object, new UpdateOptions().upsert(true));
 
@@ -395,6 +384,12 @@ public class MongoFile implements NosqlFile {
 	@Override
 	public void resetChecksum() {
 		crc.reset();
+	}
+
+	@Override
+	public void close() {
+		currentWriteBlock = null;
+		currentReadBlock = null;
 	}
 
 	@Override

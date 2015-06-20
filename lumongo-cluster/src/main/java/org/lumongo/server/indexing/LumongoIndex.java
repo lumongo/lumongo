@@ -5,7 +5,9 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.core.Member;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoException;
+import com.mongodb.MongoOptions;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
@@ -343,11 +345,10 @@ public class LumongoIndex implements IndexWriterManager {
 		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 
 		IndexWriterConfig config = new IndexWriterConfig(lumongoAnalyzerFactory.getAnalyzer());
+
 		//use flush interval to flush
 		config.setMaxBufferedDocs(Integer.MAX_VALUE);
-
-		//TODO:?
-		config.setRAMBufferSizeMB(IndexWriterConfig.DEFAULT_RAM_BUFFER_SIZE_MB);
+		config.setRAMBufferSizeMB(IndexWriterConfig.DISABLE_AUTO_FLUSH);
 
 		return new LumongoIndexWriter(dd, config);
 	}
