@@ -19,10 +19,10 @@ import java.nio.file.Paths;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class IndexMedline {
+public class IndexMedlineLumongo {
 	
 	@SuppressWarnings("unused")
-	private final static Logger log = Logger.getLogger(IndexMedline.class);
+	private final static Logger log = Logger.getLogger(IndexMedlineLumongo.class);
 	
 	private static LumongoWorkPool lumongoWorkPool;
 	private static Mapper<MedlineDocument> mapper;
