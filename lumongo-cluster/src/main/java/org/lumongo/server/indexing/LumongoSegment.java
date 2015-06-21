@@ -52,8 +52,6 @@ public class LumongoSegment {
 	private final IndexWriterManager indexWriterManager;
 
 	private LumongoIndexWriter indexWriter;
-	private LumongoDirectoryTaxonomyWriter taxonomyWriter;
-	private LumongoDirectoryTaxonomyReader taxonomyReader;
 	private Long lastCommit;
 	private Long lastChange;
 	private String indexName;
@@ -99,15 +97,6 @@ public class LumongoSegment {
 			}
 		}
 
-		if (!taxonomyWriter.getLumongoIndexWriter().isOpen()) {
-			synchronized (this) {
-				if (!taxonomyWriter.getLumongoIndexWriter().isOpen()) {
-					this.indexWriter = this.indexWriterManager.getLumongoIndexWriter(segmentNumber);
-					this.taxonomyReader = new LumongoDirectoryTaxonomyReader(taxonomyWriter);
-				}
-			}
-		}
-
 	}
 	
 	private void openIndexWriters() throws Exception {
@@ -115,17 +104,6 @@ public class LumongoSegment {
 			indexWriter.close();
 		}
 		this.indexWriter = this.indexWriterManager.getLumongoIndexWriter(segmentNumber);
-
-		if (this.taxonomyWriter != null) {
-			taxonomyWriter.close();
-		}
-		this.taxonomyWriter = this.indexWriterManager.getLumongoDirectoryTaxonomyWriter(segmentNumber);
-
-		if (this.taxonomyReader != null) {
-			taxonomyReader.close();
-		}
-		this.taxonomyReader = new LumongoDirectoryTaxonomyReader(taxonomyWriter);
-
 	}
 	
 	public static Object getValueFromDocument(BSONObject document, String storedFieldName) {
@@ -474,7 +452,6 @@ public class LumongoSegment {
 			forceCommit();
 		}
 		else if ((count % indexConfig.getSegmentFlushInterval()) == 0) {
-			taxonomyWriter.flush();
 			indexWriter.flush(indexConfig.getApplyUncommitedDeletes());
 		}
 		if (queryCacheEnabled) {
@@ -485,7 +462,6 @@ public class LumongoSegment {
 	public void forceCommit() throws IOException {
 		long currentTime = System.currentTimeMillis();
 
-		taxonomyWriter.commit();
 		indexWriter.commit();
 
 		if (queryCacheEnabled) {
@@ -517,7 +493,6 @@ public class LumongoSegment {
 	public void close() throws IOException {
 		forceCommit();
 
-		taxonomyWriter.close();
 		indexWriter.close();
 	}
 

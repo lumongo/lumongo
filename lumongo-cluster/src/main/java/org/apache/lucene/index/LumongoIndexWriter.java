@@ -35,7 +35,7 @@ public class LumongoIndexWriter extends IndexWriter {
 		return r;
 	}
 
-	public void flush(boolean applyAllDeletes) throws CorruptIndexException, IOException {
+	public void flush(boolean applyAllDeletes) throws IOException {
 		flush(false, applyAllDeletes);
 	}
 

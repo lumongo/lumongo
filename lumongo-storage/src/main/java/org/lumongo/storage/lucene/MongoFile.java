@@ -7,7 +7,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.Document;
 import org.bson.types.Binary;
-import org.lumongo.util.LockHandler;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -16,8 +15,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.zip.CRC32;
 
 /**
@@ -53,14 +50,10 @@ public class MongoFile implements NosqlFile {
 
 	private final CRC32 crc;
 
-	private final static LockHandler lockHandler;
-
 	private static Cache<Long, MongoBlock> cache;
 	private static RemovalListener<Long, MongoBlock> removalListener;
 
 	static {
-
-		lockHandler = new LockHandler();
 
 		createCache();
 
@@ -74,8 +67,8 @@ public class MongoFile implements NosqlFile {
 			wLock.lock();
 			try {
 			*/
-				MongoBlock mongoBlock = notification.getValue();
-				mongoBlock.flushIfDirty();
+			MongoBlock mongoBlock = notification.getValue();
+			mongoBlock.flushIfDirty();
 			/*
 			}
 			finally {
@@ -176,8 +169,8 @@ public class MongoFile implements NosqlFile {
 			wLock.lock();
 			try {
 			*/
-				MongoBlock mb1 = fetchBlock(block, true);
-				return mb1;
+			MongoBlock mb1 = fetchBlock(block, true);
+			return mb1;
 			/*
 			}
 			finally {
@@ -300,12 +293,12 @@ public class MongoFile implements NosqlFile {
 				try {
 
 */
-					dirtyBlocks.remove(key);
+				dirtyBlocks.remove(key);
 
-					MongoBlock mb = cache.getIfPresent(key);
-					if (mb != null) {
-						mb.flushIfDirty();
-					}
+				MongoBlock mb = cache.getIfPresent(key);
+				if (mb != null) {
+					mb.flushIfDirty();
+				}
 
 				/*
 				}
