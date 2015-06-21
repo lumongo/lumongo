@@ -2,17 +2,54 @@ package org.lumongo.server.indexing;
 
 import com.google.protobuf.ProtocolStringList;
 import org.apache.log4j.Logger;
-import org.apache.lucene.document.*;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.facet.*;
+import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.SortedNumericDocValuesField;
+import org.apache.lucene.document.SortedSetDocValuesField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.facet.DrillDownQuery;
+import org.apache.lucene.facet.DrillSideways;
 import org.apache.lucene.facet.DrillSideways.DrillSidewaysResult;
+import org.apache.lucene.facet.FacetField;
+import org.apache.lucene.facet.FacetResult;
+import org.apache.lucene.facet.Facets;
+import org.apache.lucene.facet.FacetsCollector;
+import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.LabelAndValue;
+import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
+import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
+import org.apache.lucene.facet.sortedset.SortedSetDocValuesReaderState;
 import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
-import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyReader;
-import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
-import org.apache.lucene.index.*;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.FieldInfos;
+import org.apache.lucene.index.Fields;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.index.TermsEnum.SeekStatus;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.FieldDoc;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MultiCollector;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.QueryWrapperFilter;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.SortedNumericSortField;
+import org.apache.lucene.search.SortedSetSortField;
+import org.apache.lucene.search.TopDocsCollector;
+import org.apache.lucene.search.TopFieldCollector;
+import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.bson.BSONObject;
@@ -22,16 +59,46 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.*;
+import org.lumongo.cluster.message.Lumongo.CountRequest;
+import org.lumongo.cluster.message.Lumongo.FacetAs;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
+import org.lumongo.cluster.message.Lumongo.FacetCount;
+import org.lumongo.cluster.message.Lumongo.FacetGroup;
+import org.lumongo.cluster.message.Lumongo.FacetRequest;
+import org.lumongo.cluster.message.Lumongo.FieldConfig;
+import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
+import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
+import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
+import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
+import org.lumongo.cluster.message.Lumongo.IndexAs;
+import org.lumongo.cluster.message.Lumongo.IndexSettings;
+import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
+import org.lumongo.cluster.message.Lumongo.ScoredResult;
+import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
+import org.lumongo.cluster.message.Lumongo.SegmentResponse;
+import org.lumongo.cluster.message.Lumongo.SortRequest;
 import org.lumongo.server.config.IndexConfig;
-import org.lumongo.server.indexing.field.*;
+import org.lumongo.server.indexing.field.DateFieldIndexer;
+import org.lumongo.server.indexing.field.DoubleFieldIndexer;
+import org.lumongo.server.indexing.field.FloatFieldIndexer;
+import org.lumongo.server.indexing.field.IndexWriterManager;
+import org.lumongo.server.indexing.field.IntFieldIndexer;
+import org.lumongo.server.indexing.field.LongFieldIndexer;
+import org.lumongo.server.indexing.field.StringFieldIndexer;
 import org.lumongo.server.searching.QueryWithFilters;
 import org.lumongo.util.LumongoUtil;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
@@ -42,7 +109,6 @@ public class LumongoSegment {
 	private final static Logger log = Logger.getLogger(LumongoSegment.class);
 
 	private final int segmentNumber;
-
 
 	private final IndexConfig indexConfig;
 	private final FacetsConfig facetsConfig;
@@ -62,17 +128,15 @@ public class LumongoSegment {
 
 	private int segmentQueryCacheMaxAmount;
 
-	public LumongoSegment(int segmentNumber, IndexWriterManager indexWriterManager, IndexConfig indexConfig)
-					throws Exception {
+	public LumongoSegment(int segmentNumber, IndexWriterManager indexWriterManager, IndexConfig indexConfig) throws Exception {
 
 		setupQueryCache(indexConfig);
 
 		this.segmentNumber = segmentNumber;
 
 		this.indexWriterManager = indexWriterManager;
-		
-		openIndexWriters();
 
+		openIndexWriters();
 
 		this.indexConfig = indexConfig;
 		this.facetsConfig = getFacetsConfig();
@@ -98,14 +162,14 @@ public class LumongoSegment {
 		}
 
 	}
-	
+
 	private void openIndexWriters() throws Exception {
 		if (this.indexWriter != null) {
 			indexWriter.close();
 		}
 		this.indexWriter = this.indexWriterManager.getLumongoIndexWriter(segmentNumber);
 	}
-	
+
 	public static Object getValueFromDocument(BSONObject document, String storedFieldName) {
 
 		Object o;
@@ -173,7 +237,6 @@ public class LumongoSegment {
 		setupQueryCache(indexConfig);
 
 		openIndexWriters();
-
 
 	}
 
@@ -271,12 +334,11 @@ public class LumongoSegment {
 
 			if ((facetRequest != null) && !facetRequest.getCountRequestList().isEmpty()) {
 
-				taxonomyReader = taxonomyReader.doOpenIfChanged(realTime);
-
 				int maxFacets = Integer.MAX_VALUE; // have to fetch all facets to merge between segments correctly
 
 				if (facetRequest.getDrillSideways()) {
-					DrillSideways ds = new DrillSideways(is, facetsConfig, taxonomyReader);
+					SortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(ir);
+					DrillSideways ds = new DrillSideways(is, facetsConfig, state);
 					DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 						ProtocolStringList pathList = countRequest.getFacetField().getPathList();
@@ -286,13 +348,13 @@ public class LumongoSegment {
 						handleFacetResult(builder, facetResult, countRequest);
 
 					}
-
 				}
 				else {
 
+					SortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(ir);
 					FacetsCollector fc = new FacetsCollector();
 					is.search(q, MultiCollector.wrap(collector, fc));
-					Facets facets = new FastTaxonomyFacetCounts(taxonomyReader, facetsConfig, fc);
+					Facets facets = new SortedSetDocValuesFacetCounts(state, fc);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 						ProtocolStringList pathList = countRequest.getFacetField().getPathList();
 						FacetResult facetResult = facets
@@ -501,7 +563,7 @@ public class LumongoSegment {
 
 		Document d = new Document();
 
-		List<FacetField> facetFields = new ArrayList<>();
+		List<Field> facetFields = new ArrayList<>();
 		for (String storedFieldName : indexConfig.getIndexedStoredFieldNames()) {
 
 			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
@@ -545,10 +607,10 @@ public class LumongoSegment {
 
 		if (!facetFields.isEmpty()) {
 
-			for (FacetField ff : facetFields) {
+			for (Field ff : facetFields) {
 				d.add(ff);
 			}
-			d = facetsConfig.build(taxonomyWriter, d);
+			d = facetsConfig.build(d);
 
 		}
 
@@ -561,8 +623,6 @@ public class LumongoSegment {
 		d.add(new LongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
 
 		Term term = new Term(indexConfig.getUniqueIdField(), uniqueId);
-
-
 
 		indexWriter.updateDocument(term, d);
 		possibleCommit();
@@ -624,13 +684,13 @@ public class LumongoSegment {
 		}
 	}
 
-	private void handleFacetsForStoredField(List<FacetField> facetFields, FieldConfig fc, Object o) throws Exception {
+	private void handleFacetsForStoredField(List<Field> facetFields, FieldConfig fc, Object o) throws Exception {
 		for (FacetAs fa : fc.getFacetAsList()) {
 			if (LMFacetType.STANDARD.equals(fa.getFacetType())) {
 				LumongoUtil.handleLists(o, obj -> {
 					String string = obj.toString();
 					if (!string.isEmpty()) {
-						facetFields.add(new FacetField(fa.getFacetName(), string));
+						facetFields.add(new SortedSetDocValuesField(fa.getFacetName(), new BytesRef(string)));
 					}
 				});
 			}
@@ -639,14 +699,14 @@ public class LumongoSegment {
 					if (obj instanceof Date) {
 						DateTime dt = new DateTime(obj).withZone(DateTimeZone.UTC);
 
-						FacetField facetField;
+						Field facetField;
 						if (LMFacetType.DATE_YYYYMMDD.equals(fa.getFacetType())) {
 							String facetValue = FORMATTER_YYYY_MM_DD.print(dt);
-							facetField = new FacetField(fa.getFacetName(), facetValue);
+							facetField = new SortedSetDocValuesField(fa.getFacetName(), new BytesRef(facetValue));
 						}
 						else if (LMFacetType.DATE_YYYY_MM_DD.equals(fa.getFacetType())) {
-							facetField = new FacetField(fa.getFacetName(), String.format("%04d", dt.getYear()), String.format("%02d", dt.getMonthOfYear()),
-											String.format("%02d", dt.getDayOfMonth()));
+							String date = String.format("%04d-%02d-%02d", dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth());
+							facetField = new SortedSetDocValuesField(fa.getFacetName(), new BytesRef(date));
 						}
 						else {
 							throw new RuntimeException("Not handled date facet type <" + fa.getFacetType() + "> for facet <" + fa.getFacetName() + ">");

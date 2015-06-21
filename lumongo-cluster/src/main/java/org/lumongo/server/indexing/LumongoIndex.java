@@ -5,9 +5,7 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.core.Member;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoException;
-import com.mongodb.MongoOptions;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
@@ -15,12 +13,14 @@ import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
 import org.apache.lucene.facet.FacetsConfig;
-import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
-import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.FieldDoc;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
 import org.bson.BSON;
 import org.bson.BasicBSONObject;
 import org.bson.Document;
@@ -48,8 +48,23 @@ import org.lumongo.util.SegmentUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.UnknownHostException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -58,7 +73,7 @@ public class LumongoIndex implements IndexWriterManager {
 	public static final String STORAGE_DB_SUFFIX = "_rs";
 
 	private static final String RESULT_STORAGE_COLLECTION = "resultStorage";
-	private static final String FACETS_SUFFIX = "facets";
+
 	private final static Logger log = Logger.getLogger(LumongoIndex.class);
 	private static final String SETTINGS_ID = "settings";
 	public static final String CONFIG_SUFFIX = "_config";
@@ -328,20 +343,11 @@ public class LumongoIndex implements IndexWriterManager {
 		}
 	}
 
-	public LumongoDirectoryTaxonomyWriter getLumongoDirectoryTaxonomyWriter(int segmentNumber) throws IOException {
-		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
-		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
-
-		MongoDirectory mongoFacetDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName + "_" + FACETS_SUFFIX,
-						clusterConfig.isSharded(), clusterConfig.getIndexBlockSize());
-		DistributedDirectory ddFacet = new DistributedDirectory(mongoFacetDirectory);
-		return new LumongoDirectoryTaxonomyWriter(ddFacet);
-	}
-
 	public LumongoIndexWriter getLumongoIndexWriter(int segmentNumber) throws Exception {
 		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
 		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
-		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(), clusterConfig.getIndexBlockSize());
+		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
+						clusterConfig.getIndexBlockSize());
 		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 
 		IndexWriterConfig config = new IndexWriterConfig(lumongoAnalyzerFactory.getAnalyzer());
@@ -353,7 +359,6 @@ public class LumongoIndex implements IndexWriterManager {
 		return new LumongoIndexWriter(dd, config);
 	}
 
-
 	private String getIndexSegmentCollectionName(int segmentNumber) {
 		return indexName + "_" + segmentNumber;
 	}
@@ -361,8 +366,6 @@ public class LumongoIndex implements IndexWriterManager {
 	private String getIndexSegmentDbName(int segmentNumber) {
 		return mongoConfig.getDatabaseName() + "_" + indexName;
 	}
-
-
 
 	public void unloadSegment(int segmentNumber) throws IOException {
 		indexLock.writeLock().lock();
@@ -640,7 +643,6 @@ public class LumongoIndex implements IndexWriterManager {
 			String dbName = getIndexSegmentDbName(i);
 			String collectionName = getIndexSegmentCollectionName(i);
 			MongoDirectory.dropIndex(mongo, dbName, collectionName);
-			MongoDirectory.dropIndex(mongo, dbName, collectionName + "_" + FACETS_SUFFIX);
 
 			documentStorage.drop();
 		}
@@ -848,10 +850,10 @@ public class LumongoIndex implements IndexWriterManager {
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<SegmentResponse> response = segmentPool
-								.submit(() -> segment.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()),
-																queryRequest.getFacetRequest(), queryRequest.getSortRequest(), queryRequest.getRealTime(),
-																new QueryCacheKey(queryRequest)));
+				Future<SegmentResponse> response = segmentPool.submit(() -> segment
+								.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()),
+												queryRequest.getFacetRequest(), queryRequest.getSortRequest(), queryRequest.getRealTime(),
+												new QueryCacheKey(queryRequest)));
 
 				responses.add(response);
 
