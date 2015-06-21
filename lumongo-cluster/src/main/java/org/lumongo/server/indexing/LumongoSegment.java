@@ -13,7 +13,6 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.DrillDownQuery;
 import org.apache.lucene.facet.DrillSideways;
 import org.apache.lucene.facet.DrillSideways.DrillSidewaysResult;
-import org.apache.lucene.facet.FacetField;
 import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.Facets;
 import org.apache.lucene.facet.FacetsCollector;
@@ -21,8 +20,8 @@ import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
+import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesReaderState;
-import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
@@ -208,14 +207,14 @@ public class LumongoSegment {
 
 	protected FacetsConfig getFacetsConfig() {
 		//only need to be done once but no harm
-		FacetsConfig.DEFAULT_DIM_CONFIG.hierarchical = true;
+		FacetsConfig.DEFAULT_DIM_CONFIG.hierarchical = false;
 		FacetsConfig.DEFAULT_DIM_CONFIG.multiValued = true;
 		return new FacetsConfig() {
 			@Override
 			public synchronized DimConfig getDimConfig(String dimName) {
 				DimConfig dc = new DimConfig();
 				dc.multiValued = true;
-				dc.hierarchical = true;
+				dc.hierarchical = false;
 				return dc;
 			}
 		};
@@ -343,7 +342,7 @@ public class LumongoSegment {
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 						ProtocolStringList pathList = countRequest.getFacetField().getPathList();
 						FacetResult facetResult = ddsr.facets
-										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(), pathList.toArray(new String[pathList.size()]));
+										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel());
 
 						handleFacetResult(builder, facetResult, countRequest);
 
@@ -356,9 +355,9 @@ public class LumongoSegment {
 					is.search(q, MultiCollector.wrap(collector, fc));
 					Facets facets = new SortedSetDocValuesFacetCounts(state, fc);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
-						ProtocolStringList pathList = countRequest.getFacetField().getPathList();
+
 						FacetResult facetResult = facets
-										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel(), pathList.toArray(new String[pathList.size()]));
+										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel());
 						handleFacetResult(builder, facetResult, countRequest);
 					}
 				}
@@ -629,6 +628,7 @@ public class LumongoSegment {
 	}
 
 	private void handleSortForStoredField(Document d, String storedFieldName, FieldConfig fc, Object o) {
+
 		if (fc.hasSortAs()) {
 			Lumongo.SortAs sortAs = fc.getSortAs();
 			String sortFieldName = sortAs.getSortFieldName();
@@ -686,11 +686,12 @@ public class LumongoSegment {
 
 	private void handleFacetsForStoredField(List<Field> facetFields, FieldConfig fc, Object o) throws Exception {
 		for (FacetAs fa : fc.getFacetAsList()) {
+
 			if (LMFacetType.STANDARD.equals(fa.getFacetType())) {
 				LumongoUtil.handleLists(o, obj -> {
 					String string = obj.toString();
 					if (!string.isEmpty()) {
-						facetFields.add(new SortedSetDocValuesField(fa.getFacetName(), new BytesRef(string)));
+						facetFields.add(new SortedSetDocValuesFacetField(fa.getFacetName(), string));
 					}
 				});
 			}
@@ -702,11 +703,11 @@ public class LumongoSegment {
 						Field facetField;
 						if (LMFacetType.DATE_YYYYMMDD.equals(fa.getFacetType())) {
 							String facetValue = FORMATTER_YYYY_MM_DD.print(dt);
-							facetField = new SortedSetDocValuesField(fa.getFacetName(), new BytesRef(facetValue));
+							facetField = new SortedSetDocValuesFacetField(fa.getFacetName(), facetValue);
 						}
 						else if (LMFacetType.DATE_YYYY_MM_DD.equals(fa.getFacetType())) {
 							String date = String.format("%04d-%02d-%02d", dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth());
-							facetField = new SortedSetDocValuesField(fa.getFacetName(), new BytesRef(date));
+							facetField = new SortedSetDocValuesFacetField(fa.getFacetName(), date);
 						}
 						else {
 							throw new RuntimeException("Not handled date facet type <" + fa.getFacetType() + "> for facet <" + fa.getFacetName() + ">");
