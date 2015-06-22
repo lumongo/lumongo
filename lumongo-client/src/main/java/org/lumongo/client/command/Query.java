@@ -122,12 +122,12 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return lastResult;
 	}
 	
-	public Query addDrillDown(String label, String... path) {
+	public Query addDrillDown(String label, String path) {
 		if (drillDowns.isEmpty()) {
-			this.drillDowns = new ArrayList<LMFacet>();
+			this.drillDowns = new ArrayList<>();
 		}
 		
-		drillDowns.add(LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build());
+		drillDowns.add(LMFacet.newBuilder().setLabel(label).setPath(path).build());
 		return this;
 	}
 	
@@ -184,22 +184,32 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		filterQueries.add(filterQuery);
 		return this;
 	}
-	
-	public Query addCountRequest(String label, String... path) {
-		LMFacet facet = LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build();
+
+	public Query addCountRequest(String label) {
+		LMFacet facet = LMFacet.newBuilder().setLabel(label).build();
 		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).build();
 		if (countRequests.isEmpty()) {
-			this.countRequests = new ArrayList<CountRequest>();
+			this.countRequests = new ArrayList<>();
+		}
+		countRequests.add(countRequest);
+		return this;
+	}
+
+	public Query addCountRequest(int maxFacets, String label) {
+		LMFacet facet = LMFacet.newBuilder().setLabel(label).build();
+		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).setMaxFacets(maxFacets).build();
+		if (countRequests.isEmpty()) {
+			this.countRequests = new ArrayList<>();
 		}
 		countRequests.add(countRequest);
 		return this;
 	}
 	
-	public Query addCountRequest(int maxFacets, String label, String... path) {
-		LMFacet facet = LMFacet.newBuilder().setLabel(label).addAllPath(Arrays.asList(path)).build();
+	public Query addCountRequest(int maxFacets, String label, String path) {
+		LMFacet facet = LMFacet.newBuilder().setLabel(label).setPath(path).build();
 		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).setMaxFacets(maxFacets).build();
 		if (countRequests.isEmpty()) {
-			this.countRequests = new ArrayList<CountRequest>();
+			this.countRequests = new ArrayList<>();
 		}
 		countRequests.add(countRequest);
 		return this;

@@ -651,7 +651,7 @@ public class LumongoIndexManager {
 						DrillDownQuery ddQuery = new DrillDownQuery(facetsConfig, query);
 						
 						for (LMFacet or : drillDownList) {
-							ddQuery.add(or.getLabel(), or.getPathList().toArray(new String[0]));
+							ddQuery.add(or.getLabel(), or.getPath());
 						}
 						
 						query = ddQuery;

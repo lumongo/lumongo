@@ -34,7 +34,7 @@ public class FactedFieldInfo<T> {
 					Collection<?> l = (Collection<?>) o;
 					for (Object s : l) {
 						LMFacet.Builder lmFacetBuilder = LMFacet.newBuilder().setLabel(facetPrefix);
-						lmFacetBuilder.addPath(s.toString());
+						lmFacetBuilder.setPath(s.toString());
 						list.add(lmFacetBuilder.build());
 					}
 				}
@@ -42,7 +42,7 @@ public class FactedFieldInfo<T> {
 					Object[] l = (Object[]) o;
 					for (Object s : l) {
 						LMFacet.Builder lmFacetBuilder = LMFacet.newBuilder().setLabel(facetPrefix);
-						lmFacetBuilder.addPath(s.toString());
+						lmFacetBuilder.setPath(s.toString());
 						list.add(lmFacetBuilder.build());
 					}
 				}
@@ -57,14 +57,13 @@ public class FactedFieldInfo<T> {
 					int day = cal.get(Calendar.DAY_OF_MONTH);
 
 					LMFacet.Builder lmFacetBuilder = LMFacet.newBuilder().setLabel(facetPrefix);
-					lmFacetBuilder.addPath(year + "");
-					lmFacetBuilder.addPath(month + "");
-					lmFacetBuilder.addPath(day + "");
+					lmFacetBuilder.setPath(year + "" + month + "" + day);
+
 					list.add(lmFacetBuilder.build());
 				}
 				else {
 					LMFacet.Builder lmFacetBuilder = LMFacet.newBuilder().setLabel(facetPrefix);
-					lmFacetBuilder.addPath(o.toString());
+					lmFacetBuilder.setPath(o.toString());
 					list.add(lmFacetBuilder.build());
 				}
 

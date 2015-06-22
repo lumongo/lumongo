@@ -48,6 +48,7 @@ import org.apache.lucene.search.SortedSetSortField;
 import org.apache.lucene.search.TopDocsCollector;
 import org.apache.lucene.search.TopFieldCollector;
 import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.search.TotalHitCountCollector;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.bson.BSONObject;
@@ -332,13 +333,15 @@ public class LumongoSegment {
 
 			if ((facetRequest != null) && !facetRequest.getCountRequestList().isEmpty()) {
 
-				int maxFacets = Integer.MAX_VALUE; // have to fetch all facets to merge between segments correctly
+				//TODO fix me
 
 				if (facetRequest.getDrillSideways()) {
 					SortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(indexReader);
 					DrillSideways ds = new DrillSideways(indexSearcher, facetsConfig, state);
 					DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
+
+						int maxFacets = (countRequest.getMaxFacets() * 2) + 32;
 
 						FacetResult facetResult = ddsr.facets
 										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel());
@@ -354,6 +357,7 @@ public class LumongoSegment {
 					indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
 					Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
+						int maxFacets = (countRequest.getMaxFacets() * 2) + 32;
 						FacetResult facetResult = facets
 										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel());
 						handleFacetResult(builder, facetResult, countRequest);

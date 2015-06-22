@@ -236,7 +236,7 @@ message LMDoc {
 
 message LMFacet {
 	required string label = 1;
-	repeated string path = 2;
+	optional string path = 2;
 }
 
 message LMField {

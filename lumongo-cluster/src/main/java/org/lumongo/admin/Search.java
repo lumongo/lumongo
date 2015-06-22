@@ -88,7 +88,8 @@ public class Search {
 				}
 				
 				for (String drillDown : drillDowns) {
-					q.addDrillDown(drillDown);
+					//TODO: this is broke
+					//q.addDrillDown(drillDown);
 				}
 				
 				for (String sort : sortList) {

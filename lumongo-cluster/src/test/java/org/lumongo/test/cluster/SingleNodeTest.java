@@ -10,6 +10,7 @@ import org.lumongo.client.command.DeleteIndex;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.command.FetchDocumentAndAssociated;
 import org.lumongo.client.command.FetchLargeAssociated;
+import org.lumongo.client.command.OptimizeIndex;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
@@ -119,6 +120,7 @@ public class SingleNodeTest extends ServerTestBase {
 				}
 			}
 		}
+
 		{
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "issn");
 			QueryResult qr = lumongoWorkPool.query(q);
@@ -172,7 +174,7 @@ public class SingleNodeTest extends ServerTestBase {
 		}
 		
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013", "09");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013-09");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
@@ -181,7 +183,7 @@ public class SingleNodeTest extends ServerTestBase {
 		}
 		
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013", "08");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013-08");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
