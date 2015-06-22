@@ -1,6 +1,5 @@
 package org.lumongo.server.indexing;
 
-import com.google.protobuf.ProtocolStringList;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -246,7 +245,7 @@ public class LumongoSegment {
 	public SegmentResponse querySegment(QueryWithFilters queryWithFilters, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest,
 					boolean realTime, QueryCacheKey queryCacheKey) throws Exception {
 
-		IndexReader ir = null;
+		IndexReader indexReader = null;
 
 		try {
 
@@ -275,9 +274,9 @@ public class LumongoSegment {
 
 			reopenIndexWritersIfNecessary();
 
-			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
+			indexReader = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
 
-			IndexSearcher is = new IndexSearcher(ir);
+			IndexSearcher indexSearcher = new IndexSearcher(indexReader);
 
 			int hasMoreAmount = amount + 1;
 
@@ -336,11 +335,11 @@ public class LumongoSegment {
 				int maxFacets = Integer.MAX_VALUE; // have to fetch all facets to merge between segments correctly
 
 				if (facetRequest.getDrillSideways()) {
-					SortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(ir);
-					DrillSideways ds = new DrillSideways(is, facetsConfig, state);
+					SortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(indexReader);
+					DrillSideways ds = new DrillSideways(indexSearcher, facetsConfig, state);
 					DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
-						ProtocolStringList pathList = countRequest.getFacetField().getPathList();
+
 						FacetResult facetResult = ddsr.facets
 										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel());
 
@@ -350,12 +349,11 @@ public class LumongoSegment {
 				}
 				else {
 
-					SortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(ir);
-					FacetsCollector fc = new FacetsCollector();
-					is.search(q, MultiCollector.wrap(collector, fc));
-					Facets facets = new SortedSetDocValuesFacetCounts(state, fc);
+					SortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(indexReader);
+					FacetsCollector facetsCollector = new FacetsCollector();
+					indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
+					Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
-
 						FacetResult facetResult = facets
 										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel());
 						handleFacetResult(builder, facetResult, countRequest);
@@ -364,7 +362,7 @@ public class LumongoSegment {
 
 			}
 			else {
-				is.search(q, collector);
+				indexSearcher.search(q, collector);
 			}
 
 			ScoreDoc[] results = collector.topDocs().scoreDocs;
@@ -378,14 +376,14 @@ public class LumongoSegment {
 			int numResults = Math.min(results.length, amount);
 
 			for (int i = 0; i < numResults; i++) {
-				ScoredResult.Builder srBuilder = handleDocResult(is, sortRequest, sorting, results, i);
+				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i);
 
 				builder.addScoredResult(srBuilder.build());
 
 			}
 
 			if (moreAvailable) {
-				ScoredResult.Builder srBuilder = handleDocResult(is, sortRequest, sorting, results, numResults);
+				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, numResults);
 				builder.setNext(srBuilder);
 			}
 
@@ -399,8 +397,8 @@ public class LumongoSegment {
 			return segmentResponse;
 		}
 		finally {
-			if (ir != null) {
-				ir.close();
+			if (indexReader != null) {
+				indexReader.close();
 			}
 
 		}
