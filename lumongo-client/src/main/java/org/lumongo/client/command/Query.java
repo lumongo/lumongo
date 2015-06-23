@@ -204,7 +204,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		countRequests.add(countRequest);
 		return this;
 	}
-	
+
 	public Query addCountRequest(int maxFacets, String label, String path) {
 		LMFacet facet = LMFacet.newBuilder().setLabel(label).setPath(path).build();
 		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).setMaxFacets(maxFacets).build();
@@ -214,7 +214,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		countRequests.add(countRequest);
 		return this;
 	}
-	
+
 	public List<CountRequest> getCountRequests() {
 		return countRequests;
 	}

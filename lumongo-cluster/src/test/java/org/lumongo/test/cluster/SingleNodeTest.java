@@ -10,7 +10,6 @@ import org.lumongo.client.command.DeleteIndex;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.command.FetchDocumentAndAssociated;
 import org.lumongo.client.command.FetchLargeAssociated;
-import org.lumongo.client.command.OptimizeIndex;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
@@ -41,7 +40,6 @@ public class SingleNodeTest extends ServerTestBase {
 	
 	public static final String FACET_TEST_INDEX = "facetTestIndex";
 
-	
 	@BeforeClass
 	public void test01Start() throws Exception {
 		startSuite(1);
@@ -129,7 +127,6 @@ public class SingleNodeTest extends ServerTestBase {
 			
 			assertEquals("Total facets not " + issns.length, qr.getFacetCounts("issn").size(), issns.length);
 			for (FacetCount fc : qr.getFacetCounts("issn")) {
-				System.out.println(fc.getFacet() + ": " + fc.getCount());
 				assertEquals("Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">", COUNT_PER_ISSN, fc.getCount());
 			}
 			
@@ -141,31 +138,18 @@ public class SingleNodeTest extends ServerTestBase {
 			QueryResult qr = lumongoWorkPool.query(q);
 			
 			assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
-			
-			assertEquals("Total facets not " + 2, 2, qr.getFacetCounts("date").size());
-			for (@SuppressWarnings("unused")
-			FacetCount fc : qr.getFacetCounts("date")) {
-				//System.out.println(fc);
+
+			for (@SuppressWarnings("unused") FacetCount fc : qr.getFacetCounts("date")) {
+				//System.out.println("Date: " + fc);
 			}
-			
+
+			assertEquals("Total facets not " + 3, 3, qr.getFacetCounts("date").size());
+
 		}
+
 		
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "date", "2013");
-			QueryResult qr = lumongoWorkPool.query(q);
-			
-			assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
-			
-			assertEquals("Total facets not " + 2, 2, qr.getFacetCounts("date").size());
-			for (@SuppressWarnings("unused")
-			FacetCount fc : qr.getFacetCounts("date")) {
-				//System.out.println(fc);
-			}
-			
-		}
-		
-		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2014");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2014-10-04");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
@@ -174,7 +158,7 @@ public class SingleNodeTest extends ServerTestBase {
 		}
 		
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013-09");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013-09-04");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
@@ -183,7 +167,7 @@ public class SingleNodeTest extends ServerTestBase {
 		}
 		
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013-08");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013-08-04");
 			
 			QueryResult qr = lumongoWorkPool.query(q);
 			
@@ -276,10 +260,8 @@ public class SingleNodeTest extends ServerTestBase {
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "an:{1 TO 3}", 10));
 			assertEquals("Total hits is not 1", 1, qr.getTotalHits());
 
-
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "an:[1 TO 5]", 10).addFieldSort("an"));
 			assertEquals("Unique id does not match expected", "someUniqueId-1", qr.getResults().get(0).getUniqueId());
-
 
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "an:[1 TO 4]", 10).addFieldSort("an", Lumongo.FieldSort.Direction.DESCENDING));
 			assertEquals("Unique id does not match expected", "someUniqueId-4", qr.getResults().get(0).getUniqueId());

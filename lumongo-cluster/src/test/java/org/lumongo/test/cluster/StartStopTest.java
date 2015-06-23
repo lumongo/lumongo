@@ -161,7 +161,7 @@ public class StartStopTest extends ServerTestBase {
 
 			assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
 
-			assertEquals("Total facets not " + 2, 2, qr.getFacetCounts("date").size());
+			assertEquals("Total facets not " + 3, 3, qr.getFacetCounts("date").size());
 			for (@SuppressWarnings("unused")
 			FacetCount fc : qr.getFacetCounts("date")) {
 				//System.out.println(fc);
@@ -170,21 +170,7 @@ public class StartStopTest extends ServerTestBase {
 		}
 
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "date", "2013");
-			QueryResult qr = lumongoWorkPool.query(q);
-
-			assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
-
-			assertEquals("Total facets not " + 2, 2, qr.getFacetCounts("date").size());
-			for (@SuppressWarnings("unused")
-			FacetCount fc : qr.getFacetCounts("date")) {
-				//System.out.println(fc);
-			}
-
-		}
-
-		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2014");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2014-10-04");
 
 			QueryResult qr = lumongoWorkPool.query(q);
 
@@ -193,7 +179,7 @@ public class StartStopTest extends ServerTestBase {
 		}
 
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013-09");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013-09-04");
 
 			QueryResult qr = lumongoWorkPool.query(q);
 
@@ -202,7 +188,7 @@ public class StartStopTest extends ServerTestBase {
 		}
 
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013-08");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addDrillDown("date", "2013-08-04");
 
 			QueryResult qr = lumongoWorkPool.query(q);
 
