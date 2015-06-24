@@ -2,6 +2,8 @@
 =============
 ## Distributed Realtime Search With Lucene
 
+[![Join the chat at https://gitter.im/lumongo/lumongo](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/lumongo/lumongo?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 
 LuMongo is a real-time distributed search and storage system based on Lucene. LuMongo is designed from the ground up to scale both vertically and horizontally across servers. LuMongo
 stores Lucene indexes directly into MongoDB.  Documents can be stored natively into MongoDB.  When stored natively document can be queried as normal
