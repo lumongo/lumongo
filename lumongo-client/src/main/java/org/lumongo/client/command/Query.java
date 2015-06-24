@@ -34,7 +34,6 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private String query;
 	private int amount;
 	private Collection<String> indexes;
-	private Boolean realTime;
 	private QueryResult lastResult;
 	private List<CountRequest> countRequests = Collections.emptyList();
 	private List<LMFacet> drillDowns = Collections.emptyList();
@@ -94,16 +93,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	public Collection<String> getIndexes() {
 		return indexes;
 	}
-	
-	public Query setRealTime(Boolean realTime) {
-		this.realTime = realTime;
-		return this;
-	}
-	
-	public Boolean getRealTime() {
-		return realTime;
-	}
-	
+
 	public Boolean getDrillSideways() {
 		return drillSideways;
 	}
@@ -256,9 +246,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		if (query != null) {
 			requestBuilder.setQuery(query);
 		}
-		if (realTime != null) {
-			requestBuilder.setRealTime(realTime);
-		}
+
 		if (lastResult != null) {
 			requestBuilder.setLastResult(lastResult.getLastResult());
 		}

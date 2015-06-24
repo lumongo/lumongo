@@ -39,7 +39,6 @@ public class Search {
 		OptionSpec<String> queryArg = parser.accepts(AdminConstants.QUERY, "Lucene query (matches all docs by default)").withRequiredArg();
 		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT, "Amount of results to return").withRequiredArg().ofType(Integer.class)
 						.defaultsTo(10);
-		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME, "Real time search").withRequiredArg().ofType(Boolean.class);
 		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET, "Count facets on").withRequiredArg();
 		OptionSpec<String> drillDownArg = parser.accepts(AdminConstants.DRILL_DOWN, "Drill down on").withRequiredArg();
 		OptionSpec<String> sortArg = parser.accepts(AdminConstants.SORT, "Field to sort on").withRequiredArg();
@@ -60,7 +59,6 @@ public class Search {
 			int port = options.valueOf(portArg);
 			String query = options.valueOf(queryArg);
 			int amount = options.valueOf(amountArg);
-			Boolean realTime = options.valueOf(realTimeArg);
 			List<String> facets = options.valuesOf(facetsArg);
 			List<String> drillDowns = options.valuesOf(drillDownArg);
 			List<String> sortList = options.valuesOf(sortArg);
@@ -108,9 +106,7 @@ public class Search {
 				for (String filterQuery : filterQueryList) {
 					q.addFilterQuery(filterQuery);
 				}
-				
-				q.setRealTime(realTime);
-				
+
 				QueryResult qr = lumongoWorkPool.execute(q);
 				
 				List<ScoredResult> srList = qr.getResults();

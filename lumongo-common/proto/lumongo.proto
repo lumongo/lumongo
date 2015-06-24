@@ -361,7 +361,6 @@ message QueryRequest {
 	required uint32 amount = 3;
 	optional LastResult lastResult = 4;
 	optional bool fetchFull = 5 [default = false];
-	optional bool realTime = 6 [default = true];
 	optional FacetRequest facetRequest = 7;
 	optional SortRequest sortRequest = 8;
 	repeated string queryField = 9;

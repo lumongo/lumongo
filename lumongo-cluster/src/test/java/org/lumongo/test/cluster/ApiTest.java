@@ -200,7 +200,6 @@ public class ApiTest {
 		String[] indexes = new String[] { MY_INDEX_NAME, MY_INDEX_NAME2 };
 		String normalLuceneQuery = "issn:1234-1234 AND title:special";
 		Query query = new Query(indexes, normalLuceneQuery, numberOfResults);
-		query.setRealTime(false);
 		QueryResult queryResult = lumongoWorkPool.query(query);
 		
 		long totalHits = queryResult.getTotalHits();

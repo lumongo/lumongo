@@ -20,15 +20,14 @@ import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
-import org.apache.lucene.facet.sortedset.SortedSetDocValuesReaderState;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
@@ -115,16 +114,16 @@ public class LumongoSegment {
 	private final Set<String> fetchSet;
 	private final IndexWriterManager indexWriterManager;
 
-	private LumongoIndexWriter indexWriter;
+	private IndexWriter indexWriter;
 	private Long lastCommit;
 	private Long lastChange;
 	private String indexName;
 	private QueryResultCache queryResultCache;
-	private QueryResultCache queryResultCacheRealtime;
 
 	private boolean queryCacheEnabled;
 
 	private int segmentQueryCacheMaxAmount;
+
 
 	public LumongoSegment(int segmentNumber, IndexWriterManager indexWriterManager, IndexConfig indexConfig) throws Exception {
 
@@ -154,7 +153,7 @@ public class LumongoSegment {
 		if (!indexWriter.isOpen()) {
 			synchronized (this) {
 				if (!indexWriter.isOpen()) {
-					this.indexWriter = this.indexWriterManager.getLumongoIndexWriter(segmentNumber);
+					this.indexWriter = this.indexWriterManager.getIndexWriter(segmentNumber);
 				}
 			}
 		}
@@ -165,7 +164,7 @@ public class LumongoSegment {
 		if (this.indexWriter != null) {
 			indexWriter.close();
 		}
-		this.indexWriter = this.indexWriterManager.getLumongoIndexWriter(segmentNumber);
+		this.indexWriter = this.indexWriterManager.getIndexWriter(segmentNumber);
 	}
 
 	public static Object getValueFromDocument(BSONObject document, String storedFieldName) {
@@ -225,7 +224,6 @@ public class LumongoSegment {
 
 		if (queryCacheEnabled) {
 			this.queryResultCache = new QueryResultCache(indexConfig.getSegmentQueryCacheSize(), 8);
-			this.queryResultCacheRealtime = new QueryResultCache(indexConfig.getSegmentQueryCacheSize(), 8);
 		}
 	}
 
@@ -243,13 +241,13 @@ public class LumongoSegment {
 	}
 
 	public SegmentResponse querySegment(QueryWithFilters queryWithFilters, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest,
-					boolean realTime, QueryCacheKey queryCacheKey) throws Exception {
+					QueryCacheKey queryCacheKey) throws Exception {
 
 		IndexReader indexReader = null;
 
 		try {
 
-			QueryResultCache qrc = realTime ? queryResultCacheRealtime : queryResultCache;
+			QueryResultCache qrc = queryResultCache;
 
 			boolean useCache = queryCacheEnabled && ((segmentQueryCacheMaxAmount <= 0) || (segmentQueryCacheMaxAmount >= amount));
 			if (useCache) {
@@ -274,7 +272,7 @@ public class LumongoSegment {
 
 			reopenIndexWritersIfNecessary();
 
-			indexReader = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
+			indexReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
 
 			IndexSearcher indexSearcher = new IndexSearcher(indexReader);
 
@@ -334,8 +332,9 @@ public class LumongoSegment {
 
 				//TODO fix me
 
+				DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(indexReader);
+
 				if (facetRequest.getDrillSideways()) {
-					SortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(indexReader);
 					DrillSideways ds = new DrillSideways(indexSearcher, facetsConfig, state);
 					DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
@@ -350,8 +349,6 @@ public class LumongoSegment {
 					}
 				}
 				else {
-
-					SortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(indexReader);
 					FacetsCollector facetsCollector = new FacetsCollector();
 					indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
 					Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
@@ -513,12 +510,7 @@ public class LumongoSegment {
 		if ((count % indexConfig.getSegmentCommitInterval()) == 0) {
 			forceCommit();
 		}
-		else if ((count % indexConfig.getSegmentFlushInterval()) == 0) {
-			indexWriter.flush(indexConfig.getApplyUncommitedDeletes());
-		}
-		if (queryCacheEnabled) {
-			queryResultCacheRealtime.clear();
-		}
+
 	}
 
 	public void forceCommit() throws IOException {
@@ -527,7 +519,6 @@ public class LumongoSegment {
 		indexWriter.commit();
 
 		if (queryCacheEnabled) {
-			queryResultCacheRealtime.clear();
 			queryResultCache.clear();
 		}
 
@@ -775,7 +766,7 @@ public class LumongoSegment {
 
 		DirectoryReader ir = null;
 		try {
-			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), request.getRealTime());
+			ir = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
 
 			String fieldName = request.getFieldName();
 			String startTerm = "";
@@ -874,7 +865,7 @@ public class LumongoSegment {
 		IndexReader ir = null;
 
 		try {
-			ir = indexWriter.getReader(indexConfig.getApplyUncommitedDeletes(), realTime);
+			ir = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
 			int count = ir.numDocs();
 			return SegmentCountResponse.newBuilder().setNumberOfDocs(count).setSegmentNumber(segmentNumber).build();
 		}

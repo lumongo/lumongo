@@ -13,20 +13,41 @@ import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
 import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.LumongoIndexWriter;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.store.NRTCachingDirectory;
 import org.bson.BSON;
 import org.bson.BasicBSONObject;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.*;
+import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
+import org.lumongo.cluster.message.Lumongo.DeleteRequest;
+import org.lumongo.cluster.message.Lumongo.FetchType;
+import org.lumongo.cluster.message.Lumongo.FieldSort;
+import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
+import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
+import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
+import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
+import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
+import org.lumongo.cluster.message.Lumongo.IndexSettings;
+import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
+import org.lumongo.cluster.message.Lumongo.LastIndexResult;
+import org.lumongo.cluster.message.Lumongo.LastResult;
+import org.lumongo.cluster.message.Lumongo.QueryRequest;
+import org.lumongo.cluster.message.Lumongo.ResultDocument;
+import org.lumongo.cluster.message.Lumongo.ScoredResult;
+import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
+import org.lumongo.cluster.message.Lumongo.SegmentResponse;
+import org.lumongo.cluster.message.Lumongo.SortRequest;
+import org.lumongo.cluster.message.Lumongo.StoreRequest;
+import org.lumongo.cluster.message.Lumongo.Term;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.MongoConfig;
@@ -343,7 +364,7 @@ public class LumongoIndex implements IndexWriterManager {
 		}
 	}
 
-	public LumongoIndexWriter getLumongoIndexWriter(int segmentNumber) throws Exception {
+	public IndexWriter getIndexWriter(int segmentNumber) throws Exception {
 		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
 		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
 		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
@@ -356,7 +377,9 @@ public class LumongoIndex implements IndexWriterManager {
 		config.setMaxBufferedDocs(Integer.MAX_VALUE);
 		config.setRAMBufferSizeMB(IndexWriterConfig.DISABLE_AUTO_FLUSH);
 
-		return new LumongoIndexWriter(dd, config);
+		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 8, 48);
+
+		return new IndexWriter(nrtCachingDirectory, config);
 	}
 
 	private String getIndexSegmentCollectionName(int segmentNumber) {
@@ -852,7 +875,7 @@ public class LumongoIndex implements IndexWriterManager {
 
 				Future<SegmentResponse> response = segmentPool.submit(() -> segment
 								.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()),
-												queryRequest.getFacetRequest(), queryRequest.getSortRequest(), queryRequest.getRealTime(),
+												queryRequest.getFacetRequest(), queryRequest.getSortRequest(),
 												new QueryCacheKey(queryRequest)));
 
 				responses.add(response);

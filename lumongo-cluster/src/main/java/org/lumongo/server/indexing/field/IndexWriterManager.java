@@ -1,11 +1,11 @@
 package org.lumongo.server.indexing.field;
 
-import org.apache.lucene.index.LumongoIndexWriter;
+import org.apache.lucene.index.IndexWriter;
 
 /**
  * Created by mdavis on 6/6/15.
  */
 public interface IndexWriterManager {
-	LumongoIndexWriter getLumongoIndexWriter(int segmentNumber) throws Exception;
+	IndexWriter getIndexWriter(int segmentNumber) throws Exception;
 
 }

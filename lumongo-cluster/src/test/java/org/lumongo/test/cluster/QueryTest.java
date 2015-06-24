@@ -36,7 +36,6 @@ public class QueryTest {
 		for (int i = 0; i < 10000; i++) {
 			int index = ThreadLocalRandom.current().nextInt(queries.length);
 			String query = queries[index];
-			q.setRealTime(false);
 			q.setQuery(query);
 			
 			ListenableFuture<QueryResult> qr = lumongoWorkPool.executeAsync(q);
