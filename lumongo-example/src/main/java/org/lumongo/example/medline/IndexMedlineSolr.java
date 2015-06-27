@@ -2,6 +2,7 @@ package org.lumongo.example.medline;
 
 import org.apache.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.impl.ConcurrentUpdateSolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.common.SolrInputDocument;
 import org.lumongo.example.medline.schema.MedlineCitation;
@@ -38,7 +39,8 @@ public class IndexMedlineSolr {
 
 		LogUtil.loadLogConfig();
 
-		SolrClient solrClient = new HttpSolrClient(server);
+		//SolrClient solrClient = new HttpSolrClient(server);
+		SolrClient solrClient = new ConcurrentUpdateSolrClient(server, 100, 1);
 
 		final AtomicInteger counter = new AtomicInteger();
 		final long start = System.currentTimeMillis();
