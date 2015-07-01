@@ -23,7 +23,7 @@ public class LumongoPoolConfig {
 	public final static int DEFAULT_MEMBER_UPDATE_INTERVAL = 10000;
 
 	public LumongoPoolConfig() {
-		this.members = new ArrayList<LMMember>();
+		this.members = new ArrayList<>();
 		this.maxConnections = 16;
 		this.maxIdle = 16;
 		this.defaultRetries = DEFAULT_DEFAULT_RETRIES;
