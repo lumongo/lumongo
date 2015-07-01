@@ -725,6 +725,9 @@ public class LumongoSegment {
 	public void deleteDocument(String uniqueId) throws Exception {
 		Term term = new Term(uniqueIdField, uniqueId);
 		indexWriter.deleteDocuments(term);
+		if (indexConfig.getApplyUncommitedDeletes()) {
+			queryResultCache.clear();
+		}
 		possibleCommit();
 
 	}
