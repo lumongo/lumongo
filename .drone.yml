@@ -1,7 +1,7 @@
 notify:
   webhook:
     urls:
-      - "https://webhooks.gitter.im/e/9e5ea0720e48294e7c3a"
+      - "https://webhooks.gitter.im/e/ccc831f03bf26a2ae917"
     on_success: true
     on_failure: true
 
