@@ -24,7 +24,6 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.Fields;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LeafReaderContext;
@@ -108,22 +107,23 @@ public class LumongoSegment {
 	private final int segmentNumber;
 
 	private final IndexConfig indexConfig;
-	private final FacetsConfig facetsConfig;
 	private final String uniqueIdField;
 	private final AtomicLong counter;
 	private final Set<String> fetchSet;
 	private final IndexWriterManager indexWriterManager;
 
 	private IndexWriter indexWriter;
+	private DirectoryReader directoryReader;
+
 	private Long lastCommit;
 	private Long lastChange;
 	private String indexName;
 	private QueryResultCache queryResultCache;
+	private FacetsConfig facetsConfig;
 
 	private boolean queryCacheEnabled;
 
 	private int segmentQueryCacheMaxAmount;
-
 
 	public LumongoSegment(int segmentNumber, IndexWriterManager indexWriterManager, IndexConfig indexConfig) throws Exception {
 
@@ -132,10 +132,10 @@ public class LumongoSegment {
 		this.segmentNumber = segmentNumber;
 
 		this.indexWriterManager = indexWriterManager;
+		this.indexConfig = indexConfig;
 
 		openIndexWriters();
 
-		this.indexConfig = indexConfig;
 		this.facetsConfig = getFacetsConfig();
 
 		this.uniqueIdField = indexConfig.getUniqueIdField();
@@ -154,6 +154,7 @@ public class LumongoSegment {
 			synchronized (this) {
 				if (!indexWriter.isOpen()) {
 					this.indexWriter = this.indexWriterManager.getIndexWriter(segmentNumber);
+					this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
 				}
 			}
 		}
@@ -165,6 +166,7 @@ public class LumongoSegment {
 			indexWriter.close();
 		}
 		this.indexWriter = this.indexWriterManager.getIndexWriter(segmentNumber);
+		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
 	}
 
 	public static Object getValueFromDocument(BSONObject document, String storedFieldName) {
@@ -204,18 +206,17 @@ public class LumongoSegment {
 	}
 
 	protected FacetsConfig getFacetsConfig() {
-		//only need to be done once but no harm
-		FacetsConfig.DEFAULT_DIM_CONFIG.hierarchical = false;
-		FacetsConfig.DEFAULT_DIM_CONFIG.multiValued = true;
-		return new FacetsConfig() {
-			@Override
-			public synchronized DimConfig getDimConfig(String dimName) {
-				DimConfig dc = new DimConfig();
-				dc.multiValued = true;
-				dc.hierarchical = false;
-				return dc;
+		FacetsConfig facetsConfig = new FacetsConfig();
+		for (String storedFieldName : indexConfig.getIndexedStoredFieldNames()) {
+
+			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
+			for (FacetAs fa : fc.getFacetAsList()) {
+				facetsConfig.setMultiValued(fa.getFacetName(), true);
+				facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME + "." + fa.getFacetName());
 			}
-		};
+
+		}
+		return facetsConfig;
 	}
 
 	private void setupQueryCache(IndexConfig indexConfig) {
@@ -230,8 +231,8 @@ public class LumongoSegment {
 	public void updateIndexSettings(IndexSettings indexSettings) throws Exception {
 
 		this.indexConfig.configure(indexSettings);
+		this.facetsConfig = getFacetsConfig();
 		setupQueryCache(indexConfig);
-
 		openIndexWriters();
 
 	}
@@ -243,166 +244,167 @@ public class LumongoSegment {
 	public SegmentResponse querySegment(QueryWithFilters queryWithFilters, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest,
 					QueryCacheKey queryCacheKey) throws Exception {
 
-		IndexReader indexReader = null;
+		QueryResultCache qrc = queryResultCache;
 
-		try {
-
-			QueryResultCache qrc = queryResultCache;
-
-			boolean useCache = queryCacheEnabled && ((segmentQueryCacheMaxAmount <= 0) || (segmentQueryCacheMaxAmount >= amount));
-			if (useCache) {
-				SegmentResponse cacheSegmentResponse = qrc.getCacheSegmentResponse(queryCacheKey);
-				if (cacheSegmentResponse != null) {
-					return cacheSegmentResponse;
-				}
-
+		boolean useCache = queryCacheEnabled && ((segmentQueryCacheMaxAmount <= 0) || (segmentQueryCacheMaxAmount >= amount));
+		if (useCache) {
+			SegmentResponse cacheSegmentResponse = qrc.getCacheSegmentResponse(queryCacheKey);
+			if (cacheSegmentResponse != null) {
+				return cacheSegmentResponse;
 			}
 
-			Query q = queryWithFilters.getQuery();
+		}
 
-			if (!queryWithFilters.getFilterQueries().isEmpty()) {
-				BooleanQuery booleanQuery = new BooleanQuery();
+		Query q = queryWithFilters.getQuery();
 
-				for (Query filterQuery : queryWithFilters.getFilterQueries()) {
-					booleanQuery.add(filterQuery, BooleanClause.Occur.MUST);
-				}
+		if (!queryWithFilters.getFilterQueries().isEmpty()) {
+			BooleanQuery booleanQuery = new BooleanQuery();
 
-				q = new QueryWrapperFilter(booleanQuery);
+			for (Query filterQuery : queryWithFilters.getFilterQueries()) {
+				booleanQuery.add(filterQuery, BooleanClause.Occur.MUST);
 			}
 
-			reopenIndexWritersIfNecessary();
+			q = new QueryWrapperFilter(booleanQuery);
+		}
 
-			indexReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
+		reopenIndexWritersIfNecessary();
 
-			IndexSearcher indexSearcher = new IndexSearcher(indexReader);
+		openReaderIfChanges();
 
-			int hasMoreAmount = amount + 1;
+		IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
-			TopDocsCollector<?> collector;
+		int hasMoreAmount = amount + 1;
 
-			List<SortField> sortFields = new ArrayList<>();
-			boolean sorting = (sortRequest != null) && !sortRequest.getFieldSortList().isEmpty();
-			if (sorting) {
+		TopDocsCollector<?> collector;
 
-				for (FieldSort fs : sortRequest.getFieldSortList()) {
-					boolean reverse = Direction.DESCENDING.equals(fs.getDirection());
+		List<SortField> sortFields = new ArrayList<>();
+		boolean sorting = (sortRequest != null) && !sortRequest.getFieldSortList().isEmpty();
+		if (sorting) {
 
-					String sortField = fs.getSortField();
-					Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
+			for (FieldSort fs : sortRequest.getFieldSortList()) {
+				boolean reverse = Direction.DESCENDING.equals(fs.getDirection());
 
-					if (IndexConfig.isNumericOrDateSortType(sortType)) {
-						SortField.Type type;
-						if (IndexConfig.isNumericIntSortType(sortType)) {
-							type = SortField.Type.INT;
-						}
-						else if (IndexConfig.isNumericLongSortType(sortType)) {
-							type = SortField.Type.LONG;
-						}
-						else if (IndexConfig.isNumericFloatSortType(sortType)) {
-							type = SortField.Type.FLOAT;
-						}
-						else if (IndexConfig.isNumericDoubleSortType(sortType)) {
-							type = SortField.Type.DOUBLE;
-						}
-						else if (IndexConfig.isNumericDateSortType(sortType)) {
-							type = SortField.Type.LONG;
-						}
-						else {
-							throw new Exception("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
-						}
-						sortFields.add(new SortedNumericSortField(sortField, type, reverse));
+				String sortField = fs.getSortField();
+				Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
+
+				if (IndexConfig.isNumericOrDateSortType(sortType)) {
+					SortField.Type type;
+					if (IndexConfig.isNumericIntSortType(sortType)) {
+						type = SortField.Type.INT;
+					}
+					else if (IndexConfig.isNumericLongSortType(sortType)) {
+						type = SortField.Type.LONG;
+					}
+					else if (IndexConfig.isNumericFloatSortType(sortType)) {
+						type = SortField.Type.FLOAT;
+					}
+					else if (IndexConfig.isNumericDoubleSortType(sortType)) {
+						type = SortField.Type.DOUBLE;
+					}
+					else if (IndexConfig.isNumericDateSortType(sortType)) {
+						type = SortField.Type.LONG;
 					}
 					else {
-						sortFields.add(new SortedSetSortField(sortField, reverse));
+						throw new Exception("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
 					}
-
-				}
-				Sort sort = new Sort();
-				sort.setSort(sortFields.toArray(new SortField[sortFields.size()]));
-
-				collector = TopFieldCollector.create(sort, hasMoreAmount, after, true, true, true);
-			}
-			else {
-				collector = TopScoreDocCollector.create(hasMoreAmount, after);
-			}
-
-			SegmentResponse.Builder builder = SegmentResponse.newBuilder();
-
-			if ((facetRequest != null) && !facetRequest.getCountRequestList().isEmpty()) {
-
-				//TODO fix me
-
-				DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(indexReader);
-
-				if (facetRequest.getDrillSideways()) {
-					DrillSideways ds = new DrillSideways(indexSearcher, facetsConfig, state);
-					DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
-					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
-
-						int maxFacets = (countRequest.getMaxFacets() * 2) + 32;
-
-						FacetResult facetResult = ddsr.facets
-										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel());
-
-						handleFacetResult(builder, facetResult, countRequest);
-
-					}
+					sortFields.add(new SortedNumericSortField(sortField, type, reverse));
 				}
 				else {
-					FacetsCollector facetsCollector = new FacetsCollector();
-					indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
-					Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
-					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
-						int maxFacets = (countRequest.getMaxFacets() * 2) + 32;
-						FacetResult facetResult = facets
-										.getTopChildren(maxFacets, countRequest.getFacetField().getLabel());
-						handleFacetResult(builder, facetResult, countRequest);
-					}
+					sortFields.add(new SortedSetSortField(sortField, reverse));
 				}
 
 			}
+			Sort sort = new Sort();
+			sort.setSort(sortFields.toArray(new SortField[sortFields.size()]));
+
+			collector = TopFieldCollector.create(sort, hasMoreAmount, after, true, true, true);
+		}
+		else {
+			collector = TopScoreDocCollector.create(hasMoreAmount, after);
+		}
+
+		SegmentResponse.Builder builder = SegmentResponse.newBuilder();
+
+		if ((facetRequest != null) && !facetRequest.getCountRequestList().isEmpty()) {
+
+			//TODO fix me
+
+			if (facetRequest.getDrillSideways()) {
+				DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(directoryReader);
+				DrillSideways ds = new DrillSideways(indexSearcher, facetsConfig, state);
+				DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
+				for (CountRequest countRequest : facetRequest.getCountRequestList()) {
+
+					int maxFacets = (countRequest.getMaxFacets() * 2) + 32;
+
+					FacetResult facetResult = ddsr.facets
+									.getTopChildren(maxFacets, countRequest.getFacetField().getLabel());
+
+					handleFacetResult(builder, facetResult, countRequest);
+
+				}
+			}
 			else {
-				indexSearcher.search(q, collector);
-			}
 
-			ScoreDoc[] results = collector.topDocs().scoreDocs;
+				FacetsCollector facetsCollector = new FacetsCollector();
+				indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
 
-			int totalHits = collector.getTotalHits();
-
-			builder.setTotalHits(totalHits);
-
-			boolean moreAvailable = (results.length == hasMoreAmount);
-
-			int numResults = Math.min(results.length, amount);
-
-			for (int i = 0; i < numResults; i++) {
-				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i);
-
-				builder.addScoredResult(srBuilder.build());
-
-			}
-
-			if (moreAvailable) {
-				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, numResults);
-				builder.setNext(srBuilder);
-			}
-
-			builder.setIndexName(indexName);
-			builder.setSegmentNumber(segmentNumber);
-
-			SegmentResponse segmentResponse = builder.build();
-			if (useCache) {
-				qrc.storeInCache(queryCacheKey, segmentResponse);
-			}
-			return segmentResponse;
-		}
-		finally {
-			if (indexReader != null) {
-				indexReader.close();
+				for (CountRequest countRequest : facetRequest.getCountRequestList()) {
+					int maxFacets = (countRequest.getMaxFacets() * 2) + 32;
+					String label = countRequest.getFacetField().getLabel();
+					String indexFieldName = facetsConfig.getDimConfig(
+									label).indexFieldName;
+					DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(directoryReader, indexFieldName);
+					Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
+					FacetResult facetResult = facets
+									.getTopChildren(maxFacets, label);
+					handleFacetResult(builder, facetResult, countRequest);
+				}
 			}
 
 		}
+		else {
+			indexSearcher.search(q, collector);
+		}
 
+		ScoreDoc[] results = collector.topDocs().scoreDocs;
+
+		int totalHits = collector.getTotalHits();
+
+		builder.setTotalHits(totalHits);
+
+		boolean moreAvailable = (results.length == hasMoreAmount);
+
+		int numResults = Math.min(results.length, amount);
+
+		for (int i = 0; i < numResults; i++) {
+			ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i);
+
+			builder.addScoredResult(srBuilder.build());
+
+		}
+
+		if (moreAvailable) {
+			ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, numResults);
+			builder.setNext(srBuilder);
+		}
+
+		builder.setIndexName(indexName);
+		builder.setSegmentNumber(segmentNumber);
+
+		SegmentResponse segmentResponse = builder.build();
+		if (useCache) {
+			qrc.storeInCache(queryCacheKey, segmentResponse);
+		}
+		return segmentResponse;
+
+	}
+
+	private void openReaderIfChanges() throws IOException {
+		DirectoryReader newDirectoryReader = DirectoryReader.openIfChanged(directoryReader, indexWriter, indexConfig.getApplyUncommitedDeletes());
+		if (newDirectoryReader != null) {
+			directoryReader = newDirectoryReader;
+		}
 	}
 
 	public void handleFacetResult(SegmentResponse.Builder builder, FacetResult fc, CountRequest countRequest) {
@@ -739,13 +741,14 @@ public class LumongoSegment {
 	}
 
 	public GetFieldNamesResponse getFieldNames() throws IOException {
-		GetFieldNamesResponse.Builder builder = GetFieldNamesResponse.newBuilder();
 
-		DirectoryReader ir = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
+		openReaderIfChanges();
+
+		GetFieldNamesResponse.Builder builder = GetFieldNamesResponse.newBuilder();
 
 		Set<String> fields = new HashSet<>();
 
-		for (LeafReaderContext subreaderContext : ir.leaves()) {
+		for (LeafReaderContext subreaderContext : directoryReader.leaves()) {
 			FieldInfos fieldInfos = subreaderContext.reader().getFieldInfos();
 			for (FieldInfo fi : fieldInfos) {
 				String fieldName = fi.name;
@@ -765,81 +768,74 @@ public class LumongoSegment {
 	}
 
 	public GetTermsResponse getTerms(GetTermsRequest request) throws IOException {
+		openReaderIfChanges();
+
 		GetTermsResponse.Builder builder = GetTermsResponse.newBuilder();
 
-		DirectoryReader ir = null;
-		try {
-			ir = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
+		String fieldName = request.getFieldName();
+		String startTerm = "";
 
-			String fieldName = request.getFieldName();
-			String startTerm = "";
+		if (request.hasStartingTerm()) {
+			startTerm = request.getStartingTerm();
+		}
 
-			if (request.hasStartingTerm()) {
-				startTerm = request.getStartingTerm();
-			}
+		Pattern termFilter = null;
+		if (request.hasTermFilter()) {
+			termFilter = Pattern.compile(request.getTermFilter());
+		}
 
-			Pattern termFilter = null;
-			if (request.hasTermFilter()) {
-				termFilter = Pattern.compile(request.getTermFilter());
-			}
+		Pattern termMatch = null;
+		if (request.hasTermMatch()) {
+			termMatch = Pattern.compile(request.getTermMatch());
+		}
 
-			Pattern termMatch = null;
-			if (request.hasTermMatch()) {
-				termMatch = Pattern.compile(request.getTermMatch());
-			}
+		BytesRef startTermBytes = new BytesRef(startTerm);
 
-			BytesRef startTermBytes = new BytesRef(startTerm);
+		SortedMap<String, AtomicLong> termsMap = new TreeMap<>();
 
-			SortedMap<String, AtomicLong> termsMap = new TreeMap<>();
+		for (LeafReaderContext subreaderContext : directoryReader.leaves()) {
+			Fields fields = subreaderContext.reader().fields();
+			if (fields != null) {
 
-			for (LeafReaderContext subreaderContext : ir.leaves()) {
-				Fields fields = subreaderContext.reader().fields();
-				if (fields != null) {
+				Terms terms = fields.terms(fieldName);
+				if (terms != null) {
+					// TODO reuse?
+					TermsEnum termsEnum = terms.iterator();
+					SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
 
-					Terms terms = fields.terms(fieldName);
-					if (terms != null) {
-						// TODO reuse?
-						TermsEnum termsEnum = terms.iterator();
-						SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
+					BytesRef text;
+					if (!seekStatus.equals(SeekStatus.END)) {
+						text = termsEnum.term();
 
-						BytesRef text;
-						if (!seekStatus.equals(SeekStatus.END)) {
-							text = termsEnum.term();
+						handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
 
+						while ((text = termsEnum.next()) != null) {
 							handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
-
-							while ((text = termsEnum.next()) != null) {
-								handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
-							}
-
 						}
+
 					}
 				}
-
 			}
 
-			int amount = Math.min(request.getAmount(), termsMap.size());
-
-			int i = 0;
-			for (String term : termsMap.keySet()) {
-				AtomicLong docFreq = termsMap.get(term);
-				builder.addTerm(Lumongo.Term.newBuilder().setValue(term).setDocFreq(docFreq.get()));
-
-				// TODO remove the limit and paging and just return all?
-				i++;
-				if (i > amount) {
-					break;
-				}
-
-			}
-
-			return builder.build();
 		}
-		finally {
-			if (ir != null) {
-				ir.close();
+
+		int amount = Math.min(request.getAmount(), termsMap.size());
+
+		int i = 0;
+		for (String term : termsMap.keySet()) {
+			AtomicLong docFreq = termsMap.get(term);
+			builder.addTerm(Lumongo.Term.newBuilder().setValue(term).setDocFreq(docFreq.get()));
+
+			// TODO remove the limit and paging and just return all?
+			i++;
+			if (i > amount) {
+				break;
 			}
+
 		}
+
+		return builder.build();
+
 	}
 
 	private void handleTerm(SortedMap<String, AtomicLong> termsMap, TermsEnum termsEnum, BytesRef text, Pattern termFilter, Pattern termMatch)
@@ -865,18 +861,11 @@ public class LumongoSegment {
 	}
 
 	public SegmentCountResponse getNumberOfDocs(boolean realTime) throws IOException {
-		IndexReader ir = null;
 
-		try {
-			ir = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
-			int count = ir.numDocs();
-			return SegmentCountResponse.newBuilder().setNumberOfDocs(count).setSegmentNumber(segmentNumber).build();
-		}
-		finally {
-			if (ir != null) {
-				ir.close();
-			}
-		}
+		openReaderIfChanges();
+		int count = directoryReader.numDocs();
+		return SegmentCountResponse.newBuilder().setNumberOfDocs(count).setSegmentNumber(segmentNumber).build();
+
 	}
 
 }
