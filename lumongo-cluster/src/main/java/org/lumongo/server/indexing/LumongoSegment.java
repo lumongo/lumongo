@@ -9,9 +9,6 @@ import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.facet.DrillDownQuery;
-import org.apache.lucene.facet.DrillSideways;
-import org.apache.lucene.facet.DrillSideways.DrillSidewaysResult;
 import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.Facets;
 import org.apache.lucene.facet.FacetsCollector;
@@ -314,39 +311,23 @@ public class LumongoSegment {
 
 		if ((facetRequest != null) && !facetRequest.getCountRequestList().isEmpty()) {
 
-			//TODO fix me
 
-			if (facetRequest.getDrillSideways()) {
-				DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(directoryReader);
-				DrillSideways ds = new DrillSideways(indexSearcher, facetsConfig, state);
-				DrillSidewaysResult ddsr = ds.search((DrillDownQuery) q, collector);
-				for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 
-					int maxFacets = (countRequest.getMaxFacets() * 2) + 32;
+			FacetsCollector facetsCollector = new FacetsCollector();
+			indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
 
-					FacetResult facetResult = ddsr.facets
-									.getTopChildren(maxFacets, countRequest.getFacetField().getLabel());
+			for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 
-					handleFacetResult(builder, facetResult, countRequest);
-
-				}
-			}
-			else {
-
-				FacetsCollector facetsCollector = new FacetsCollector();
-				indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
-
-				for (CountRequest countRequest : facetRequest.getCountRequestList()) {
-					int maxFacets = (countRequest.getMaxFacets() * 2) + 32;
-					String label = countRequest.getFacetField().getLabel();
-					String indexFieldName = facetsConfig.getDimConfig(
-									label).indexFieldName;
-					DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(directoryReader, indexFieldName);
-					Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
-					FacetResult facetResult = facets
-									.getTopChildren(maxFacets, label);
-					handleFacetResult(builder, facetResult, countRequest);
-				}
+				//TODO fix me
+				int maxFacets = (countRequest.getMaxFacets() * 2) + 32;
+				String label = countRequest.getFacetField().getLabel();
+				String indexFieldName = facetsConfig.getDimConfig(
+								label).indexFieldName;
+				DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(directoryReader, indexFieldName);
+				Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
+				FacetResult facetResult = facets
+								.getTopChildren(maxFacets, label);
+				handleFacetResult(builder, facetResult, countRequest);
 			}
 
 		}

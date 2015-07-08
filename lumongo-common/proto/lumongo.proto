@@ -314,7 +314,6 @@ message FacetCount {
 message FacetRequest {
 	repeated CountRequest countRequest = 1;
 	repeated LMFacet drillDown = 2;
-	optional bool drillSideways = 3 [default = false];
 }
 
 message CountRequest {

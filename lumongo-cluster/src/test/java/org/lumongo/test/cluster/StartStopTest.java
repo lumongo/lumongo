@@ -225,15 +225,10 @@ public class StartStopTest extends ServerTestBase {
 			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10);
 			q.addDrillDown("issn", "1234-1234").addDrillDown("country", "France");
 			q.addCountRequest("issn");
-			q.setDrillSideways(true);
 
 			QueryResult qr = lumongoWorkPool.query(q);
 
 			assertEquals("Total record count after drill down not " + (COUNT_PER_ISSN / 2), COUNT_PER_ISSN / 2, qr.getTotalHits());
-			assertEquals("Number of issn facets not equal " + issns.length, issns.length, qr.getFacetCounts("issn").size());
-
-			q.setDrillSideways(false);
-			qr = lumongoWorkPool.query(q);
 			assertEquals("Number of issn facets not equal " + 1, 1, qr.getFacetCounts("issn").size());
 		}
 	}

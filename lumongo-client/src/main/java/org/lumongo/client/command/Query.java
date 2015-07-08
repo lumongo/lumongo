@@ -94,15 +94,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return indexes;
 	}
 
-	public Boolean getDrillSideways() {
-		return drillSideways;
-	}
-	
-	public Query setDrillSideways(Boolean drillSideways) {
-		this.drillSideways = drillSideways;
-		return this;
-	}
-	
+
 	public Query setLastResult(QueryResult lastResult) {
 		this.lastResult = lastResult;
 		return this;
@@ -257,11 +249,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		
 		if (!drillDowns.isEmpty() || !countRequests.isEmpty()) {
 			FacetRequest.Builder facetRequestBuilder = FacetRequest.newBuilder();
-			
-			if (drillSideways != null) {
-				facetRequestBuilder.setDrillSideways(drillSideways);
-			}
-			
+
 			facetRequestBuilder.addAllDrillDown(drillDowns);
 			
 			facetRequestBuilder.addAllCountRequest(countRequests);
