@@ -3,6 +3,7 @@ package org.lumongo.test.cluster;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.lumongo.client.command.DeleteAllAssociated;
 import org.lumongo.client.command.DeleteAssociated;
 import org.lumongo.client.command.DeleteFull;
@@ -99,15 +100,15 @@ public class SingleNodeTest extends ServerTestBase {
 					}
 					
 					if (tenth) { // 1/10 of input
-						Date d = (new DateTime()).withDate(2014, 10, 4).toDate();
+						Date d = (new DateTime(DateTimeZone.UTC)).withDate(2014, 10, 4).toDate();
 						object.put("date", d);
 					}
 					else if (half) { // 2/5 of input
-						Date d = (new DateTime()).withDate(2013, 9, 4).toDate();
+						Date d = (new DateTime(DateTimeZone.UTC)).withDate(2013, 9, 4).toDate();
 						object.put("date", d);
 					}
 					else { // 1/2 of input
-						Date d = (new DateTime()).withDate(2013, 8, 4).toDate();
+						Date d = (new DateTime(DateTimeZone.UTC)).withDate(2013, 8, 4).toDate();
 						object.put("date", d);
 					}
 					
@@ -140,7 +141,7 @@ public class SingleNodeTest extends ServerTestBase {
 			assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
 
 			for (@SuppressWarnings("unused") FacetCount fc : qr.getFacetCounts("date")) {
-				//System.out.println("Date: " + fc);
+				System.out.println("Date: " + fc);
 			}
 
 			assertEquals("Total facets not " + 3, 3, qr.getFacetCounts("date").size());

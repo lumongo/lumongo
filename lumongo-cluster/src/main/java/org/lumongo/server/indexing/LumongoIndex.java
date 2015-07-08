@@ -80,7 +80,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -132,6 +131,7 @@ public class LumongoIndex implements IndexWriterManager {
 	private LumongoAnalyzerFactory lumongoAnalyzerFactory;
 
 	private LockHandler documentLockHandler;
+	private FacetsConfig facetsConfig;
 
 	private LumongoIndex(HazelcastManager hazelcastManger, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig)
 					throws UnknownHostException, MongoException {
@@ -323,19 +323,22 @@ public class LumongoIndex implements IndexWriterManager {
 		}
 	}
 
-	public FacetsConfig getFacetsConfig() {
-		//only need to be done once but no harm
-		FacetsConfig.DEFAULT_DIM_CONFIG.hierarchical = true;
-		FacetsConfig.DEFAULT_DIM_CONFIG.multiValued = true;
-		return new FacetsConfig() {
-			@Override
-			public synchronized DimConfig getDimConfig(String dimName) {
-				DimConfig dc = new DimConfig();
-				dc.multiValued = true;
-				dc.hierarchical = true;
-				return dc;
+	private FacetsConfig generateFacetsConfig() {
+		FacetsConfig facetsConfig = new FacetsConfig();
+		for (String storedFieldName : indexConfig.getIndexedStoredFieldNames()) {
+
+			Lumongo.FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
+			for (Lumongo.FacetAs fa : fc.getFacetAsList()) {
+				facetsConfig.setMultiValued(fa.getFacetName(), true);
+				facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME + "." + fa.getFacetName());
 			}
-		};
+
+		}
+		return facetsConfig;
+	}
+
+	public FacetsConfig getFacetsConfig() {
+		return facetsConfig;
 	}
 
 	private void loadSegment(int segmentNumber) throws Exception {
@@ -351,7 +354,8 @@ public class LumongoIndex implements IndexWriterManager {
 
 				IndexWriterManager indexWriterManager = this;
 
-				LumongoSegment s = new LumongoSegment(segmentNumber, indexWriterManager, indexConfig);
+				facetsConfig = generateFacetsConfig();
+				LumongoSegment s = new LumongoSegment(segmentNumber, indexWriterManager, indexConfig, facetsConfig);
 				segmentMap.put(segmentNumber, s);
 
 				log.info("Loaded segment <" + segmentNumber + "> for index <" + indexName + ">");
@@ -943,13 +947,16 @@ public class LumongoIndex implements IndexWriterManager {
 			IndexSettings indexSettings = newIndexConfig.getIndexSettings();
 			indexConfig.configure(indexSettings);
 
+
+			facetsConfig = generateFacetsConfig();
+
 			parsers.clear();
 
 			//force analyzer to be fetched first so it doesn't fail only on one segment below
 			lumongoAnalyzerFactory.getAnalyzer();
 			for (LumongoSegment s : segmentMap.values()) {
 				try {
-					s.updateIndexSettings(indexSettings);
+					s.updateIndexSettings(indexSettings, facetsConfig);
 				}
 				catch (Exception ignored) {
 				}
@@ -1023,12 +1030,7 @@ public class LumongoIndex implements IndexWriterManager {
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<GetFieldNamesResponse> response = segmentPool.submit(new Callable<GetFieldNamesResponse>() {
-					@Override
-					public GetFieldNamesResponse call() throws Exception {
-						return segment.getFieldNames();
-					}
-				});
+				Future<GetFieldNamesResponse> response = segmentPool.submit(segment::getFieldNames);
 
 				responses.add(response);
 

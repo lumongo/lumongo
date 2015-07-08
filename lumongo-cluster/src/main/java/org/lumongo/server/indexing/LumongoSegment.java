@@ -125,7 +125,7 @@ public class LumongoSegment {
 
 	private int segmentQueryCacheMaxAmount;
 
-	public LumongoSegment(int segmentNumber, IndexWriterManager indexWriterManager, IndexConfig indexConfig) throws Exception {
+	public LumongoSegment(int segmentNumber, IndexWriterManager indexWriterManager, IndexConfig indexConfig, FacetsConfig facetsConfig) throws Exception {
 
 		setupQueryCache(indexConfig);
 
@@ -136,7 +136,7 @@ public class LumongoSegment {
 
 		openIndexWriters();
 
-		this.facetsConfig = getFacetsConfig();
+		this.facetsConfig = facetsConfig;
 
 		this.uniqueIdField = indexConfig.getUniqueIdField();
 
@@ -205,20 +205,6 @@ public class LumongoSegment {
 		return o;
 	}
 
-	protected FacetsConfig getFacetsConfig() {
-		FacetsConfig facetsConfig = new FacetsConfig();
-		for (String storedFieldName : indexConfig.getIndexedStoredFieldNames()) {
-
-			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
-			for (FacetAs fa : fc.getFacetAsList()) {
-				facetsConfig.setMultiValued(fa.getFacetName(), true);
-				facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME + "." + fa.getFacetName());
-			}
-
-		}
-		return facetsConfig;
-	}
-
 	private void setupQueryCache(IndexConfig indexConfig) {
 		queryCacheEnabled = (indexConfig.getSegmentQueryCacheSize() > 0);
 		segmentQueryCacheMaxAmount = indexConfig.getSegmentQueryCacheMaxAmount();
@@ -228,10 +214,11 @@ public class LumongoSegment {
 		}
 	}
 
-	public void updateIndexSettings(IndexSettings indexSettings) throws Exception {
+	public void updateIndexSettings(IndexSettings indexSettings, FacetsConfig facetsConfig) throws Exception {
 
 		this.indexConfig.configure(indexSettings);
-		this.facetsConfig = getFacetsConfig();
+		this.facetsConfig = facetsConfig;
+
 		setupQueryCache(indexConfig);
 		openIndexWriters();
 
