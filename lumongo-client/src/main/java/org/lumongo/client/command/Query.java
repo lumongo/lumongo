@@ -43,8 +43,6 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private Integer minimumNumberShouldMatch;
 	private Operator defaultOperator;
 	
-	private Boolean drillSideways;
-	
 	public Query(String index, String query, int amount) {
 		this(new String[] { index }, query, amount);
 	}
@@ -126,13 +124,13 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	}
 	
 	public void setQueryFields(String... queryFields) {
-		this.queryFields = new HashSet<String>(Arrays.asList(queryFields));
+		this.queryFields = new HashSet<>(Arrays.asList(queryFields));
 		
 	}
 	
 	public Query addQueryField(String queryField) {
 		if (queryFields.isEmpty()) {
-			this.queryFields = new HashSet<String>();
+			this.queryFields = new HashSet<>();
 		}
 		
 		queryFields.add(queryField);
@@ -141,7 +139,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	
 	public Query addQueryField(String... queryFields) {
 		if (this.queryFields.isEmpty()) {
-			this.queryFields = new HashSet<String>();
+			this.queryFields = new HashSet<>();
 		}
 		
 		for (String queryField : queryFields) {
@@ -160,7 +158,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	
 	public Query addFilterQuery(String filterQuery) {
 		if (filterQueries.isEmpty()) {
-			this.filterQueries = new ArrayList<String>();
+			this.filterQueries = new ArrayList<>();
 		}
 		
 		filterQueries.add(filterQuery);
@@ -203,7 +201,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	
 	public Query addFieldSort(String sort) {
 		if (fieldSorts.isEmpty()) {
-			this.fieldSorts = new ArrayList<FieldSort>();
+			this.fieldSorts = new ArrayList<>();
 		}
 		fieldSorts.add(FieldSort.newBuilder().setSortField(sort).setDirection(Direction.ASCENDING).build());
 		return this;
@@ -211,7 +209,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	
 	public Query addFieldSort(String sort, Direction direction) {
 		if (fieldSorts.isEmpty()) {
-			this.fieldSorts = new ArrayList<FieldSort>();
+			this.fieldSorts = new ArrayList<>();
 		}
 		fieldSorts.add(FieldSort.newBuilder().setSortField(sort).setDirection(direction).build());
 		return this;
