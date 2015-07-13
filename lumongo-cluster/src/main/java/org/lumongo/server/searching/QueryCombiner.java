@@ -1,6 +1,8 @@
 package org.lumongo.server.searching;
 
 import org.apache.log4j.Logger;
+import org.apache.lucene.util.BitDocIdSet;
+import org.apache.lucene.util.FixedBitSet;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetGroup;
@@ -148,33 +150,66 @@ public class QueryCombiner {
 		}
 		
 		Map<CountRequest, Map<String, AtomicLong>> totalFacetCounts = new HashMap<>();
+		Map<CountRequest, Map<String, FixedBitSet>> totalSegmentsForFacets = new HashMap<>();
+		Map<CountRequest, FixedBitSet> fullResultsMap = new HashMap<>();
+
+		int segIndex = 0;
+
+
+
+
 		for (SegmentResponse sr : segmentResponses) {
+
 			for (FacetGroup fg : sr.getFacetGroupList()) {
 				
 				Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(fg.getCountRequest());
+				Map<String, FixedBitSet> segmentCounts = totalSegmentsForFacets.get(fg.getCountRequest());
+				FixedBitSet fullResults = fullResultsMap.get(fg.getCountRequest());
 				
 				if (fieldCounts == null) {
 					fieldCounts = new HashMap<>();
 					totalFacetCounts.put(fg.getCountRequest(), fieldCounts);
+
+					segmentCounts = new HashMap<>();
+					totalSegmentsForFacets.put(fg.getCountRequest(), segmentCounts);
+
+					fullResults = new FixedBitSet(segmentResponses.size());
+					fullResultsMap.put(fg.getCountRequest(), fullResults);
 				}
-				
+
+				if (fg.getFacetCountCount() < fg.getCountRequest().getSegmentFacets()) {
+					fullResults.set(segIndex);
+				}
+
 				for (FacetCount fc : fg.getFacetCountList()) {
 					String facet = fc.getFacet();
 					AtomicLong facetSum = fieldCounts.get(facet);
+					FixedBitSet segmentSet = segmentCounts.get(facet);
 					
 					if (facetSum == null) {
 						facetSum = new AtomicLong();
 						fieldCounts.put(facet, facetSum);
+						segmentSet = new FixedBitSet(segmentResponses.size());
+						segmentCounts.put(facet, segmentSet);
 					}
 					facetSum.addAndGet(fc.getCount());
+					segmentSet.set(segIndex);
 				}
 			}
+
+			segIndex++;
 		}
-		
+
+
+
 		for (CountRequest countRequest : totalFacetCounts.keySet()) {
+
 			FacetGroup.Builder fg = FacetGroup.newBuilder();
 			fg.setCountRequest(countRequest);
 			Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(countRequest);
+			Map<String, FixedBitSet> segmentCounts = totalSegmentsForFacets.get(countRequest);
+			FixedBitSet fullResults = fullResultsMap.get(fg.getCountRequest());
+
 			SortedSet<FacetCountResult> sortedFacetResults = fieldCounts.keySet().stream()
 							.map(facet -> new FacetCountResult(facet, fieldCounts.get(facet).get()))
 							.collect(Collectors.toCollection(TreeSet::new));
@@ -183,8 +218,19 @@ public class QueryCombiner {
 			
 			int count = 0;
 			for (FacetCountResult facet : sortedFacetResults) {
-				fg.addFacetCount(FacetCount.newBuilder().setFacet(facet.getFacet()).setCount(facet.getCount()));
+
+				int numberOfSegments = segmentResponses.size();
+				FixedBitSet segCount = segmentCounts.get(facet.getFacet());
+				segCount.or(fullResults);
+
+				boolean exact = (segCount.cardinality() >= numberOfSegments);
+
+				fg.addFacetCount(FacetCount.newBuilder().setFacet(facet.getFacet()).setCount(facet.getCount()).setExact(exact));
 				count++;
+
+
+
+
 				if (maxCount > 0 && count >= maxCount) {
 					break;
 				}
@@ -322,7 +368,7 @@ public class QueryCombiner {
 				}
 				
 				if (lastForIndex == null) {
-					//this happen what amount from index is zero
+					//this happen when amount from index is zero
 					continue;
 				}
 				

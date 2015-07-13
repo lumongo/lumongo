@@ -309,6 +309,7 @@ message FacetGroup {
 message FacetCount {
 	required string facet = 1;
 	required uint64 count = 2;
+	optional bool exact = 3;
 }
 
 message FacetRequest {
@@ -319,6 +320,7 @@ message FacetRequest {
 message CountRequest {
 	required LMFacet facetField = 1;
 	optional uint32 maxFacets = 2 [default = 10];
+	optional uint32 segmentFacets = 3;
 }
 
 message SegmentResponse {

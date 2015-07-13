@@ -166,28 +166,17 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	}
 
 	public Query addCountRequest(String label) {
-		LMFacet facet = LMFacet.newBuilder().setLabel(label).build();
-		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).build();
-		if (countRequests.isEmpty()) {
-			this.countRequests = new ArrayList<>();
-		}
-		countRequests.add(countRequest);
-		return this;
+		return(addCountRequest(label, 10));
 	}
 
-	public Query addCountRequest(int maxFacets, String label) {
-		LMFacet facet = LMFacet.newBuilder().setLabel(label).build();
-		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).setMaxFacets(maxFacets).build();
-		if (countRequests.isEmpty()) {
-			this.countRequests = new ArrayList<>();
-		}
-		countRequests.add(countRequest);
-		return this;
+	public Query addCountRequest(String label, int maxFacets) {
+		return(addCountRequest(label, maxFacets, maxFacets * 8));
 	}
 
-	public Query addCountRequest(int maxFacets, String label, String path) {
-		LMFacet facet = LMFacet.newBuilder().setLabel(label).setPath(path).build();
-		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).setMaxFacets(maxFacets).build();
+	public Query addCountRequest(String label, int maxFacets, int segmentFacets) {
+
+		LMFacet facet = LMFacet.newBuilder().setLabel(label).build();
+		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).setMaxFacets(maxFacets).setSegmentFacets(segmentFacets).build();
 		if (countRequests.isEmpty()) {
 			this.countRequests = new ArrayList<>();
 		}

@@ -67,7 +67,7 @@ public class QueryTest {
 			{
 				//using facet count
 				Query query = new Query("medline", "title:cancer AND issn:*", 10);
-				query.addCountRequest(4, "issn");
+				query.addCountRequest("issn", 4);
 				QueryResult queryResult = lumongoWorkPool.query(query);
 				
 				long totalHits = queryResult.getTotalHits();
@@ -91,7 +91,7 @@ public class QueryTest {
 			{
 				//using facet count
 				Query query = new Query("medline", "title:cancer AND issn:*", 10);
-				query.addCountRequest(4, "issn");
+				query.addCountRequest("issn", 4);
 				QueryResult queryResult = lumongoWorkPool.query(query);
 				
 				long totalHits = queryResult.getTotalHits();
@@ -115,8 +115,8 @@ public class QueryTest {
 			{
 				//using two facets
 				Query query = new Query("medline", "title:cancer AND issn:*", 10);
-				query.addCountRequest(4, "journalCountry");
-				query.addCountRequest(4, "issn");
+				query.addCountRequest("journalCountry", 4);
+				query.addCountRequest("issn", 4);
 				QueryResult queryResult = lumongoWorkPool.query(query);
 				
 				long totalHits = queryResult.getTotalHits();
@@ -145,7 +145,7 @@ public class QueryTest {
 			{
 				//using date facet
 				Query query = new Query("medline", "title:asthma", 10);
-				query.addCountRequest(15, "publicationDate");
+				query.addCountRequest("publicationDate", 15);
 				
 				QueryResult queryResult = lumongoWorkPool.query(query);
 				
@@ -171,7 +171,7 @@ public class QueryTest {
 			{
 				//using date facet
 				Query query = new Query("medline", "title:asthma", 10);
-				query.addCountRequest(15, "publicationDate", "2005");
+				query.addCountRequest("publicationDate", 15);
 				//query.addDrillDown("2005");
 				
 				QueryResult queryResult = lumongoWorkPool.query(query);

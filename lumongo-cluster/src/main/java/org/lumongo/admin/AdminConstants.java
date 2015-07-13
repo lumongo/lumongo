@@ -23,6 +23,8 @@ public class AdminConstants {
 	public static final String QUERY = "query";
 	public static final String AMOUNT = "amount";
 	public static final String FACET = "facet";
+	public static final String FACET_COUNT = "facetCount";
+	public static final String FACET_SEGMENT_COUNT = "facetSegmentCount";
 	public static final String DRILL_DOWN = "drillDown";
 	public static final String SORT = "sort";
 	public static final String SORT_DESC = "sortDesc";

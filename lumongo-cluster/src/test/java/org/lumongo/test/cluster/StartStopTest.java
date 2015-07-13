@@ -141,7 +141,7 @@ public class StartStopTest extends ServerTestBase {
 	public void test05ConfirmCounts() throws Exception {
 		LumongoWorkPool lumongoWorkPool = getLumongoWorkPool();
 		{
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "issn");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest("issn", 30);
 			QueryResult qr = lumongoWorkPool.query(q);
 
 			assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
@@ -156,7 +156,7 @@ public class StartStopTest extends ServerTestBase {
 
 		{
 
-			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest(30, "date");
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest("date", 30);
 			QueryResult qr = lumongoWorkPool.query(q);
 
 			assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());

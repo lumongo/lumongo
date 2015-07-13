@@ -40,7 +40,9 @@ public class Search {
 		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT, "Amount of results to return").withRequiredArg().ofType(Integer.class)
 						.defaultsTo(10);
 		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET, "Count facets on").withRequiredArg();
-		OptionSpec<String> drillDownArg = parser.accepts(AdminConstants.DRILL_DOWN, "Drill down on").withRequiredArg();
+		OptionSpec<Integer> facetsCountArg = parser.accepts(AdminConstants.FACET_COUNT, "Number of facets to return").withRequiredArg().ofType(Integer.class).defaultsTo(10);
+		OptionSpec<Integer> facetSegmentCountArg = parser.accepts(AdminConstants.FACET_SEGMENT_COUNT, "Number of facets to return per segment").withRequiredArg().ofType(
+						Integer.class).defaultsTo(40);
 		OptionSpec<String> sortArg = parser.accepts(AdminConstants.SORT, "Field to sort on").withRequiredArg();
 		OptionSpec<String> sortDescArg = parser.accepts(AdminConstants.SORT_DESC, "Field to sort on (descending)").withRequiredArg();
 		OptionSpec<String> queryFieldArg = parser.accepts(AdminConstants.QUERY_FIELD,
@@ -60,7 +62,9 @@ public class Search {
 			String query = options.valueOf(queryArg);
 			int amount = options.valueOf(amountArg);
 			List<String> facets = options.valuesOf(facetsArg);
-			List<String> drillDowns = options.valuesOf(drillDownArg);
+			Integer facetCount = options.valueOf(facetsCountArg);
+			Integer facetSegmentCount = options.valueOf(facetSegmentCountArg);
+
 			List<String> sortList = options.valuesOf(sortArg);
 			List<String> sortDescList = options.valuesOf(sortDescArg);
 			List<String> queryFieldsList = options.valuesOf(queryFieldArg);
@@ -82,14 +86,9 @@ public class Search {
 				}
 				
 				for (String facet : facets) {
-					q.addCountRequest(facet);
+					q.addCountRequest(facet, facetCount, facetSegmentCount);
 				}
-				
-				for (String drillDown : drillDowns) {
-					//TODO: this is broke
-					//q.addDrillDown(drillDown);
-				}
-				
+
 				for (String sort : sortList) {
 					
 					q.addFieldSort(sort);
@@ -193,6 +192,8 @@ public class Search {
 							System.out.print(fc.getFacet());
 							System.out.print("\t");
 							System.out.print(fc.getCount());
+							System.out.print("\t");
+							System.out.print(fc.getExact());
 							System.out.println();
 						}
 					}
