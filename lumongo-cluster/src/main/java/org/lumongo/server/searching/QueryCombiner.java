@@ -1,7 +1,6 @@
 package org.lumongo.server.searching;
 
 import org.apache.log4j.Logger;
-import org.apache.lucene.util.BitDocIdSet;
 import org.apache.lucene.util.FixedBitSet;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
@@ -149,92 +148,141 @@ public class QueryCombiner {
 			}
 		}
 		
-		Map<CountRequest, Map<String, AtomicLong>> totalFacetCounts = new HashMap<>();
-		Map<CountRequest, Map<String, FixedBitSet>> totalSegmentsForFacets = new HashMap<>();
+		Map<CountRequest, Map<String, AtomicLong>> facetCountsMap = new HashMap<>();
+		Map<CountRequest, Map<String, FixedBitSet>> segmentsReturnedMap = new HashMap<>();
 		Map<CountRequest, FixedBitSet> fullResultsMap = new HashMap<>();
+		Map<CountRequest, long[]> minForSegmentMap = new HashMap<>();
 
 		int segIndex = 0;
-
-
-
 
 		for (SegmentResponse sr : segmentResponses) {
 
 			for (FacetGroup fg : sr.getFacetGroupList()) {
 				
-				Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(fg.getCountRequest());
-				Map<String, FixedBitSet> segmentCounts = totalSegmentsForFacets.get(fg.getCountRequest());
-				FixedBitSet fullResults = fullResultsMap.get(fg.getCountRequest());
-				
-				if (fieldCounts == null) {
-					fieldCounts = new HashMap<>();
-					totalFacetCounts.put(fg.getCountRequest(), fieldCounts);
+				CountRequest countRequest = fg.getCountRequest();
+				Map<String, AtomicLong> facetCounts = facetCountsMap.get(countRequest);
+				Map<String, FixedBitSet> segmentsReturned = segmentsReturnedMap.get(countRequest);
+				FixedBitSet fullResults = fullResultsMap.get(countRequest);
+				long[] minForSegment = minForSegmentMap.get(countRequest);
 
-					segmentCounts = new HashMap<>();
-					totalSegmentsForFacets.put(fg.getCountRequest(), segmentCounts);
+				if (facetCounts == null) {
+					facetCounts = new HashMap<>();
+					facetCountsMap.put(countRequest, facetCounts);
+
+					segmentsReturned = new HashMap<>();
+					segmentsReturnedMap.put(countRequest, segmentsReturned);
 
 					fullResults = new FixedBitSet(segmentResponses.size());
-					fullResultsMap.put(fg.getCountRequest(), fullResults);
-				}
+					fullResultsMap.put(countRequest, fullResults);
 
-				if (fg.getFacetCountCount() < fg.getCountRequest().getSegmentFacets()) {
-					fullResults.set(segIndex);
+					minForSegment = new long[segmentResponses.size()];
+					minForSegmentMap.put(countRequest, minForSegment);
 				}
 
 				for (FacetCount fc : fg.getFacetCountList()) {
 					String facet = fc.getFacet();
-					AtomicLong facetSum = fieldCounts.get(facet);
-					FixedBitSet segmentSet = segmentCounts.get(facet);
+					AtomicLong facetSum = facetCounts.get(facet);
+					FixedBitSet segmentSet = segmentsReturned.get(facet);
 					
 					if (facetSum == null) {
 						facetSum = new AtomicLong();
-						fieldCounts.put(facet, facetSum);
+						facetCounts.put(facet, facetSum);
 						segmentSet = new FixedBitSet(segmentResponses.size());
-						segmentCounts.put(facet, segmentSet);
+						segmentsReturned.put(facet, segmentSet);
 					}
-					facetSum.addAndGet(fc.getCount());
+					long count = fc.getCount();
+					facetSum.addAndGet(count);
 					segmentSet.set(segIndex);
+
+					minForSegment[segIndex] = count;
+				}
+
+				int segmentFacets = countRequest.getSegmentFacets();
+				int facetCountCount = fg.getFacetCountCount();
+				if (facetCountCount < segmentFacets || (segmentFacets == 0)) {
+					fullResults.set(segIndex);
+					minForSegment[segIndex] = 0;
+					System.out.println(segIndex + ":" + facetCountCount + ":" + segmentFacets);
 				}
 			}
 
 			segIndex++;
 		}
 
-
-
-		for (CountRequest countRequest : totalFacetCounts.keySet()) {
+		for (CountRequest countRequest : facetCountsMap.keySet()) {
 
 			FacetGroup.Builder fg = FacetGroup.newBuilder();
 			fg.setCountRequest(countRequest);
-			Map<String, AtomicLong> fieldCounts = totalFacetCounts.get(countRequest);
-			Map<String, FixedBitSet> segmentCounts = totalSegmentsForFacets.get(countRequest);
-			FixedBitSet fullResults = fullResultsMap.get(fg.getCountRequest());
+			Map<String, AtomicLong> facetCounts = facetCountsMap.get(countRequest);
+			Map<String, FixedBitSet> segmentsReturned = segmentsReturnedMap.get(countRequest);
+			FixedBitSet fullResults = fullResultsMap.get(countRequest);
+			long[] minForSegment = minForSegmentMap.get(countRequest);
 
-			SortedSet<FacetCountResult> sortedFacetResults = fieldCounts.keySet().stream()
-							.map(facet -> new FacetCountResult(facet, fieldCounts.get(facet).get()))
+			int numberOfSegments = segmentResponses.size();
+			long maxValuePossibleMissing = 0;
+			for (int i = 0; i < numberOfSegments; i++) {
+				maxValuePossibleMissing += minForSegment[i];
+			}
+
+			boolean computeError = countRequest.getSegmentFacets() != 0 && countRequest.getComputeError();
+			boolean computePossibleMissing = countRequest.getSegmentFacets() != 0 && countRequest.getComputePossibleMissed() && (maxValuePossibleMissing != 0);
+
+			SortedSet<FacetCountResult> sortedFacetResults = facetCounts.keySet().stream()
+							.map(facet -> new FacetCountResult(facet, facetCounts.get(facet).get()))
 							.collect(Collectors.toCollection(TreeSet::new));
-			
+
 			Integer maxCount = countRequest.getMaxFacets();
-			
+
+			long minCountReturned = 0;
+
 			int count = 0;
 			for (FacetCountResult facet : sortedFacetResults) {
 
-				int numberOfSegments = segmentResponses.size();
-				FixedBitSet segCount = segmentCounts.get(facet.getFacet());
+				FixedBitSet segCount = segmentsReturned.get(facet.getFacet());
 				segCount.or(fullResults);
 
-				boolean exact = (segCount.cardinality() >= numberOfSegments);
+				FacetCount.Builder facetCountBuilder = FacetCount.newBuilder().setFacet(facet.getFacet()).setCount(facet.getCount());
 
-				fg.addFacetCount(FacetCount.newBuilder().setFacet(facet.getFacet()).setCount(facet.getCount()).setExact(exact));
+				long maxWithError = 0;
+				if (computeError) {
+					long maxError = 0;
+					if (segCount.cardinality() < numberOfSegments) {
+						for (int i = 0; i < numberOfSegments; i++) {
+							if (!segCount.get(i)) {
+								maxError += minForSegment[i];
+							}
+						}
+					}
+					facetCountBuilder.setMaxError(maxError);
+					maxWithError = maxError + facet.getCount();
+				}
+
 				count++;
 
-
-
-
 				if (maxCount > 0 && count >= maxCount) {
-					break;
+
+					if (computePossibleMissing) {
+						if (maxWithError > maxValuePossibleMissing) {
+							maxValuePossibleMissing = maxWithError;
+						}
+					}
+					else {
+						break;
+					}
+				}
+				else {
+					fg.addFacetCount(facetCountBuilder);
+					minCountReturned = facet.getCount();
 				}
 			}
+
+			if (!sortedFacetResults.isEmpty()) {
+				if (maxValuePossibleMissing > minCountReturned) {
+					fg.setPossibleMissing(true);
+					fg.setMaxValuePossibleMissing(maxValuePossibleMissing);
+				}
+			}
+
 			builder.addFacetGroup(fg);
 		}
 		

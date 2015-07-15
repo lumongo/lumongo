@@ -318,16 +318,24 @@ public class LumongoSegment {
 
 			for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 
-				if (countRequest.getSegmentFacets() < countRequest.getMaxFacets()) {
-					throw new IllegalArgumentException("Segment facets must be greater than or equal to max facets");
-				}
 
-				int numOfFacets = countRequest.getSegmentFacets() + 1;
 				String label = countRequest.getFacetField().getLabel();
 				String indexFieldName = facetsConfig.getDimConfig(
 								label).indexFieldName;
 				DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(directoryReader, indexFieldName);
 				Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
+
+				int numOfFacets;
+				if (countRequest.getSegmentFacets() != 0) {
+					if (countRequest.getSegmentFacets() < countRequest.getMaxFacets()) {
+						throw new IllegalArgumentException("Segment facets must be greater than or equal to max facets");
+					}
+					numOfFacets = countRequest.getSegmentFacets() + 1;
+				}
+				else {
+					numOfFacets = state.getSize();
+				}
+
 				FacetResult facetResult = facets
 								.getTopChildren(numOfFacets, label);
 				handleFacetResult(builder, facetResult, countRequest);

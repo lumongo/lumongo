@@ -1,8 +1,12 @@
 package org.lumongo.server.searching;
 
+import java.util.Comparator;
+
 public class FacetCountResult implements Comparable<FacetCountResult> {
 	private String facet;
 	private long count;
+
+	public static Comparator<FacetCountResult> COUNT_THEN_FACET_COMPARE = Comparator.comparingLong(FacetCountResult::getCount).reversed().thenComparing(FacetCountResult::getFacet);
 
 	public FacetCountResult(String facet, long count) {
 		this.facet = facet;
@@ -27,11 +31,7 @@ public class FacetCountResult implements Comparable<FacetCountResult> {
 
 	@Override
 	public int compareTo(FacetCountResult o) {
-		int compareCount = Long.compare(this.count, o.count);
-		if (compareCount == 0) {
-			return this.facet.compareTo(o.facet);
-		}
-		return -1 * compareCount;
+		return COUNT_THEN_FACET_COMPARE.compare(this, o);
 	}
 
 	@Override
@@ -44,6 +44,6 @@ public class FacetCountResult implements Comparable<FacetCountResult> {
 
 	@Override
 	public int hashCode() {
-		return facet.hashCode() + (int) count;
+		return facet.hashCode() + Long.hashCode(count);
 	}
 }

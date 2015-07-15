@@ -1,4 +1,5 @@
 option java_generic_services = true;
+
 option java_package = "org.lumongo.cluster.message";
 
 service ExternalService {
@@ -12,8 +13,7 @@ service ExternalService {
 	rpc ChangeIndex (IndexSettingsRequest) returns (IndexSettingsResponse);
 	rpc DeleteIndex (IndexDeleteRequest) returns (IndexDeleteResponse);
 	rpc GetIndexes (GetIndexesRequest) returns (GetIndexesResponse);
-	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns
-	(GetNumberOfDocsResponse);
+	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
 	rpc Clear (ClearRequest) returns (ClearResponse);
 	rpc Optimize (OptimizeRequest) returns (OptimizeResponse);
 	rpc GetFieldNames (GetFieldNamesRequest) returns (GetFieldNamesResponse);
@@ -26,8 +26,7 @@ service InternalService {
 	rpc Query (QueryRequest) returns (InternalQueryResponse);
 	rpc Store (StoreRequest) returns (StoreResponse);
 	rpc Delete (DeleteRequest) returns (DeleteResponse);
-	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns
-	(GetNumberOfDocsResponse);
+	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
 	rpc Clear (ClearRequest) returns (ClearResponse);
 	rpc Optimize (OptimizeRequest) returns (OptimizeResponse);
 	rpc GetFieldNames (GetFieldNamesRequest) returns (GetFieldNamesResponse);
@@ -176,7 +175,7 @@ message FieldConfig {
 	required string storedFieldName = 1;
 	repeated IndexAs indexAs = 2;
 	repeated FacetAs facetAs = 3;
-    optional SortAs sortAs = 4;
+	optional SortAs sortAs = 4;
 }
 
 message IndexAs {
@@ -195,16 +194,16 @@ message FacetAs {
 }
 
 message SortAs {
-    enum SortType {
-        STRING = 1;
-        NUMERIC_INT = 2;
-        NUMERIC_LONG = 3;
-        NUMERIC_FLOAT = 4;
-        NUMERIC_DOUBLE = 5;
-        DATE = 6;
-    }
-    required string sortFieldName = 1;
-    required SortType sortType = 2;
+	enum SortType {
+		STRING = 1;
+		NUMERIC_INT = 2;
+		NUMERIC_LONG = 3;
+		NUMERIC_FLOAT = 4;
+		NUMERIC_DOUBLE = 5;
+		DATE = 6;
+	}
+	required string sortFieldName = 1;
+	required SortType sortType = 2;
 }
 
 message IndexSettingsResponse {
@@ -295,7 +294,8 @@ message FieldSort {
 	enum Direction {
 		ASCENDING = 1;
 		DESCENDING = 2;
-	};
+	}
+	;
 
 	required string sortField = 1;
 	optional Direction direction = 2 [default = ASCENDING];
@@ -304,12 +304,14 @@ message FieldSort {
 message FacetGroup {
 	required CountRequest countRequest = 1;
 	repeated FacetCount facetCount = 2;
+	optional bool possibleMissing = 3 [default = false];
+	optional uint64 maxValuePossibleMissing = 4 [ default = 0];
 }
 
 message FacetCount {
 	required string facet = 1;
 	required uint64 count = 2;
-	optional bool exact = 3;
+	optional uint64 maxError = 3;
 }
 
 message FacetRequest {
@@ -321,6 +323,8 @@ message CountRequest {
 	required LMFacet facetField = 1;
 	optional uint32 maxFacets = 2 [default = 10];
 	optional uint32 segmentFacets = 3;
+	optional bool computeError = 4 [default = true];
+	optional bool computePossibleMissed = 5 [default = true];
 }
 
 message SegmentResponse {
@@ -369,7 +373,7 @@ message QueryRequest {
 	repeated string fields = 11;
 	optional FetchType resultFetchType = 12 [default = NONE];
 	optional uint32 minimumNumberShouldMatch = 13 [default = 0];
-	optional Operator defaultOperator = 14 [ default = OR ];
+	optional Operator defaultOperator = 14 [default = OR];
 }
 
 message QueryResponse {

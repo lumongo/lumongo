@@ -48,7 +48,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	}
 	
 	public Query(String[] indexes, String query, int amount) {
-		this(new ArrayList<String>(Arrays.asList(indexes)), query, amount);
+		this(new ArrayList<>(Arrays.asList(indexes)), query, amount);
 	}
 	
 	public Query(Collection<String> indexes, String query, int amount) {

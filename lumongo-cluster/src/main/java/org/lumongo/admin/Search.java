@@ -193,10 +193,14 @@ public class Search {
 							System.out.print("\t");
 							System.out.print(fc.getCount());
 							System.out.print("\t");
-							System.out.print(fc.getExact());
+							System.out.print("+" + fc.getMaxError());
 							System.out.println();
 						}
+						if (fg.getPossibleMissing()) {
+							System.out.println("Possible facets missing from top results for <" + fg.getCountRequest().getFacetField().getLabel() + "> with max count <" + fg.getMaxValuePossibleMissing() + ">");
+						}
 					}
+
 					
 				}
 				
