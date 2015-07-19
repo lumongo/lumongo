@@ -110,10 +110,14 @@ public class ClusterAdmin {
 				if (serverAddress == null) {
 					serverAddress = ServerNameHelper.getLocalServer();
 				}
+				if (hazelcastPort != null) {
+					System.err.println("Set hazelcast port in node config file");
+				}
+				else {
+					System.out.println("Registering node with server address <" + serverAddress + ">");
 
-				System.out.println("Registering node with server address <" + serverAddress + ">");
-
-				ClusterHelper.registerNode(mongoConfig, localNodeConfig, serverAddress);
+					ClusterHelper.registerNode(mongoConfig, localNodeConfig, serverAddress);
+				}
 			}
 			else if (Command.removeNode.equals(command)) {
 				if (serverAddress == null) {
