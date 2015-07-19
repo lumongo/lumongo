@@ -94,8 +94,8 @@ public class MongoDirectory implements NosqlDirectory {
 			Short indexNumber = indexNameToNumberMap.get(key);
 			if (indexNumber == null) {
 				indexNameToNumberMap.put(key, indexCount);
-				indexCount++;
 				indexNumber = indexCount;
+				indexCount++;
 			}
 			this.indexNumber = indexNumber;
 		}
