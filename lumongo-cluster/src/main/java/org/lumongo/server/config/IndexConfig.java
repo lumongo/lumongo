@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class IndexConfig {
 	
 	public static final String DEFAULT_SEARCH_FIELD = "defaultSearchField";
-	public static final String APPLY_UNCOMMITED_DELETES = "applyUncommitedDeletes";
+	public static final String APPLY_UNCOMMITTED_DELETES = "applyUncommittedDeletes";
 	public static final String REQUEST_FACTOR = "requestFactor";
 	public static final String MIN_SEGMENT_REQUEST = "minSegmentRequest";
 	public static final String NUMBER_OF_SEGMENTS = "numberOfSegments";
@@ -44,7 +44,7 @@ public class IndexConfig {
 	public static final String SORT_FIELD_NAME = "sortFieldName";
 
 	private String defaultSearchField;
-	private boolean applyUncommitedDeletes;
+	private boolean applyUncommittedDeletes;
 	private double requestFactor;
 	private int minSegmentRequest;
 	private int numberOfSegments;
@@ -136,7 +136,7 @@ public class IndexConfig {
 	public static IndexConfig fromDocument(Document settings) {
 		IndexConfig indexConfig = new IndexConfig();
 		indexConfig.defaultSearchField = (String) settings.get(DEFAULT_SEARCH_FIELD);
-		indexConfig.applyUncommitedDeletes = (boolean) settings.get(APPLY_UNCOMMITED_DELETES);
+		indexConfig.applyUncommittedDeletes = (boolean) settings.get(APPLY_UNCOMMITTED_DELETES);
 		indexConfig.requestFactor = (double) settings.get(REQUEST_FACTOR);
 		indexConfig.minSegmentRequest = (int) settings.get(MIN_SEGMENT_REQUEST);
 		indexConfig.numberOfSegments = (int) settings.get(NUMBER_OF_SEGMENTS);
@@ -207,7 +207,7 @@ public class IndexConfig {
 
 	public void configure(IndexSettings indexSettings) {
 		this.defaultSearchField = indexSettings.getDefaultSearchField();
-		this.applyUncommitedDeletes = indexSettings.getApplyUncommitedDeletes();
+		this.applyUncommittedDeletes = indexSettings.getApplyUncommitedDeletes();
 		this.requestFactor = indexSettings.getRequestFactor();
 		this.minSegmentRequest = indexSettings.getMinSegmentRequest();
 		this.blockCompression = indexSettings.getBlockCompression();
@@ -234,7 +234,7 @@ public class IndexConfig {
 	public IndexSettings getIndexSettings() {
 		IndexSettings.Builder isb = IndexSettings.newBuilder();
 		isb.setDefaultSearchField(defaultSearchField);
-		isb.setApplyUncommitedDeletes(applyUncommitedDeletes);
+		isb.setApplyUncommitedDeletes(applyUncommittedDeletes);
 		isb.setRequestFactor(requestFactor);
 		isb.setMinSegmentRequest(minSegmentRequest);
 		isb.setBlockCompression(blockCompression);
@@ -303,8 +303,8 @@ public class IndexConfig {
 		return defaultSearchField;
 	}
 
-	public boolean getApplyUncommitedDeletes() {
-		return applyUncommitedDeletes;
+	public boolean getApplyUncommittedDeletes() {
+		return applyUncommittedDeletes;
 	}
 
 	public double getRequestFactor() {
@@ -355,7 +355,7 @@ public class IndexConfig {
 	public Document toDocument() {
 		Document dbObject = new Document();
 		dbObject.put(DEFAULT_SEARCH_FIELD, defaultSearchField);
-		dbObject.put(APPLY_UNCOMMITED_DELETES, applyUncommitedDeletes);
+		dbObject.put(APPLY_UNCOMMITTED_DELETES, applyUncommittedDeletes);
 		dbObject.put(REQUEST_FACTOR, requestFactor);
 		dbObject.put(MIN_SEGMENT_REQUEST, minSegmentRequest);
 		dbObject.put(NUMBER_OF_SEGMENTS, numberOfSegments);
@@ -413,7 +413,7 @@ public class IndexConfig {
 
 	@Override
 	public String toString() {
-		return "IndexConfig [defaultSearchField=" + defaultSearchField + ", applyUncommitedDeletes=" + applyUncommitedDeletes + ", requestFactor="
+		return "IndexConfig [defaultSearchField=" + defaultSearchField + ", applyUncommittedDeletes=" + applyUncommittedDeletes + ", requestFactor="
 						+ requestFactor + ", minSegmentRequest=" + minSegmentRequest + ", numberOfSegments=" + numberOfSegments + ", indexName=" + indexName
 						+ ", uniqueIdField=" + uniqueIdField + ", idleTimeWithoutCommit=" + idleTimeWithoutCommit + ", segmentFlushInterval="
 						+ segmentFlushInterval + ", segmentCommitInterval=" + segmentCommitInterval + ", segmentQueryCacheSize=" + segmentQueryCacheSize

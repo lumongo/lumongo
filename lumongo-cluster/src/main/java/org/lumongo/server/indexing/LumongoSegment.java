@@ -152,7 +152,7 @@ public class LumongoSegment {
 			synchronized (this) {
 				if (!indexWriter.isOpen()) {
 					this.indexWriter = this.indexWriterManager.getIndexWriter(segmentNumber);
-					this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
+					this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommittedDeletes());
 				}
 			}
 		}
@@ -164,7 +164,7 @@ public class LumongoSegment {
 			indexWriter.close();
 		}
 		this.indexWriter = this.indexWriterManager.getIndexWriter(segmentNumber);
-		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommitedDeletes());
+		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommittedDeletes());
 	}
 
 	public static Object getValueFromDocument(BSONObject document, String storedFieldName) {
@@ -381,7 +381,7 @@ public class LumongoSegment {
 	}
 
 	private void openReaderIfChanges() throws IOException {
-		DirectoryReader newDirectoryReader = DirectoryReader.openIfChanged(directoryReader, indexWriter, indexConfig.getApplyUncommitedDeletes());
+		DirectoryReader newDirectoryReader = DirectoryReader.openIfChanged(directoryReader, indexWriter, indexConfig.getApplyUncommittedDeletes());
 		if (newDirectoryReader != null) {
 			directoryReader = newDirectoryReader;
 		}
@@ -709,7 +709,7 @@ public class LumongoSegment {
 	public void deleteDocument(String uniqueId) throws Exception {
 		Term term = new Term(uniqueIdField, uniqueId);
 		indexWriter.deleteDocuments(term);
-		if (indexConfig.getApplyUncommitedDeletes()) {
+		if (indexConfig.getApplyUncommittedDeletes()) {
 			queryResultCache.clear();
 		}
 		possibleCommit();

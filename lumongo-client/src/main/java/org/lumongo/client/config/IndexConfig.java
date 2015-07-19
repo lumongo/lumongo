@@ -9,7 +9,7 @@ import java.util.TreeMap;
 public class IndexConfig {
 	
 	private String defaultSearchField;
-	private Boolean applyUncommitedDeletes;
+	private Boolean applyUncommittedDeletes;
 	private Double requestFactor;
 	private Integer minSegmentRequest;
 	private Integer numberOfSegments;
@@ -42,12 +42,12 @@ public class IndexConfig {
 		return this;
 	}
 	
-	public boolean isApplyUncommitedDeletes() {
-		return applyUncommitedDeletes;
+	public boolean getApplyUncommittedDeletes() {
+		return applyUncommittedDeletes;
 	}
 	
-	public IndexConfig setApplyUncommitedDeletes(boolean applyUncommitedDeletes) {
-		this.applyUncommitedDeletes = applyUncommitedDeletes;
+	public IndexConfig setApplyUncommittedDeletes(boolean applyUncommittedDeletes) {
+		this.applyUncommittedDeletes = applyUncommittedDeletes;
 		return this;
 	}
 	
@@ -169,8 +169,8 @@ public class IndexConfig {
 		if (defaultSearchField != null) {
 			isb.setDefaultSearchField(defaultSearchField);
 		}
-		if (applyUncommitedDeletes != null) {
-			isb.setApplyUncommitedDeletes(applyUncommitedDeletes);
+		if (applyUncommittedDeletes != null) {
+			isb.setApplyUncommitedDeletes(applyUncommittedDeletes);
 		}
 		if (requestFactor != null) {
 			isb.setRequestFactor(requestFactor);
@@ -211,7 +211,7 @@ public class IndexConfig {
 	
 	protected void configure(IndexSettings indexSettings) {
 		this.defaultSearchField = indexSettings.getDefaultSearchField();
-		this.applyUncommitedDeletes = indexSettings.getApplyUncommitedDeletes();
+		this.applyUncommittedDeletes = indexSettings.getApplyUncommitedDeletes();
 		this.requestFactor = indexSettings.getRequestFactor();
 		this.minSegmentRequest = indexSettings.getMinSegmentRequest();
 		this.blockCompression = indexSettings.getBlockCompression();

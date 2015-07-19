@@ -133,7 +133,7 @@ public class Mapper<T> {
 
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField.getFieldName());
 
-		indexConfig.setApplyUncommitedDeletes(settings.applyUncommitedDeletes());
+		indexConfig.setApplyUncommittedDeletes(settings.applyUncommitedDeletes());
 		indexConfig.setRequestFactor(settings.requestFactor());
 		indexConfig.setMinSegmentRequest(settings.minSeqmentRequest());
 		indexConfig.setIdleTimeWithoutCommit(settings.idleTimeWithoutCommit());
