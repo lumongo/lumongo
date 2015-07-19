@@ -43,6 +43,7 @@ import org.apache.lucene.search.SortedSetSortField;
 import org.apache.lucene.search.TopDocsCollector;
 import org.apache.lucene.search.TopFieldCollector;
 import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.bson.BSONObject;
@@ -527,7 +528,9 @@ public class LumongoSegment {
 	public void close() throws IOException {
 		forceCommit();
 
+		Directory directory = indexWriter.getDirectory();
 		indexWriter.close();
+		directory.close();
 	}
 
 	public void index(String uniqueId, BSONObject document, long timestamp) throws Exception {
