@@ -16,7 +16,6 @@ import java.util.List;
 @Settings(
 				indexName = "medline",
 				numberOfSegments = 8,
-				segmentFlushInterval = 2000,
 				segmentCommitInterval = 4000)
 public class MedlineDocument {
 

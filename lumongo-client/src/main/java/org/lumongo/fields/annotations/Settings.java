@@ -25,15 +25,15 @@ public @interface Settings {
 	int idleTimeWithoutCommit() default 30;
 	
 	int segmentCommitInterval() default 3200;
-	
-	boolean blockCompression() default false;
-	
+
 	double segmentTolerance() default 0.05;
-	
-	int segmentFlushInterval() default 1600;
-	
+
 	int segmentQueryCacheSize() default 512;
 	
 	int segmentQueryCacheMaxAmount() default 256;
+
+	boolean storeDocumentInIndex() default true;
+
+	boolean storeDocumentInMongo() default true;
 	
 }

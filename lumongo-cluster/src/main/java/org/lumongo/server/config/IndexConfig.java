@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class IndexConfig {
-	
+
 	public static final String DEFAULT_SEARCH_FIELD = "defaultSearchField";
 	public static final String APPLY_UNCOMMITTED_DELETES = "applyUncommittedDeletes";
 	public static final String REQUEST_FACTOR = "requestFactor";
@@ -26,10 +26,11 @@ public class IndexConfig {
 	public static final String INDEX_NAME = "indexName";
 	public static final String UNIQUE_ID_FIELD = "uniqueIdField";
 	public static final String IDLE_TIME_WITHOUT_COMMIT = "idleTimeWithoutCommit";
-	public static final String SEGMENT_FLUSH_INTERVAL = "segmentFlushInterval";
 	public static final String SEGMENT_COMMIT_INTERVAL = "segmentCommitInterval";
 	public static final String SEGMENT_QUERY_CACHE_SIZE = "segmentQueryCacheSize";
 	public static final String SEGMENT_QUERY_CACHE_MAX_AMOUNT = "segmentQueryCacheMaxAmount";
+	public static final String STORE_DOCUMENT_IN_MONGO = "storeDocumentInMongo";
+	public static final String STORE_DOCUMENT_IN_INDEX = "storeDocumentInIndex";
 	public static final String SEGMENT_TOLERANCE = "segmentTolerance";
 	public static final String FIELD_CONFIGS = "fieldConfigs";
 	public static final String STORED_FIELD_NAME = "storedFieldName";
@@ -51,12 +52,12 @@ public class IndexConfig {
 	private String indexName;
 	private String uniqueIdField;
 	private int idleTimeWithoutCommit;
-	private int segmentFlushInterval;
 	private int segmentCommitInterval;
 	private int segmentQueryCacheSize;
 	private int segmentQueryCacheMaxAmount;
+	private boolean storeDocumentInIndex;
+	private boolean storeDocumentInMongo;
 
-	private boolean blockCompression;
 	private double segmentTolerance;
 	private ConcurrentHashMap<String, FieldConfig> fieldConfigMap;
 	private ConcurrentHashMap<String, Lumongo.IndexAs> indexAsMap;
@@ -82,8 +83,8 @@ public class IndexConfig {
 
 	public static boolean isNumericOrDateSortType(Lumongo.SortAs.SortType sortType) {
 		return sortType != null && (Lumongo.SortAs.SortType.NUMERIC_INT.equals(sortType) || Lumongo.SortAs.SortType.NUMERIC_LONG.equals(sortType)
-						|| Lumongo.SortAs.SortType.NUMERIC_FLOAT.equals(sortType) || Lumongo.SortAs.SortType.NUMERIC_DOUBLE.equals(sortType)
-						|| Lumongo.SortAs.SortType.DATE.equals(sortType));
+				|| Lumongo.SortAs.SortType.NUMERIC_FLOAT.equals(sortType) || Lumongo.SortAs.SortType.NUMERIC_DOUBLE.equals(sortType)
+				|| Lumongo.SortAs.SortType.DATE.equals(sortType));
 	}
 
 	public static boolean isNumericIntSortType(Lumongo.SortAs.SortType sortType) {
@@ -128,8 +129,7 @@ public class IndexConfig {
 
 	public static boolean isNumericOrDateAnalyzer(LMAnalyzer analyzer) {
 		return isNumericIntAnalyzer(analyzer) || isNumericLongAnalyzer(analyzer) || isNumericFloatAnalyzer(analyzer) || isNumericDoubleAnalyzer(analyzer)
-						|| isDateAnalyzer(
-						analyzer);
+				|| isDateAnalyzer(analyzer);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -151,14 +151,6 @@ public class IndexConfig {
 		}
 		if (settings.get(SEGMENT_QUERY_CACHE_MAX_AMOUNT) != null) {
 			indexConfig.segmentQueryCacheMaxAmount = (int) settings.get(SEGMENT_QUERY_CACHE_MAX_AMOUNT);
-		}
-
-		if (settings.containsKey(SEGMENT_FLUSH_INTERVAL)) {
-			indexConfig.segmentFlushInterval = (int) settings.get(SEGMENT_FLUSH_INTERVAL);
-		}
-		else {
-			//make flush interval equal to segment commit interval divided by 2 if not defined (for old indexes)
-			indexConfig.segmentFlushInterval = (indexConfig.segmentCommitInterval / 2);
 		}
 
 		indexConfig.fieldConfigMap = new ConcurrentHashMap<>();
@@ -207,16 +199,16 @@ public class IndexConfig {
 
 	public void configure(IndexSettings indexSettings) {
 		this.defaultSearchField = indexSettings.getDefaultSearchField();
-		this.applyUncommittedDeletes = indexSettings.getApplyUncommitedDeletes();
+		this.applyUncommittedDeletes = indexSettings.getApplyUncommittedDeletes();
 		this.requestFactor = indexSettings.getRequestFactor();
 		this.minSegmentRequest = indexSettings.getMinSegmentRequest();
-		this.blockCompression = indexSettings.getBlockCompression();
 		this.segmentCommitInterval = indexSettings.getSegmentCommitInterval();
-		this.segmentFlushInterval = indexSettings.getSegmentFlushInterval();
 		this.idleTimeWithoutCommit = indexSettings.getIdleTimeWithoutCommit();
 		this.segmentTolerance = indexSettings.getSegmentTolerance();
 		this.segmentQueryCacheSize = indexSettings.getSegmentQueryCacheSize();
 		this.segmentQueryCacheMaxAmount = indexSettings.getSegmentQueryCacheMaxAmount();
+		this.storeDocumentInIndex = indexSettings.getStoreDocumentInIndex();
+		this.storeDocumentInMongo = indexSettings.getStoreDocumentInMongo();
 
 		ConcurrentHashMap<String, FieldConfig> fieldConfigMap = new ConcurrentHashMap<>();
 
@@ -234,17 +226,17 @@ public class IndexConfig {
 	public IndexSettings getIndexSettings() {
 		IndexSettings.Builder isb = IndexSettings.newBuilder();
 		isb.setDefaultSearchField(defaultSearchField);
-		isb.setApplyUncommitedDeletes(applyUncommittedDeletes);
+		isb.setApplyUncommittedDeletes(applyUncommittedDeletes);
 		isb.setRequestFactor(requestFactor);
 		isb.setMinSegmentRequest(minSegmentRequest);
-		isb.setBlockCompression(blockCompression);
 		isb.setSegmentCommitInterval(segmentCommitInterval);
 		isb.setIdleTimeWithoutCommit(idleTimeWithoutCommit);
 		isb.setSegmentTolerance(segmentTolerance);
 		isb.addAllFieldConfig(fieldConfigMap.values());
-		isb.setSegmentFlushInterval(segmentFlushInterval);
 		isb.setSegmentQueryCacheSize(segmentQueryCacheSize);
 		isb.setSegmentQueryCacheMaxAmount(segmentQueryCacheMaxAmount);
+		isb.setStoreDocumentInMongo(storeDocumentInMongo);
+		isb.setStoreDocumentInIndex(storeDocumentInIndex);
 		return isb.build();
 	}
 
@@ -335,11 +327,6 @@ public class IndexConfig {
 		return segmentCommitInterval;
 	}
 
-	public int getSegmentFlushInterval() {
-		return segmentFlushInterval;
-	}
-
-
 	public double getSegmentTolerance() {
 		return segmentTolerance;
 	}
@@ -350,6 +337,14 @@ public class IndexConfig {
 
 	public int getSegmentQueryCacheMaxAmount() {
 		return segmentQueryCacheMaxAmount;
+	}
+
+	public boolean isStoreDocumentInIndex() {
+		return storeDocumentInIndex;
+	}
+
+	public boolean isStoreDocumentInMongo() {
+		return storeDocumentInMongo;
 	}
 
 	public Document toDocument() {
@@ -364,9 +359,10 @@ public class IndexConfig {
 		dbObject.put(IDLE_TIME_WITHOUT_COMMIT, idleTimeWithoutCommit);
 		dbObject.put(SEGMENT_COMMIT_INTERVAL, segmentCommitInterval);
 		dbObject.put(SEGMENT_TOLERANCE, segmentTolerance);
-		dbObject.put(SEGMENT_FLUSH_INTERVAL, segmentFlushInterval);
 		dbObject.put(SEGMENT_QUERY_CACHE_SIZE, segmentQueryCacheSize);
 		dbObject.put(SEGMENT_QUERY_CACHE_MAX_AMOUNT, segmentQueryCacheMaxAmount);
+		dbObject.put(STORE_DOCUMENT_IN_MONGO, storeDocumentInMongo);
+		dbObject.put(STORE_DOCUMENT_IN_INDEX, storeDocumentInIndex);
 
 		List<Document> fieldConfigs = new ArrayList<>();
 		for (FieldConfig fc : fieldConfigMap.values()) {
@@ -413,12 +409,22 @@ public class IndexConfig {
 
 	@Override
 	public String toString() {
-		return "IndexConfig [defaultSearchField=" + defaultSearchField + ", applyUncommittedDeletes=" + applyUncommittedDeletes + ", requestFactor="
-						+ requestFactor + ", minSegmentRequest=" + minSegmentRequest + ", numberOfSegments=" + numberOfSegments + ", indexName=" + indexName
-						+ ", uniqueIdField=" + uniqueIdField + ", idleTimeWithoutCommit=" + idleTimeWithoutCommit + ", segmentFlushInterval="
-						+ segmentFlushInterval + ", segmentCommitInterval=" + segmentCommitInterval + ", segmentQueryCacheSize=" + segmentQueryCacheSize
-						+ ", segmentQueryCacheMaxAmount=" + segmentQueryCacheMaxAmount + ", segmentTolerance="
-						+ segmentTolerance + ", fieldConfigMap=" + fieldConfigMap + ", indexAsMap=" + indexAsMap + "]";
+		return "IndexConfig{" +
+				"defaultSearchField='" + defaultSearchField + '\'' +
+				", applyUncommittedDeletes=" + applyUncommittedDeletes +
+				", requestFactor=" + requestFactor +
+				", minSegmentRequest=" + minSegmentRequest +
+				", numberOfSegments=" + numberOfSegments +
+				", indexName='" + indexName + '\'' +
+				", uniqueIdField='" + uniqueIdField + '\'' +
+				", idleTimeWithoutCommit=" + idleTimeWithoutCommit +
+				", segmentCommitInterval=" + segmentCommitInterval +
+				", segmentQueryCacheSize=" + segmentQueryCacheSize +
+				", segmentQueryCacheMaxAmount=" + segmentQueryCacheMaxAmount +
+				", segmentTolerance=" + segmentTolerance +
+				", fieldConfigMap=" + fieldConfigMap +
+				", indexAsMap=" + indexAsMap +
+				", sortAsMap=" + sortAsMap +
+				'}';
 	}
-	
 }

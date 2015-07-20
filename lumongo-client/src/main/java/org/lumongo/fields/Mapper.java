@@ -138,9 +138,7 @@ public class Mapper<T> {
 		indexConfig.setMinSegmentRequest(settings.minSeqmentRequest());
 		indexConfig.setIdleTimeWithoutCommit(settings.idleTimeWithoutCommit());
 		indexConfig.setSegmentCommitInterval(settings.segmentCommitInterval());
-		indexConfig.setBlockCompression(settings.blockCompression());
 		indexConfig.setSegmentTolerance(settings.segmentTolerance());
-		indexConfig.setSegmentFlushInterval(settings.segmentFlushInterval());
 		indexConfig.setSegmentQueryCacheSize(settings.segmentQueryCacheSize());
 		indexConfig.setSegmentQueryCacheMaxAmount(settings.segmentQueryCacheMaxAmount());
 

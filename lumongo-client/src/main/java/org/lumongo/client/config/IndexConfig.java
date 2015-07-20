@@ -15,12 +15,12 @@ public class IndexConfig {
 	private Integer numberOfSegments;
 	private String indexName;
 	private Integer idleTimeWithoutCommit;
-	private Integer segmentFlushInterval;
 	private Integer segmentCommitInterval;
-	private Boolean blockCompression;
 	private Double segmentTolerance;
 	private Integer segmentQueryCacheSize;
 	private Integer segmentQueryCacheMaxAmount;
+	private Boolean storeDocumentInMongo;
+	private Boolean storeDocumentInIndex;
 	
 	private TreeMap<String, FieldConfig> fieldMap;
 	
@@ -95,16 +95,7 @@ public class IndexConfig {
 		this.idleTimeWithoutCommit = idleTimeWithoutCommit;
 		return this;
 	}
-	
-	public int getSegmentFlushInterval() {
-		return segmentFlushInterval;
-	}
-	
-	public IndexConfig setSegmentFlushInterval(int segmentFlushInterval) {
-		this.segmentFlushInterval = segmentFlushInterval;
-		return this;
-	}
-	
+
 	public int getSegmentCommitInterval() {
 		return segmentCommitInterval;
 	}
@@ -113,15 +104,7 @@ public class IndexConfig {
 		this.segmentCommitInterval = segmentCommitInterval;
 		return this;
 	}
-	
-	public boolean isBlockCompression() {
-		return blockCompression;
-	}
-	
-	public IndexConfig setBlockCompression(boolean blockCompression) {
-		this.blockCompression = blockCompression;
-		return this;
-	}
+
 	
 	public double getSegmentTolerance() {
 		return segmentTolerance;
@@ -170,7 +153,7 @@ public class IndexConfig {
 			isb.setDefaultSearchField(defaultSearchField);
 		}
 		if (applyUncommittedDeletes != null) {
-			isb.setApplyUncommitedDeletes(applyUncommittedDeletes);
+			isb.setApplyUncommittedDeletes(applyUncommittedDeletes);
 		}
 		if (requestFactor != null) {
 			isb.setRequestFactor(requestFactor);
@@ -178,9 +161,7 @@ public class IndexConfig {
 		if (minSegmentRequest != null) {
 			isb.setMinSegmentRequest(minSegmentRequest);
 		}
-		if (blockCompression != null) {
-			isb.setBlockCompression(blockCompression);
-		}
+
 		if (segmentCommitInterval != null) {
 			isb.setSegmentCommitInterval(segmentCommitInterval);
 		}
@@ -190,15 +171,20 @@ public class IndexConfig {
 		if (segmentTolerance != null) {
 			isb.setSegmentTolerance(segmentTolerance);
 		}
-		if (segmentFlushInterval != null) {
-			isb.setSegmentFlushInterval(segmentFlushInterval);
-		}
 		if (segmentQueryCacheSize != null) {
 			isb.setSegmentQueryCacheSize(segmentQueryCacheSize);
 		}
 		
 		if (segmentQueryCacheMaxAmount != null) {
 			isb.setSegmentQueryCacheMaxAmount(segmentQueryCacheMaxAmount);
+		}
+
+		if (storeDocumentInIndex != null) {
+			isb.setStoreDocumentInIndex(storeDocumentInIndex);
+		}
+
+		if (storeDocumentInMongo != null) {
+			isb.setStoreDocumentInMongo(storeDocumentInMongo);
 		}
 		
 		for (String fieldName : fieldMap.keySet()) {
@@ -211,16 +197,16 @@ public class IndexConfig {
 	
 	protected void configure(IndexSettings indexSettings) {
 		this.defaultSearchField = indexSettings.getDefaultSearchField();
-		this.applyUncommittedDeletes = indexSettings.getApplyUncommitedDeletes();
+		this.applyUncommittedDeletes = indexSettings.getApplyUncommittedDeletes();
 		this.requestFactor = indexSettings.getRequestFactor();
 		this.minSegmentRequest = indexSettings.getMinSegmentRequest();
-		this.blockCompression = indexSettings.getBlockCompression();
 		this.segmentCommitInterval = indexSettings.getSegmentCommitInterval();
-		this.segmentFlushInterval = indexSettings.getSegmentFlushInterval();
 		this.idleTimeWithoutCommit = indexSettings.getIdleTimeWithoutCommit();
 		this.segmentTolerance = indexSettings.getSegmentTolerance();
 		this.segmentQueryCacheSize = indexSettings.getSegmentQueryCacheSize();
 		this.segmentQueryCacheMaxAmount = indexSettings.getSegmentQueryCacheMaxAmount();
+		this.storeDocumentInIndex = indexSettings.getStoreDocumentInIndex();
+		this.storeDocumentInMongo = indexSettings.getStoreDocumentInMongo();
 		this.fieldMap = new TreeMap<>();
 		
 		for (FieldConfig fc : indexSettings.getFieldConfigList()) {

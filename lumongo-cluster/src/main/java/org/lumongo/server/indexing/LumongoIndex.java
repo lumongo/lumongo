@@ -878,9 +878,8 @@ public class LumongoIndex implements IndexWriterManager {
 			for (final LumongoSegment segment : segmentMap.values()) {
 
 				Future<SegmentResponse> response = segmentPool.submit(() -> segment
-								.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()),
-												queryRequest.getFacetRequest(), queryRequest.getSortRequest(),
-												new QueryCacheKey(queryRequest)));
+						.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
+								queryRequest.getSortRequest(), new QueryCacheKey(queryRequest), queryRequest.getResultFetchType()));
 
 				responses.add(response);
 
@@ -1056,7 +1055,19 @@ public class LumongoIndex implements IndexWriterManager {
 			}
 
 			fields.remove(LumongoConstants.TIMESTAMP_FIELD);
-			fields.remove(LumongoConstants.LUCENE_FACET_FIELD);
+			fields.remove(LumongoConstants.STORED_DOC_FIELD);
+			fields.remove(LumongoConstants.STORED_META_FIELD);
+
+
+			List<String> toRemove = new ArrayList<>();
+			for (String field : fields) {
+				if (field.startsWith(FacetsConfig.DEFAULT_INDEX_FIELD_NAME)) {
+					toRemove.add(field);
+				}
+			}
+			fields.removeAll(toRemove);
+
+
 			responseBuilder.addAllFieldName(fields);
 			return responseBuilder.build();
 		}

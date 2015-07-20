@@ -164,11 +164,11 @@ message IndexSettings {
 	optional uint32 minSegmentRequest = 5 [default = 2];
 	optional uint32 idleTimeWithoutCommit = 6 [default = 30];
 	optional uint32 segmentCommitInterval = 7 [default = 3200];
-	optional bool blockCompression = 8 [default = false];
 	optional double segmentTolerance = 9 [default = 0.05];
-	optional uint32 segmentFlushInterval = 10 [default = 1600];
 	optional uint32 segmentQueryCacheSize = 11 [default = 512];
 	optional uint32 segmentQueryCacheMaxAmount = 12 [default = 256];
+	optional bool storeDocumentInIndex = 13 [default = false];
+	optional bool storeDocumentInMongo = 14 [default = false];
 }
 
 message FieldConfig {
@@ -284,6 +284,7 @@ message ScoredResult {
 	repeated double sortDouble = 11;
 	repeated int64 sortDate = 12;
 	required int64 timestamp = 13;
+	optional ResultDocument resultDocument = 14;
 }
 
 message SortRequest {

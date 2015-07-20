@@ -38,5 +38,7 @@ public class LumongoConstants {
 	public static final String UTF8 = "UTF-8";
 	
 	public static final String TIMESTAMP_FIELD = "lmtsf";
-	public static final String LUCENE_FACET_FIELD = "$facets";
+	public static final String STORED_META_FIELD = "lmsmf";
+	public static final String STORED_DOC_FIELD = "lmsdf";
+
 }

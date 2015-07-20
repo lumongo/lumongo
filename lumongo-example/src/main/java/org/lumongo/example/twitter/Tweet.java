@@ -13,7 +13,6 @@ import java.util.Date;
 @Settings(
 				indexName = Tweet.INDEX_NAME,
 				numberOfSegments = 4,
-				segmentFlushInterval = 3000,
 				segmentCommitInterval = 6000)
 public class Tweet {
 	
@@ -21,7 +20,7 @@ public class Tweet {
 	
 	//using constant for field names is not required but allows referencing from
 	//other parts of the code
-	//if no field anonation is present, the name of the java field is used
+	//if no field annotation is present, the name of the java field is used
 	public static final String ID = "id";
 	public static final String FAVORITE_COUNT = "favoriteCount";
 	public static final String RETWEET_COUNT = "retweetCount";
