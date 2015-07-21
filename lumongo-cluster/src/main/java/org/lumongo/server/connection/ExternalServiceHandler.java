@@ -3,8 +3,9 @@ package org.lumongo.server.connection;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
+import com.googlecode.protobuf.pro.duplex.execute.PendingServerCallState;
 import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
-import com.googlecode.protobuf.pro.duplex.execute.ThreadPoolCallExecutor;
+import com.googlecode.protobuf.pro.duplex.execute.NonInterruptingThreadPoolCallExecutor;
 import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerPipelineFactory;
 import com.googlecode.protobuf.pro.duplex.util.RenamingThreadFactoryProxy;
 import io.netty.bootstrap.ServerBootstrap;
@@ -77,7 +78,7 @@ public class ExternalServiceHandler extends ExternalService {
 		
 		int externalWorkers = clusterConfig.getExternalWorkers();
 		
-		RpcServerCallExecutor executor = new ThreadPoolCallExecutor(externalWorkers, externalWorkers, new RenamingThreadFactoryProxy(
+		RpcServerCallExecutor executor = new NonInterruptingThreadPoolCallExecutor(externalWorkers, externalWorkers, new RenamingThreadFactoryProxy(
 						ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc", Executors.defaultThreadFactory()));
 		
 		DuplexTcpServerPipelineFactory serverFactory = new DuplexTcpServerPipelineFactory(externalServerInfo);

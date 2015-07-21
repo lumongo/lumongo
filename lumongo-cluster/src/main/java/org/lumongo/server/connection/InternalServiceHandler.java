@@ -4,7 +4,7 @@ import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
 import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
-import com.googlecode.protobuf.pro.duplex.execute.ThreadPoolCallExecutor;
+import com.googlecode.protobuf.pro.duplex.execute.NonInterruptingThreadPoolCallExecutor;
 import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerPipelineFactory;
 import com.googlecode.protobuf.pro.duplex.util.RenamingThreadFactoryProxy;
 import io.netty.bootstrap.ServerBootstrap;
@@ -60,7 +60,7 @@ public class InternalServiceHandler extends InternalService {
 		int coreInternalWorkers = clusterConfig.getInternalWorkers();
 		int maxInternalWorkers = 1024; // TODO fix this
 		
-		RpcServerCallExecutor executor = new ThreadPoolCallExecutor(coreInternalWorkers, maxInternalWorkers, new RenamingThreadFactoryProxy(
+		RpcServerCallExecutor executor = new NonInterruptingThreadPoolCallExecutor(coreInternalWorkers, maxInternalWorkers, new RenamingThreadFactoryProxy(
 						InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc", Executors.defaultThreadFactory()));
 		
 		DuplexTcpServerPipelineFactory serverFactory = new DuplexTcpServerPipelineFactory(internalServerInfo);
