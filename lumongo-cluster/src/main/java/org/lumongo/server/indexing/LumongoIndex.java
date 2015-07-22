@@ -698,7 +698,7 @@ public class LumongoIndex implements IndexWriterManager {
 					BasicBSONObject document = (BasicBSONObject) BSON.decode(storeRequest.getResultDocument().getDocument().toByteArray());
 
 					LumongoSegment s = findSegmentFromUniqueId(uniqueId);
-					s.index(uniqueId, document, timestamp);
+					s.index(uniqueId, timestamp, document, storeRequest.getResultDocument().getMetadataList());
 
 					documentStorage.storeSourceDocument(storeRequest.getUniqueId(), timestamp, document, storeRequest.getResultDocument().getMetadataList());
 				}

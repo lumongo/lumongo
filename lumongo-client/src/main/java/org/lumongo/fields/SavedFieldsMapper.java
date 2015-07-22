@@ -41,7 +41,7 @@ public class SavedFieldsMapper<T> {
 		}
 
 		if (f.isAnnotationPresent(Embedded.class)) {
-			savedEmbeddedFields.add(new SavedEmbeddedFieldInfo(f, fieldName));
+			savedEmbeddedFields.add(new SavedEmbeddedFieldInfo<>(f, fieldName));
 		}
 		else if (f.isAnnotationPresent(NotSaved.class)) {
 
@@ -71,7 +71,7 @@ public class SavedFieldsMapper<T> {
 			document.put(sfi.getFieldName(), o);
 		}
 
-		for (SavedEmbeddedFieldInfo sefi : savedEmbeddedFields) {
+		for (SavedEmbeddedFieldInfo<T> sefi : savedEmbeddedFields) {
 			Object o = sefi.getValue(object);
 			document.put(sefi.getFieldName(), o);
 		}

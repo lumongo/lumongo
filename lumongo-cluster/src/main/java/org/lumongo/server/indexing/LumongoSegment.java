@@ -1,5 +1,7 @@
 package org.lumongo.server.indexing;
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.BinaryDocValuesField;
 import org.apache.lucene.document.Document;
@@ -8,6 +10,7 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.FacetResult;
@@ -35,6 +38,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.bson.BSON;
 import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -383,7 +387,6 @@ public class LumongoSegment {
 			FetchType resultFetchType) throws IOException {
 		int docId = results[i].doc;
 
-
 		Set<String> fieldsToFetch  = fetchSet;
 		if (indexConfig.isStoreDocumentInIndex()) {
 			if (FetchType.FULL.equals(resultFetchType)) {
@@ -395,12 +398,32 @@ public class LumongoSegment {
 		}
 
 		Document d = is.doc(docId, fieldsToFetch);
+
+		IndexableField f = d.getField(LumongoConstants.TIMESTAMP_FIELD);
+		long timestamp = f.numericValue().longValue();
+
+		if (indexConfig.isStoreDocumentInIndex()) {
+			ResultDocument.Builder rdBuilder = ResultDocument.newBuilder();
+			if (FetchType.FULL.equals(resultFetchType)) {
+				BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
+
+			}
+			if (FetchType.FULL.equals(resultFetchType) || FetchType.META.equals(resultFetchType)) {
+				BytesRef metaRef = d.getBinaryValue(LumongoConstants.STORED_META_FIELD);
+				DBObject metaObj = new BasicDBObject();
+				metaObj.putAll(BSON.decode(metaRef.bytes));
+
+				for (String key : metaObj.keySet()) {
+					rdBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue(((String)metaObj.get(key))));
+				}
+			}
+		}
+
 		ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
 		srBuilder.setScore(results[i].score);
 		srBuilder.setUniqueId(d.get(indexConfig.getUniqueIdField()));
 
-		IndexableField f = d.getField(LumongoConstants.TIMESTAMP_FIELD);
-		srBuilder.setTimestamp(f.numericValue().longValue());
+		srBuilder.setTimestamp(timestamp);
 
 		srBuilder.setDocId(docId);
 		srBuilder.setSegment(segmentNumber);
@@ -523,7 +546,7 @@ public class LumongoSegment {
 		directory.close();
 	}
 
-	public void index(String uniqueId, BSONObject document, long timestamp) throws Exception {
+	public void index(String uniqueId, long timestamp, BasicBSONObject document, List<Metadata> metadataList) throws Exception {
 		reopenIndexWritersIfNecessary();
 
 		Document d = new Document();
@@ -589,7 +612,17 @@ public class LumongoSegment {
 
 		if (indexConfig.isStoreDocumentInIndex()) {
 			byte[] documentBytes = BSON.encode(document);
-			d.add(new BinaryDocValuesField(LumongoConstants.STORED_DOC_FIELD, new BytesRef(documentBytes)));
+			d.add(new StoredField(LumongoConstants.STORED_DOC_FIELD, new BytesRef(documentBytes)));
+
+			DBObject metadataObject = new BasicDBObject();
+
+			for (Metadata metadata : metadataList) {
+				metadataObject.put(metadata.getKey(), metadata.getValue());
+			}
+
+			byte[] metadataBytes = BSON.encode(metadataObject);
+			d.add(new StoredField(LumongoConstants.STORED_META_FIELD, new BytesRef(metadataBytes)));
+
 		}
 
 		Term term = new Term(indexConfig.getUniqueIdField(), uniqueId);
@@ -728,8 +761,8 @@ public class LumongoSegment {
 
 		Set<String> fields = new HashSet<>();
 
-		for (LeafReaderContext subreaderContext : directoryReader.leaves()) {
-			FieldInfos fieldInfos = subreaderContext.reader().getFieldInfos();
+		for (LeafReaderContext subReaderContext : directoryReader.leaves()) {
+			FieldInfos fieldInfos = subReaderContext.reader().getFieldInfos();
 			for (FieldInfo fi : fieldInfos) {
 				String fieldName = fi.name;
 				fields.add(fieldName);
@@ -773,8 +806,8 @@ public class LumongoSegment {
 
 		SortedMap<String, AtomicLong> termsMap = new TreeMap<>();
 
-		for (LeafReaderContext subreaderContext : directoryReader.leaves()) {
-			Fields fields = subreaderContext.reader().fields();
+		for (LeafReaderContext subReaderContext : directoryReader.leaves()) {
+			Fields fields = subReaderContext.reader().fields();
 			if (fields != null) {
 
 				Terms terms = fields.terms(fieldName);

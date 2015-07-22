@@ -155,7 +155,7 @@ public class Mapper<T> {
 
 	public Store createStore(T object) throws Exception {
 		if (settings == null) {
-			throw new RuntimeException("No Settings annonation for class <" + clazz.getSimpleName() + ">");
+			throw new RuntimeException("No Settings annotation for class <" + clazz.getSimpleName() + ">");
 		}
 		return createStore(settings.indexName(), object);
 	}
