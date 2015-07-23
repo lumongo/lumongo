@@ -5,6 +5,7 @@ import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.QueryResult;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
@@ -42,6 +43,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private List<String> filterQueries = Collections.emptyList();
 	private Integer minimumNumberShouldMatch;
 	private Operator defaultOperator;
+	private Lumongo.FetchType resultFetchType;
 	
 	public Query(String index, String query, int amount) {
 		this(new String[] { index }, query, amount);
@@ -212,7 +214,15 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		this.defaultOperator = defaultOperator;
 		return this;
 	}
-	
+
+	public Lumongo.FetchType getResultFetchType() {
+		return resultFetchType;
+	}
+
+	public void setResultFetchType(Lumongo.FetchType resultFetchType) {
+		this.resultFetchType = resultFetchType;
+	}
+
 	@Override
 	public QueryRequest getRequest() {
 		QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
@@ -255,6 +265,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		
 		if (defaultOperator != null) {
 			requestBuilder.setDefaultOperator(defaultOperator);
+		}
+
+		if (resultFetchType != null) {
+			requestBuilder.setResultFetchType(resultFetchType);
 		}
 		
 		SortRequest.Builder sortRequestBuilder = SortRequest.newBuilder();

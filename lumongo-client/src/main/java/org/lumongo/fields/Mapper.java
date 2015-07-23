@@ -141,6 +141,8 @@ public class Mapper<T> {
 		indexConfig.setSegmentTolerance(settings.segmentTolerance());
 		indexConfig.setSegmentQueryCacheSize(settings.segmentQueryCacheSize());
 		indexConfig.setSegmentQueryCacheMaxAmount(settings.segmentQueryCacheMaxAmount());
+		indexConfig.setStoreDocumentInIndex(settings.storeDocumentInIndex());
+		indexConfig.setStoreDocumentInMongo(settings.storeDocumentInMongo());
 
 		for (Lumongo.FieldConfig fieldConfig : fieldConfigMapper.getFieldConfigs()) {
 			indexConfig.addFieldConfig(fieldConfig);

@@ -147,6 +147,22 @@ public class IndexConfig {
 		return fieldMap;
 	}
 
+	public Boolean getStoreDocumentInMongo() {
+		return storeDocumentInMongo;
+	}
+
+	public void setStoreDocumentInMongo(Boolean storeDocumentInMongo) {
+		this.storeDocumentInMongo = storeDocumentInMongo;
+	}
+
+	public Boolean getStoreDocumentInIndex() {
+		return storeDocumentInIndex;
+	}
+
+	public void setStoreDocumentInIndex(Boolean storeDocumentInIndex) {
+		this.storeDocumentInIndex = storeDocumentInIndex;
+	}
+
 	public IndexSettings getIndexSettings() {
 		IndexSettings.Builder isb = IndexSettings.newBuilder();
 		if (defaultSearchField != null) {

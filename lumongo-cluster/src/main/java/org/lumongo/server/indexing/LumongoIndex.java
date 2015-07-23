@@ -700,7 +700,9 @@ public class LumongoIndex implements IndexWriterManager {
 					LumongoSegment s = findSegmentFromUniqueId(uniqueId);
 					s.index(uniqueId, timestamp, document, storeRequest.getResultDocument().getMetadataList());
 
-					documentStorage.storeSourceDocument(storeRequest.getUniqueId(), timestamp, document, storeRequest.getResultDocument().getMetadataList());
+					if (indexConfig.isStoreDocumentInMongo()) {
+						documentStorage.storeSourceDocument(storeRequest.getUniqueId(), timestamp, document, storeRequest.getResultDocument().getMetadataList());
+					}
 				}
 
 				if (storeRequest.getClearExistingAssociated()) {

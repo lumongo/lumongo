@@ -146,6 +146,13 @@ public class IndexConfig {
 		indexConfig.segmentCommitInterval = (int) settings.get(SEGMENT_COMMIT_INTERVAL);
 		indexConfig.segmentTolerance = (double) settings.get(SEGMENT_TOLERANCE);
 
+		if (settings.get(STORE_DOCUMENT_IN_MONGO) != null) {
+			indexConfig.storeDocumentInMongo = (boolean) settings.get(STORE_DOCUMENT_IN_MONGO);
+		}
+		if (settings.get(STORE_DOCUMENT_IN_INDEX) != null) {
+			indexConfig.storeDocumentInIndex = (boolean) settings.get(STORE_DOCUMENT_IN_INDEX);
+		}
+
 		if (settings.get(SEGMENT_QUERY_CACHE_SIZE) != null) {
 			indexConfig.segmentQueryCacheSize = (int) settings.get(SEGMENT_QUERY_CACHE_SIZE);
 		}
@@ -421,6 +428,8 @@ public class IndexConfig {
 				", segmentCommitInterval=" + segmentCommitInterval +
 				", segmentQueryCacheSize=" + segmentQueryCacheSize +
 				", segmentQueryCacheMaxAmount=" + segmentQueryCacheMaxAmount +
+				", storeDocumentInIndex=" + storeDocumentInIndex +
+				", storeDocumentInMongo=" + storeDocumentInMongo +
 				", segmentTolerance=" + segmentTolerance +
 				", fieldConfigMap=" + fieldConfigMap +
 				", indexAsMap=" + indexAsMap +

@@ -19,7 +19,7 @@ _sym_db = _symbol_database.Default()
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='lumongo.proto',
   package='',
-  serialized_pb=_b('\n\rlumongo.proto\"\x13\n\x11GetMembersRequest\"v\n\x08LMMember\x12\x15\n\rserverAddress\x18\x01 \x02(\t\x12\x14\n\x0c\x65xternalPort\x18\x02 \x02(\r\x12\x14\n\x0cinternalPort\x18\x03 \x01(\r\x12\x15\n\rhazelcastPort\x18\x04 \x01(\r\x12\x10\n\x08restPort\x18\x05 \x01(\r\"T\n\x12GetMembersResponse\x12\x19\n\x06member\x18\x01 \x03(\x0b\x32\t.LMMember\x12#\n\x0cindexMapping\x18\x02 \x03(\x0b\x32\r.IndexMapping\"d\n\x0cIndexMapping\x12\x11\n\tindexName\x18\x01 \x02(\t\x12\x18\n\x10numberOfSegments\x18\x02 \x02(\r\x12\'\n\x0esegmentMapping\x18\x03 \x03(\x0b\x32\x0f.SegmentMapping\"B\n\x0eSegmentMapping\x12\x15\n\rsegmentNumber\x18\x01 \x02(\r\x12\x19\n\x06member\x18\x02 \x02(\x0b\x32\t.LMMember\"\xb3\x01\n\x0fGetTermsRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\x12\x11\n\tfieldName\x18\x02 \x02(\t\x12\x0e\n\x06\x61mount\x18\x03 \x02(\r\x12\x14\n\x0cstartingTerm\x18\x04 \x01(\t\x12\x15\n\nminDocFreq\x18\x05 \x01(\r:\x01\x31\x12\x16\n\x08realTime\x18\x06 \x01(\x08:\x04true\x12\x12\n\ntermFilter\x18\x07 \x01(\t\x12\x11\n\ttermMatch\x18\x08 \x01(\t\"@\n\x10GetTermsResponse\x12\x13\n\x04term\x18\x01 \x03(\x0b\x32\x05.Term\x12\x17\n\x08lastTerm\x18\x02 \x01(\x0b\x32\x05.Term\"&\n\x04Term\x12\r\n\x05value\x18\x01 \x02(\t\x12\x0f\n\x07\x64ocFreq\x18\x02 \x01(\x04\")\n\x14GetFieldNamesRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\"*\n\x15GetFieldNamesResponse\x12\x11\n\tfieldName\x18\x01 \x03(\t\"!\n\x0c\x43learRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\"\x0f\n\rClearResponse\"$\n\x0fOptimizeRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\"\x12\n\x10OptimizeResponse\"\x13\n\x11GetIndexesRequest\"\'\n\x12GetIndexesResponse\x12\x11\n\tindexName\x18\x01 \x03(\t\"C\n\x16GetNumberOfDocsRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\x12\x16\n\x08realTime\x18\x02 \x01(\x08:\x04true\"d\n\x17GetNumberOfDocsResponse\x12\x14\n\x0cnumberOfDocs\x18\x01 \x02(\x04\x12\x33\n\x14segmentCountResponse\x18\x02 \x03(\x0b\x32\x15.SegmentCountResponse\"C\n\x14SegmentCountResponse\x12\x15\n\rsegmentNumber\x18\x01 \x02(\r\x12\x14\n\x0cnumberOfDocs\x18\x02 \x02(\r\"\x7f\n\x12IndexCreateRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\x12\x15\n\runiqueIdField\x18\x02 \x02(\t\x12\x18\n\x10numberOfSegments\x18\x03 \x02(\r\x12%\n\rindexSettings\x18\x04 \x02(\x0b\x32\x0e.IndexSettings\"\x15\n\x13IndexCreateResponse\"P\n\x14IndexSettingsRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\x12%\n\rindexSettings\x18\x04 \x02(\x0b\x32\x0e.IndexSettings\"\xac\x03\n\rIndexSettings\x12\x1a\n\x12\x64\x65\x66\x61ultSearchField\x18\x01 \x02(\t\x12!\n\x0b\x66ieldConfig\x18\x02 \x03(\x0b\x32\x0c.FieldConfig\x12%\n\x17\x61pplyUncommittedDeletes\x18\x03 \x01(\x08:\x04true\x12\x18\n\rrequestFactor\x18\x04 \x01(\x01:\x01\x32\x12\x1c\n\x11minSegmentRequest\x18\x05 \x01(\r:\x01\x32\x12!\n\x15idleTimeWithoutCommit\x18\x06 \x01(\r:\x02\x33\x30\x12#\n\x15segmentCommitInterval\x18\x07 \x01(\r:\x04\x33\x32\x30\x30\x12\x1e\n\x10segmentTolerance\x18\t \x01(\x01:\x04\x30.05\x12\"\n\x15segmentQueryCacheSize\x18\x0b \x01(\r:\x03\x35\x31\x32\x12\'\n\x1asegmentQueryCacheMaxAmount\x18\x0c \x01(\r:\x03\x32\x35\x36\x12#\n\x14storeDocumentInIndex\x18\r \x01(\x08:\x05\x66\x61lse\x12#\n\x14storeDocumentInMongo\x18\x0e \x01(\x08:\x05\x66\x61lse\"u\n\x0b\x46ieldConfig\x12\x17\n\x0fstoredFieldName\x18\x01 \x02(\t\x12\x19\n\x07indexAs\x18\x02 \x03(\x0b\x32\x08.IndexAs\x12\x19\n\x07\x66\x61\x63\x65tAs\x18\x03 \x03(\x0b\x32\x08.FacetAs\x12\x17\n\x06sortAs\x18\x04 \x01(\x0b\x32\x07.SortAs\"@\n\x07IndexAs\x12\x16\n\x0eindexFieldName\x18\x01 \x02(\t\x12\x1d\n\x08\x61nalyzer\x18\x02 \x02(\x0e\x32\x0b.LMAnalyzer\"\x8a\x01\n\x07\x46\x61\x63\x65tAs\x12\x11\n\tfacetName\x18\x01 \x02(\t\x12\'\n\tfacetType\x18\x02 \x02(\x0e\x32\x14.FacetAs.LMFacetType\"C\n\x0bLMFacetType\x12\x0c\n\x08STANDARD\x10\x01\x12\x13\n\x0f\x44\x41TE_YYYY_MM_DD\x10\x02\x12\x11\n\rDATE_YYYYMMDD\x10\x03\"\xaf\x01\n\x06SortAs\x12\x15\n\rsortFieldName\x18\x01 \x02(\t\x12\"\n\x08sortType\x18\x02 \x02(\x0e\x32\x10.SortAs.SortType\"j\n\x08SortType\x12\n\n\x06STRING\x10\x01\x12\x0f\n\x0bNUMERIC_INT\x10\x02\x12\x10\n\x0cNUMERIC_LONG\x10\x03\x12\x11\n\rNUMERIC_FLOAT\x10\x04\x12\x12\n\x0eNUMERIC_DOUBLE\x10\x05\x12\x08\n\x04\x44\x41TE\x10\x06\"\x17\n\x15IndexSettingsResponse\"\'\n\x12IndexDeleteRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\"\x15\n\x13IndexDeleteResponse\"\xb5\x01\n\x0cStoreRequest\x12\x10\n\x08uniqueId\x18\x01 \x02(\t\x12\x11\n\tindexName\x18\x02 \x02(\t\x12\'\n\x0eresultDocument\x18\x03 \x01(\x0b\x32\x0f.ResultDocument\x12/\n\x12\x61ssociatedDocument\x18\x04 \x03(\x0b\x32\x13.AssociatedDocument\x12&\n\x17\x63learExistingAssociated\x18\x05 \x01(\x08:\x05\x66\x61lse\"\x0f\n\rStoreResponse\"S\n\x05LMDoc\x12\x1e\n\x0cindexedField\x18\x01 \x03(\x0b\x32\x08.LMField\x12\x17\n\x05\x66\x61\x63\x65t\x18\x02 \x03(\x0b\x32\x08.LMFacet\x12\x11\n\ttimestamp\x18\x03 \x01(\x03\"&\n\x07LMFacet\x12\r\n\x05label\x18\x01 \x02(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"~\n\x07LMField\x12\x11\n\tfieldName\x18\x01 \x02(\t\x12\x12\n\nfieldValue\x18\x02 \x03(\t\x12\x10\n\x08intValue\x18\x03 \x03(\x05\x12\x11\n\tlongValue\x18\x04 \x03(\x03\x12\x12\n\nfloatValue\x18\x05 \x03(\x02\x12\x13\n\x0b\x64oubleValue\x18\x06 \x03(\x01\"w\n\x0eResultDocument\x12\x10\n\x08uniqueId\x18\x01 \x02(\t\x12\x11\n\tindexName\x18\x02 \x02(\t\x12\x10\n\x08\x64ocument\x18\x03 \x01(\x0c\x12\x1b\n\x08metadata\x18\x04 \x03(\x0b\x32\t.Metadata\x12\x11\n\ttimestamp\x18\x05 \x01(\x03\"\xb0\x01\n\x12\x41ssociatedDocument\x12\x10\n\x08\x66ilename\x18\x01 \x02(\t\x12\x18\n\x10\x64ocumentUniqueId\x18\x02 \x02(\t\x12\x11\n\tindexName\x18\x03 \x02(\t\x12\x10\n\x08\x64ocument\x18\x04 \x01(\x0c\x12\x19\n\ncompressed\x18\x05 \x01(\x08:\x05\x66\x61lse\x12\x1b\n\x08metadata\x18\x06 \x03(\x0b\x32\t.Metadata\x12\x11\n\ttimestamp\x18\x07 \x01(\x03\"&\n\x08Metadata\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\t\"\xfc\x01\n\x0cScoredResult\x12\x10\n\x08uniqueId\x18\x01 \x02(\t\x12\r\n\x05score\x18\x02 \x02(\x02\x12\r\n\x05\x64ocId\x18\x03 \x02(\r\x12\x11\n\tindexName\x18\x04 \x02(\t\x12\x0f\n\x07segment\x18\x05 \x02(\r\x12\x13\n\x0bresultIndex\x18\x06 \x02(\r\x12\x10\n\x08sortTerm\x18\x07 \x03(\t\x12\x13\n\x0bsortInteger\x18\x08 \x03(\x05\x12\x10\n\x08sortLong\x18\t \x03(\x03\x12\x11\n\tsortFloat\x18\n \x03(\x02\x12\x12\n\nsortDouble\x18\x0b \x03(\x01\x12\x10\n\x08sortDate\x18\x0c \x03(\x03\x12\x11\n\ttimestamp\x18\r \x02(\x03\",\n\x0bSortRequest\x12\x1d\n\tfieldSort\x18\x01 \x03(\x0b\x32\n.FieldSort\"~\n\tFieldSort\x12\x11\n\tsortField\x18\x01 \x02(\t\x12\x32\n\tdirection\x18\x02 \x01(\x0e\x32\x14.FieldSort.Direction:\tASCENDING\"*\n\tDirection\x12\r\n\tASCENDING\x10\x01\x12\x0e\n\nDESCENDING\x10\x02\"\x96\x01\n\nFacetGroup\x12#\n\x0c\x63ountRequest\x18\x01 \x02(\x0b\x32\r.CountRequest\x12\x1f\n\nfacetCount\x18\x02 \x03(\x0b\x32\x0b.FacetCount\x12\x1e\n\x0fpossibleMissing\x18\x03 \x01(\x08:\x05\x66\x61lse\x12\"\n\x17maxValuePossibleMissing\x18\x04 \x01(\x04:\x01\x30\"<\n\nFacetCount\x12\r\n\x05\x66\x61\x63\x65t\x18\x01 \x02(\t\x12\r\n\x05\x63ount\x18\x02 \x02(\x04\x12\x10\n\x08maxError\x18\x03 \x01(\x04\"P\n\x0c\x46\x61\x63\x65tRequest\x12#\n\x0c\x63ountRequest\x18\x01 \x03(\x0b\x32\r.CountRequest\x12\x1b\n\tdrillDown\x18\x02 \x03(\x0b\x32\x08.LMFacet\"\x9b\x01\n\x0c\x43ountRequest\x12\x1c\n\nfacetField\x18\x01 \x02(\x0b\x32\x08.LMFacet\x12\x15\n\tmaxFacets\x18\x02 \x01(\r:\x02\x31\x30\x12\x15\n\rsegmentFacets\x18\x03 \x01(\r\x12\x1a\n\x0c\x63omputeError\x18\x04 \x01(\x08:\x04true\x12#\n\x15\x63omputePossibleMissed\x18\x05 \x01(\x08:\x04true\"\xb1\x01\n\x0fSegmentResponse\x12\x15\n\rsegmentNumber\x18\x01 \x02(\r\x12\x11\n\tindexName\x18\x02 \x02(\t\x12\x11\n\ttotalHits\x18\x03 \x02(\r\x12#\n\x0cscoredResult\x18\x04 \x03(\x0b\x32\r.ScoredResult\x12\x1b\n\x04next\x18\x05 \x01(\x0b\x32\r.ScoredResult\x12\x1f\n\nfacetGroup\x18\x06 \x03(\x0b\x32\x0b.FacetGroup\"K\n\x0fLastIndexResult\x12\x11\n\tindexName\x18\x01 \x02(\t\x12%\n\x0elastForSegment\x18\x02 \x03(\x0b\x32\r.ScoredResult\"7\n\nLastResult\x12)\n\x0flastIndexResult\x18\x01 \x03(\x0b\x32\x10.LastIndexResult\"L\n\x15InternalQueryResponse\x12\x33\n\x14indexSegmentResponse\x18\x01 \x03(\x0b\x32\x15.IndexSegmentResponse\"S\n\x14IndexSegmentResponse\x12\x11\n\tindexName\x18\x01 \x02(\t\x12(\n\x0esegmentReponse\x18\x02 \x03(\x0b\x32\x10.SegmentResponse\"\x9a\x03\n\x0cQueryRequest\x12\r\n\x05index\x18\x01 \x03(\t\x12\r\n\x05query\x18\x02 \x01(\t\x12\x0e\n\x06\x61mount\x18\x03 \x02(\r\x12\x1f\n\nlastResult\x18\x04 \x01(\x0b\x32\x0b.LastResult\x12\x18\n\tfetchFull\x18\x05 \x01(\x08:\x05\x66\x61lse\x12#\n\x0c\x66\x61\x63\x65tRequest\x18\x07 \x01(\x0b\x32\r.FacetRequest\x12!\n\x0bsortRequest\x18\x08 \x01(\x0b\x32\x0c.SortRequest\x12\x12\n\nqueryField\x18\t \x03(\t\x12\x13\n\x0b\x66ilterQuery\x18\n \x03(\t\x12\x0e\n\x06\x66ields\x18\x0b \x03(\t\x12)\n\x0fresultFetchType\x18\x0c \x01(\x0e\x32\n.FetchType:\x04NONE\x12#\n\x18minimumNumberShouldMatch\x18\r \x01(\r:\x01\x30\x12\x33\n\x0f\x64\x65\x66\x61ultOperator\x18\x0e \x01(\x0e\x32\x16.QueryRequest.Operator:\x02OR\"\x1b\n\x08Operator\x12\x07\n\x03\x41ND\x10\x01\x12\x06\n\x02OR\x10\x02\"\x84\x01\n\rQueryResponse\x12\x11\n\ttotalHits\x18\x01 \x02(\x04\x12\x1e\n\x07results\x18\x02 \x03(\x0b\x32\r.ScoredResult\x12\x1f\n\nlastResult\x18\x03 \x02(\x0b\x32\x0b.LastResult\x12\x1f\n\nfacetGroup\x18\x04 \x03(\x0b\x32\x0b.FacetGroup\"\x87\x01\n\rDeleteRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\x12\x10\n\x08uniqueId\x18\x02 \x02(\t\x12\x10\n\x08\x66ilename\x18\x03 \x01(\t\x12\x1c\n\x0e\x64\x65leteDocument\x18\x04 \x01(\x08:\x04true\x12!\n\x13\x64\x65leteAllAssociated\x18\x05 \x01(\x08:\x04true\"\x10\n\x0e\x44\x65leteResponse\"5\n\x12\x42\x61tchDeleteRequest\x12\x1f\n\x07request\x18\x01 \x03(\x0b\x32\x0e.DeleteRequest\"\x15\n\x13\x42\x61tchDeleteResponse\"8\n\x11\x42\x61tchFetchRequest\x12#\n\x0c\x66\x65tchRequest\x18\x01 \x03(\x0b\x32\r.FetchRequest\";\n\x12\x42\x61tchFetchResponse\x12%\n\rfetchResponse\x18\x01 \x03(\x0b\x32\x0e.FetchResponse\"\xd5\x01\n\x0c\x46\x65tchRequest\x12\x10\n\x08uniqueId\x18\x01 \x02(\t\x12\x11\n\tindexName\x18\x02 \x02(\t\x12\x10\n\x08\x66ileName\x18\x03 \x01(\t\x12)\n\x0fresultFetchType\x18\x04 \x01(\x0e\x32\n.FetchType:\x04\x46ULL\x12-\n\x13\x61ssociatedFetchType\x18\x05 \x01(\x0e\x32\n.FetchType:\x04META\x12\x16\n\x0e\x64ocumentFields\x18\x06 \x03(\t\x12\x1c\n\x14\x64ocumentMaskedFields\x18\x07 \x03(\t\"i\n\rFetchResponse\x12\'\n\x0eresultDocument\x18\x01 \x01(\x0b\x32\x0f.ResultDocument\x12/\n\x12\x61ssociatedDocument\x18\x02 \x03(\x0b\x32\x13.AssociatedDocument*\xf8\x01\n\nLMAnalyzer\x12\x0b\n\x07KEYWORD\x10\x01\x12\x0e\n\nLC_KEYWORD\x10\x02\x12\x0e\n\nWHITESPACE\x10\x03\x12\x11\n\rLC_WHITESPACE\x10\x04\x12\x0c\n\x08STANDARD\x10\x05\x12\x0f\n\x0bNUMERIC_INT\x10\x06\x12\x10\n\x0cNUMERIC_LONG\x10\x07\x12\x11\n\rNUMERIC_FLOAT\x10\x08\x12\x12\n\x0eNUMERIC_DOUBLE\x10\t\x12\x14\n\x10STANDARD_FOLDING\x10\n\x12\x14\n\x10STANDARD_NO_STOP\x10\x0b\x12\x1c\n\x18STANDARD_FOLDING_NO_STOP\x10\x0c\x12\x08\n\x04\x44\x41TE\x10\r*)\n\tFetchType\x12\x08\n\x04\x46ULL\x10\x01\x12\x08\n\x04META\x10\x02\x12\x08\n\x04NONE\x10\x03\x32\xd5\x06\n\x0f\x45xternalService\x12&\n\x05Query\x12\r.QueryRequest\x1a\x0e.QueryResponse\x12&\n\x05Store\x12\r.StoreRequest\x1a\x0e.StoreResponse\x12)\n\x06\x44\x65lete\x12\x0e.DeleteRequest\x1a\x0f.DeleteResponse\x12\x38\n\x0b\x42\x61tchDelete\x12\x13.BatchDeleteRequest\x1a\x14.BatchDeleteResponse\x12&\n\x05\x46\x65tch\x12\r.FetchRequest\x1a\x0e.FetchResponse\x12\x35\n\nBatchFetch\x12\x12.BatchFetchRequest\x1a\x13.BatchFetchResponse\x12\x38\n\x0b\x43reateIndex\x12\x13.IndexCreateRequest\x1a\x14.IndexCreateResponse\x12<\n\x0b\x43hangeIndex\x12\x15.IndexSettingsRequest\x1a\x16.IndexSettingsResponse\x12\x38\n\x0b\x44\x65leteIndex\x12\x13.IndexDeleteRequest\x1a\x14.IndexDeleteResponse\x12\x35\n\nGetIndexes\x12\x12.GetIndexesRequest\x1a\x13.GetIndexesResponse\x12\x44\n\x0fGetNumberOfDocs\x12\x17.GetNumberOfDocsRequest\x1a\x18.GetNumberOfDocsResponse\x12&\n\x05\x43lear\x12\r.ClearRequest\x1a\x0e.ClearResponse\x12/\n\x08Optimize\x12\x10.OptimizeRequest\x1a\x11.OptimizeResponse\x12>\n\rGetFieldNames\x12\x15.GetFieldNamesRequest\x1a\x16.GetFieldNamesResponse\x12/\n\x08GetTerms\x12\x10.GetTermsRequest\x1a\x11.GetTermsResponse\x12\x35\n\nGetMembers\x12\x12.GetMembersRequest\x1a\x13.GetMembersResponse2\xa4\x03\n\x0fInternalService\x12.\n\x05Query\x12\r.QueryRequest\x1a\x16.InternalQueryResponse\x12&\n\x05Store\x12\r.StoreRequest\x1a\x0e.StoreResponse\x12)\n\x06\x44\x65lete\x12\x0e.DeleteRequest\x1a\x0f.DeleteResponse\x12\x44\n\x0fGetNumberOfDocs\x12\x17.GetNumberOfDocsRequest\x1a\x18.GetNumberOfDocsResponse\x12&\n\x05\x43lear\x12\r.ClearRequest\x1a\x0e.ClearResponse\x12/\n\x08Optimize\x12\x10.OptimizeRequest\x1a\x11.OptimizeResponse\x12>\n\rGetFieldNames\x12\x15.GetFieldNamesRequest\x1a\x16.GetFieldNamesResponse\x12/\n\x08GetTerms\x12\x10.GetTermsRequest\x1a\x11.GetTermsResponseB \n\x1borg.lumongo.cluster.message\x88\x01\x01')
+  serialized_pb=_b('\n\rlumongo.proto\"\x13\n\x11GetMembersRequest\"v\n\x08LMMember\x12\x15\n\rserverAddress\x18\x01 \x02(\t\x12\x14\n\x0c\x65xternalPort\x18\x02 \x02(\r\x12\x14\n\x0cinternalPort\x18\x03 \x01(\r\x12\x15\n\rhazelcastPort\x18\x04 \x01(\r\x12\x10\n\x08restPort\x18\x05 \x01(\r\"T\n\x12GetMembersResponse\x12\x19\n\x06member\x18\x01 \x03(\x0b\x32\t.LMMember\x12#\n\x0cindexMapping\x18\x02 \x03(\x0b\x32\r.IndexMapping\"d\n\x0cIndexMapping\x12\x11\n\tindexName\x18\x01 \x02(\t\x12\x18\n\x10numberOfSegments\x18\x02 \x02(\r\x12\'\n\x0esegmentMapping\x18\x03 \x03(\x0b\x32\x0f.SegmentMapping\"B\n\x0eSegmentMapping\x12\x15\n\rsegmentNumber\x18\x01 \x02(\r\x12\x19\n\x06member\x18\x02 \x02(\x0b\x32\t.LMMember\"\xb3\x01\n\x0fGetTermsRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\x12\x11\n\tfieldName\x18\x02 \x02(\t\x12\x0e\n\x06\x61mount\x18\x03 \x02(\r\x12\x14\n\x0cstartingTerm\x18\x04 \x01(\t\x12\x15\n\nminDocFreq\x18\x05 \x01(\r:\x01\x31\x12\x16\n\x08realTime\x18\x06 \x01(\x08:\x04true\x12\x12\n\ntermFilter\x18\x07 \x01(\t\x12\x11\n\ttermMatch\x18\x08 \x01(\t\"@\n\x10GetTermsResponse\x12\x13\n\x04term\x18\x01 \x03(\x0b\x32\x05.Term\x12\x17\n\x08lastTerm\x18\x02 \x01(\x0b\x32\x05.Term\"&\n\x04Term\x12\r\n\x05value\x18\x01 \x02(\t\x12\x0f\n\x07\x64ocFreq\x18\x02 \x01(\x04\")\n\x14GetFieldNamesRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\"*\n\x15GetFieldNamesResponse\x12\x11\n\tfieldName\x18\x01 \x03(\t\"!\n\x0c\x43learRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\"\x0f\n\rClearResponse\"$\n\x0fOptimizeRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\"\x12\n\x10OptimizeResponse\"\x13\n\x11GetIndexesRequest\"\'\n\x12GetIndexesResponse\x12\x11\n\tindexName\x18\x01 \x03(\t\"C\n\x16GetNumberOfDocsRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\x12\x16\n\x08realTime\x18\x02 \x01(\x08:\x04true\"d\n\x17GetNumberOfDocsResponse\x12\x14\n\x0cnumberOfDocs\x18\x01 \x02(\x04\x12\x33\n\x14segmentCountResponse\x18\x02 \x03(\x0b\x32\x15.SegmentCountResponse\"C\n\x14SegmentCountResponse\x12\x15\n\rsegmentNumber\x18\x01 \x02(\r\x12\x14\n\x0cnumberOfDocs\x18\x02 \x02(\r\"\x7f\n\x12IndexCreateRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\x12\x15\n\runiqueIdField\x18\x02 \x02(\t\x12\x18\n\x10numberOfSegments\x18\x03 \x02(\r\x12%\n\rindexSettings\x18\x04 \x02(\x0b\x32\x0e.IndexSettings\"\x15\n\x13IndexCreateResponse\"P\n\x14IndexSettingsRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\x12%\n\rindexSettings\x18\x04 \x02(\x0b\x32\x0e.IndexSettings\"\xab\x03\n\rIndexSettings\x12\x1a\n\x12\x64\x65\x66\x61ultSearchField\x18\x01 \x02(\t\x12!\n\x0b\x66ieldConfig\x18\x02 \x03(\x0b\x32\x0c.FieldConfig\x12%\n\x17\x61pplyUncommittedDeletes\x18\x03 \x01(\x08:\x04true\x12\x18\n\rrequestFactor\x18\x04 \x01(\x01:\x01\x32\x12\x1c\n\x11minSegmentRequest\x18\x05 \x01(\r:\x01\x32\x12!\n\x15idleTimeWithoutCommit\x18\x06 \x01(\r:\x02\x33\x30\x12#\n\x15segmentCommitInterval\x18\x07 \x01(\r:\x04\x33\x32\x30\x30\x12\x1e\n\x10segmentTolerance\x18\t \x01(\x01:\x04\x30.05\x12\"\n\x15segmentQueryCacheSize\x18\x0b \x01(\r:\x03\x35\x31\x32\x12\'\n\x1asegmentQueryCacheMaxAmount\x18\x0c \x01(\r:\x03\x32\x35\x36\x12#\n\x14storeDocumentInIndex\x18\r \x01(\x08:\x05\x66\x61lse\x12\"\n\x14storeDocumentInMongo\x18\x0e \x01(\x08:\x04true\"u\n\x0b\x46ieldConfig\x12\x17\n\x0fstoredFieldName\x18\x01 \x02(\t\x12\x19\n\x07indexAs\x18\x02 \x03(\x0b\x32\x08.IndexAs\x12\x19\n\x07\x66\x61\x63\x65tAs\x18\x03 \x03(\x0b\x32\x08.FacetAs\x12\x17\n\x06sortAs\x18\x04 \x01(\x0b\x32\x07.SortAs\"@\n\x07IndexAs\x12\x16\n\x0eindexFieldName\x18\x01 \x02(\t\x12\x1d\n\x08\x61nalyzer\x18\x02 \x02(\x0e\x32\x0b.LMAnalyzer\"\x8a\x01\n\x07\x46\x61\x63\x65tAs\x12\x11\n\tfacetName\x18\x01 \x02(\t\x12\'\n\tfacetType\x18\x02 \x02(\x0e\x32\x14.FacetAs.LMFacetType\"C\n\x0bLMFacetType\x12\x0c\n\x08STANDARD\x10\x01\x12\x13\n\x0f\x44\x41TE_YYYY_MM_DD\x10\x02\x12\x11\n\rDATE_YYYYMMDD\x10\x03\"\xaf\x01\n\x06SortAs\x12\x15\n\rsortFieldName\x18\x01 \x02(\t\x12\"\n\x08sortType\x18\x02 \x02(\x0e\x32\x10.SortAs.SortType\"j\n\x08SortType\x12\n\n\x06STRING\x10\x01\x12\x0f\n\x0bNUMERIC_INT\x10\x02\x12\x10\n\x0cNUMERIC_LONG\x10\x03\x12\x11\n\rNUMERIC_FLOAT\x10\x04\x12\x12\n\x0eNUMERIC_DOUBLE\x10\x05\x12\x08\n\x04\x44\x41TE\x10\x06\"\x17\n\x15IndexSettingsResponse\"\'\n\x12IndexDeleteRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\"\x15\n\x13IndexDeleteResponse\"\xb5\x01\n\x0cStoreRequest\x12\x10\n\x08uniqueId\x18\x01 \x02(\t\x12\x11\n\tindexName\x18\x02 \x02(\t\x12\'\n\x0eresultDocument\x18\x03 \x01(\x0b\x32\x0f.ResultDocument\x12/\n\x12\x61ssociatedDocument\x18\x04 \x03(\x0b\x32\x13.AssociatedDocument\x12&\n\x17\x63learExistingAssociated\x18\x05 \x01(\x08:\x05\x66\x61lse\"\x0f\n\rStoreResponse\"S\n\x05LMDoc\x12\x1e\n\x0cindexedField\x18\x01 \x03(\x0b\x32\x08.LMField\x12\x17\n\x05\x66\x61\x63\x65t\x18\x02 \x03(\x0b\x32\x08.LMFacet\x12\x11\n\ttimestamp\x18\x03 \x01(\x03\"&\n\x07LMFacet\x12\r\n\x05label\x18\x01 \x02(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"~\n\x07LMField\x12\x11\n\tfieldName\x18\x01 \x02(\t\x12\x12\n\nfieldValue\x18\x02 \x03(\t\x12\x10\n\x08intValue\x18\x03 \x03(\x05\x12\x11\n\tlongValue\x18\x04 \x03(\x03\x12\x12\n\nfloatValue\x18\x05 \x03(\x02\x12\x13\n\x0b\x64oubleValue\x18\x06 \x03(\x01\"w\n\x0eResultDocument\x12\x10\n\x08uniqueId\x18\x01 \x02(\t\x12\x11\n\tindexName\x18\x02 \x02(\t\x12\x10\n\x08\x64ocument\x18\x03 \x01(\x0c\x12\x1b\n\x08metadata\x18\x04 \x03(\x0b\x32\t.Metadata\x12\x11\n\ttimestamp\x18\x05 \x01(\x03\"\xb0\x01\n\x12\x41ssociatedDocument\x12\x10\n\x08\x66ilename\x18\x01 \x02(\t\x12\x18\n\x10\x64ocumentUniqueId\x18\x02 \x02(\t\x12\x11\n\tindexName\x18\x03 \x02(\t\x12\x10\n\x08\x64ocument\x18\x04 \x01(\x0c\x12\x19\n\ncompressed\x18\x05 \x01(\x08:\x05\x66\x61lse\x12\x1b\n\x08metadata\x18\x06 \x03(\x0b\x32\t.Metadata\x12\x11\n\ttimestamp\x18\x07 \x01(\x03\"&\n\x08Metadata\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\t\"\xa5\x02\n\x0cScoredResult\x12\x10\n\x08uniqueId\x18\x01 \x02(\t\x12\r\n\x05score\x18\x02 \x02(\x02\x12\r\n\x05\x64ocId\x18\x03 \x02(\r\x12\x11\n\tindexName\x18\x04 \x02(\t\x12\x0f\n\x07segment\x18\x05 \x02(\r\x12\x13\n\x0bresultIndex\x18\x06 \x02(\r\x12\x10\n\x08sortTerm\x18\x07 \x03(\t\x12\x13\n\x0bsortInteger\x18\x08 \x03(\x05\x12\x10\n\x08sortLong\x18\t \x03(\x03\x12\x11\n\tsortFloat\x18\n \x03(\x02\x12\x12\n\nsortDouble\x18\x0b \x03(\x01\x12\x10\n\x08sortDate\x18\x0c \x03(\x03\x12\x11\n\ttimestamp\x18\r \x02(\x03\x12\'\n\x0eresultDocument\x18\x0e \x01(\x0b\x32\x0f.ResultDocument\",\n\x0bSortRequest\x12\x1d\n\tfieldSort\x18\x01 \x03(\x0b\x32\n.FieldSort\"~\n\tFieldSort\x12\x11\n\tsortField\x18\x01 \x02(\t\x12\x32\n\tdirection\x18\x02 \x01(\x0e\x32\x14.FieldSort.Direction:\tASCENDING\"*\n\tDirection\x12\r\n\tASCENDING\x10\x01\x12\x0e\n\nDESCENDING\x10\x02\"\x96\x01\n\nFacetGroup\x12#\n\x0c\x63ountRequest\x18\x01 \x02(\x0b\x32\r.CountRequest\x12\x1f\n\nfacetCount\x18\x02 \x03(\x0b\x32\x0b.FacetCount\x12\x1e\n\x0fpossibleMissing\x18\x03 \x01(\x08:\x05\x66\x61lse\x12\"\n\x17maxValuePossibleMissing\x18\x04 \x01(\x04:\x01\x30\"<\n\nFacetCount\x12\r\n\x05\x66\x61\x63\x65t\x18\x01 \x02(\t\x12\r\n\x05\x63ount\x18\x02 \x02(\x04\x12\x10\n\x08maxError\x18\x03 \x01(\x04\"P\n\x0c\x46\x61\x63\x65tRequest\x12#\n\x0c\x63ountRequest\x18\x01 \x03(\x0b\x32\r.CountRequest\x12\x1b\n\tdrillDown\x18\x02 \x03(\x0b\x32\x08.LMFacet\"\x9b\x01\n\x0c\x43ountRequest\x12\x1c\n\nfacetField\x18\x01 \x02(\x0b\x32\x08.LMFacet\x12\x15\n\tmaxFacets\x18\x02 \x01(\r:\x02\x31\x30\x12\x15\n\rsegmentFacets\x18\x03 \x01(\r\x12\x1a\n\x0c\x63omputeError\x18\x04 \x01(\x08:\x04true\x12#\n\x15\x63omputePossibleMissed\x18\x05 \x01(\x08:\x04true\"\xb1\x01\n\x0fSegmentResponse\x12\x15\n\rsegmentNumber\x18\x01 \x02(\r\x12\x11\n\tindexName\x18\x02 \x02(\t\x12\x11\n\ttotalHits\x18\x03 \x02(\r\x12#\n\x0cscoredResult\x18\x04 \x03(\x0b\x32\r.ScoredResult\x12\x1b\n\x04next\x18\x05 \x01(\x0b\x32\r.ScoredResult\x12\x1f\n\nfacetGroup\x18\x06 \x03(\x0b\x32\x0b.FacetGroup\"K\n\x0fLastIndexResult\x12\x11\n\tindexName\x18\x01 \x02(\t\x12%\n\x0elastForSegment\x18\x02 \x03(\x0b\x32\r.ScoredResult\"7\n\nLastResult\x12)\n\x0flastIndexResult\x18\x01 \x03(\x0b\x32\x10.LastIndexResult\"L\n\x15InternalQueryResponse\x12\x33\n\x14indexSegmentResponse\x18\x01 \x03(\x0b\x32\x15.IndexSegmentResponse\"S\n\x14IndexSegmentResponse\x12\x11\n\tindexName\x18\x01 \x02(\t\x12(\n\x0esegmentReponse\x18\x02 \x03(\x0b\x32\x10.SegmentResponse\"\x9a\x03\n\x0cQueryRequest\x12\r\n\x05index\x18\x01 \x03(\t\x12\r\n\x05query\x18\x02 \x01(\t\x12\x0e\n\x06\x61mount\x18\x03 \x02(\r\x12\x1f\n\nlastResult\x18\x04 \x01(\x0b\x32\x0b.LastResult\x12\x18\n\tfetchFull\x18\x05 \x01(\x08:\x05\x66\x61lse\x12#\n\x0c\x66\x61\x63\x65tRequest\x18\x07 \x01(\x0b\x32\r.FacetRequest\x12!\n\x0bsortRequest\x18\x08 \x01(\x0b\x32\x0c.SortRequest\x12\x12\n\nqueryField\x18\t \x03(\t\x12\x13\n\x0b\x66ilterQuery\x18\n \x03(\t\x12\x0e\n\x06\x66ields\x18\x0b \x03(\t\x12)\n\x0fresultFetchType\x18\x0c \x01(\x0e\x32\n.FetchType:\x04NONE\x12#\n\x18minimumNumberShouldMatch\x18\r \x01(\r:\x01\x30\x12\x33\n\x0f\x64\x65\x66\x61ultOperator\x18\x0e \x01(\x0e\x32\x16.QueryRequest.Operator:\x02OR\"\x1b\n\x08Operator\x12\x07\n\x03\x41ND\x10\x01\x12\x06\n\x02OR\x10\x02\"\x84\x01\n\rQueryResponse\x12\x11\n\ttotalHits\x18\x01 \x02(\x04\x12\x1e\n\x07results\x18\x02 \x03(\x0b\x32\r.ScoredResult\x12\x1f\n\nlastResult\x18\x03 \x02(\x0b\x32\x0b.LastResult\x12\x1f\n\nfacetGroup\x18\x04 \x03(\x0b\x32\x0b.FacetGroup\"\x87\x01\n\rDeleteRequest\x12\x11\n\tindexName\x18\x01 \x02(\t\x12\x10\n\x08uniqueId\x18\x02 \x02(\t\x12\x10\n\x08\x66ilename\x18\x03 \x01(\t\x12\x1c\n\x0e\x64\x65leteDocument\x18\x04 \x01(\x08:\x04true\x12!\n\x13\x64\x65leteAllAssociated\x18\x05 \x01(\x08:\x04true\"\x10\n\x0e\x44\x65leteResponse\"5\n\x12\x42\x61tchDeleteRequest\x12\x1f\n\x07request\x18\x01 \x03(\x0b\x32\x0e.DeleteRequest\"\x15\n\x13\x42\x61tchDeleteResponse\"8\n\x11\x42\x61tchFetchRequest\x12#\n\x0c\x66\x65tchRequest\x18\x01 \x03(\x0b\x32\r.FetchRequest\";\n\x12\x42\x61tchFetchResponse\x12%\n\rfetchResponse\x18\x01 \x03(\x0b\x32\x0e.FetchResponse\"\xd5\x01\n\x0c\x46\x65tchRequest\x12\x10\n\x08uniqueId\x18\x01 \x02(\t\x12\x11\n\tindexName\x18\x02 \x02(\t\x12\x10\n\x08\x66ileName\x18\x03 \x01(\t\x12)\n\x0fresultFetchType\x18\x04 \x01(\x0e\x32\n.FetchType:\x04\x46ULL\x12-\n\x13\x61ssociatedFetchType\x18\x05 \x01(\x0e\x32\n.FetchType:\x04META\x12\x16\n\x0e\x64ocumentFields\x18\x06 \x03(\t\x12\x1c\n\x14\x64ocumentMaskedFields\x18\x07 \x03(\t\"i\n\rFetchResponse\x12\'\n\x0eresultDocument\x18\x01 \x01(\x0b\x32\x0f.ResultDocument\x12/\n\x12\x61ssociatedDocument\x18\x02 \x03(\x0b\x32\x13.AssociatedDocument*\xf8\x01\n\nLMAnalyzer\x12\x0b\n\x07KEYWORD\x10\x01\x12\x0e\n\nLC_KEYWORD\x10\x02\x12\x0e\n\nWHITESPACE\x10\x03\x12\x11\n\rLC_WHITESPACE\x10\x04\x12\x0c\n\x08STANDARD\x10\x05\x12\x0f\n\x0bNUMERIC_INT\x10\x06\x12\x10\n\x0cNUMERIC_LONG\x10\x07\x12\x11\n\rNUMERIC_FLOAT\x10\x08\x12\x12\n\x0eNUMERIC_DOUBLE\x10\t\x12\x14\n\x10STANDARD_FOLDING\x10\n\x12\x14\n\x10STANDARD_NO_STOP\x10\x0b\x12\x1c\n\x18STANDARD_FOLDING_NO_STOP\x10\x0c\x12\x08\n\x04\x44\x41TE\x10\r*)\n\tFetchType\x12\x08\n\x04\x46ULL\x10\x01\x12\x08\n\x04META\x10\x02\x12\x08\n\x04NONE\x10\x03\x32\xd5\x06\n\x0f\x45xternalService\x12&\n\x05Query\x12\r.QueryRequest\x1a\x0e.QueryResponse\x12&\n\x05Store\x12\r.StoreRequest\x1a\x0e.StoreResponse\x12)\n\x06\x44\x65lete\x12\x0e.DeleteRequest\x1a\x0f.DeleteResponse\x12\x38\n\x0b\x42\x61tchDelete\x12\x13.BatchDeleteRequest\x1a\x14.BatchDeleteResponse\x12&\n\x05\x46\x65tch\x12\r.FetchRequest\x1a\x0e.FetchResponse\x12\x35\n\nBatchFetch\x12\x12.BatchFetchRequest\x1a\x13.BatchFetchResponse\x12\x38\n\x0b\x43reateIndex\x12\x13.IndexCreateRequest\x1a\x14.IndexCreateResponse\x12<\n\x0b\x43hangeIndex\x12\x15.IndexSettingsRequest\x1a\x16.IndexSettingsResponse\x12\x38\n\x0b\x44\x65leteIndex\x12\x13.IndexDeleteRequest\x1a\x14.IndexDeleteResponse\x12\x35\n\nGetIndexes\x12\x12.GetIndexesRequest\x1a\x13.GetIndexesResponse\x12\x44\n\x0fGetNumberOfDocs\x12\x17.GetNumberOfDocsRequest\x1a\x18.GetNumberOfDocsResponse\x12&\n\x05\x43lear\x12\r.ClearRequest\x1a\x0e.ClearResponse\x12/\n\x08Optimize\x12\x10.OptimizeRequest\x1a\x11.OptimizeResponse\x12>\n\rGetFieldNames\x12\x15.GetFieldNamesRequest\x1a\x16.GetFieldNamesResponse\x12/\n\x08GetTerms\x12\x10.GetTermsRequest\x1a\x11.GetTermsResponse\x12\x35\n\nGetMembers\x12\x12.GetMembersRequest\x1a\x13.GetMembersResponse2\xa4\x03\n\x0fInternalService\x12.\n\x05Query\x12\r.QueryRequest\x1a\x16.InternalQueryResponse\x12&\n\x05Store\x12\r.StoreRequest\x1a\x0e.StoreResponse\x12)\n\x06\x44\x65lete\x12\x0e.DeleteRequest\x1a\x0f.DeleteResponse\x12\x44\n\x0fGetNumberOfDocs\x12\x17.GetNumberOfDocsRequest\x1a\x18.GetNumberOfDocsResponse\x12&\n\x05\x43lear\x12\r.ClearRequest\x1a\x0e.ClearResponse\x12/\n\x08Optimize\x12\x10.OptimizeRequest\x1a\x11.OptimizeResponse\x12>\n\rGetFieldNames\x12\x15.GetFieldNamesRequest\x1a\x16.GetFieldNamesResponse\x12/\n\x08GetTerms\x12\x10.GetTermsRequest\x1a\x11.GetTermsResponseB \n\x1borg.lumongo.cluster.message\x88\x01\x01')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -84,8 +84,8 @@ _LMANALYZER = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=5839,
-  serialized_end=6087,
+  serialized_start=5879,
+  serialized_end=6127,
 )
 _sym_db.RegisterEnumDescriptor(_LMANALYZER)
 
@@ -111,8 +111,8 @@ _FETCHTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=6089,
-  serialized_end=6130,
+  serialized_start=6129,
+  serialized_end=6170,
 )
 _sym_db.RegisterEnumDescriptor(_FETCHTYPE)
 
@@ -156,8 +156,8 @@ _FACETAS_LMFACETTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2123,
-  serialized_end=2190,
+  serialized_start=2122,
+  serialized_end=2189,
 )
 _sym_db.RegisterEnumDescriptor(_FACETAS_LMFACETTYPE)
 
@@ -194,8 +194,8 @@ _SORTAS_SORTTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2262,
-  serialized_end=2368,
+  serialized_start=2261,
+  serialized_end=2367,
 )
 _sym_db.RegisterEnumDescriptor(_SORTAS_SORTTYPE)
 
@@ -216,8 +216,8 @@ _FIELDSORT_DIRECTION = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=3638,
-  serialized_end=3680,
+  serialized_start=3678,
+  serialized_end=3720,
 )
 _sym_db.RegisterEnumDescriptor(_FIELDSORT_DIRECTION)
 
@@ -238,8 +238,8 @@ _QUERYREQUEST_OPERATOR = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=4998,
-  serialized_end=5025,
+  serialized_start=5038,
+  serialized_end=5065,
 )
 _sym_db.RegisterEnumDescriptor(_QUERYREQUEST_OPERATOR)
 
@@ -1124,7 +1124,7 @@ _INDEXSETTINGS = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='storeDocumentInMongo', full_name='IndexSettings.storeDocumentInMongo', index=11,
       number=14, type=8, cpp_type=7, label=1,
-      has_default_value=True, default_value=False,
+      has_default_value=True, default_value=True,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
@@ -1140,7 +1140,7 @@ _INDEXSETTINGS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=1436,
-  serialized_end=1864,
+  serialized_end=1863,
 )
 
 
@@ -1190,8 +1190,8 @@ _FIELDCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1866,
-  serialized_end=1983,
+  serialized_start=1865,
+  serialized_end=1982,
 )
 
 
@@ -1227,8 +1227,8 @@ _INDEXAS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1985,
-  serialized_end=2049,
+  serialized_start=1984,
+  serialized_end=2048,
 )
 
 
@@ -1265,8 +1265,8 @@ _FACETAS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2052,
-  serialized_end=2190,
+  serialized_start=2051,
+  serialized_end=2189,
 )
 
 
@@ -1303,8 +1303,8 @@ _SORTAS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2193,
-  serialized_end=2368,
+  serialized_start=2192,
+  serialized_end=2367,
 )
 
 
@@ -1326,8 +1326,8 @@ _INDEXSETTINGSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2370,
-  serialized_end=2393,
+  serialized_start=2369,
+  serialized_end=2392,
 )
 
 
@@ -1356,8 +1356,8 @@ _INDEXDELETEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2395,
-  serialized_end=2434,
+  serialized_start=2394,
+  serialized_end=2433,
 )
 
 
@@ -1379,8 +1379,8 @@ _INDEXDELETERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2436,
-  serialized_end=2457,
+  serialized_start=2435,
+  serialized_end=2456,
 )
 
 
@@ -1437,8 +1437,8 @@ _STOREREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2460,
-  serialized_end=2641,
+  serialized_start=2459,
+  serialized_end=2640,
 )
 
 
@@ -1460,8 +1460,8 @@ _STORERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2643,
-  serialized_end=2658,
+  serialized_start=2642,
+  serialized_end=2657,
 )
 
 
@@ -1504,8 +1504,8 @@ _LMDOC = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2660,
-  serialized_end=2743,
+  serialized_start=2659,
+  serialized_end=2742,
 )
 
 
@@ -1541,8 +1541,8 @@ _LMFACET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2745,
-  serialized_end=2783,
+  serialized_start=2744,
+  serialized_end=2782,
 )
 
 
@@ -1606,8 +1606,8 @@ _LMFIELD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2785,
-  serialized_end=2911,
+  serialized_start=2784,
+  serialized_end=2910,
 )
 
 
@@ -1664,8 +1664,8 @@ _RESULTDOCUMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2913,
-  serialized_end=3032,
+  serialized_start=2912,
+  serialized_end=3031,
 )
 
 
@@ -1736,8 +1736,8 @@ _ASSOCIATEDDOCUMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3035,
-  serialized_end=3211,
+  serialized_start=3034,
+  serialized_end=3210,
 )
 
 
@@ -1773,8 +1773,8 @@ _METADATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3213,
-  serialized_end=3251,
+  serialized_start=3212,
+  serialized_end=3250,
 )
 
 
@@ -1876,6 +1876,13 @@ _SCOREDRESULT = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='resultDocument', full_name='ScoredResult.resultDocument', index=13,
+      number=14, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -1887,8 +1894,8 @@ _SCOREDRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3254,
-  serialized_end=3506,
+  serialized_start=3253,
+  serialized_end=3546,
 )
 
 
@@ -1917,8 +1924,8 @@ _SORTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3508,
-  serialized_end=3552,
+  serialized_start=3548,
+  serialized_end=3592,
 )
 
 
@@ -1955,8 +1962,8 @@ _FIELDSORT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3554,
-  serialized_end=3680,
+  serialized_start=3594,
+  serialized_end=3720,
 )
 
 
@@ -2006,8 +2013,8 @@ _FACETGROUP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3683,
-  serialized_end=3833,
+  serialized_start=3723,
+  serialized_end=3873,
 )
 
 
@@ -2050,8 +2057,8 @@ _FACETCOUNT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3835,
-  serialized_end=3895,
+  serialized_start=3875,
+  serialized_end=3935,
 )
 
 
@@ -2087,8 +2094,8 @@ _FACETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3897,
-  serialized_end=3977,
+  serialized_start=3937,
+  serialized_end=4017,
 )
 
 
@@ -2145,8 +2152,8 @@ _COUNTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3980,
-  serialized_end=4135,
+  serialized_start=4020,
+  serialized_end=4175,
 )
 
 
@@ -2210,8 +2217,8 @@ _SEGMENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4138,
-  serialized_end=4315,
+  serialized_start=4178,
+  serialized_end=4355,
 )
 
 
@@ -2247,8 +2254,8 @@ _LASTINDEXRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4317,
-  serialized_end=4392,
+  serialized_start=4357,
+  serialized_end=4432,
 )
 
 
@@ -2277,8 +2284,8 @@ _LASTRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4394,
-  serialized_end=4449,
+  serialized_start=4434,
+  serialized_end=4489,
 )
 
 
@@ -2307,8 +2314,8 @@ _INTERNALQUERYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4451,
-  serialized_end=4527,
+  serialized_start=4491,
+  serialized_end=4567,
 )
 
 
@@ -2344,8 +2351,8 @@ _INDEXSEGMENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4529,
-  serialized_end=4612,
+  serialized_start=4569,
+  serialized_end=4652,
 )
 
 
@@ -2459,8 +2466,8 @@ _QUERYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4615,
-  serialized_end=5025,
+  serialized_start=4655,
+  serialized_end=5065,
 )
 
 
@@ -2510,8 +2517,8 @@ _QUERYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5028,
-  serialized_end=5160,
+  serialized_start=5068,
+  serialized_end=5200,
 )
 
 
@@ -2568,8 +2575,8 @@ _DELETEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5163,
-  serialized_end=5298,
+  serialized_start=5203,
+  serialized_end=5338,
 )
 
 
@@ -2591,8 +2598,8 @@ _DELETERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5300,
-  serialized_end=5316,
+  serialized_start=5340,
+  serialized_end=5356,
 )
 
 
@@ -2621,8 +2628,8 @@ _BATCHDELETEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5318,
-  serialized_end=5371,
+  serialized_start=5358,
+  serialized_end=5411,
 )
 
 
@@ -2644,8 +2651,8 @@ _BATCHDELETERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5373,
-  serialized_end=5394,
+  serialized_start=5413,
+  serialized_end=5434,
 )
 
 
@@ -2674,8 +2681,8 @@ _BATCHFETCHREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5396,
-  serialized_end=5452,
+  serialized_start=5436,
+  serialized_end=5492,
 )
 
 
@@ -2704,8 +2711,8 @@ _BATCHFETCHRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5454,
-  serialized_end=5513,
+  serialized_start=5494,
+  serialized_end=5553,
 )
 
 
@@ -2776,8 +2783,8 @@ _FETCHREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5516,
-  serialized_end=5729,
+  serialized_start=5556,
+  serialized_end=5769,
 )
 
 
@@ -2813,8 +2820,8 @@ _FETCHRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5731,
-  serialized_end=5836,
+  serialized_start=5771,
+  serialized_end=5876,
 )
 
 _GETMEMBERSRESPONSE.fields_by_name['member'].message_type = _LMMEMBER
@@ -2841,6 +2848,7 @@ _LMDOC.fields_by_name['indexedField'].message_type = _LMFIELD
 _LMDOC.fields_by_name['facet'].message_type = _LMFACET
 _RESULTDOCUMENT.fields_by_name['metadata'].message_type = _METADATA
 _ASSOCIATEDDOCUMENT.fields_by_name['metadata'].message_type = _METADATA
+_SCOREDRESULT.fields_by_name['resultDocument'].message_type = _RESULTDOCUMENT
 _SORTREQUEST.fields_by_name['fieldSort'].message_type = _FIELDSORT
 _FIELDSORT.fields_by_name['direction'].enum_type = _FIELDSORT_DIRECTION
 _FIELDSORT_DIRECTION.containing_type = _FIELDSORT

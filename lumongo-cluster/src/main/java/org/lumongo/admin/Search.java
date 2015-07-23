@@ -1,9 +1,13 @@
 package org.lumongo.admin;
 
+import com.google.protobuf.ByteString;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+import org.bson.BSON;
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.command.BatchFetch;
@@ -14,6 +18,7 @@ import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.QueryResult;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetGroup;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
@@ -80,6 +85,10 @@ public class Search {
 			try {
 				
 				Query q = new Query(indexes, query, amount);
+
+				if (fetch) {
+					q.setResultFetchType(Lumongo.FetchType.FULL);
+				}
 				
 				if (minimumNumberShouldMatch != null) {
 					q.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
@@ -126,6 +135,10 @@ public class Search {
 				System.out.print("SegmentId");
 				System.out.print("\t");
 				System.out.print("Sort");
+				System.out.print("\t");
+				if (fetch) {
+					System.out.print("Document");
+				}
 				System.out.println();
 				
 				for (ScoredResult sr : srList) {
@@ -179,6 +192,18 @@ public class Search {
 					else {
 						System.out.print("--");
 					}
+
+					if (fetch) {
+						System.out.print("\t");
+						if (sr.hasResultDocument()) {
+							Lumongo.ResultDocument resultDocument = sr.getResultDocument();
+							if (resultDocument.hasDocument()) {
+								DBObject document = new BasicDBObject();
+								document.putAll(BSON.decode(resultDocument.getDocument().toByteArray()));
+								System.out.println(document);
+							}
+						}
+					}
 					
 					System.out.println();
 				}
@@ -203,30 +228,10 @@ public class Search {
 
 					
 				}
-				
-				if (fetch) {
-					System.out.println("\nDocuments\n");
-					BatchFetch batchFetch = new BatchFetch();
-					batchFetch.addFetchDocumentsFromResults(srList);
-					
-					BatchFetchResult bfr = lumongoWorkPool.execute(batchFetch);
-					
-					for (FetchResult fetchResult : bfr.getFetchResults()) {
-						System.out.println();
-						
-						if (fetchResult.hasResultDocument()) {
-							System.out.println(fetchResult.getUniqueId() + ":\n" + fetchResult.getDocument());
-						}
-						else {
-							System.out.println(fetchResult.getUniqueId() + ":\n" + "Failed to fetch");
-						}
-					}
-				}
+
 			}
 			finally {
-				if (lumongoWorkPool != null) {
-					lumongoWorkPool.shutdown();
-				}
+				lumongoWorkPool.shutdown();
 			}
 		}
 		catch (OptionException e) {

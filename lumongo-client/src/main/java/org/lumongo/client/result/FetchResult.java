@@ -29,7 +29,7 @@ public class FetchResult extends Result {
 			this.associatedResults = Collections.emptyList();
 		}
 		else {
-			this.associatedResults = new ArrayList<AssociatedResult>();
+			this.associatedResults = new ArrayList<>();
 			for (AssociatedDocument ad : fetchResponse.getAssociatedDocumentList()) {
 				associatedResults.add(new AssociatedResult(ad));
 			}
