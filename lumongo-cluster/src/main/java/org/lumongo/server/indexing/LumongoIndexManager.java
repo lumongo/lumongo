@@ -542,7 +542,8 @@ public class LumongoIndexManager {
 			FetchResponse.Builder frBuilder = FetchResponse.newBuilder();
 
 			if (!FetchType.NONE.equals(request.getResultFetchType())) {
-				ResultDocument resultDoc = i.getSourceDocument(request.getUniqueId(), request.getResultFetchType(), request.getDocumentFieldsList(),
+				//TODO consider using timestamp for cache use
+				ResultDocument resultDoc = i.getSourceDocument(request.getUniqueId(), null, request.getResultFetchType(), request.getDocumentFieldsList(),
 								request.getDocumentMaskedFieldsList());
 				if (null != resultDoc) {
 					frBuilder.setResultDocument(resultDoc);

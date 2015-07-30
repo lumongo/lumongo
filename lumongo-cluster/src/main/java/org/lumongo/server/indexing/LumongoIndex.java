@@ -55,7 +55,6 @@ import org.lumongo.server.exceptions.InvalidIndexConfig;
 import org.lumongo.server.exceptions.SegmentDoesNotExist;
 import org.lumongo.server.hazelcast.HazelcastManager;
 import org.lumongo.server.hazelcast.UpdateSegmentsTask;
-import org.lumongo.server.indexing.field.IndexWriterManager;
 import org.lumongo.server.searching.QueryWithFilters;
 import org.lumongo.storage.constants.MongoConstants;
 import org.lumongo.storage.lucene.DistributedDirectory;
@@ -89,7 +88,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class LumongoIndex implements IndexWriterManager {
+public class LumongoIndex implements IndexSegmentInterface {
 	public static final String STORAGE_DB_SUFFIX = "_rs";
 
 	private static final String RESULT_STORAGE_COLLECTION = "resultStorage";
@@ -308,7 +307,7 @@ public class LumongoIndex implements IndexWriterManager {
 			log.info("Canceling timers for <" + indexName + ">");
 			commitTask.cancel();
 			commitTimer.cancel();
-			log.info("Commiting <" + indexName + ">");
+			log.info("Committing <" + indexName + ">");
 			doCommit(true);
 
 			log.info("Shutting segment pool for <" + indexName + ">");
@@ -352,10 +351,11 @@ public class LumongoIndex implements IndexWriterManager {
 				hzLock.lock();
 				log.info("Obtained lock for index <" + indexName + "> segment <" + segmentNumber + ">");
 
-				IndexWriterManager indexWriterManager = this;
+				//Just for clarity
+				IndexSegmentInterface indexSegmentInterface = this;
 
 				facetsConfig = generateFacetsConfig();
-				LumongoSegment s = new LumongoSegment(segmentNumber, indexWriterManager, indexConfig, facetsConfig);
+				LumongoSegment s = new LumongoSegment(segmentNumber, indexSegmentInterface, indexConfig, facetsConfig);
 				segmentMap.put(segmentNumber, s);
 
 				log.info("Loaded segment <" + segmentNumber + "> for index <" + indexName + ">");
@@ -402,7 +402,7 @@ public class LumongoIndex implements IndexWriterManager {
 				if (segmentMap.containsKey(segmentNumber)) {
 					LumongoSegment s = segmentMap.remove(segmentNumber);
 					if (s != null) {
-						log.info("Commiting and closing segment <" + segmentNumber + "> for index <" + indexName + ">");
+						log.info("Committing and closing segment <" + segmentNumber + "> for index <" + indexName + ">");
 						s.close();
 						log.info("Removed segment <" + segmentNumber + "> for index <" + indexName + ">");
 						log.info("Current segments <" + (new TreeSet<>(segmentMap.keySet())) + "> for index <" + indexName + ">");
@@ -1219,10 +1219,12 @@ public class LumongoIndex implements IndexWriterManager {
 		}
 	}
 
-	public ResultDocument getSourceDocument(String uniqueId, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
+	@Override
+	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
 					throws Exception {
 		indexLock.readLock().lock();
 		try {
+			//TODO use cache if timestamp not null
 			return documentStorage.getSourceDocument(uniqueId, resultFetchType, fieldsToReturn, fieldsToMask);
 		}
 		finally {

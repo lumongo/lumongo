@@ -66,7 +66,6 @@ import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.indexing.field.DateFieldIndexer;
 import org.lumongo.server.indexing.field.DoubleFieldIndexer;
 import org.lumongo.server.indexing.field.FloatFieldIndexer;
-import org.lumongo.server.indexing.field.IndexWriterManager;
 import org.lumongo.server.indexing.field.IntFieldIndexer;
 import org.lumongo.server.indexing.field.LongFieldIndexer;
 import org.lumongo.server.indexing.field.StringFieldIndexer;
@@ -100,7 +99,7 @@ public class LumongoSegment {
     private final Set<String> fetchSet;
     private final Set<String> fetchSetWithMeta;
     private final Set<String> fetchSetWithDocument;
-    private final IndexWriterManager indexWriterManager;
+    private final IndexSegmentInterface indexSegmentInterface;
 
     private IndexWriter indexWriter;
     private DirectoryReader directoryReader;
@@ -115,13 +114,13 @@ public class LumongoSegment {
 
     private int segmentQueryCacheMaxAmount;
 
-    public LumongoSegment(int segmentNumber, IndexWriterManager indexWriterManager, IndexConfig indexConfig, FacetsConfig facetsConfig) throws Exception {
+    public LumongoSegment(int segmentNumber, IndexSegmentInterface indexSegmentInterface, IndexConfig indexConfig, FacetsConfig facetsConfig) throws Exception {
 
         setupQueryCache(indexConfig);
 
         this.segmentNumber = segmentNumber;
 
-        this.indexWriterManager = indexWriterManager;
+        this.indexSegmentInterface = indexSegmentInterface;
         this.indexConfig = indexConfig;
 
         openIndexWriters();
@@ -150,7 +149,7 @@ public class LumongoSegment {
         if (!indexWriter.isOpen()) {
             synchronized (this) {
                 if (!indexWriter.isOpen()) {
-                    this.indexWriter = this.indexWriterManager.getIndexWriter(segmentNumber);
+                    this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
                     this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommittedDeletes());
                 }
             }
@@ -162,7 +161,7 @@ public class LumongoSegment {
         if (this.indexWriter != null) {
             indexWriter.close();
         }
-        this.indexWriter = this.indexWriterManager.getIndexWriter(segmentNumber);
+        this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
         this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommittedDeletes());
     }
 
@@ -384,7 +383,7 @@ public class LumongoSegment {
     }
 
     private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i,
-                                                 FetchType resultFetchType) throws IOException {
+                                                 FetchType resultFetchType) throws Exception {
         int docId = results[i].doc;
 
         Set<String> fieldsToFetch = fetchSet;
@@ -404,24 +403,32 @@ public class LumongoSegment {
         ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
         String uniqueId = d.get(indexConfig.getUniqueIdField());
 
-        if (indexConfig.isStoreDocumentInIndex()) {
-            ResultDocument.Builder rdBuilder = ResultDocument.newBuilder();
-            if (FetchType.FULL.equals(resultFetchType)) {
-                BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
-                rdBuilder.setDocument(ByteString.copyFrom(docRef.bytes));
-            }
-            if (FetchType.FULL.equals(resultFetchType) || FetchType.META.equals(resultFetchType)) {
-                BytesRef metaRef = d.getBinaryValue(LumongoConstants.STORED_META_FIELD);
-                DBObject metaObj = new BasicDBObject();
-                metaObj.putAll(BSON.decode(metaRef.bytes));
-
-                for (String key : metaObj.keySet()) {
-                    rdBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue(((String) metaObj.get(key))));
+        if (!FetchType.NONE.equals(resultFetchType)) {
+            if (indexConfig.isStoreDocumentInIndex()) {
+                ResultDocument.Builder rdBuilder = ResultDocument.newBuilder();
+                if (FetchType.FULL.equals(resultFetchType)) {
+                    BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
+                    rdBuilder.setDocument(ByteString.copyFrom(docRef.bytes));
                 }
+                if (FetchType.FULL.equals(resultFetchType) || FetchType.META.equals(resultFetchType)) {
+                    BytesRef metaRef = d.getBinaryValue(LumongoConstants.STORED_META_FIELD);
+                    DBObject metaObj = new BasicDBObject();
+                    metaObj.putAll(BSON.decode(metaRef.bytes));
+
+                    for (String key : metaObj.keySet()) {
+                        rdBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue(((String) metaObj.get(key))));
+                    }
+                }
+                rdBuilder.setUniqueId(uniqueId);
+                rdBuilder.setIndexName(indexName);
+                srBuilder.setResultDocument(rdBuilder);
             }
-            rdBuilder.setUniqueId(uniqueId);
-            rdBuilder.setIndexName(indexName);
-            srBuilder.setResultDocument(rdBuilder);
+            else if (indexConfig.isStoreDocumentInMongo()) {
+                ResultDocument resultDocument = indexSegmentInterface.getSourceDocument(uniqueId, timestamp, resultFetchType, Collections.emptyList(), Collections.emptyList());
+				if (resultDocument != null) {
+					srBuilder.setResultDocument(resultDocument);
+				}
+            }
         }
 
         srBuilder.setScore(results[i].score);

@@ -1,4 +1,4 @@
-package org.lumongo.server.indexing.field;
+package org.lumongo.server.indexing;
 
 import org.apache.lucene.index.IndexWriter;
 

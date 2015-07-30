@@ -15,12 +15,11 @@ import java.util.List;
 
 @Settings(
         indexName = "medline",
-        numberOfSegments = 8,
-        segmentCommitInterval = 4000,
-        storeDocumentInIndex = true,
-        storeDocumentInMongo = false)
+        numberOfSegments = 1,
+        segmentCommitInterval = 50000,
+        storeDocumentInIndex = false,
+        storeDocumentInMongo = true)
 public class MedlineDocument {
-
 
     @UniqueId
     private String pmid;

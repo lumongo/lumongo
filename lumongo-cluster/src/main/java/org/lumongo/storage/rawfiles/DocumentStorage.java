@@ -11,30 +11,30 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface DocumentStorage {
-	public void storeSourceDocument(String uniqueId, long timeStamp, BasicBSONObject document, List<Metadata> metaDataList) throws Exception;
+	void storeSourceDocument(String uniqueId, long timeStamp, BasicBSONObject document, List<Metadata> metaDataList) throws Exception;
 	
-	public void storeAssociatedDocument(AssociatedDocument docs) throws Exception;
+	void storeAssociatedDocument(AssociatedDocument docs) throws Exception;
 	
-	public List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType fetchType) throws Exception;
+	List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType fetchType) throws Exception;
 	
-	public AssociatedDocument getAssociatedDocument(String uniqueId, String filename, FetchType fetchType) throws Exception;
+	AssociatedDocument getAssociatedDocument(String uniqueId, String filename, FetchType fetchType) throws Exception;
 	
-	public void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long timestamp, HashMap<String, String> metadataMap)
+	void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long timestamp, HashMap<String, String> metadataMap)
 					throws Exception;
 	
-	public InputStream getAssociatedDocumentStream(String uniqueId, String filename);
+	InputStream getAssociatedDocumentStream(String uniqueId, String filename);
 	
-	public List<String> getAssociatedFilenames(String uniqueId) throws Exception;
+	List<String> getAssociatedFilenames(String uniqueId) throws Exception;
 	
-	public void deleteSourceDocument(String uniqueId) throws Exception;
+	void deleteSourceDocument(String uniqueId) throws Exception;
 	
-	public void deleteAssociatedDocument(String uniqueId, String fileName);
+	void deleteAssociatedDocument(String uniqueId, String fileName);
 	
-	public void deleteAssociatedDocuments(String uniqueId);
+	void deleteAssociatedDocuments(String uniqueId);
 	
-	public void drop();
+	void drop();
 	
-	public void deleteAllDocuments();
+	void deleteAllDocuments();
 	
-	public ResultDocument getSourceDocument(String uniqueId, FetchType fetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception;
+	ResultDocument getSourceDocument(String uniqueId, FetchType fetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception;
 }

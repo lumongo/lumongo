@@ -46,25 +46,25 @@ public class MongoDocumentStorage implements DocumentStorage {
 	private static final String COMPRESSED_FLAG = "_comp_";
 	private static final String DOCUMENT_UNIQUE_ID_KEY = "_uid_";
 	
-	private MongoClient pool;
+	private MongoClient mongoClient;
 	private String database;
 	private String indexName;
 	
 	private String rawCollectionName;
 	
-	public MongoDocumentStorage(MongoClient pool, String indexName, String dbName, String rawCollectionName, boolean sharded) {
-		this.pool = pool;
+	public MongoDocumentStorage(MongoClient mongoClient, String indexName, String dbName, String rawCollectionName, boolean sharded) {
+		this.mongoClient = mongoClient;
 		this.indexName = indexName;
 		this.database = dbName;
 		this.rawCollectionName = rawCollectionName;
 		
-		MongoDatabase storageDb = pool.getDatabase(database);
+		MongoDatabase storageDb = mongoClient.getDatabase(database);
 		MongoCollection<Document> coll = storageDb.getCollection(ASSOCIATED_FILES + "." + FILES);
 		coll.createIndex(new Document(ASSOCIATED_METADATA + "." + DOCUMENT_UNIQUE_ID_KEY, 1));
 		
 		if (sharded) {
 			
-			MongoDatabase adminDb = pool.getDatabase(MongoConstants.StandardDBs.ADMIN);
+			MongoDatabase adminDb = mongoClient.getDatabase(MongoConstants.StandardDBs.ADMIN);
 			Document enableCommand = new Document();
 			enableCommand.put(MongoConstants.Commands.ENABLE_SHARDING, database);
 			adminDb.runCommand(enableCommand);
@@ -84,13 +84,13 @@ public class MongoDocumentStorage implements DocumentStorage {
 	
 	private GridFS createGridFSConnection() {
 		//Grid FS does not use the new api yet as of java driver 3.0-beta-2
-		DB db = pool.getDB(database);
+		DB db = mongoClient.getDB(database);
 		return new GridFS(db, ASSOCIATED_FILES);
 	}
 	
 	@Override
 	public void storeSourceDocument(String uniqueId, long timeStamp, BasicBSONObject document, List<Metadata> metaDataList) throws Exception {
-		MongoDatabase db = pool.getDatabase(database);
+		MongoDatabase db = mongoClient.getDatabase(database);
 		MongoCollection<Document> coll = db.getCollection(rawCollectionName);
 		Document object = new Document();
 		object.putAll(document);
@@ -114,7 +114,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	@Override
 	public ResultDocument getSourceDocument(String uniqueId, FetchType fetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception {
 		if (!FetchType.NONE.equals(fetchType)) {
-			MongoDatabase db = pool.getDatabase(database);
+			MongoDatabase db = mongoClient.getDatabase(database);
 			MongoCollection<Document> coll = db.getCollection(rawCollectionName);
 			Document search = new Document(MongoConstants.StandardFields._ID, uniqueId);
 			
@@ -186,7 +186,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	
 	@Override
 	public void deleteSourceDocument(String uniqueId) throws Exception {
-		MongoDatabase db = pool.getDatabase(database);
+		MongoDatabase db = mongoClient.getDatabase(database);
 		MongoCollection<Document> coll = db.getCollection(rawCollectionName);
 		Document search = new Document(MongoConstants.StandardFields._ID, uniqueId);
 		coll.deleteOne(search);
@@ -197,14 +197,14 @@ public class MongoDocumentStorage implements DocumentStorage {
 		GridFS gridFS = createGridFSConnection();
 		gridFS.remove(new BasicDBObject());
 		
-		MongoDatabase db = pool.getDatabase(database);
+		MongoDatabase db = mongoClient.getDatabase(database);
 		MongoCollection<Document> coll = db.getCollection(rawCollectionName);
 		coll.deleteMany(new Document());
 	}
 	
 	@Override
 	public void drop() {
-		MongoDatabase db = pool.getDatabase(database);
+		MongoDatabase db = mongoClient.getDatabase(database);
 		db.drop();
 	}
 	
