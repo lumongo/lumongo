@@ -11,7 +11,7 @@ popd > /dev/null
 
 if [ -z "$LUMONGO_JAVA_SETTINGS" ]
 then
-	export LUMONGO_JAVA_SETTINGS="-Xmx2048m"
+	export LUMONGO_JAVA_SETTINGS="-Xmx4096m"
 fi
 
 java $LUMONGO_JAVA_SETTINGS -cp $WORKING_DIR/@project@-@version@.jar org.lumongo.admin.StartNode "$@"
