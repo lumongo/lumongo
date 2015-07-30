@@ -1,14 +1,14 @@
 package org.lumongo.fields;
 
+import com.google.protobuf.ByteString;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import org.lumongo.client.command.BatchFetch;
+import org.bson.BSON;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
-import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
-import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.annotations.AsField;
@@ -169,12 +169,6 @@ public class Mapper<T> {
 		return store;
 	}
 
-	public List<T> fromQueryResult(LumongoWorkPool lumongoWorkPool, QueryResult queryResult) throws Exception {
-		BatchFetch batchFetch = new BatchFetch().addFetchDocumentsFromResults(queryResult);
-		BatchFetchResult bfr = lumongoWorkPool.batchFetch(batchFetch);
-		return fromBatchFetchResult(bfr);
-	}
-
 	public List<T> fromBatchFetchResult(BatchFetchResult batchFetchResult) throws Exception {
 		List<T> results = new ArrayList<>();
 		for (FetchResult fr : batchFetchResult.getFetchResults()) {
@@ -185,6 +179,18 @@ public class Mapper<T> {
 
 	public T fromFetchResult(FetchResult fetchResult) throws Exception {
 		return fetchResult.getDocument(this);
+	}
+
+	public T fromScoredResult(Lumongo.ScoredResult scoredResult) throws Exception {
+		if (scoredResult.hasResultDocument()) {
+			Lumongo.ResultDocument rd = scoredResult.getResultDocument();
+
+			ByteString bs = rd.getDocument();
+			DBObject document = new BasicDBObject();
+			document.putAll(BSON.decode(bs.toByteArray()));
+			return fromDBObject(document);
+		}
+		return null;
 	}
 
 	public ResultDocBuilder toResultDocumentBuilder(T object) throws Exception {
