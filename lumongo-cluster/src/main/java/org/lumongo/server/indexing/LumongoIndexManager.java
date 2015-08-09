@@ -114,7 +114,7 @@ public class LumongoIndexManager {
 		globalLock.writeLock().lock();
 		try {
 			if (master) {
-				// make sure we can resolve it before transfering segments
+				// make sure we can resolve it before transferring segments
 				Nodes nodes = ClusterHelper.getNodes(mongoConfig);
 				@SuppressWarnings("unused") LocalNodeConfig localNodeConfig = nodes.find(memberAdded);
 
@@ -451,6 +451,51 @@ public class LumongoIndexManager {
 		}
 	}
 
+	public FetchResponse internalFetch(FetchRequest fetchRequest) throws Exception {
+		globalLock.readLock().lock();
+		try {
+
+			LumongoIndex i = indexMap.get(fetchRequest.getIndexName());
+			if (i == null) {
+				throw new IndexDoesNotExist(fetchRequest.getIndexName());
+			}
+
+			FetchResponse.Builder frBuilder = FetchResponse.newBuilder();
+
+			String uniqueId = fetchRequest.getUniqueId();
+
+			FetchType resultFetchType = fetchRequest.getResultFetchType();
+			if (!FetchType.NONE.equals(resultFetchType)) {
+
+				//TODO consider using timestamp for cache use
+				ResultDocument resultDoc = i.getSourceDocument(uniqueId, null, resultFetchType, fetchRequest.getDocumentFieldsList(), fetchRequest.getDocumentMaskedFieldsList());
+				if (null != resultDoc) {
+					frBuilder.setResultDocument(resultDoc);
+				}
+			}
+
+			FetchType associatedFetchType = fetchRequest.getAssociatedFetchType();
+			if (!FetchType.NONE.equals(associatedFetchType)) {
+				if (fetchRequest.hasFileName()) {
+					AssociatedDocument ad = i.getAssociatedDocument(uniqueId, fetchRequest.getFileName(), associatedFetchType);
+					if (ad != null) {
+						frBuilder.addAssociatedDocument(ad);
+					}
+				}
+				else {
+					for (AssociatedDocument ad : i.getAssociatedDocuments(uniqueId, associatedFetchType)) {
+						frBuilder.addAssociatedDocument(ad);
+					}
+				}
+			}
+			return frBuilder.build();
+
+		}
+		finally {
+			globalLock.readLock().unlock();
+		}
+	}
+
 	public DeleteResponse deleteDocument(DeleteRequest deleteRequest) throws Exception {
 		globalLock.readLock().lock();
 		try {
@@ -539,30 +584,17 @@ public class LumongoIndexManager {
 				throw new IndexDoesNotExist(indexName);
 			}
 
-			FetchResponse.Builder frBuilder = FetchResponse.newBuilder();
+			Member m = i.findMember(request.getUniqueId());
 
-			if (!FetchType.NONE.equals(request.getResultFetchType())) {
-				//TODO consider using timestamp for cache use
-				ResultDocument resultDoc = i.getSourceDocument(request.getUniqueId(), null, request.getResultFetchType(), request.getDocumentFieldsList(),
-								request.getDocumentMaskedFieldsList());
-				if (null != resultDoc) {
-					frBuilder.setResultDocument(resultDoc);
-				}
+			Member self = hazelcastManager.getSelf();
+
+			if (!self.equals(m)) {
+				return internalClient.executeFetch(m, request);
 			}
-			if (!FetchType.NONE.equals(request.getAssociatedFetchType())) {
-				if (request.hasFileName()) {
-					AssociatedDocument ad = i.getAssociatedDocument(request.getUniqueId(), request.getFileName(), request.getAssociatedFetchType());
-					if (ad != null) {
-						frBuilder.addAssociatedDocument(ad);
-					}
-				}
-				else {
-					for (AssociatedDocument ad : i.getAssociatedDocuments(request.getUniqueId(), request.getAssociatedFetchType())) {
-						frBuilder.addAssociatedDocument(ad);
-					}
-				}
+			else {
+				return internalFetch(request);
 			}
-			return frBuilder.build();
+
 		}
 		finally {
 			globalLock.readLock().unlock();
@@ -650,7 +682,7 @@ public class LumongoIndexManager {
 			}
 
 			SocketRequestFederator<QueryRequest, InternalQueryResponse> queryFederator = new SocketRequestFederator<QueryRequest, InternalQueryResponse>(
-							hazelcastManager, pool) {
+					hazelcastManager, pool) {
 
 				@Override
 				public InternalQueryResponse processExternal(Member m, QueryRequest request) throws Exception {
@@ -764,7 +796,7 @@ public class LumongoIndexManager {
 			int numberOfSegments = i.getNumberOfSegments();
 
 			SocketRequestFederator<GetNumberOfDocsRequest, GetNumberOfDocsResponse> federator = new SocketRequestFederator<GetNumberOfDocsRequest, GetNumberOfDocsResponse>(
-							hazelcastManager, pool) {
+					hazelcastManager, pool) {
 
 				@Override
 				public GetNumberOfDocsResponse processExternal(Member m, GetNumberOfDocsRequest request) throws Exception {
@@ -866,7 +898,7 @@ public class LumongoIndexManager {
 		globalLock.readLock().lock();
 		try {
 			SocketRequestFederator<OptimizeRequest, OptimizeResponse> federator = new SocketRequestFederator<OptimizeRequest, OptimizeResponse>(
-							hazelcastManager, pool) {
+					hazelcastManager, pool) {
 
 				@Override
 				public OptimizeResponse processExternal(Member m, OptimizeRequest request) throws Exception {
@@ -910,7 +942,7 @@ public class LumongoIndexManager {
 		globalLock.readLock().lock();
 		try {
 			SocketRequestFederator<GetFieldNamesRequest, GetFieldNamesResponse> federator = new SocketRequestFederator<GetFieldNamesRequest, GetFieldNamesResponse>(
-							hazelcastManager, pool) {
+					hazelcastManager, pool) {
 
 				@Override
 				public GetFieldNamesResponse processExternal(Member m, GetFieldNamesRequest request) throws Exception {
@@ -960,7 +992,7 @@ public class LumongoIndexManager {
 		try {
 
 			SocketRequestFederator<GetTermsRequest, GetTermsResponse> federator = new SocketRequestFederator<GetTermsRequest, GetTermsResponse>(
-							hazelcastManager, pool) {
+					hazelcastManager, pool) {
 
 				@Override
 				public GetTermsResponse processExternal(Member m, GetTermsRequest request) throws Exception {
@@ -1032,7 +1064,7 @@ public class LumongoIndexManager {
 
 	//rest
 	public void storeAssociatedDocument(String indexName, String uniqueId, String fileName, InputStream is, boolean compress,
-					HashMap<String, String> metadataMap) throws Exception {
+			HashMap<String, String> metadataMap) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			LumongoIndex i = indexMap.get(indexName);

@@ -25,6 +25,7 @@ service ExternalService {
 service InternalService {
 	rpc Query (QueryRequest) returns (InternalQueryResponse);
 	rpc Store (StoreRequest) returns (StoreResponse);
+	rpc Fetch (FetchRequest) returns (FetchResponse);
 	rpc Delete (DeleteRequest) returns (DeleteResponse);
 	rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
 	rpc Clear (ClearRequest) returns (ClearResponse);

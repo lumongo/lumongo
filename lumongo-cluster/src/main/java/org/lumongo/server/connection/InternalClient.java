@@ -3,6 +3,7 @@ package org.lumongo.server.connection;
 import com.google.protobuf.RpcController;
 import com.hazelcast.core.Member;
 import org.apache.log4j.Logger;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
@@ -203,12 +204,12 @@ public class InternalClient {
 		}
 		
 	}
-	
+
 	public DeleteResponse executeDelete(Member m, DeleteRequest request) throws Exception {
-		
+
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
-		
+
 		InternalRpcConnection rpcConnection = null;
 		try {
 			rpcConnection = getInternalRpcConnection(m);
@@ -217,9 +218,9 @@ public class InternalClient {
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}
-			
+
 			returnInternalBlockingConnection(m, rpcConnection, true);
-			
+
 			return response;
 		}
 		catch (Exception e) {
@@ -229,7 +230,35 @@ public class InternalClient {
 		finally {
 			lock.readLock().unlock();
 		}
-		
+
+	}
+
+	public Lumongo.FetchResponse executeFetch(Member m, Lumongo.FetchRequest request) throws Exception {
+
+		ReadWriteLock lock = getLockForMember(m);
+		lock.readLock().lock();
+
+		InternalRpcConnection rpcConnection = null;
+		try {
+			rpcConnection = getInternalRpcConnection(m);
+			RpcController controller = rpcConnection.getClientRPCController();
+			Lumongo.FetchResponse response = rpcConnection.getService().fetch(controller, request);
+			if (controller.failed()) {
+				throw new Exception(m + ":" + controller.errorText());
+			}
+
+			returnInternalBlockingConnection(m, rpcConnection, true);
+
+			return response;
+		}
+		catch (Exception e) {
+			returnInternalBlockingConnection(m, rpcConnection, false);
+			throw e;
+		}
+		finally {
+			lock.readLock().unlock();
+		}
+
 	}
 	
 	public GetNumberOfDocsResponse getNumberOfDocs(Member m, GetNumberOfDocsRequest request) throws Exception {

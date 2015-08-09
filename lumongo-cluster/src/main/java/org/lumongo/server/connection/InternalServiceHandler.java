@@ -12,6 +12,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.apache.log4j.Logger;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.ClearRequest;
 import org.lumongo.cluster.message.Lumongo.ClearResponse;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
@@ -37,7 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class InternalServiceHandler extends InternalService {
-	
+
 	private final static Logger log = Logger.getLogger(InternalServiceHandler.class);
 	
 	private final LumongoIndexManager indexManager;
@@ -125,12 +126,25 @@ public class InternalServiceHandler extends InternalService {
 			done.run(r);
 		}
 		catch (Exception e) {
-			log.error("Failed to run internal index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
+			log.error("Failed to run internal store: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
 			controller.setFailed(e.getMessage());
 			done.run(null);
 		}
 	}
-	
+
+	@Override
+	public void fetch(RpcController controller, Lumongo.FetchRequest request, RpcCallback<Lumongo.FetchResponse> done) {
+		try {
+			Lumongo.FetchResponse r = indexManager.internalFetch(request);
+			done.run(r);
+		}
+		catch (Exception e) {
+			log.error("Failed to run internal fetch: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
+			controller.setFailed(e.getMessage());
+			done.run(null);
+		}
+	}
+
 	@Override
 	public void delete(RpcController controller, DeleteRequest request, RpcCallback<DeleteResponse> done) {
 		try {
