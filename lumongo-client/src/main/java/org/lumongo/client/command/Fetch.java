@@ -2,6 +2,7 @@ package org.lumongo.client.command;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
+import org.lumongo.client.command.base.RoutableCommand;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.FetchResult;
@@ -14,7 +15,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class Fetch extends SimpleCommand<FetchRequest, FetchResult> {
+public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements RoutableCommand {
 
 	private String uniqueId;
 	private String indexName;
@@ -32,6 +33,11 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> {
 
 	public String getUniqueId() {
 		return uniqueId;
+	}
+
+	@Override
+	public String getIndexName() {
+		return indexName;
 	}
 
 	public Fetch setFileName(String fileName) {
