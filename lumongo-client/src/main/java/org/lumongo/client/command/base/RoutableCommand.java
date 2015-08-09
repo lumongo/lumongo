@@ -1,7 +1,7 @@
 package org.lumongo.client.command.base;
 
 public interface RoutableCommand {
-	public String getUniqueId();
+	String getUniqueId();
 
-	public String getIndexName();
+	String getIndexName();
 }
