@@ -55,6 +55,7 @@ public class BatchFetch extends SimpleCommand<BatchFetchRequest, BatchFetchResul
 			Fetch f = new Fetch(scoredResult.getUniqueId(), scoredResult.getIndexName());
 			f.setResultFetchType(FetchType.FULL);
 			f.setAssociatedFetchType(FetchType.NONE);
+			f.setTimestamp(scoredResult.getTimestamp());
 			fetchList.add(f);
 		}
 		return this;

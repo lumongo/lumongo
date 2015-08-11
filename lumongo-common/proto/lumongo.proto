@@ -427,6 +427,7 @@ message FetchRequest {
 	optional FetchType associatedFetchType = 5 [default = META];
 	repeated string documentFields = 6;
 	repeated string documentMaskedFields = 7;
+	optional int64 timestamp = 8;
 }
 
 message FetchResponse {

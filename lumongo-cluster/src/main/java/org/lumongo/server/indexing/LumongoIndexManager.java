@@ -467,8 +467,12 @@ public class LumongoIndexManager {
 			FetchType resultFetchType = fetchRequest.getResultFetchType();
 			if (!FetchType.NONE.equals(resultFetchType)) {
 
-				//TODO consider using timestamp for cache use
-				ResultDocument resultDoc = i.getSourceDocument(uniqueId, null, resultFetchType, fetchRequest.getDocumentFieldsList(), fetchRequest.getDocumentMaskedFieldsList());
+				Long timestamp = null;
+				if (fetchRequest.hasTimestamp()) {
+					timestamp = fetchRequest.getTimestamp();
+				}
+
+				ResultDocument resultDoc = i.getSourceDocument(uniqueId, timestamp, resultFetchType, fetchRequest.getDocumentFieldsList(), fetchRequest.getDocumentMaskedFieldsList());
 				if (null != resultDoc) {
 					frBuilder.setResultDocument(resultDoc);
 				}

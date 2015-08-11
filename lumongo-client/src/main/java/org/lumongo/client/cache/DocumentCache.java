@@ -62,7 +62,9 @@ public class DocumentCache {
 		boolean fetch = fetchNeeded(fr, timestamp);
 
 		if (fetch) {
-			fr = lumongoWorkPool.fetch(new FetchDocument(uniqueId, indexName));
+			FetchDocument fetchDocument = new FetchDocument(uniqueId, indexName);
+			fetchDocument.setTimestamp(timestamp);
+			fr = lumongoWorkPool.fetch(fetchDocument);
 			if (fr.hasResultDocument()) {
 				documentCache.put(new DocId(uniqueId, indexName), fr);
 
@@ -86,7 +88,9 @@ public class DocumentCache {
 			boolean fetch = fetchNeeded(fetchResult, sr.getTimestamp());
 
 			if (fetch) {
-				fetchDocumentList.add(new FetchDocument(sr.getUniqueId(), sr.getIndexName()));
+				FetchDocument fetchDocument = new FetchDocument(sr.getUniqueId(), sr.getIndexName());
+				fetchDocument.setTimestamp(sr.getTimestamp());
+				fetchDocumentList.add(fetchDocument);
 			}
 			else {
 				resultsFromCache.add(fetchResult);

@@ -26,6 +26,8 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements R
 	private Set<String> documentFields = Collections.emptySet();
 	private Set<String> documentMaskedFields = Collections.emptySet();
 
+	private Long timestamp;
+
 	public Fetch(String uniqueId, String indexName) {
 		this.uniqueId = uniqueId;
 		this.indexName = indexName;
@@ -65,6 +67,14 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements R
 	public Fetch setAssociatedFetchType(FetchType associatedFetchType) {
 		this.associatedFetchType = associatedFetchType;
 		return this;
+	}
+
+	public Long getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(Long timestamp) {
+		this.timestamp = timestamp;
 	}
 
 	public Set<String> getDocumentMaskedFields() {
@@ -108,6 +118,9 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements R
 		}
 		if (associatedFetchType != null) {
 			fetchRequestBuilder.setAssociatedFetchType(associatedFetchType);
+		}
+		if (timestamp != null) {
+			fetchRequestBuilder.setTimestamp(timestamp);
 		}
 		fetchRequestBuilder.addAllDocumentFields(documentFields);
 		fetchRequestBuilder.addAllDocumentMaskedFields(documentMaskedFields);

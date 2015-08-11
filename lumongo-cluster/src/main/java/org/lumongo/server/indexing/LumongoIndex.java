@@ -1203,7 +1203,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 			throws Exception {
 		indexLock.readLock().lock();
 		try {
-			//TODO use cache if timestamp not null
+
 
 
 			if (indexConfig.isStoreDocumentInMongo()) {
