@@ -7,9 +7,9 @@ dependencies {
     compile project(':lumongo-client') //needed for admin tools
     compile 'com.hazelcast:hazelcast:3.5'
     compile 'net.sf.jopt-simple:jopt-simple:4.6'
-    compile 'org.apache.lucene:lucene-facet:5.2.1'
-    compile 'org.apache.lucene:lucene-queryparser:5.2.1'
-    compile 'org.apache.lucene:lucene-analyzers-common:5.2.1'
+    compile 'org.apache.lucene:lucene-facet:5.3.0'
+    compile 'org.apache.lucene:lucene-queryparser:5.3.0'
+    compile 'org.apache.lucene:lucene-analyzers-common:5.3.0'
     compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.10.1'
     compile 'com.cedarsoftware:json-io:2.6.0'
     compile 'com.googlecode.protobuf-java-format:protobuf-java-format:1.2'

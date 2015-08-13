@@ -98,9 +98,10 @@ public class LumongoQueryParser extends QueryParser {
 	}
 	
 	@Override
-	protected BooleanQuery newBooleanQuery(boolean disableCoord) {
-		BooleanQuery bq = new BooleanQuery(disableCoord);
-		bq.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
-		return bq;
+	protected BooleanQuery.Builder newBooleanQuery(boolean disableCoord) {
+		BooleanQuery.Builder builder = new BooleanQuery.Builder();
+		builder.setDisableCoord(disableCoord);
+		builder.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
+		return builder;
 	}
 }

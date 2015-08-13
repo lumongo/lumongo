@@ -761,16 +761,16 @@ public class LumongoIndex implements IndexSegmentInterface {
 					return qp.parse(query);
 				}
 				else {
-					BooleanQuery bQuery = new BooleanQuery();
+					BooleanQuery.Builder bQuery = new BooleanQuery.Builder();
 					for (String queryField : queryFields) {
 						qp.setField(queryField);
 						Query q = qp.parse(query);
 						if ((q != null) && // q never null, just being defensive
-								(!(q instanceof BooleanQuery) || (((BooleanQuery) q).getClauses().length > 0))) {
+								(!(q instanceof BooleanQuery) || (((BooleanQuery) q).clauses().size() > 0))) {
 							bQuery.add(q, BooleanClause.Occur.SHOULD);
 						}
 					}
-					return bQuery;
+					return bQuery.build();
 				}
 
 			}
