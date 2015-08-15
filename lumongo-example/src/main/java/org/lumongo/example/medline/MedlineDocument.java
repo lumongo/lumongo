@@ -17,8 +17,8 @@ import java.util.List;
         indexName = "medline",
         numberOfSegments = 1,
         segmentCommitInterval = 50000,
-        storeDocumentInIndex = false,
-        storeDocumentInMongo = true)
+        storeDocumentInIndex = true,
+        storeDocumentInMongo = false)
 public class MedlineDocument {
 
     @UniqueId

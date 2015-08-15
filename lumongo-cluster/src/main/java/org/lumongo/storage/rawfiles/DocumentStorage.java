@@ -5,6 +5,7 @@ import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
+import org.lumongo.server.indexing.ResultBundle;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -36,5 +37,5 @@ public interface DocumentStorage {
 	
 	void deleteAllDocuments();
 	
-	ResultDocument getSourceDocument(String uniqueId, FetchType fetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception;
+	ResultBundle getSourceDocument(String uniqueId, FetchType fetchType) throws Exception;
 }

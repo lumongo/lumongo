@@ -1,5 +1,6 @@
 package org.lumongo.server.indexing;
 
+import com.google.protobuf.ByteString;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.Member;
@@ -24,6 +25,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.NRTCachingDirectory;
 import org.bson.BSON;
+import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
@@ -1204,11 +1206,11 @@ public class LumongoIndex implements IndexSegmentInterface {
 		indexLock.readLock().lock();
 		try {
 
+			ResultBundle rd = null;
 
-
+			//TODO try cache first
 			if (indexConfig.isStoreDocumentInMongo()) {
-
-				return documentStorage.getSourceDocument(uniqueId, resultFetchType, fieldsToReturn, fieldsToMask);
+				rd = documentStorage.getSourceDocument(uniqueId, resultFetchType);
 			}
 			else {
 				LumongoSegment s = findSegmentFromUniqueId(uniqueId);
@@ -1223,10 +1225,26 @@ public class LumongoIndex implements IndexSegmentInterface {
 				if (!scoredResultList.isEmpty()) {
 					ScoredResult scoredResult = scoredResultList.iterator().next();
 					if (scoredResult.hasResultDocument()) {
-						return scoredResult.getResultDocument();
+						rd = new ResultBundle();
+						ResultDocument resultDocument = scoredResult.getResultDocument();
+						rd.setResultDocBuilder(ResultDocument.newBuilder(resultDocument));
+
+						ByteString objBytes = resultDocument.getDocument();
+						BSONObject bsonObject = BSON.decode(objBytes.toByteArray());
+						BasicDBObject resultObj = new BasicDBObject();
+						resultObj.putAll(bsonObject);
+						rd.setResultObj(resultObj);
+
 					}
 				}
 
+
+			}
+
+
+			if (rd != null) {
+				//TODO do filter
+				return rd.build();
 			}
 
 			return null;

@@ -1,6 +1,6 @@
 package org.lumongo.example.wikipedia;
 
-import org.lumongo.client.cache.DocumentCache;
+import org.lumongo.client.cache.ClientDocumentCache;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
@@ -22,12 +22,12 @@ public class SearchWikipedia {
 		mapper = new Mapper<Article>(Article.class);
 
 		int maxSize = 2000;
-		DocumentCache documentCache = new DocumentCache(lumongoWorkPool, maxSize);
+		ClientDocumentCache clientDocumentCache = new ClientDocumentCache(lumongoWorkPool, maxSize);
 
 		Query query = new Query("wikipedia", "title:a*", 10);
 		QueryResult queryResult = lumongoWorkPool.query(query);
 
-		BatchFetchResult batchFetchResult = documentCache.fetch(queryResult);
+		BatchFetchResult batchFetchResult = clientDocumentCache.fetch(queryResult);
 
 		List<Article> articles = mapper.fromBatchFetchResult(batchFetchResult);
 

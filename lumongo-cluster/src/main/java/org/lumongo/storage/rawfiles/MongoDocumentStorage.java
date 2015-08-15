@@ -19,6 +19,7 @@ import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
+import org.lumongo.server.indexing.ResultBundle;
 import org.lumongo.storage.constants.MongoConstants;
 import org.lumongo.util.CommonCompression;
 import org.lumongo.util.CommonCompression.CompressionLevel;
@@ -112,56 +113,27 @@ public class MongoDocumentStorage implements DocumentStorage {
 	}
 	
 	@Override
-	public ResultDocument getSourceDocument(String uniqueId, FetchType fetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception {
+	public ResultBundle getSourceDocument(String uniqueId, FetchType fetchType) throws Exception {
 		if (!FetchType.NONE.equals(fetchType)) {
 			MongoDatabase db = mongoClient.getDatabase(database);
 			MongoCollection<Document> coll = db.getCollection(rawCollectionName);
 			Document search = new Document(MongoConstants.StandardFields._ID, uniqueId);
 			
-			Document fields = null;
-			
-			if (FetchType.FULL.equals(fetchType)) {
-				if (!fieldsToReturn.isEmpty() || !fieldsToMask.isEmpty()) {
-					fields = new Document();
-					
-					if (!fieldsToReturn.isEmpty()) {
-						for (String fieldToReturn : fieldsToReturn) {
-							fields.put(fieldToReturn, 1);
-						}
-						fields.put(MongoConstants.StandardFields._ID, 1);
-						fields.put(TIMESTAMP, 1);
-						fields.put(METADATA, 1);
-					}
-					else if (!fieldsToMask.isEmpty()) {
-						for (String fieldToMask : fieldsToMask) {
-							fields.put(fieldToMask, 0);
-						}
-						fields.remove(TIMESTAMP);
-						fields.remove(METADATA);
-						fields.remove(MongoConstants.StandardFields._ID);
-					}
-					
-					if (!fieldsToReturn.isEmpty() && !fieldsToMask.isEmpty()) {
-						//TODO: warn user fieldsToMask will be ignored?
-					}
-				}
-			}
-			else if (FetchType.META.equals(fetchType)) {
-				fields = new Document();
-				fields.put(MongoConstants.StandardFields._ID, 1);
-				fields.put(TIMESTAMP, 1);
-				fields.put(METADATA, 1);
-			}
-			
-			Document result = coll.find(search).projection(fields).first();
+
+			Document result = coll.find(search).first();
 			
 			if (null != result) {
 				
 				long timestamp = (long) result.remove(TIMESTAMP);
-				
+
+
+
 				ResultDocument.Builder dBuilder = ResultDocument.newBuilder();
 				dBuilder.setUniqueId(uniqueId);
 				dBuilder.setTimestamp(timestamp);
+
+				ResultBundle resultBundle = new ResultBundle();
+				resultBundle.setResultDocBuilder(dBuilder);
 				
 				if (result.containsKey(METADATA)) {
 					DBObject metadata = (DBObject) result.remove(METADATA);
@@ -173,12 +145,13 @@ public class MongoDocumentStorage implements DocumentStorage {
 				if (FetchType.FULL.equals(fetchType)) {
 					BasicDBObject resultObj = new BasicDBObject();
 					resultObj.putAll(result);
-					ByteString document = ByteString.copyFrom(BSON.encode(resultObj));
-					dBuilder.setDocument(document);
+					resultBundle.setResultObj(resultObj);
+
 				}
 				
 				dBuilder.setIndexName(indexName);
-				return dBuilder.build();
+
+				return resultBundle;
 			}
 		}
 		return null;

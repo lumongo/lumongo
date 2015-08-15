@@ -9,6 +9,7 @@ import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
+import org.lumongo.util.cache.DocId;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,12 +20,12 @@ import java.util.List;
  * @author mdavis
  *
  */
-public class DocumentCache {
+public class ClientDocumentCache {
 	private LumongoWorkPool lumongoWorkPool;
 
 	private static Cache<DocId, FetchResult> documentCache;
 
-	public DocumentCache(LumongoWorkPool lumongoWorkPool, int maxSize) {
+	public ClientDocumentCache(LumongoWorkPool lumongoWorkPool, int maxSize) {
 		this.lumongoWorkPool = lumongoWorkPool;
 		documentCache = CacheBuilder.newBuilder().concurrencyLevel(16).maximumSize(maxSize).build();
 	}
