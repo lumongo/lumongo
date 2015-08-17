@@ -34,8 +34,10 @@ public class ResultBundle {
 	}
 
 	public Lumongo.ResultDocument build() {
-		ByteString document = ByteString.copyFrom(BSON.encode(resultObj));
-		resultDocBuilder.setDocument(document);
+		if (resultObj != null) {
+			ByteString document = ByteString.copyFrom(BSON.encode(resultObj));
+			resultDocBuilder.setDocument(document);
+		}
 		return resultDocBuilder.build();
 	}
 

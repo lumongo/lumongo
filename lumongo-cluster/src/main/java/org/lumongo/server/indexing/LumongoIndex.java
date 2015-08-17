@@ -1208,6 +1208,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			ResultBundle rd = null;
 
+
 			//TODO try cache first
 			if (indexConfig.isStoreDocumentInMongo()) {
 				rd = documentStorage.getSourceDocument(uniqueId, resultFetchType);
@@ -1229,11 +1230,13 @@ public class LumongoIndex implements IndexSegmentInterface {
 						ResultDocument resultDocument = scoredResult.getResultDocument();
 						rd.setResultDocBuilder(ResultDocument.newBuilder(resultDocument));
 
-						ByteString objBytes = resultDocument.getDocument();
-						BSONObject bsonObject = BSON.decode(objBytes.toByteArray());
-						BasicDBObject resultObj = new BasicDBObject();
-						resultObj.putAll(bsonObject);
-						rd.setResultObj(resultObj);
+						if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
+							ByteString objBytes = resultDocument.getDocument();
+							BSONObject bsonObject = BSON.decode(objBytes.toByteArray());
+							BasicDBObject resultObj = new BasicDBObject();
+							resultObj.putAll(bsonObject);
+							rd.setResultObj(resultObj);
+						}
 
 					}
 				}
@@ -1243,7 +1246,25 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 
 			if (rd != null) {
-				//TODO do filter
+
+				if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
+					BasicDBObject resultObj = rd.getResultObj();
+
+					if (!fieldsToReturn.isEmpty()) {
+						for (String key : resultObj.keySet()) {
+							if (!fieldsToReturn.contains(key)) {
+								resultObj.remove(key);
+							}
+						}
+					}
+					if (!fieldsToMask.isEmpty()) {
+						for (String field : fieldsToMask) {
+							resultObj.remove(field);
+						}
+					}
+				}
+
+
 				return rd.build();
 			}
 
