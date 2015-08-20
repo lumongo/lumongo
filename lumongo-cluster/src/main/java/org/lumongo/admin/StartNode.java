@@ -6,7 +6,7 @@ import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
-import org.lumongo.server.LuceneNode;
+import org.lumongo.server.LumongoNode;
 import org.lumongo.server.config.MongoConfig;
 import org.lumongo.util.LogUtil;
 import org.lumongo.util.ServerNameHelper;
@@ -43,7 +43,7 @@ public class StartNode {
 				hazelcastPort = LumongoConstants.DEFAULT_HAZELCAST_PORT;
 			}
 
-			LuceneNode luceneNode = new LuceneNode(mongoConfig, serverAddress, hazelcastPort);
+			LumongoNode luceneNode = new LumongoNode(mongoConfig, serverAddress, hazelcastPort);
 
 			luceneNode.start();
 			luceneNode.setupShutdownHook();

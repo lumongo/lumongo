@@ -1,12 +1,11 @@
 package org.lumongo.test.cluster;
 
-import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import org.apache.log4j.Logger;
 import org.lumongo.LumongoConstants;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
-import org.lumongo.server.LuceneNode;
+import org.lumongo.server.LumongoNode;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
@@ -26,7 +25,7 @@ public class ServerTestBase {
 	private static Logger log = Logger.getLogger(ServerTestBase.class);
 	
 	private LumongoWorkPool lumongoWorkPool;
-	private List<LuceneNode> luceneNodes;
+	private List<LumongoNode> luceneNodes;
 	
 	public void startSuite(int instanceCount) throws Exception {
 		
@@ -74,7 +73,7 @@ public class ServerTestBase {
 		String localServer = ServerNameHelper.getLocalServer();
 
 		for (int i = 0; i < instanceCount; i++) {
-			LuceneNode ln = createLuceneNode(mongoConfig, localServer, i);
+			LumongoNode ln = createLuceneNode(mongoConfig, localServer, i);
 			ln.start();
 			luceneNodes.add(ln);
 		}
@@ -83,15 +82,15 @@ public class ServerTestBase {
 		
 	}
 	
-	public LuceneNode createLuceneNode(MongoConfig mongoConfig, String localServer, int instance) throws Exception {
+	public LumongoNode createLuceneNode(MongoConfig mongoConfig, String localServer, int instance) throws Exception {
 		LocalNodeConfig localNodeConfig = getTestLocalNodeConfig(instance);
 		ClusterHelper.registerNode(mongoConfig, localNodeConfig, localServer);
-		return new LuceneNode(mongoConfig, localServer, localNodeConfig.getHazelcastPort());
+		return new LumongoNode(mongoConfig, localServer, localNodeConfig.getHazelcastPort());
 	}
 	
 	public void stopServer() throws Exception {
 		log.info("Stopping server");
-		for (LuceneNode ln : luceneNodes) {
+		for (LumongoNode ln : luceneNodes) {
 			ln.shutdown();
 		}
 		luceneNodes.clear();

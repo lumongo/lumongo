@@ -17,8 +17,8 @@ import org.lumongo.util.LogUtil;
 
 import java.io.IOException;
 
-public class LuceneNode {
-	private final static Logger log = Logger.getLogger(LuceneNode.class);
+public class LumongoNode {
+	private final static Logger log = Logger.getLogger(LumongoNode.class);
 
 	static {
 		try {
@@ -36,7 +36,7 @@ public class LuceneNode {
 
 	private final RestServiceManager restServiceManager;
 
-	public LuceneNode(MongoConfig mongoConfig, String localServer, int instance) throws Exception {
+	public LumongoNode(MongoConfig mongoConfig, String localServer, int instance) throws Exception {
 
 		LocalNodeConfig localNodeConfig = ClusterHelper.getNodeConfig(mongoConfig, localServer, instance);
 
