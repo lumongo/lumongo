@@ -170,6 +170,7 @@ message IndexSettings {
 	optional uint32 segmentQueryCacheMaxAmount = 12 [default = 256];
 	optional bool storeDocumentInIndex = 13 [default = false];
 	optional bool storeDocumentInMongo = 14 [default = true];
+	optional uint32 segmentDocumentCacheSize =  15 [default = 256];
 }
 
 message FieldConfig {
@@ -376,6 +377,8 @@ message QueryRequest {
 	optional FetchType resultFetchType = 12 [default = NONE];
 	optional uint32 minimumNumberShouldMatch = 13 [default = 0];
 	optional Operator defaultOperator = 14 [default = OR];
+	repeated string documentFields = 15;
+	repeated string documentMaskedFields = 16;
 }
 
 message QueryResponse {

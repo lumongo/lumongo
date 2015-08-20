@@ -21,6 +21,7 @@ public class IndexConfig {
 	private Integer segmentQueryCacheMaxAmount;
 	private Boolean storeDocumentInMongo;
 	private Boolean storeDocumentInIndex;
+	private Integer segmentDocumentCacheSize;
 	
 	private TreeMap<String, FieldConfig> fieldMap;
 	
@@ -163,6 +164,14 @@ public class IndexConfig {
 		this.storeDocumentInIndex = storeDocumentInIndex;
 	}
 
+	public Integer getSegmentDocumentCacheSize() {
+		return segmentDocumentCacheSize;
+	}
+
+	public void setSegmentDocumentCacheSize(Integer segmentDocumentCacheSize) {
+		this.segmentDocumentCacheSize = segmentDocumentCacheSize;
+	}
+
 	public IndexSettings getIndexSettings() {
 		IndexSettings.Builder isb = IndexSettings.newBuilder();
 		if (defaultSearchField != null) {
@@ -202,6 +211,10 @@ public class IndexConfig {
 		if (storeDocumentInMongo != null) {
 			isb.setStoreDocumentInMongo(storeDocumentInMongo);
 		}
+
+		if (segmentDocumentCacheSize != null) {
+			isb.setSegmentDocumentCacheSize(segmentDocumentCacheSize);
+		}
 		
 		for (String fieldName : fieldMap.keySet()) {
 			FieldConfig fieldConfig = fieldMap.get(fieldName);
@@ -223,6 +236,7 @@ public class IndexConfig {
 		this.segmentQueryCacheMaxAmount = indexSettings.getSegmentQueryCacheMaxAmount();
 		this.storeDocumentInIndex = indexSettings.getStoreDocumentInIndex();
 		this.storeDocumentInMongo = indexSettings.getStoreDocumentInMongo();
+		this.segmentDocumentCacheSize = indexSettings.getSegmentDocumentCacheSize();
 		this.fieldMap = new TreeMap<>();
 		
 		for (FieldConfig fc : indexSettings.getFieldConfigList()) {
