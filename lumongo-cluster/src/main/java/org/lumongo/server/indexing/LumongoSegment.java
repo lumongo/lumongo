@@ -56,6 +56,7 @@ import org.lumongo.server.indexing.field.IntFieldIndexer;
 import org.lumongo.server.indexing.field.LongFieldIndexer;
 import org.lumongo.server.indexing.field.StringFieldIndexer;
 import org.lumongo.server.searching.QueryWithFilters;
+import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.util.LumongoUtil;
 
 import java.io.IOException;
@@ -86,6 +87,7 @@ public class LumongoSegment {
 	private final Set<String> fetchSetWithMeta;
 	private final Set<String> fetchSetWithDocument;
 	private final IndexSegmentInterface indexSegmentInterface;
+	private final DocumentStorage documentStorage;
 
 	private IndexWriter indexWriter;
 	private DirectoryReader directoryReader;
@@ -94,17 +96,17 @@ public class LumongoSegment {
 	private Long lastChange;
 	private String indexName;
 	private QueryResultCache queryResultCache;
+	private ServerDocumentCache serverDocumentCache;
 	private FacetsConfig facetsConfig;
-
-	private boolean queryCacheEnabled;
 
 	private int segmentQueryCacheMaxAmount;
 
-	public LumongoSegment(int segmentNumber, IndexSegmentInterface indexSegmentInterface, IndexConfig indexConfig, FacetsConfig facetsConfig) throws Exception {
-
-		setupQueryCache(indexConfig);
+	public LumongoSegment(int segmentNumber, IndexSegmentInterface indexSegmentInterface, IndexConfig indexConfig, FacetsConfig facetsConfig,
+			DocumentStorage documentStorage) throws Exception {
+		setupCaches(indexConfig);
 
 		this.segmentNumber = segmentNumber;
+		this.documentStorage = documentStorage;
 
 		this.indexSegmentInterface = indexSegmentInterface;
 		this.indexConfig = indexConfig;
@@ -186,13 +188,25 @@ public class LumongoSegment {
 		return o;
 	}
 
-	private void setupQueryCache(IndexConfig indexConfig) {
-		queryCacheEnabled = (indexConfig.getSegmentQueryCacheSize() > 0);
+	private void setupCaches(IndexConfig indexConfig) {
 		segmentQueryCacheMaxAmount = indexConfig.getSegmentQueryCacheMaxAmount();
 
-		if (queryCacheEnabled) {
-			this.queryResultCache = new QueryResultCache(indexConfig.getSegmentQueryCacheSize(), 8);
+		int segmentQueryCacheSize = indexConfig.getSegmentQueryCacheSize();
+		if ((segmentQueryCacheSize > 0)) {
+			this.queryResultCache = new QueryResultCache(segmentQueryCacheSize, 8);
 		}
+		else {
+			this.queryResultCache = null;
+		}
+
+		int segmentDocumentCacheSize = indexConfig.getSegmentDocumentCacheSize();
+		if ((segmentDocumentCacheSize > 0)) {
+			this.serverDocumentCache = new ServerDocumentCache(segmentDocumentCacheSize, 8);
+		}
+		else {
+			this.serverDocumentCache = null;
+		}
+
 	}
 
 	public void updateIndexSettings(IndexSettings indexSettings, FacetsConfig facetsConfig) throws Exception {
@@ -200,7 +214,7 @@ public class LumongoSegment {
 		this.indexConfig.configure(indexSettings);
 		this.facetsConfig = facetsConfig;
 
-		setupQueryCache(indexConfig);
+		setupCaches(indexConfig);
 		openIndexWriters();
 
 	}
@@ -210,11 +224,11 @@ public class LumongoSegment {
 	}
 
 	public SegmentResponse querySegment(QueryWithFilters queryWithFilters, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest,
-			QueryCacheKey queryCacheKey, FetchType resultFetchType) throws Exception {
+			QueryCacheKey queryCacheKey, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception {
 
 		QueryResultCache qrc = queryResultCache;
 
-		boolean useCache = queryCacheEnabled && ((segmentQueryCacheMaxAmount <= 0) || (segmentQueryCacheMaxAmount >= amount)) && queryCacheKey != null;
+		boolean useCache = (qrc != null) && ((segmentQueryCacheMaxAmount <= 0) || (segmentQueryCacheMaxAmount >= amount)) && queryCacheKey != null;
 		if (useCache) {
 			SegmentResponse cacheSegmentResponse = qrc.getCacheSegmentResponse(queryCacheKey);
 			if (cacheSegmentResponse != null) {
@@ -226,13 +240,13 @@ public class LumongoSegment {
 		Query q = queryWithFilters.getQuery();
 
 		if (!queryWithFilters.getFilterQueries().isEmpty()) {
-			BooleanQuery booleanQuery = new BooleanQuery();
+			BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 
 			for (Query filterQuery : queryWithFilters.getFilterQueries()) {
 				booleanQuery.add(filterQuery, BooleanClause.Occur.MUST);
 			}
 
-			q = new QueryWrapperFilter(booleanQuery);
+			q = new QueryWrapperFilter(booleanQuery.build());
 		}
 
 		reopenIndexWritersIfNecessary();
@@ -336,12 +350,13 @@ public class LumongoSegment {
 		int numResults = Math.min(results.length, amount);
 
 		for (int i = 0; i < numResults; i++) {
-			ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i, resultFetchType);
+			ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i, resultFetchType, fieldsToReturn, fieldsToMask);
 			builder.addScoredResult(srBuilder.build());
 		}
 
 		if (moreAvailable) {
-			ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, numResults, resultFetchType);
+			ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, numResults, resultFetchType, fieldsToReturn,
+					fieldsToMask);
 			builder.setNext(srBuilder);
 		}
 
@@ -380,7 +395,7 @@ public class LumongoSegment {
 	}
 
 	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i,
-			FetchType resultFetchType) throws Exception {
+			FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception {
 		int docId = results[i].doc;
 
 		Set<String> fieldsToFetch = fetchSet;
@@ -407,6 +422,14 @@ public class LumongoSegment {
 				if (FetchType.FULL.equals(resultFetchType)) {
 					BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
 					rdBuilder.setDocument(ByteString.copyFrom(docRef.bytes));
+
+					if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
+						ResultBundle resultBundle = new ResultBundle();
+						resultBundle.setResultDocBuilder(rdBuilder);
+						filterDocument(resultBundle, fieldsToReturn, fieldsToMask);
+						resultBundle.updateBuilder();
+					}
+
 				}
 				if (FetchType.FULL.equals(resultFetchType) || FetchType.META.equals(resultFetchType)) {
 					BytesRef metaRef = d.getBinaryValue(LumongoConstants.STORED_META_FIELD);
@@ -422,11 +445,14 @@ public class LumongoSegment {
 				srBuilder.setResultDocument(rdBuilder);
 			}
 			else if (indexConfig.isStoreDocumentInMongo()) {
-				ResultDocument resultDocument = indexSegmentInterface
-						.getSourceDocument(uniqueId, timestamp, resultFetchType, Collections.emptyList(), Collections.emptyList());
-				if (resultDocument != null) {
-					srBuilder.setResultDocument(resultDocument);
+
+				ResultBundle resultBundle = documentStorage.getSourceDocument(uniqueId, resultFetchType);
+
+				if (resultBundle != null) {
+					filterDocument(resultBundle, fieldsToReturn, fieldsToMask);
+					srBuilder.setResultDocument(resultBundle.build());
 				}
+
 			}
 		}
 
@@ -509,6 +535,87 @@ public class LumongoSegment {
 		return srBuilder;
 	}
 
+	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
+			throws Exception {
+
+		ResultBundle rd = null;
+
+		if (serverDocumentCache != null) {
+			rd = serverDocumentCache.getFromCache(uniqueId);
+		}
+
+		if (rd == null) {
+			if (indexConfig.isStoreDocumentInMongo()) {
+				rd = documentStorage.getSourceDocument(uniqueId, resultFetchType);
+			}
+			else {
+
+				Query query = new TermQuery(new org.apache.lucene.index.Term(indexConfig.getUniqueIdField(), uniqueId));
+
+				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
+
+				SegmentResponse segmentResponse = this.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType, fieldsToReturn, fieldsToMask);
+
+				List<ScoredResult> scoredResultList = segmentResponse.getScoredResultList();
+				if (!scoredResultList.isEmpty()) {
+					ScoredResult scoredResult = scoredResultList.iterator().next();
+					if (scoredResult.hasResultDocument()) {
+						rd = new ResultBundle();
+						ResultDocument resultDocument = scoredResult.getResultDocument();
+						rd.setResultDocBuilder(ResultDocument.newBuilder(resultDocument));
+					}
+				}
+
+			}
+
+			if (serverDocumentCache != null && rd != null) {
+				//serverDocumentCache.storeInCache(uniqueId, rd);
+			}
+		}
+
+		return filterDocument(rd, fieldsToReturn, fieldsToMask);
+
+	}
+
+	private ResultDocument filterDocument(ResultBundle rd, List<String> fieldsToReturn, List<String> fieldsToMask) {
+		if (rd != null) {
+
+			if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
+				BasicDBObject resultObj = rd.getResultObj();
+
+				//from index, not from mongo
+				if (resultObj == null) {
+					ResultDocument.Builder resultDocBuilder = rd.getResultDocBuilder();
+					ByteString objBytes = resultDocBuilder.getDocument();
+					BSONObject bsonObject = BSON.decode(objBytes.toByteArray());
+					resultObj = new BasicDBObject();
+					resultObj.putAll(bsonObject);
+					rd.setResultObj(resultObj);
+				}
+				else {
+					resultObj = new BasicDBObject(resultObj);
+				}
+
+				if (!fieldsToReturn.isEmpty()) {
+					for (String key : resultObj.keySet()) {
+						if (!fieldsToReturn.contains(key)) {
+							resultObj.remove(key);
+						}
+					}
+				}
+				if (!fieldsToMask.isEmpty()) {
+					for (String field : fieldsToMask) {
+						resultObj.remove(field);
+					}
+				}
+			}
+
+			return rd.build();
+		}
+
+		return null;
+	}
+
 	private void possibleCommit() throws IOException {
 		lastChange = System.currentTimeMillis();
 
@@ -524,8 +631,9 @@ public class LumongoSegment {
 
 		indexWriter.commit();
 
-		if (queryCacheEnabled) {
-			queryResultCache.clear();
+		QueryResultCache qrc = queryResultCache;
+		if (qrc != null) {
+			qrc.clear();
 		}
 
 		lastCommit = currentTime;

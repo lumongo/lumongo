@@ -349,6 +349,10 @@ public class IndexConfig {
 		return storeDocumentInMongo;
 	}
 
+	public int getSegmentDocumentCacheSize() {
+		return segmentDocumentCacheSize;
+	}
+
 	public Document toDocument() {
 		Document dbObject = new Document();
 		dbObject.put(DEFAULT_SEARCH_FIELD, defaultSearchField);

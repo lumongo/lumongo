@@ -1,6 +1,5 @@
 package org.lumongo.server.indexing;
 
-import com.google.protobuf.ByteString;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.Member;
@@ -22,10 +21,8 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.NRTCachingDirectory;
 import org.bson.BSON;
-import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
@@ -338,7 +335,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				IndexSegmentInterface indexSegmentInterface = this;
 
 				facetsConfig = generateFacetsConfig();
-				LumongoSegment s = new LumongoSegment(segmentNumber, indexSegmentInterface, indexConfig, facetsConfig);
+				LumongoSegment s = new LumongoSegment(segmentNumber, indexSegmentInterface, indexConfig, facetsConfig, documentStorage);
 				segmentMap.put(segmentNumber, s);
 
 				log.info("Loaded segment <" + segmentNumber + "> for index <" + indexName + ">");
@@ -654,8 +651,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 			String collectionName = getIndexSegmentCollectionName(i);
 			MongoDirectory.dropIndex(mongo, dbName, collectionName);
 
-			documentStorage.drop();
 		}
+		documentStorage.drop();
 
 		for (int i = 0; i < numberOfSegments; i++) {
 			String dbName = getIndexSegmentDbName(i);
@@ -865,7 +862,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 				Future<SegmentResponse> response = segmentPool.submit(() -> segment
 						.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
-								queryRequest.getSortRequest(), new QueryCacheKey(queryRequest), queryRequest.getResultFetchType()));
+								queryRequest.getSortRequest(), new QueryCacheKey(queryRequest), queryRequest.getResultFetchType(), queryRequest.getDocumentFieldsList(), queryRequest.getDocumentMaskedFieldsList()));
 
 				responses.add(response);
 
@@ -1200,76 +1197,12 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	@Override
 	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
 			throws Exception {
 		indexLock.readLock().lock();
 		try {
-
-			ResultBundle rd = null;
-
-
-			//TODO try cache first
-			if (indexConfig.isStoreDocumentInMongo()) {
-				rd = documentStorage.getSourceDocument(uniqueId, resultFetchType);
-			}
-			else {
-				LumongoSegment s = findSegmentFromUniqueId(uniqueId);
-
-				Query query = new TermQuery(new org.apache.lucene.index.Term(indexConfig.getUniqueIdField(), uniqueId));
-
-				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
-
-				SegmentResponse segmentResponse = s.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType);
-
-				List<ScoredResult> scoredResultList = segmentResponse.getScoredResultList();
-				if (!scoredResultList.isEmpty()) {
-					ScoredResult scoredResult = scoredResultList.iterator().next();
-					if (scoredResult.hasResultDocument()) {
-						rd = new ResultBundle();
-						ResultDocument resultDocument = scoredResult.getResultDocument();
-						rd.setResultDocBuilder(ResultDocument.newBuilder(resultDocument));
-
-						if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
-							ByteString objBytes = resultDocument.getDocument();
-							BSONObject bsonObject = BSON.decode(objBytes.toByteArray());
-							BasicDBObject resultObj = new BasicDBObject();
-							resultObj.putAll(bsonObject);
-							rd.setResultObj(resultObj);
-						}
-
-					}
-				}
-
-
-			}
-
-
-			if (rd != null) {
-
-				if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
-					BasicDBObject resultObj = rd.getResultObj();
-
-					if (!fieldsToReturn.isEmpty()) {
-						for (String key : resultObj.keySet()) {
-							if (!fieldsToReturn.contains(key)) {
-								resultObj.remove(key);
-							}
-						}
-					}
-					if (!fieldsToMask.isEmpty()) {
-						for (String field : fieldsToMask) {
-							resultObj.remove(field);
-						}
-					}
-				}
-
-
-				return rd.build();
-			}
-
-			return null;
-
+			LumongoSegment s = findSegmentFromUniqueId(uniqueId);
+			return s.getSourceDocument(uniqueId, timestamp, resultFetchType, fieldsToReturn, fieldsToMask);
 		}
 		finally {
 			indexLock.readLock().unlock();

@@ -34,11 +34,15 @@ public class ResultBundle {
 	}
 
 	public Lumongo.ResultDocument build() {
+		updateBuilder();
+		return resultDocBuilder.build();
+	}
+
+	public void updateBuilder() {
 		if (resultObj != null) {
 			ByteString document = ByteString.copyFrom(BSON.encode(resultObj));
 			resultDocBuilder.setDocument(document);
 		}
-		return resultDocBuilder.build();
 	}
 
 	@Override
