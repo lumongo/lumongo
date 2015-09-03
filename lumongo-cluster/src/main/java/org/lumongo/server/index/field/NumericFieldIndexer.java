@@ -1,4 +1,4 @@
-package org.lumongo.server.indexing.field;
+package org.lumongo.server.index.field;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;

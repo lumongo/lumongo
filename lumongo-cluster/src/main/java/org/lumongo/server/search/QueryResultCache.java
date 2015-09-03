@@ -1,4 +1,4 @@
-package org.lumongo.server.indexing;
+package org.lumongo.server.search;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;

@@ -1,4 +1,4 @@
-package org.lumongo.server.indexing;
+package org.lumongo.server.index;
 
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
@@ -49,13 +49,16 @@ import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.server.config.IndexConfig;
-import org.lumongo.server.indexing.field.DateFieldIndexer;
-import org.lumongo.server.indexing.field.DoubleFieldIndexer;
-import org.lumongo.server.indexing.field.FloatFieldIndexer;
-import org.lumongo.server.indexing.field.IntFieldIndexer;
-import org.lumongo.server.indexing.field.LongFieldIndexer;
-import org.lumongo.server.indexing.field.StringFieldIndexer;
-import org.lumongo.server.searching.QueryWithFilters;
+import org.lumongo.server.index.field.DateFieldIndexer;
+import org.lumongo.server.index.field.DoubleFieldIndexer;
+import org.lumongo.server.index.field.FloatFieldIndexer;
+import org.lumongo.server.index.field.IntFieldIndexer;
+import org.lumongo.server.index.field.LongFieldIndexer;
+import org.lumongo.server.index.field.StringFieldIndexer;
+import org.lumongo.server.search.QueryCacheKey;
+import org.lumongo.server.search.QueryResultCache;
+import org.lumongo.server.search.QueryWithFilters;
+import org.lumongo.server.search.ServerDocumentCache;
 import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.util.LumongoUtil;
 
@@ -724,7 +727,7 @@ public class LumongoSegment {
 		d.removeFields(indexConfig.getUniqueIdField());
 		d.add(new TextField(indexConfig.getUniqueIdField(), uniqueId, Store.NO));
 
-		// make sure the update works because it is searching on a term
+		// make sure the update works because it is search on a term
 		d.add(new StringField(indexConfig.getUniqueIdField(), uniqueId, Store.YES));
 
 		d.add(new LongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));

@@ -9,7 +9,7 @@ import org.lumongo.server.config.Nodes;
 import org.lumongo.server.connection.ExternalServiceHandler;
 import org.lumongo.server.connection.InternalServiceHandler;
 import org.lumongo.server.hazelcast.HazelcastManager;
-import org.lumongo.server.indexing.LumongoIndexManager;
+import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.server.rest.RestServiceManager;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.util.ClusterHelper;

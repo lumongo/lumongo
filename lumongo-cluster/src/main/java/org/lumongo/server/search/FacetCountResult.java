@@ -1,4 +1,4 @@
-package org.lumongo.server.searching;
+package org.lumongo.server.search;
 
 import java.util.Comparator;
 

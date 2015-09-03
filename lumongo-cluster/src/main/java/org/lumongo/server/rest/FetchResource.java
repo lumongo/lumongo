@@ -3,26 +3,18 @@ package org.lumongo.server.rest;
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import org.apache.log4j.Logger;
 import org.bson.BSON;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.server.indexing.LumongoIndexManager;
-import org.lumongo.util.StreamHelper;
+import org.lumongo.server.index.LumongoIndexManager;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 @Path(LumongoConstants.FETCH_URL)
 public class FetchResource {

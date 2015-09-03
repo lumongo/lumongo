@@ -1,4 +1,4 @@
-package org.lumongo.server.indexing;
+package org.lumongo.server.index;
 
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
@@ -35,7 +35,9 @@ import org.lumongo.server.exceptions.InvalidIndexConfig;
 import org.lumongo.server.exceptions.SegmentDoesNotExist;
 import org.lumongo.server.hazelcast.HazelcastManager;
 import org.lumongo.server.hazelcast.UpdateSegmentsTask;
-import org.lumongo.server.searching.QueryWithFilters;
+import org.lumongo.server.search.LumongoQueryParser;
+import org.lumongo.server.search.QueryCacheKey;
+import org.lumongo.server.search.QueryWithFilters;
 import org.lumongo.storage.constants.MongoConstants;
 import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;

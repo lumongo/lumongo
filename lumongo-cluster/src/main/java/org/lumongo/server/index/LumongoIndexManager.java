@@ -1,4 +1,4 @@
-package org.lumongo.server.indexing;
+package org.lumongo.server.index;
 
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
@@ -25,8 +25,8 @@ import org.lumongo.server.exceptions.InvalidIndexConfig;
 import org.lumongo.server.hazelcast.HazelcastManager;
 import org.lumongo.server.hazelcast.ReloadIndexSettingsTask;
 import org.lumongo.server.hazelcast.UnloadIndexTask;
-import org.lumongo.server.searching.QueryCombiner;
-import org.lumongo.server.searching.QueryWithFilters;
+import org.lumongo.server.search.QueryCombiner;
+import org.lumongo.server.search.QueryWithFilters;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LumongoThreadFactory;
 

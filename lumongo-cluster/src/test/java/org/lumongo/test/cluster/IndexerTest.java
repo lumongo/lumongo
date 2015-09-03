@@ -4,7 +4,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.junit.Assert;
 import org.junit.Test;
-import org.lumongo.server.indexing.LumongoSegment;
+import org.lumongo.server.index.LumongoSegment;
 
 import java.util.ArrayList;
 import java.util.Arrays;

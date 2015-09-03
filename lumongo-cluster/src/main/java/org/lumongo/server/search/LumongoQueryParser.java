@@ -1,4 +1,4 @@
-package org.lumongo.server.indexing;
+package org.lumongo.server.search;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.ParseException;

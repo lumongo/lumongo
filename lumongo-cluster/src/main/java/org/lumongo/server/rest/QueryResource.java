@@ -8,7 +8,7 @@ import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
-import org.lumongo.server.indexing.LumongoIndexManager;
+import org.lumongo.server.index.LumongoIndexManager;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

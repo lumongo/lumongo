@@ -1,10 +1,9 @@
-package org.lumongo.server.indexing;
+package org.lumongo.server.index;
 
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import org.bson.BSON;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.doc.ResultDocBuilder;
 
 /**
  * Created by mdavis on 8/15/15.

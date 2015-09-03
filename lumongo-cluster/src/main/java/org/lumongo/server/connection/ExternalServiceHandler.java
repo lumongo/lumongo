@@ -3,7 +3,6 @@ package org.lumongo.server.connection;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
-import com.googlecode.protobuf.pro.duplex.execute.PendingServerCallState;
 import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
 import com.googlecode.protobuf.pro.duplex.execute.NonInterruptingThreadPoolCallExecutor;
 import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerPipelineFactory;
@@ -50,7 +49,7 @@ import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
-import org.lumongo.server.indexing.LumongoIndexManager;
+import org.lumongo.server.index.LumongoIndexManager;
 
 import java.net.UnknownHostException;
 import java.util.concurrent.Executors;

@@ -32,7 +32,7 @@ import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.cluster.message.Lumongo.StoreResponse;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
-import org.lumongo.server.indexing.LumongoIndexManager;
+import org.lumongo.server.index.LumongoIndexManager;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;

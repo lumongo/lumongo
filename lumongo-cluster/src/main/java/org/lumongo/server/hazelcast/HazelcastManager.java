@@ -15,11 +15,9 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperties;
 import org.apache.log4j.Logger;
-import org.apache.lucene.index.CorruptIndexException;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.Nodes.HazelcastNode;
-import org.lumongo.server.exceptions.IndexDoesNotExist;
-import org.lumongo.server.indexing.LumongoIndexManager;
+import org.lumongo.server.index.LumongoIndexManager;
 
 import java.io.IOException;
 import java.util.HashMap;

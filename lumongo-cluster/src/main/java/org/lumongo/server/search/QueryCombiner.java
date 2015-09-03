@@ -1,4 +1,4 @@
-package org.lumongo.server.searching;
+package org.lumongo.server.search;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.FixedBitSet;
@@ -16,7 +16,7 @@ import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.SegmentResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
-import org.lumongo.server.indexing.LumongoIndex;
+import org.lumongo.server.index.LumongoIndex;
 
 import java.util.ArrayList;
 import java.util.Arrays;

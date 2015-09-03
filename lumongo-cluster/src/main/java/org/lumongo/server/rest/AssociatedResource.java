@@ -1,7 +1,7 @@
 package org.lumongo.server.rest;
 
 import org.lumongo.LumongoConstants;
-import org.lumongo.server.indexing.LumongoIndexManager;
+import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.util.StreamHelper;
 
 import javax.ws.rs.GET;
