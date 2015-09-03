@@ -94,11 +94,12 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements R
 		return documentFields;
 	}
 
-	public void addDocumentField(String documentField) {
+	public Fetch addDocumentField(String documentField) {
 		if (documentFields.isEmpty()) {
 			this.documentFields = new LinkedHashSet<>();
 		}
 		documentFields.add(documentField);
+		return this;
 	}
 
 	@Override

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -44,7 +45,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private Integer minimumNumberShouldMatch;
 	private Operator defaultOperator;
 	private Lumongo.FetchType resultFetchType;
-	
+	private Set<String> documentFields = Collections.emptySet();
+	private Set<String> documentMaskedFields = Collections.emptySet();
+
+
 	public Query(String index, String query, int amount) {
 		this(new String[] { index }, query, amount);
 	}
@@ -223,6 +227,31 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		this.resultFetchType = resultFetchType;
 	}
 
+	public Set<String> getDocumentMaskedFields() {
+		return documentMaskedFields;
+	}
+
+	public Query addDocumentMaskedField(String documentMaskedField) {
+		if (documentMaskedFields.isEmpty()) {
+			documentMaskedFields = new LinkedHashSet<>();
+		}
+
+		documentMaskedFields.add(documentMaskedField);
+		return this;
+	}
+
+	public Set<String> getDocumentFields() {
+		return documentFields;
+	}
+
+	public Query addDocumentField(String documentField) {
+		if (documentFields.isEmpty()) {
+			this.documentFields = new LinkedHashSet<>();
+		}
+		documentFields.add(documentField);
+		return this;
+	}
+
 	@Override
 	public QueryRequest getRequest() {
 		QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
@@ -270,6 +299,9 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		if (resultFetchType != null) {
 			requestBuilder.setResultFetchType(resultFetchType);
 		}
+
+		requestBuilder.addAllDocumentFields(documentFields);
+		requestBuilder.addAllDocumentMaskedFields(documentMaskedFields);
 		
 		SortRequest.Builder sortRequestBuilder = SortRequest.newBuilder();
 		sortRequestBuilder.addAllFieldSort(fieldSorts);

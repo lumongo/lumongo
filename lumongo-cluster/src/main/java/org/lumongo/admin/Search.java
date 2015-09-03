@@ -57,6 +57,10 @@ public class Search {
 						.withRequiredArg().ofType(Integer.class);
 		
 		OptionSpec<Void> fetchArg = parser.accepts(AdminConstants.FETCH);
+
+		OptionSpec<String> fieldsToReturnArg = parser.accepts(AdminConstants.RETURN, "Fields to return from fetch").withRequiredArg();
+		OptionSpec<String> fieldsToMaskArg = parser.accepts(AdminConstants.MASK, "Fields to mask from fetch").withRequiredArg();
+
 		
 		try {
 			OptionSet options = parser.parse(args);
@@ -75,6 +79,9 @@ public class Search {
 			List<String> queryFieldsList = options.valuesOf(queryFieldArg);
 			List<String> filterQueryList = options.valuesOf(filterQueryArg);
 			Integer minimumNumberShouldMatch = options.valueOf(minimumNumberShouldMatchArg);
+
+			List<String> fieldsToReturn = options.valuesOf(fieldsToReturnArg);
+			List<String> fieldsToMask = options.valuesOf(fieldsToMaskArg);
 			
 			boolean fetch = options.has(fetchArg);
 			
@@ -98,22 +105,18 @@ public class Search {
 					q.addCountRequest(facet, facetCount, facetSegmentCount);
 				}
 
-				for (String sort : sortList) {
-					
-					q.addFieldSort(sort);
-				}
+				sortList.forEach(q::addFieldSort);
 				
 				for (String sortDesc : sortDescList) {
 					q.addFieldSort(sortDesc, Direction.DESCENDING);
 				}
-				
-				for (String queryField : queryFieldsList) {
-					q.addQueryField(queryField);
-				}
-				
-				for (String filterQuery : filterQueryList) {
-					q.addFilterQuery(filterQuery);
-				}
+
+				queryFieldsList.forEach(q::addQueryField);
+
+				filterQueryList.forEach(q::addFilterQuery);
+
+				fieldsToReturn.forEach(q::addDocumentField);
+				fieldsToMask.forEach(q::addDocumentMaskedField);
 
 				QueryResult qr = lumongoWorkPool.execute(q);
 				

@@ -422,6 +422,9 @@ public class LumongoSegment {
 		if (!FetchType.NONE.equals(resultFetchType)) {
 			if (indexConfig.isStoreDocumentInIndex()) {
 				ResultDocument.Builder rdBuilder = ResultDocument.newBuilder();
+				rdBuilder.setUniqueId(uniqueId);
+				rdBuilder.setIndexName(indexName);
+
 				if (FetchType.FULL.equals(resultFetchType)) {
 					BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
 					rdBuilder.setDocument(ByteString.copyFrom(docRef.bytes));
@@ -443,8 +446,7 @@ public class LumongoSegment {
 						rdBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue(((String) metaObj.get(key))));
 					}
 				}
-				rdBuilder.setUniqueId(uniqueId);
-				rdBuilder.setIndexName(indexName);
+
 				srBuilder.setResultDocument(rdBuilder);
 			}
 			else if (indexConfig.isStoreDocumentInMongo()) {
@@ -600,7 +602,7 @@ public class LumongoSegment {
 				}
 
 				if (!fieldsToReturn.isEmpty()) {
-					for (String key : resultObj.keySet()) {
+					for (String key : new ArrayList<>(resultObj.keySet())) {
 						if (!fieldsToReturn.contains(key)) {
 							resultObj.remove(key);
 						}

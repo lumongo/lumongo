@@ -36,4 +36,6 @@ public class AdminConstants {
 	public static final String DOCUMENT_FIELDS = "field";
 	public static final String DOCUMENT_MASKED_FIELDS = "maskedField";
 	public static final String MIN_TO_MATCH = "minToMatch";
+	public static final String RETURN = "return";
+	public static final String MASK = "mask";
 }
