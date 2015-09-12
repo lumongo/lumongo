@@ -7,7 +7,7 @@ import org.lumongo.fields.FieldConfigBuilder;
 import java.util.TreeMap;
 
 public class IndexConfig {
-	
+
 	private String defaultSearchField;
 	private Boolean applyUncommittedDeletes;
 	private Double requestFactor;
@@ -21,77 +21,76 @@ public class IndexConfig {
 	private Integer segmentQueryCacheMaxAmount;
 	private Boolean storeDocumentInMongo;
 	private Boolean storeDocumentInIndex;
-	private Integer segmentDocumentCacheSize;
-	
+
 	private TreeMap<String, FieldConfig> fieldMap;
-	
+
 	protected IndexConfig() {
-		
+
 	}
-	
+
 	public IndexConfig(String defaultSearchField) {
 		this.defaultSearchField = defaultSearchField;
 		this.fieldMap = new TreeMap<>();
 	}
-	
+
 	public String getDefaultSearchField() {
 		return defaultSearchField;
 	}
-	
+
 	public IndexConfig setDefaultSearchField(String defaultSearchField) {
 		this.defaultSearchField = defaultSearchField;
 		return this;
 	}
-	
+
 	public boolean getApplyUncommittedDeletes() {
 		return applyUncommittedDeletes;
 	}
-	
+
 	public IndexConfig setApplyUncommittedDeletes(boolean applyUncommittedDeletes) {
 		this.applyUncommittedDeletes = applyUncommittedDeletes;
 		return this;
 	}
-	
+
 	public double getRequestFactor() {
 		return requestFactor;
 	}
-	
+
 	public IndexConfig setRequestFactor(double requestFactor) {
 		this.requestFactor = requestFactor;
 		return this;
 	}
-	
+
 	public int getMinSegmentRequest() {
 		return minSegmentRequest;
 	}
-	
+
 	public IndexConfig setMinSegmentRequest(int minSegmentRequest) {
 		this.minSegmentRequest = minSegmentRequest;
 		return this;
 	}
-	
+
 	public int getNumberOfSegments() {
 		return numberOfSegments;
 	}
-	
+
 	public IndexConfig setNumberOfSegments(int numberOfSegments) {
 		this.numberOfSegments = numberOfSegments;
 		return this;
 	}
-	
+
 	public String getIndexName() {
 		return indexName;
 	}
-	
+
 	public IndexConfig setIndexName(String indexName) {
 		this.indexName = indexName;
 		return this;
 	}
-	
+
 	public int getIdleTimeWithoutCommit() {
 		return idleTimeWithoutCommit;
 	}
-	
+
 	public IndexConfig setIdleTimeWithoutCommit(int idleTimeWithoutCommit) {
 		this.idleTimeWithoutCommit = idleTimeWithoutCommit;
 		return this;
@@ -100,34 +99,33 @@ public class IndexConfig {
 	public int getSegmentCommitInterval() {
 		return segmentCommitInterval;
 	}
-	
+
 	public IndexConfig setSegmentCommitInterval(int segmentCommitInterval) {
 		this.segmentCommitInterval = segmentCommitInterval;
 		return this;
 	}
 
-	
 	public double getSegmentTolerance() {
 		return segmentTolerance;
 	}
-	
+
 	public IndexConfig setSegmentTolerance(double segmentTolerance) {
 		this.segmentTolerance = segmentTolerance;
 		return this;
 	}
-	
+
 	public Integer getSegmentQueryCacheSize() {
 		return segmentQueryCacheSize;
 	}
-	
+
 	public void setSegmentQueryCacheSize(Integer segmentQueryCacheSize) {
 		this.segmentQueryCacheSize = segmentQueryCacheSize;
 	}
-	
+
 	public Integer getSegmentQueryCacheMaxAmount() {
 		return segmentQueryCacheMaxAmount;
 	}
-	
+
 	public void setSegmentQueryCacheMaxAmount(Integer segmentQueryCacheMaxAmount) {
 		this.segmentQueryCacheMaxAmount = segmentQueryCacheMaxAmount;
 	}
@@ -135,11 +133,11 @@ public class IndexConfig {
 	public void addFieldConfig(FieldConfigBuilder FieldConfigBuilder) {
 		addFieldConfig(FieldConfigBuilder.build());
 	}
-	
+
 	public void addFieldConfig(FieldConfig fieldConfig) {
 		this.fieldMap.put(fieldConfig.getStoredFieldName(), fieldConfig);
 	}
-	
+
 	public FieldConfig getFieldConfig(String fieldName) {
 		return this.fieldMap.get(fieldName);
 	}
@@ -162,14 +160,6 @@ public class IndexConfig {
 
 	public void setStoreDocumentInIndex(Boolean storeDocumentInIndex) {
 		this.storeDocumentInIndex = storeDocumentInIndex;
-	}
-
-	public Integer getSegmentDocumentCacheSize() {
-		return segmentDocumentCacheSize;
-	}
-
-	public void setSegmentDocumentCacheSize(Integer segmentDocumentCacheSize) {
-		this.segmentDocumentCacheSize = segmentDocumentCacheSize;
 	}
 
 	public IndexSettings getIndexSettings() {
@@ -199,7 +189,7 @@ public class IndexConfig {
 		if (segmentQueryCacheSize != null) {
 			isb.setSegmentQueryCacheSize(segmentQueryCacheSize);
 		}
-		
+
 		if (segmentQueryCacheMaxAmount != null) {
 			isb.setSegmentQueryCacheMaxAmount(segmentQueryCacheMaxAmount);
 		}
@@ -212,18 +202,14 @@ public class IndexConfig {
 			isb.setStoreDocumentInMongo(storeDocumentInMongo);
 		}
 
-		if (segmentDocumentCacheSize != null) {
-			isb.setSegmentDocumentCacheSize(segmentDocumentCacheSize);
-		}
-		
 		for (String fieldName : fieldMap.keySet()) {
 			FieldConfig fieldConfig = fieldMap.get(fieldName);
 			isb.addFieldConfig(fieldConfig);
 		}
-		
+
 		return isb.build();
 	}
-	
+
 	protected void configure(IndexSettings indexSettings) {
 		this.defaultSearchField = indexSettings.getDefaultSearchField();
 		this.applyUncommittedDeletes = indexSettings.getApplyUncommittedDeletes();
@@ -236,19 +222,18 @@ public class IndexConfig {
 		this.segmentQueryCacheMaxAmount = indexSettings.getSegmentQueryCacheMaxAmount();
 		this.storeDocumentInIndex = indexSettings.getStoreDocumentInIndex();
 		this.storeDocumentInMongo = indexSettings.getStoreDocumentInMongo();
-		this.segmentDocumentCacheSize = indexSettings.getSegmentDocumentCacheSize();
 		this.fieldMap = new TreeMap<>();
-		
+
 		for (FieldConfig fc : indexSettings.getFieldConfigList()) {
 			fieldMap.put(fc.getStoredFieldName(), fc);
 		}
-		
+
 	}
-	
+
 	public static IndexConfig fromIndexSettings(IndexSettings indexSettings) {
 		IndexConfig ic = new IndexConfig();
 		ic.configure(indexSettings);
 		return ic;
 	}
-	
+
 }

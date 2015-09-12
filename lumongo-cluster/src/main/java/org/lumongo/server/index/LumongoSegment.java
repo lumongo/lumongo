@@ -99,7 +99,7 @@ public class LumongoSegment {
 	private Long lastChange;
 	private String indexName;
 	private QueryResultCache queryResultCache;
-	private ServerDocumentCache serverDocumentCache;
+
 	private FacetsConfig facetsConfig;
 
 	private int segmentQueryCacheMaxAmount;
@@ -200,14 +200,6 @@ public class LumongoSegment {
 		}
 		else {
 			this.queryResultCache = null;
-		}
-
-		int segmentDocumentCacheSize = indexConfig.getSegmentDocumentCacheSize();
-		if ((segmentDocumentCacheSize > 0)) {
-			this.serverDocumentCache = new ServerDocumentCache(segmentDocumentCacheSize, 8);
-		}
-		else {
-			this.serverDocumentCache = null;
 		}
 
 	}
@@ -425,18 +417,6 @@ public class LumongoSegment {
 				rdBuilder.setUniqueId(uniqueId);
 				rdBuilder.setIndexName(indexName);
 
-				if (FetchType.FULL.equals(resultFetchType)) {
-					BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
-					rdBuilder.setDocument(ByteString.copyFrom(docRef.bytes));
-
-					if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
-						ResultBundle resultBundle = new ResultBundle();
-						resultBundle.setResultDocBuilder(rdBuilder);
-						filterDocument(resultBundle, fieldsToReturn, fieldsToMask);
-						resultBundle.updateBuilder();
-					}
-
-				}
 				if (FetchType.FULL.equals(resultFetchType) || FetchType.META.equals(resultFetchType)) {
 					BytesRef metaRef = d.getBinaryValue(LumongoConstants.STORED_META_FIELD);
 					DBObject metaObj = new BasicDBObject();
@@ -447,15 +427,31 @@ public class LumongoSegment {
 					}
 				}
 
-				srBuilder.setResultDocument(rdBuilder);
+				ResultDocument resultDocument = null;
+
+				if (FetchType.FULL.equals(resultFetchType)) {
+					BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
+					rdBuilder.setDocument(ByteString.copyFrom(docRef.bytes));
+
+					if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
+						resultDocument = filterDocument(rdBuilder.build(), fieldsToReturn, fieldsToMask);
+					}
+
+				}
+
+				if (resultDocument == null) {
+					resultDocument = rdBuilder.build();
+				}
+
+				srBuilder.setResultDocument(resultDocument);
 			}
 			else if (indexConfig.isStoreDocumentInMongo()) {
 
-				ResultBundle resultBundle = documentStorage.getSourceDocument(uniqueId, resultFetchType);
+				ResultDocument rd = documentStorage.getSourceDocument(uniqueId, resultFetchType);
 
-				if (resultBundle != null) {
-					filterDocument(resultBundle, fieldsToReturn, fieldsToMask);
-					srBuilder.setResultDocument(resultBundle.build());
+				if (rd != null) {
+					rd = filterDocument(rd, fieldsToReturn, fieldsToMask);
+					srBuilder.setResultDocument(rd);
 				}
 
 			}
@@ -543,63 +539,44 @@ public class LumongoSegment {
 	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
 			throws Exception {
 
-		ResultBundle rd = null;
+		ResultDocument rd = null;
 
-		if (serverDocumentCache != null) {
-			rd = serverDocumentCache.getFromCache(uniqueId);
+		if (indexConfig.isStoreDocumentInMongo()) {
+			rd = documentStorage.getSourceDocument(uniqueId, resultFetchType);
 		}
+		else {
 
-		if (rd == null) {
-			if (indexConfig.isStoreDocumentInMongo()) {
-				rd = documentStorage.getSourceDocument(uniqueId, resultFetchType);
-			}
-			else {
+			Query query = new TermQuery(new org.apache.lucene.index.Term(indexConfig.getUniqueIdField(), uniqueId));
 
-				Query query = new TermQuery(new org.apache.lucene.index.Term(indexConfig.getUniqueIdField(), uniqueId));
+			QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 
-				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
+			SegmentResponse segmentResponse = this.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType, fieldsToReturn, fieldsToMask);
 
-				SegmentResponse segmentResponse = this.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType, fieldsToReturn, fieldsToMask);
+			List<ScoredResult> scoredResultList = segmentResponse.getScoredResultList();
+			if (!scoredResultList.isEmpty()) {
+				ScoredResult scoredResult = scoredResultList.iterator().next();
+				if (scoredResult.hasResultDocument()) {
 
-				List<ScoredResult> scoredResultList = segmentResponse.getScoredResultList();
-				if (!scoredResultList.isEmpty()) {
-					ScoredResult scoredResult = scoredResultList.iterator().next();
-					if (scoredResult.hasResultDocument()) {
-						rd = new ResultBundle();
-						ResultDocument resultDocument = scoredResult.getResultDocument();
-						rd.setResultDocBuilder(ResultDocument.newBuilder(resultDocument));
-					}
+					rd = scoredResult.getResultDocument();
 				}
-
 			}
 
-			if (serverDocumentCache != null && rd != null) {
-				//serverDocumentCache.storeInCache(uniqueId, rd);
-			}
 		}
 
 		return filterDocument(rd, fieldsToReturn, fieldsToMask);
 
 	}
 
-	private ResultDocument filterDocument(ResultBundle rd, List<String> fieldsToReturn, List<String> fieldsToMask) {
+	private ResultDocument filterDocument(ResultDocument rd, List<String> fieldsToReturn, List<String> fieldsToMask) {
 		if (rd != null) {
 
 			if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
-				BasicDBObject resultObj = rd.getResultObj();
+				ResultDocument.Builder resultDocBuilder = rd.toBuilder();
 
-				//from index, not from mongo
-				if (resultObj == null) {
-					ResultDocument.Builder resultDocBuilder = rd.getResultDocBuilder();
-					ByteString objBytes = resultDocBuilder.getDocument();
-					BSONObject bsonObject = BSON.decode(objBytes.toByteArray());
-					resultObj = new BasicDBObject();
-					resultObj.putAll(bsonObject);
-					rd.setResultObj(resultObj);
-				}
-				else {
-					resultObj = new BasicDBObject(resultObj);
-				}
+				ByteString objBytes = resultDocBuilder.getDocument();
+				BSONObject bsonObject = BSON.decode(objBytes.toByteArray());
+				BasicDBObject resultObj = new BasicDBObject();
+				resultObj.putAll(bsonObject);
 
 				if (!fieldsToReturn.isEmpty()) {
 					for (String key : new ArrayList<>(resultObj.keySet())) {
@@ -613,9 +590,15 @@ public class LumongoSegment {
 						resultObj.remove(field);
 					}
 				}
-			}
 
-			return rd.build();
+				ByteString document = ByteString.copyFrom(BSON.encode(resultObj));
+				resultDocBuilder.setDocument(document);
+
+				return resultDocBuilder.build();
+			}
+			else {
+				return rd;
+			}
 		}
 
 		return null;

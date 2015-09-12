@@ -58,7 +58,6 @@ public class IndexConfig {
 	private int segmentQueryCacheMaxAmount;
 	private boolean storeDocumentInIndex;
 	private boolean storeDocumentInMongo;
-	private int segmentDocumentCacheSize;
 
 	private double segmentTolerance;
 	private ConcurrentHashMap<String, FieldConfig> fieldConfigMap;
@@ -151,7 +150,6 @@ public class IndexConfig {
 		indexConfig.storeDocumentInIndex = (boolean) settings.get(STORE_DOCUMENT_IN_INDEX);
 		indexConfig.segmentQueryCacheSize = (int) settings.get(SEGMENT_QUERY_CACHE_SIZE);
 		indexConfig.segmentQueryCacheMaxAmount = (int) settings.get(SEGMENT_QUERY_CACHE_MAX_AMOUNT);
-		indexConfig.segmentDocumentCacheSize = (int) settings.get(SEGMENT_DOCUMENT_CACHE_SIZE);
 
 		indexConfig.fieldConfigMap = new ConcurrentHashMap<>();
 		List<Document> fieldConfigs = (List<Document>) settings.get(FIELD_CONFIGS);
@@ -209,7 +207,6 @@ public class IndexConfig {
 		this.segmentQueryCacheMaxAmount = indexSettings.getSegmentQueryCacheMaxAmount();
 		this.storeDocumentInIndex = indexSettings.getStoreDocumentInIndex();
 		this.storeDocumentInMongo = indexSettings.getStoreDocumentInMongo();
-		this.segmentDocumentCacheSize = indexSettings.getSegmentDocumentCacheSize();
 
 		ConcurrentHashMap<String, FieldConfig> fieldConfigMap = new ConcurrentHashMap<>();
 
@@ -238,7 +235,6 @@ public class IndexConfig {
 		isb.setSegmentQueryCacheMaxAmount(segmentQueryCacheMaxAmount);
 		isb.setStoreDocumentInMongo(storeDocumentInMongo);
 		isb.setStoreDocumentInIndex(storeDocumentInIndex);
-		isb.setSegmentDocumentCacheSize(segmentDocumentCacheSize);
 		return isb.build();
 	}
 
@@ -349,10 +345,6 @@ public class IndexConfig {
 		return storeDocumentInMongo;
 	}
 
-	public int getSegmentDocumentCacheSize() {
-		return segmentDocumentCacheSize;
-	}
-
 	public Document toDocument() {
 		Document dbObject = new Document();
 		dbObject.put(DEFAULT_SEARCH_FIELD, defaultSearchField);
@@ -369,7 +361,6 @@ public class IndexConfig {
 		dbObject.put(SEGMENT_QUERY_CACHE_MAX_AMOUNT, segmentQueryCacheMaxAmount);
 		dbObject.put(STORE_DOCUMENT_IN_MONGO, storeDocumentInMongo);
 		dbObject.put(STORE_DOCUMENT_IN_INDEX, storeDocumentInIndex);
-		dbObject.put(SEGMENT_DOCUMENT_CACHE_SIZE, segmentDocumentCacheSize);
 
 		List<Document> fieldConfigs = new ArrayList<>();
 		for (FieldConfig fc : fieldConfigMap.values()) {
@@ -430,7 +421,6 @@ public class IndexConfig {
 				", segmentQueryCacheMaxAmount=" + segmentQueryCacheMaxAmount +
 				", storeDocumentInIndex=" + storeDocumentInIndex +
 				", storeDocumentInMongo=" + storeDocumentInMongo +
-				", segmentDocumentCacheSize=" + segmentDocumentCacheSize +
 				", segmentTolerance=" + segmentTolerance +
 				", fieldConfigMap=" + fieldConfigMap +
 				", indexAsMap=" + indexAsMap +

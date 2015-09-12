@@ -1,10 +1,10 @@
 package org.lumongo.storage.rawfiles;
 
 import org.bson.BasicBSONObject;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.Metadata;
-import org.lumongo.server.index.ResultBundle;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -35,6 +35,6 @@ public interface DocumentStorage {
 	void drop();
 	
 	void deleteAllDocuments();
-	
-	ResultBundle getSourceDocument(String uniqueId, FetchType fetchType) throws Exception;
+
+	Lumongo.ResultDocument getSourceDocument(String uniqueId, FetchType fetchType) throws Exception;
 }

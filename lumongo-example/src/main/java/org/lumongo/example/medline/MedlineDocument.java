@@ -14,11 +14,11 @@ import java.util.Date;
 import java.util.List;
 
 @Settings(
-        indexName = "medline",
+        indexName = "medlineBoth",
         numberOfSegments = 1,
         segmentCommitInterval = 50000,
         storeDocumentInIndex = true,
-        storeDocumentInMongo = false)
+        storeDocumentInMongo = true)
 public class MedlineDocument {
 
     @UniqueId

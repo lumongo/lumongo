@@ -5,7 +5,7 @@ description 'LuMongo Storage'
 configurations { luceneTestFramework } 
 
 dependencies {
-	compile 'org.mongodb:mongo-java-driver:3.0.2'
+	compile "org.mongodb:mongo-java-driver:$mongoJavaVersion"
 	compile 'log4j:log4j:1.2.17'
 	compile "org.apache.lucene:lucene-core:$luceneVersion"
 	compile 'com.google.guava:guava:18.0'

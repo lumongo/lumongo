@@ -2,20 +2,19 @@ package org.lumongo.server.search;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import org.lumongo.server.index.ResultBundle;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.util.LockHandler;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ServerDocumentCache {
-	private Cache<String, ResultBundle> resultBundleCache;
+	private Cache<String, Lumongo.ResultDocument> resultDocumentCache;
 	private LockHandler lockHandler;
 
 	public ServerDocumentCache(int maxSize, int concurrency) {
 		lockHandler = new LockHandler();
-		resultBundleCache = CacheBuilder.newBuilder().concurrencyLevel(concurrency).maximumSize(maxSize).build();
+		resultDocumentCache = CacheBuilder.newBuilder().concurrencyLevel(concurrency).maximumSize(maxSize).build();
 	}
 
 
@@ -24,26 +23,26 @@ public class ServerDocumentCache {
 		return readWriteLock.writeLock();
 	}
 
-	public ResultBundle getFromCache(String uniqueId) {
+	public  Lumongo.ResultDocument getFromCache(String uniqueId) {
 		ReadWriteLock readWriteLock = lockHandler.getLock(uniqueId);
 		readWriteLock.readLock().lock();
 		try {
-			return resultBundleCache.getIfPresent(uniqueId);
+			return resultDocumentCache.getIfPresent(uniqueId);
 		}
 		finally {
 			readWriteLock.readLock().unlock();
 		}
 	}
 	
-	public void storeInCache(String uniqueId, ResultBundle resultBundle) {
-		resultBundleCache.put(uniqueId, resultBundle);
+	public void storeInCache(String uniqueId,  Lumongo.ResultDocument  resultDocument) {
+		resultDocumentCache.put(uniqueId, resultDocument);
 	}
 
 	public void removeFromCache(String uniqueId) {
-		resultBundleCache.invalidate(uniqueId);
+		resultDocumentCache.invalidate(uniqueId);
 	}
 	
 	public void clear() {
-		resultBundleCache.invalidateAll();
+		resultDocumentCache.invalidateAll();
 	}
 }

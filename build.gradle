@@ -12,9 +12,10 @@ subprojects {
 	sourceCompatibility = 1.8
 	targetCompatibility = 1.8
 	
-	version = '0.40-SNAPSHOT'
+	version = '0.40'
 	ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 	ext.luceneVersion = '5.3.0'
+	ext.mongoJavaVersion = '3.0.3'
 
 	group = 'org.lumongo'
 	
