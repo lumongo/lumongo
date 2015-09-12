@@ -1,6 +1,74 @@
+0.40
+#43 Update to Lucene 5.3 from 4.x
+#44 Update to Mongo Java Driver 3.0.x
+#54 Switch to NRTCachingDirectory
+#52 Switch from hierachical facets to doc values based facets
+#49 Add fetch REST service
+#45 Add choice of document storage in mongo or in index
+#55 Update to Hazelcast 3.5
+
+0.31
+#28 Add Minimum Should Match Option on Query
+#34 Fixed Working Dir Variables in the Bash Scripts to Work on OSX
+#35 Add Batch Delete Operation
+#37 Add ability to specific default operator for queries (AND / OR)
+#38 Allow a single field to be indexed multiple ways using mapper annotations
+#42 Allow Annonation Based Mapper to Have Embedded Objects
+#25 Upgrade to Lucene 4.10.3
+#26 Upgrade to Hazelcast 3.4.1
+#27 Upgrade to protobuf-rpc-pro to 3.3
+
+0.30
+#9 Refactor API to become more BSON centric to support new features
+#10 Add ability to only return certain fields (like solr fl)
+#19 Remove index configuration for collection vs. db control
+#20 Update lucene 4.10 -> 4.10.1
+#21 Update hazelcast 3.2.2 -> 3.3.1
+#22 Fix lock handler code
+#23 Fix range queries for open ended ranges
+#24 Add date analyzer
+
+0.29
+#2 Add query result cache
+#4 Add ability to specify query fields (like qf in solr)
+#5 Enable filter queries (like solr fq)
+#6 Fix test cases to not be order dependent
+#7 Enable simple rest based query service (to be expanded)
+#8 Allow running query with 0 results for faceting
+#11 Treat query of no query (null) as :
+#13 Allow regex to filter terms
+#14 Create Index Ignores Segments For Some Calls in LumongoWorkPool
+#15 Facets Lost While Indexing Under Heavy Load With Multiple Threads
+#16 Update lucene 4.9 -> 4.10
+#17 Command line search program should have a default value for amount
+Other Version Updates:
+  grizzly 2.10.1 added
+  mongo-java-driver 2.12.2 -> 2.12.3
+  Build system to gradle 2.0
+
+0.28
+Add ability to sort descending from command line util
+Update lucene 4.8.1 -> 4.9
+Other Version Updates:
+  protobuf-rpc-pro-duplex 3.2.2 -> 3.2.3
+  mongo-java-driver 2.12.0 -> 2.12.2
+  guava 16.0 -> 17.0
+  hazelcast 3.2 -> 3.2.2
+  log4j 1.2.16 -> 1.2.17
+
+0.27.1
+Update to Lucene 4.8
+
+0.27
+Update to Lucene 4.8
+
+
 0.25
-Update to Lucene 4.4
+Update to Lucene 4.7.2
+Switch to github
+
 ...
+
 
 0.13.2
 Launch Script handles quoted arguements correctly
