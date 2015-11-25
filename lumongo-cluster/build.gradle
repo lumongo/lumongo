@@ -12,7 +12,7 @@ dependencies {
     compile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
     compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.10.1'
     compile 'com.cedarsoftware:json-io:2.6.0'
-    compile 'com.googlecode.protobuf-java-format:protobuf-java-format:1.2'
+
     compile 'joda-time:joda-time:2.4'
 }
 
