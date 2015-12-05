@@ -27,12 +27,15 @@ public class LumongoConstants {
 	public static final String QUERY = "q";
 	public static final String QUERY_FIELD = "qf";
 	public static final String FILTER_QUERY = "fq";
-	public static final String AMOUNT = "amount";
+	public static final String ROWS = "rows";
 	public static final String UNIQUE_ID = "uniqueId";
 	public static final String FILE_NAME = "fileName";
 	public static final String INDEX = "index";
 	public static final String FACET = "facet";
+	public static final String FETCH = "fetch";
+	public static final String FIELDS = "fl";
 	public static final String PRETTY = "pretty";
+	public static final String FORMAT = "format";
 	
 	//General
 	public static final String UTF8 = "UTF-8";

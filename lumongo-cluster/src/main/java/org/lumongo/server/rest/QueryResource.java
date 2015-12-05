@@ -1,8 +1,14 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.util.JsonFormat;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import org.bson.BSON;
+import org.bson.BSONObject;
 import org.lumongo.LumongoConstants;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.LMFacet;
@@ -29,14 +35,22 @@ public class QueryResource {
 
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	public String get(@QueryParam(LumongoConstants.INDEX) List<String> indexName, @QueryParam(LumongoConstants.QUERY) String query,
-			@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields, @QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
-			@QueryParam(LumongoConstants.AMOUNT) int amount, @QueryParam(LumongoConstants.FACET) List<String> facet,
-			@QueryParam(LumongoConstants.PRETTY) boolean pretty) {
+	public String get(
+					@QueryParam(LumongoConstants.INDEX) List<String> indexName,
+					@QueryParam(LumongoConstants.QUERY) String query,
+					@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields,
+					@QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
+					@QueryParam(LumongoConstants.FIELDS) List<String> fields,
+					@QueryParam(LumongoConstants.FETCH) Boolean fetch,
+					@QueryParam(LumongoConstants.ROWS) int rows,
+					@QueryParam(LumongoConstants.FACET) List<String> facet,
+					@QueryParam(LumongoConstants.PRETTY) boolean pretty,
+					@QueryParam(LumongoConstants.FORMAT) String format) {
+
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		qrBuilder.setQuery(query);
-		qrBuilder.setAmount(amount);
+		qrBuilder.setAmount(rows);
 
 		if (queryFields != null) {
 			for (String queryField : queryFields) {
@@ -50,6 +64,23 @@ public class QueryResource {
 			}
 		}
 
+		if (fields != null) {
+			for (String field : fields) {
+				if (field.startsWith("-")) {
+					qrBuilder.addDocumentMaskedFields(field.substring(1, field.length()));
+				}
+				else {
+					qrBuilder.addDocumentFields(field);
+				}
+			}
+		}
+
+		qrBuilder.setResultFetchType(Lumongo.FetchType.FULL);
+		if (fetch != null && !fetch) {
+			qrBuilder.setResultFetchType(Lumongo.FetchType.NONE);
+		}
+
+
 		FacetRequest.Builder frBuilder = FacetRequest.newBuilder();
 		for (String f : facet) {
 			CountRequest.Builder countBuilder = CountRequest.newBuilder();
@@ -60,10 +91,19 @@ public class QueryResource {
 		}
 		qrBuilder.setFacetRequest(frBuilder);
 
+
+
 		try {
 			QueryResponse qr = indexManager.query(qrBuilder.build());
 
-			String response = JsonFormat.printer().print(qr);
+			String response;
+			if ("proto".equalsIgnoreCase(format)) {
+				response =  JsonFormat.printer().print(qr);
+			}
+			else {
+				response = getStandardResponse(qr);
+			}
+
 			if (pretty) {
 				response = JsonWriter.formatJson(response);
 			}
@@ -74,5 +114,51 @@ public class QueryResource {
 					LumongoConstants.INTERNAL_ERROR);
 		}
 
+	}
+
+	private String getStandardResponse(QueryResponse qr) {
+		StringBuilder responseBuilder = new StringBuilder();
+		responseBuilder.append("{");
+		responseBuilder.append("\"numFound\": ");
+		responseBuilder.append(qr.getTotalHits());
+		responseBuilder.append(",");
+		responseBuilder.append("\"docs\": [");
+
+		boolean first = true;
+		for (Lumongo.ScoredResult sr : qr.getResultsList()) {
+			if (first) {
+				first = false;
+			}
+			else {
+				responseBuilder.append(",");
+			}
+			responseBuilder.append("{");
+			responseBuilder.append("\"id\": ");
+			responseBuilder.append(sr.getUniqueId());
+			responseBuilder.append(",");
+			responseBuilder.append("\"score\": ");
+			responseBuilder.append(sr.getScore());
+			responseBuilder.append(",");
+			responseBuilder.append("\"indexName\": ");
+			responseBuilder.append("\"").append(sr.getIndexName()).append("\"");
+
+			if (sr.hasResultDocument()) {
+				responseBuilder.append(",");
+				Lumongo.ResultDocument document =sr.getResultDocument();
+				ByteString bs = document.getDocument();
+				BasicDBObject dbObject = new BasicDBObject();
+				dbObject.putAll(BSON.decode(bs.toByteArray()));
+				responseBuilder.append("\"document\": ");
+				responseBuilder.append(dbObject.toString());
+
+			}
+
+
+			responseBuilder.append("}");
+		}
+		responseBuilder.append("]");
+		responseBuilder.append("}");
+
+		return responseBuilder.toString();
 	}
 }
