@@ -4,9 +4,7 @@ import com.cedarsoftware.util.io.JsonWriter;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.JsonFormat;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import org.bson.BSON;
-import org.bson.BSONObject;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
@@ -35,18 +33,11 @@ public class QueryResource {
 
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	public String get(
-					@QueryParam(LumongoConstants.INDEX) List<String> indexName,
-					@QueryParam(LumongoConstants.QUERY) String query,
-					@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields,
-					@QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
-					@QueryParam(LumongoConstants.FIELDS) List<String> fields,
-					@QueryParam(LumongoConstants.FETCH) Boolean fetch,
-					@QueryParam(LumongoConstants.ROWS) int rows,
-					@QueryParam(LumongoConstants.FACET) List<String> facet,
-					@QueryParam(LumongoConstants.PRETTY) boolean pretty,
-					@QueryParam(LumongoConstants.FORMAT) String format) {
-
+	public String get(@QueryParam(LumongoConstants.INDEX) List<String> indexName, @QueryParam(LumongoConstants.QUERY) String query,
+			@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields, @QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
+			@QueryParam(LumongoConstants.FIELDS) List<String> fields, @QueryParam(LumongoConstants.FETCH) Boolean fetch,
+			@QueryParam(LumongoConstants.ROWS) int rows, @QueryParam(LumongoConstants.FACET) List<String> facet,
+			@QueryParam(LumongoConstants.PRETTY) boolean pretty, @QueryParam(LumongoConstants.FORMAT) String format) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		qrBuilder.setQuery(query);
@@ -80,7 +71,6 @@ public class QueryResource {
 			qrBuilder.setResultFetchType(Lumongo.FetchType.NONE);
 		}
 
-
 		FacetRequest.Builder frBuilder = FacetRequest.newBuilder();
 		for (String f : facet) {
 			CountRequest.Builder countBuilder = CountRequest.newBuilder();
@@ -91,14 +81,12 @@ public class QueryResource {
 		}
 		qrBuilder.setFacetRequest(frBuilder);
 
-
-
 		try {
 			QueryResponse qr = indexManager.query(qrBuilder.build());
 
 			String response;
 			if ("proto".equalsIgnoreCase(format)) {
-				response =  JsonFormat.printer().print(qr);
+				response = JsonFormat.printer().print(qr);
 			}
 			else {
 				response = getStandardResponse(qr);
@@ -121,7 +109,6 @@ public class QueryResource {
 		responseBuilder.append("{");
 		responseBuilder.append("\"totalHits\": ");
 		responseBuilder.append(qr.getTotalHits());
-
 
 		if (!qr.getResultsList().isEmpty()) {
 			responseBuilder.append(",");
@@ -160,48 +147,46 @@ public class QueryResource {
 			responseBuilder.append("]");
 		}
 
+		if (!qr.getFacetGroupList().isEmpty()) {
+			responseBuilder.append(",");
+			responseBuilder.append("\"facets\": [");
+			boolean first = true;
+			for (Lumongo.FacetGroup facetGroup : qr.getFacetGroupList()) {
+				if (first) {
+					first = false;
+				}
+				else {
+					responseBuilder.append(",");
+				}
+				responseBuilder.append("{");
+				responseBuilder.append("\"field\": \"");
+				responseBuilder.append(facetGroup.getCountRequest().getFacetField().getLabel());
+				responseBuilder.append("\",");
+				responseBuilder.append("\"values\": [");
 
-			if (!qr.getFacetGroupList().isEmpty()) {
-				responseBuilder.append(",");
-				responseBuilder.append("\"facets\": [");
-				boolean first = true;
-				for (Lumongo.FacetGroup facetGroup : qr.getFacetGroupList()) {
-					if (first) {
-						first = false;
+				boolean firstInner = true;
+				for (Lumongo.FacetCount facetCount : facetGroup.getFacetCountList()) {
+					if (firstInner) {
+						firstInner = false;
 					}
 					else {
 						responseBuilder.append(",");
 					}
+
 					responseBuilder.append("{");
-					responseBuilder.append("\"field\": \"");
-					responseBuilder.append(facetGroup.getCountRequest().getFacetField().getLabel());
+					responseBuilder.append("\"label\": \"");
+					responseBuilder.append(facetCount.getFacet());
 					responseBuilder.append("\",");
-					responseBuilder.append("\"values\": [");
-
-					boolean firstInner = true;
-					for (Lumongo.FacetCount facetCount : facetGroup.getFacetCountList()) {
-						if (firstInner) {
-							firstInner = false;
-						}
-						else {
-							responseBuilder.append(",");
-						}
-
-						responseBuilder.append("{");
-						responseBuilder.append("\"label\": \"");
-						responseBuilder.append(facetCount.getFacet());
-						responseBuilder.append("\",");
-						responseBuilder.append("\"count\": ");
-						responseBuilder.append(facetCount.getCount());
-						responseBuilder.append("}");
-					}
-					responseBuilder.append("]");
-
+					responseBuilder.append("\"count\": ");
+					responseBuilder.append(facetCount.getCount());
 					responseBuilder.append("}");
 				}
 				responseBuilder.append("]");
-			}
 
+				responseBuilder.append("}");
+			}
+			responseBuilder.append("]");
+		}
 
 		responseBuilder.append("}");
 
