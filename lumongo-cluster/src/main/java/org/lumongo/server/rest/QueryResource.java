@@ -119,44 +119,90 @@ public class QueryResource {
 	private String getStandardResponse(QueryResponse qr) {
 		StringBuilder responseBuilder = new StringBuilder();
 		responseBuilder.append("{");
-		responseBuilder.append("\"numFound\": ");
+		responseBuilder.append("\"totalHits\": ");
 		responseBuilder.append(qr.getTotalHits());
-		responseBuilder.append(",");
-		responseBuilder.append("\"docs\": [");
 
-		boolean first = true;
-		for (Lumongo.ScoredResult sr : qr.getResultsList()) {
-			if (first) {
-				first = false;
-			}
-			else {
-				responseBuilder.append(",");
-			}
-			responseBuilder.append("{");
-			responseBuilder.append("\"id\": ");
-			responseBuilder.append(sr.getUniqueId());
+
+		if (!qr.getResultsList().isEmpty()) {
 			responseBuilder.append(",");
-			responseBuilder.append("\"score\": ");
-			responseBuilder.append(sr.getScore());
-			responseBuilder.append(",");
-			responseBuilder.append("\"indexName\": ");
-			responseBuilder.append("\"").append(sr.getIndexName()).append("\"");
-
-			if (sr.hasResultDocument()) {
+			responseBuilder.append("\"results\": [");
+			boolean first = true;
+			for (Lumongo.ScoredResult sr : qr.getResultsList()) {
+				if (first) {
+					first = false;
+				}
+				else {
+					responseBuilder.append(",");
+				}
+				responseBuilder.append("{");
+				responseBuilder.append("\"id\": ");
+				responseBuilder.append(sr.getUniqueId());
 				responseBuilder.append(",");
-				Lumongo.ResultDocument document =sr.getResultDocument();
-				ByteString bs = document.getDocument();
-				BasicDBObject dbObject = new BasicDBObject();
-				dbObject.putAll(BSON.decode(bs.toByteArray()));
-				responseBuilder.append("\"document\": ");
-				responseBuilder.append(dbObject.toString());
+				responseBuilder.append("\"score\": ");
+				responseBuilder.append(sr.getScore());
+				responseBuilder.append(",");
+				responseBuilder.append("\"indexName\": ");
+				responseBuilder.append("\"").append(sr.getIndexName()).append("\"");
 
+				if (sr.hasResultDocument()) {
+					responseBuilder.append(",");
+					Lumongo.ResultDocument document = sr.getResultDocument();
+					ByteString bs = document.getDocument();
+					BasicDBObject dbObject = new BasicDBObject();
+					dbObject.putAll(BSON.decode(bs.toByteArray()));
+					responseBuilder.append("\"document\": ");
+					responseBuilder.append(dbObject.toString());
+
+				}
+
+				responseBuilder.append("}");
 			}
-
-
-			responseBuilder.append("}");
+			responseBuilder.append("]");
 		}
-		responseBuilder.append("]");
+
+
+			if (!qr.getFacetGroupList().isEmpty()) {
+				responseBuilder.append(",");
+				responseBuilder.append("\"facets\": [");
+				boolean first = true;
+				for (Lumongo.FacetGroup facetGroup : qr.getFacetGroupList()) {
+					if (first) {
+						first = false;
+					}
+					else {
+						responseBuilder.append(",");
+					}
+					responseBuilder.append("{");
+					responseBuilder.append("\"field\": \"");
+					responseBuilder.append(facetGroup.getCountRequest().getFacetField().getLabel());
+					responseBuilder.append("\",");
+					responseBuilder.append("\"values\": [");
+
+					boolean firstInner = true;
+					for (Lumongo.FacetCount facetCount : facetGroup.getFacetCountList()) {
+						if (firstInner) {
+							firstInner = false;
+						}
+						else {
+							responseBuilder.append(",");
+						}
+
+						responseBuilder.append("{");
+						responseBuilder.append("\"label\": \"");
+						responseBuilder.append(facetCount.getFacet());
+						responseBuilder.append("\",");
+						responseBuilder.append("\"count\": ");
+						responseBuilder.append(facetCount.getCount());
+						responseBuilder.append("}");
+					}
+					responseBuilder.append("]");
+
+					responseBuilder.append("}");
+				}
+				responseBuilder.append("]");
+			}
+
+
 		responseBuilder.append("}");
 
 		return responseBuilder.toString();

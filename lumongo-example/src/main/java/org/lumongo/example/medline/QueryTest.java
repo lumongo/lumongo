@@ -29,7 +29,7 @@ public class QueryTest {
 							.asList("cancer", "molecular", "biology", "kinases", "DNA", "replication", "regulators", "neurons", "animals", "depression",
 											"serotonin", "rats", "male", "university", "nicotine", "France", "United States")) {
 				//simple query and document by document lookup
-				Query query = new Query("medline", "title:" + term, 10);
+				Query query = new Query("medlineBoth", "title:" + term, 10);
 				query.setResultFetchType(fetchType);
 
 				QueryResult queryResult = lumongoWorkPool.query(query);
@@ -47,7 +47,7 @@ public class QueryTest {
 
 			{
 				//using field sort
-				Query query = new Query("medline", "title:cancer AND issn:*", 10);
+				Query query = new Query("medlineBoth", "title:cancer AND issn:*", 10);
 				query.setResultFetchType(fetchType);
 				query.addFieldSort("issn");
 				QueryResult queryResult = lumongoWorkPool.query(query);
@@ -65,7 +65,7 @@ public class QueryTest {
 
 			{
 				//using facet count
-				Query query = new Query("medline", "title:cancer AND issn:*", 10);
+				Query query = new Query("medlineBoth", "title:cancer AND issn:*", 10);
 				query.setResultFetchType(fetchType);
 				query.addCountRequest("issn", 4);
 				QueryResult queryResult = lumongoWorkPool.query(query);
@@ -88,7 +88,7 @@ public class QueryTest {
 
 			{
 				//using facet count
-				Query query = new Query("medline", "title:cancer AND issn:*", 10);
+				Query query = new Query("medlineBoth", "title:cancer AND issn:*", 10);
 				query.setResultFetchType(fetchType);
 				query.addCountRequest("issn", 4);
 				QueryResult queryResult = lumongoWorkPool.query(query);
@@ -111,7 +111,7 @@ public class QueryTest {
 
 			{
 				//using two facets
-				Query query = new Query("medline", "title:cancer AND issn:*", 10);
+				Query query = new Query("medlineBoth", "title:cancer AND issn:*", 10);
 				query.setResultFetchType(fetchType);
 				query.addCountRequest("journalCountry", 4);
 				query.addCountRequest("issn", 4);
@@ -140,7 +140,7 @@ public class QueryTest {
 
 			{
 				//using date facet
-				Query query = new Query("medline", "title:asthma", 10);
+				Query query = new Query("medlineBoth", "title:asthma", 10);
 				query.setResultFetchType(fetchType);
 				query.addCountRequest("publicationDate", 15);
 
@@ -165,7 +165,7 @@ public class QueryTest {
 
 			{
 				//using date facet
-				Query query = new Query("medline", "title:asthma", 10);
+				Query query = new Query("medlineBoth", "title:asthma", 10);
 				query.setResultFetchType(fetchType);
 				query.addCountRequest("publicationDate", 15);
 				//query.addDrillDown("2005");
@@ -195,7 +195,7 @@ public class QueryTest {
 				ClientDocumentCache clientDocumentCache = new ClientDocumentCache(lumongoWorkPool, maxSize);
 
 				{
-					Query query = new Query("medline", "title:cancer AND issn:*", 1000);
+					Query query = new Query("medlineBoth", "title:cancer AND issn:*", 1000);
 					query.setResultFetchType(fetchType);
 					QueryResult queryResult = lumongoWorkPool.query(query);
 
@@ -212,7 +212,7 @@ public class QueryTest {
 				}
 
 				{
-					Query query = new Query("medline", "title:cancer AND issn:*", 1000);
+					Query query = new Query("medlineBoth", "title:cancer AND issn:*", 1000);
 					query.setResultFetchType(fetchType);
 					QueryResult queryResult = lumongoWorkPool.query(query);
 
@@ -229,7 +229,7 @@ public class QueryTest {
 				}
 
 				{
-					Query query = new Query("medline", "title:oncology", 100);
+					Query query = new Query("medlineBoth", "title:oncology", 100);
 					query.setResultFetchType(fetchType);
 					QueryResult queryResult = lumongoWorkPool.query(query);
 					System.out.println(queryResult.getCommandTimeMs());
@@ -247,7 +247,7 @@ public class QueryTest {
 				}
 
 				{
-					Query query = new Query("medline", "title:oncology", 1000);
+					Query query = new Query("medlineBoth", "title:oncology", 1000);
 					query.setResultFetchType(fetchType);
 					QueryResult queryResult = lumongoWorkPool.query(query);
 
