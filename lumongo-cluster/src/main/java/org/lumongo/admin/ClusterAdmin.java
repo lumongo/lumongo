@@ -25,7 +25,7 @@ public class ClusterAdmin {
 	private static final String HAZELCAST_PORT = "hazelcastPort";
 	private static final String COMMAND = "command";
 
-	public static enum Command {
+	public enum Command {
 		createCluster,
 		updateCluster,
 		removeCluster,
