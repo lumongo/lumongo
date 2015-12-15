@@ -259,7 +259,7 @@ public class QueryCombiner {
 
 				count++;
 
-				if (maxCount > 0 && count >= maxCount) {
+				if (maxCount > 0 && count > maxCount) {
 
 					if (computePossibleMissing) {
 						if (maxWithError > maxValuePossibleMissing) {
