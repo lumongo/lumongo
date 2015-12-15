@@ -32,6 +32,7 @@ public class LumongoConstants {
 	public static final String FILE_NAME = "fileName";
 	public static final String INDEX = "index";
 	public static final String FACET = "facet";
+	public static final String SORT = "sort";
 	public static final String FETCH = "fetch";
 	public static final String FIELDS = "fl";
 	public static final String PRETTY = "pretty";

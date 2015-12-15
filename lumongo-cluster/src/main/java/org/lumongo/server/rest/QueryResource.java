@@ -4,6 +4,7 @@ import com.cedarsoftware.util.io.JsonWriter;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.JsonFormat;
 import com.mongodb.BasicDBObject;
+import org.apache.log4j.Logger;
 import org.bson.BSON;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
@@ -18,12 +19,13 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
 @Path(LumongoConstants.QUERY_URL)
 public class QueryResource {
+
+	private final static Logger log = Logger.getLogger(QueryResource.class);
 
 	private LumongoIndexManager indexManager;
 
@@ -32,15 +34,18 @@ public class QueryResource {
 	}
 
 	@GET
-	@Produces({ MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON + ";charset=utf-8" })
 	public String get(@QueryParam(LumongoConstants.INDEX) List<String> indexName, @QueryParam(LumongoConstants.QUERY) String query,
 			@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields, @QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
 			@QueryParam(LumongoConstants.FIELDS) List<String> fields, @QueryParam(LumongoConstants.FETCH) Boolean fetch,
 			@QueryParam(LumongoConstants.ROWS) int rows, @QueryParam(LumongoConstants.FACET) List<String> facet,
-			@QueryParam(LumongoConstants.PRETTY) boolean pretty, @QueryParam(LumongoConstants.FORMAT) String format) {
+			@QueryParam(LumongoConstants.SORT) List<String> sort, @QueryParam(LumongoConstants.PRETTY) boolean pretty,
+			@QueryParam(LumongoConstants.FORMAT) String format) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
-		qrBuilder.setQuery(query);
+		if (query != null) {
+			qrBuilder.setQuery(query);
+		}
 		qrBuilder.setAmount(rows);
 
 		if (queryFields != null) {
@@ -73,13 +78,51 @@ public class QueryResource {
 
 		FacetRequest.Builder frBuilder = FacetRequest.newBuilder();
 		for (String f : facet) {
-			CountRequest.Builder countBuilder = CountRequest.newBuilder();
-			// TODO handle path
-			LMFacet lmFacet = LMFacet.newBuilder().setLabel(f).build();
+			Integer count = null;
+			if (f.contains(":")) {
+				String countString = f.substring(f.indexOf(":") + 1);
+				f = f.substring(0, f.indexOf(":"));
+				try {
+					count = Integer.parseInt(countString);
+				}
+				catch (Exception e) {
+					return "Invalid facet count <" + countString + "> for facet <" + f + ">";
+				}
+			}
 
-			frBuilder.addCountRequest(countBuilder.setFacetField(lmFacet));
+			CountRequest.Builder countBuilder = CountRequest.newBuilder();
+			LMFacet lmFacet = LMFacet.newBuilder().setLabel(f).build();
+			CountRequest.Builder facetBuilder = countBuilder.setFacetField(lmFacet);
+			if (count != null) {
+				facetBuilder.setMaxFacets(count);
+			}
+			frBuilder.addCountRequest(facetBuilder);
 		}
 		qrBuilder.setFacetRequest(frBuilder);
+
+		Lumongo.SortRequest.Builder sortRequest = Lumongo.SortRequest.newBuilder();
+		for (String sortField : sort) {
+
+			Lumongo.FieldSort.Builder fieldSort = Lumongo.FieldSort.newBuilder();
+			if (sortField.contains(":")) {
+				String sortDir = sortField.substring(sortField.indexOf(":") + 1);
+				sortField = sortField.substring(0, sortField.indexOf(":"));
+
+
+				if ("-1".equals(sortDir) || "DESC".equalsIgnoreCase(sortDir)) {
+					fieldSort.setDirection(Lumongo.FieldSort.Direction.DESCENDING);
+				}
+				else if ("1".equals(sortDir) || "ASC".equalsIgnoreCase(sortDir)) {
+					fieldSort.setDirection(Lumongo.FieldSort.Direction.ASCENDING);
+				}
+				else {
+					return "Invalid sort direction <" + sortDir + "> for field <" + sortField + ">.  Expecting -1/1 or DESC/ASC";
+				}
+			}
+			fieldSort.setSortField(sortField);
+			sortRequest.addFieldSort(fieldSort);
+		}
+		qrBuilder.setSortRequest(sortRequest);
 
 		try {
 			QueryResponse qr = indexManager.query(qrBuilder.build());
@@ -98,8 +141,8 @@ public class QueryResource {
 			return response;
 		}
 		catch (Exception e) {
-			throw new WebApplicationException(LumongoConstants.UNIQUE_ID + " and " + LumongoConstants.FILE_NAME + " are required",
-					LumongoConstants.INTERNAL_ERROR);
+			log.error(e.getClass().getSimpleName() + ":", e);
+			return e.getMessage();
 		}
 
 	}
