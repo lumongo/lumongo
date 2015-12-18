@@ -9,6 +9,7 @@ import org.lumongo.cluster.message.Lumongo.Metadata;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface DocumentStorage {
 	void storeSourceDocument(String uniqueId, long timeStamp, BasicBSONObject document, List<Metadata> metaDataList) throws Exception;
@@ -19,7 +20,7 @@ public interface DocumentStorage {
 	
 	AssociatedDocument getAssociatedDocument(String uniqueId, String filename, FetchType fetchType) throws Exception;
 	
-	void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long timestamp, HashMap<String, String> metadataMap)
+	void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long timestamp, Map<String, String> metadataMap)
 					throws Exception;
 	
 	InputStream getAssociatedDocumentStream(String uniqueId, String filename);
