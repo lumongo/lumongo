@@ -61,7 +61,7 @@ public final class StandardNoStopAnalyzer extends Analyzer {
 		tok = new LowerCaseFilter(tok);
 		return new TokenStreamComponents(src, tok) {
 			@Override
-			protected void setReader(final Reader reader) throws IOException {
+			protected void setReader(final Reader reader) {
 				src.setMaxTokenLength(StandardNoStopAnalyzer.this.maxTokenLength);
 				super.setReader(reader);
 			}

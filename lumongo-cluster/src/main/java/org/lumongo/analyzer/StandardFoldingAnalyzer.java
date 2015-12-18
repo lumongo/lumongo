@@ -86,7 +86,7 @@ public final class StandardFoldingAnalyzer extends StopwordAnalyzerBase {
 		tok = new ASCIIFoldingFilter(tok);
 		return new TokenStreamComponents(src, tok) {
 			@Override
-			protected void setReader(final Reader reader) throws IOException {
+			protected void setReader(final Reader reader)  {
 				src.setMaxTokenLength(StandardFoldingAnalyzer.this.maxTokenLength);
 				super.setReader(reader);
 			}

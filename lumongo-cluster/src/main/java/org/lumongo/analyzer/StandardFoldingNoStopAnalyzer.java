@@ -64,7 +64,7 @@ public final class StandardFoldingNoStopAnalyzer extends Analyzer {
 		tok = new ASCIIFoldingFilter(tok);
 		return new TokenStreamComponents(src, tok) {
 			@Override
-			protected void setReader(final Reader reader) throws IOException {
+			protected void setReader(final Reader reader) {
 				src.setMaxTokenLength(StandardFoldingNoStopAnalyzer.this.maxTokenLength);
 				super.setReader(reader);
 			}

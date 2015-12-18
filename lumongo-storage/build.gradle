@@ -8,6 +8,7 @@ dependencies {
 	compile "org.mongodb:mongo-java-driver:$mongoJavaVersion"
 	compile 'log4j:log4j:1.2.17'
 	compile "org.apache.lucene:lucene-core:$luceneVersion"
+	compile "org.apache.lucene:lucene-backward-codecs:$luceneVersion"
 	compile 'com.google.guava:guava:18.0'
 	testCompile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
 	testCompile "org.apache.lucene:lucene-queryparser:$luceneVersion"
