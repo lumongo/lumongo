@@ -243,7 +243,7 @@ public class LumongoSegment {
 
 			booleanQuery.add(q, BooleanClause.Occur.MUST);
 
-			q = new QueryWrapperFilter(booleanQuery.build());
+			q = booleanQuery.build();
 		}
 
 		reopenIndexWritersIfNecessary();
