@@ -40,7 +40,7 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.FIELDS) List<String> fields, @QueryParam(LumongoConstants.FETCH) Boolean fetch,
 			@QueryParam(LumongoConstants.ROWS) int rows, @QueryParam(LumongoConstants.FACET) List<String> facet,
 			@QueryParam(LumongoConstants.SORT) List<String> sort, @QueryParam(LumongoConstants.PRETTY) boolean pretty,
-			@QueryParam(LumongoConstants.FORMAT) String format) {
+			@QueryParam(LumongoConstants.FORMAT) String format, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		if (query != null) {
@@ -96,6 +96,10 @@ public class QueryResource {
 			if (count != null) {
 				facetBuilder.setMaxFacets(count);
 			}
+			if (computeFacetError) {
+				facetBuilder.setComputeError(true);
+				facetBuilder.setComputePossibleMissed(true);
+			}
 			frBuilder.addCountRequest(facetBuilder);
 		}
 		qrBuilder.setFacetRequest(frBuilder);
@@ -107,7 +111,6 @@ public class QueryResource {
 			if (sortField.contains(":")) {
 				String sortDir = sortField.substring(sortField.indexOf(":") + 1);
 				sortField = sortField.substring(0, sortField.indexOf(":"));
-
 
 				if ("-1".equals(sortDir) || "DESC".equalsIgnoreCase(sortDir)) {
 					fieldSort.setDirection(Lumongo.FieldSort.Direction.DESCENDING);
@@ -204,7 +207,13 @@ public class QueryResource {
 				responseBuilder.append("{");
 				responseBuilder.append("\"field\": \"");
 				responseBuilder.append(facetGroup.getCountRequest().getFacetField().getLabel());
-				responseBuilder.append("\",");
+				responseBuilder.append("\"");
+				if (facetGroup.hasPossibleMissing()) {
+					responseBuilder.append(",");
+					responseBuilder.append("\"maxPossibleMissing\": ");
+					responseBuilder.append(facetGroup.getMaxValuePossibleMissing());
+				}
+				responseBuilder.append(",");
 				responseBuilder.append("\"values\": [");
 
 				boolean firstInner = true;
@@ -222,6 +231,11 @@ public class QueryResource {
 					responseBuilder.append("\",");
 					responseBuilder.append("\"count\": ");
 					responseBuilder.append(facetCount.getCount());
+					if (facetCount.hasMaxError()) {
+						responseBuilder.append(",");
+						responseBuilder.append("\"maxError\": ");
+						responseBuilder.append(facetCount.getMaxError());
+					}
 					responseBuilder.append("}");
 				}
 				responseBuilder.append("]");
