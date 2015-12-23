@@ -26,7 +26,7 @@ public class Fetch {
 		OptionSpec<String> addressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
 		OptionSpec<Integer> portArg = parser.accepts(AdminConstants.PORT).withRequiredArg().ofType(Integer.class)
 						.defaultsTo(LumongoConstants.DEFAULT_EXTERNAL_SERVICE_PORT).describedAs("Lumongo external port");
-		OptionSpec<String> uniqueIdArg = parser.accepts(AdminConstants.UNIQUE_ID).withRequiredArg().required().describedAs("Unique Id to fetch");
+		OptionSpec<String> uniqueIdArg = parser.accepts(AdminConstants.ID).withRequiredArg().required().describedAs("Unique Id to fetch");
 		OptionSpec<String> indexArg = parser.accepts(AdminConstants.INDEX).withRequiredArg().required().describedAs("Index to fetch from");
 		
 		OptionSpec<String> documentFieldsArg = parser.accepts(AdminConstants.DOCUMENT_FIELDS, "Fields to return from mongo").withRequiredArg();

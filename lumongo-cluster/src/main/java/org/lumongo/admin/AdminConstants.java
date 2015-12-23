@@ -10,7 +10,7 @@ public class AdminConstants {
 	public static final String HAZELCAST_PORT = "hazelcastPort";
 	public static final String COMMAND = "command";
 	public static final String REST_PORT = "restPort";
-	public static final String UNIQUE_ID = "uniqueId";
+	public static final String ID = "id";
 	public static final String FILE_NAME = "fileName";
 	public static final String FILE_TO_STORE = "fileToStore";
 	public static final String OUTPUT_FILE = "outputFile";

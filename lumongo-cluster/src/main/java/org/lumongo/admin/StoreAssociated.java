@@ -20,7 +20,7 @@ public class StoreAssociated {
 		OptionSpec<String> addressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
 		OptionSpec<Integer> restPortArg = parser.accepts(AdminConstants.REST_PORT).withRequiredArg().ofType(Integer.class)
 						.defaultsTo(LumongoConstants.DEFAULT_REST_SERVICE_PORT).describedAs("Lumongo rest port");
-		OptionSpec<String> uniqueIdArg = parser.accepts(AdminConstants.UNIQUE_ID).withRequiredArg().required().describedAs("Unique Id");
+		OptionSpec<String> idArg = parser.accepts(AdminConstants.ID).withRequiredArg().required().describedAs("Doc Id");
 		OptionSpec<String> indexArg = parser.accepts(AdminConstants.INDEX).withRequiredArg().required().describedAs("Index");
 		OptionSpec<String> fileNameArg = parser.accepts(AdminConstants.FILE_NAME).withRequiredArg().required().describedAs("Associated File Name");
 		OptionSpec<File> fileToStoreArg = parser.accepts(AdminConstants.FILE_TO_STORE).withRequiredArg().ofType(File.class).required()
@@ -31,13 +31,13 @@ public class StoreAssociated {
 
 			String address = options.valueOf(addressArg);
 			int restPort = options.valueOf(restPortArg);
-			String uniqueId = options.valueOf(uniqueIdArg);
+			String id = options.valueOf(idArg);
 			String indexName = options.valueOf(indexArg);
 			String fileName = options.valueOf(fileNameArg);
 			File fileToStore = options.valueOf(fileToStoreArg);
 
 			LumongoRestClient client = new LumongoRestClient(address, restPort);
-			client.storeAssociated(uniqueId, indexName, fileName, fileToStore);
+			client.storeAssociated(id, indexName, fileName, fileToStore);
 
 		}
 		catch (OptionException e) {

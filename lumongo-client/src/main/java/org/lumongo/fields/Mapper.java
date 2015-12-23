@@ -72,8 +72,6 @@ public class Mapper<T> {
 
 				@SuppressWarnings("unused") UniqueId uniqueId = f.getAnnotation(UniqueId.class);
 
-				fieldName = "_id";
-
 				if (uniqueIdField == null) {
 					uniqueIdField = new UniqueIdFieldInfo<>(f, fieldName);
 

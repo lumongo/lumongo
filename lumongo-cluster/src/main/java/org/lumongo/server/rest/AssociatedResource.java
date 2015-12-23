@@ -1,5 +1,6 @@
 package org.lumongo.server.rest;
 
+import org.apache.log4j.Logger;
 import org.lumongo.LumongoConstants;
 import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.util.StreamHelper;
@@ -21,6 +22,9 @@ import java.io.OutputStream;
 @Path(LumongoConstants.ASSOCIATED_DOCUMENTS_URL)
 public class AssociatedResource {
 
+	private final static Logger log = Logger.getLogger(AssociatedResource.class);
+
+
 	private LumongoIndexManager indexManager;
 
 	public AssociatedResource(LumongoIndexManager indexManager) {
@@ -29,7 +33,7 @@ public class AssociatedResource {
 
 	@GET
 	@Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-	public Response get(@Context Response response, @QueryParam(LumongoConstants.UNIQUE_ID) final String uniqueId,
+	public Response get(@Context Response response, @QueryParam(LumongoConstants.ID) final String uniqueId,
 					@QueryParam(LumongoConstants.FILE_NAME) final String fileName, @QueryParam(LumongoConstants.INDEX) final String indexName) {
 
 		StreamingOutput stream = new StreamingOutput() {
@@ -48,7 +52,7 @@ public class AssociatedResource {
 					}
 				}
 				else {
-					throw new WebApplicationException(LumongoConstants.UNIQUE_ID + " and " + LumongoConstants.FILE_NAME + " are required",
+					throw new WebApplicationException(LumongoConstants.ID + " and " + LumongoConstants.FILE_NAME + " are required",
 									LumongoConstants.BAD_REQUEST);
 				}
 			}
@@ -61,7 +65,7 @@ public class AssociatedResource {
 
 	@POST
 	@Produces({ MediaType.TEXT_XML })
-	public Response post(@QueryParam(LumongoConstants.UNIQUE_ID) final String uniqueId, @QueryParam(LumongoConstants.FILE_NAME) final String fileName,
+	public Response post(@QueryParam(LumongoConstants.ID) final String uniqueId, @QueryParam(LumongoConstants.FILE_NAME) final String fileName,
 					@QueryParam(LumongoConstants.INDEX) final String indexName, final InputStream is) {
 		if (uniqueId != null && fileName != null && indexName != null) {
 
@@ -72,11 +76,12 @@ public class AssociatedResource {
 								.entity("Stored associated document with uniqueId <" + uniqueId + "> and fileName <" + fileName + ">").build();
 			}
 			catch (Exception e) {
+				log.error(e.getClass().getSimpleName() + ": ", e);
 				return Response.status(LumongoConstants.INTERNAL_ERROR).entity(e.getMessage()).build();
 			}
 		}
 		else {
-			throw new WebApplicationException(LumongoConstants.UNIQUE_ID + " and " + LumongoConstants.FILE_NAME + " are required",
+			throw new WebApplicationException(LumongoConstants.ID + " and " + LumongoConstants.FILE_NAME + " are required",
 							LumongoConstants.BAD_REQUEST);
 		}
 

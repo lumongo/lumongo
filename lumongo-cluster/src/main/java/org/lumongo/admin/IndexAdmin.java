@@ -31,7 +31,7 @@ import java.util.Arrays;
 
 public class IndexAdmin {
 
-	public static enum Command {
+	public enum Command {
 		clear,
 		optimize,
 		getRealTimeCount,
@@ -97,9 +97,7 @@ public class IndexAdmin {
 				}
 
 				GetFieldsResult response = lumongoWorkPool.execute(new GetFields(index));
-				for (String fn : response.getFieldNames()) {
-					System.out.println(fn);
-				}
+				response.getFieldNames().forEach(System.out::println);
 			}
 			else if (Command.optimize.equals(command)) {
 				if (index == null) {
@@ -123,9 +121,7 @@ public class IndexAdmin {
 			else if (Command.getIndexes.equals(command)) {
 
 				GetIndexesResult response = lumongoWorkPool.execute(new GetIndexes());
-				for (String val : response.getIndexNames()) {
-					System.out.println(val);
-				}
+				response.getIndexNames().forEach(System.out::println);
 			}
 			else if (Command.getCurrentMembers.equals(command)) {
 

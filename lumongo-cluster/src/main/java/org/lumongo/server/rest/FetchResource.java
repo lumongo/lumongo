@@ -1,5 +1,6 @@
 package org.lumongo.server.rest;
 
+import com.cedarsoftware.util.io.JsonWriter;
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -19,7 +20,6 @@ import javax.ws.rs.core.Response;
 @Path(LumongoConstants.FETCH_URL)
 public class FetchResource {
 
-
 	private LumongoIndexManager indexManager;
 
 	public FetchResource(LumongoIndexManager indexManager) {
@@ -27,17 +27,15 @@ public class FetchResource {
 	}
 
 	@GET
-	@Produces({ MediaType.APPLICATION_JSON })
-	public Response get(@Context Response response, @QueryParam(LumongoConstants.UNIQUE_ID) final String uniqueId,
-					@QueryParam(LumongoConstants.INDEX) final String indexName) {
-
+	@Produces({ MediaType.APPLICATION_JSON + ";charset=utf-8" })
+	public Response get(@Context Response response, @QueryParam(LumongoConstants.ID) final String uniqueId,
+			@QueryParam(LumongoConstants.INDEX) final String indexName, @QueryParam(LumongoConstants.PRETTY) boolean pretty) {
 
 		Lumongo.FetchRequest.Builder fetchRequest = Lumongo.FetchRequest.newBuilder();
 		fetchRequest.setIndexName(indexName);
 		fetchRequest.setUniqueId(uniqueId);
 
 		Lumongo.FetchResponse fetchResponse;
-
 
 		try {
 			fetchResponse = indexManager.fetch(fetchRequest.build());
@@ -48,8 +46,13 @@ public class FetchResource {
 
 				DBObject document = new BasicDBObject();
 				document.putAll(BSON.decode(bs.toByteArray()));
-				return Response.status(LumongoConstants.SUCCESS)
-								.entity(document.toString()).build();
+				String docString = document.toString();
+
+				if (pretty) {
+					docString = JsonWriter.formatJson(docString);
+				}
+
+				return Response.status(LumongoConstants.SUCCESS).entity(docString).build();
 			}
 			else {
 				return Response.status(LumongoConstants.NOT_FOUND).entity("Failed to fetch uniqueId <" + uniqueId + "> for index <" + indexName + ">").build();
@@ -57,10 +60,10 @@ public class FetchResource {
 
 		}
 		catch (Exception e) {
-			return Response.status(LumongoConstants.INTERNAL_ERROR).entity("Failed to fetch uniqueId <" + uniqueId + "> for index <" + indexName + ">: " + e.getMessage()).build();
+			return Response.status(LumongoConstants.INTERNAL_ERROR)
+					.entity("Failed to fetch uniqueId <" + uniqueId + "> for index <" + indexName + ">: " + e.getMessage()).build();
 		}
 
 	}
-
 
 }

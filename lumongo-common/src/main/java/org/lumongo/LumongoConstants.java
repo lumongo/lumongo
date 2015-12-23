@@ -28,7 +28,7 @@ public class LumongoConstants {
 	public static final String QUERY_FIELD = "qf";
 	public static final String FILTER_QUERY = "fq";
 	public static final String ROWS = "rows";
-	public static final String UNIQUE_ID = "uniqueId";
+	public static final String ID = "id";
 	public static final String FILE_NAME = "fileName";
 	public static final String INDEX = "index";
 	public static final String FACET = "facet";

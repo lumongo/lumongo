@@ -20,6 +20,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
 
 @Path(LumongoConstants.QUERY_URL)
@@ -35,7 +36,7 @@ public class QueryResource {
 
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON + ";charset=utf-8" })
-	public String get(@QueryParam(LumongoConstants.INDEX) List<String> indexName, @QueryParam(LumongoConstants.QUERY) String query,
+	public Response get(@QueryParam(LumongoConstants.INDEX) List<String> indexName, @QueryParam(LumongoConstants.QUERY) String query,
 			@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields, @QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
 			@QueryParam(LumongoConstants.FIELDS) List<String> fields, @QueryParam(LumongoConstants.FETCH) Boolean fetch,
 			@QueryParam(LumongoConstants.ROWS) int rows, @QueryParam(LumongoConstants.FACET) List<String> facet,
@@ -86,7 +87,8 @@ public class QueryResource {
 					count = Integer.parseInt(countString);
 				}
 				catch (Exception e) {
-					return "Invalid facet count <" + countString + "> for facet <" + f + ">";
+					Response.status(LumongoConstants.INTERNAL_ERROR)
+							.entity("Invalid facet count <" + countString + "> for facet <" + f + ">").build();
 				}
 			}
 
@@ -119,7 +121,8 @@ public class QueryResource {
 					fieldSort.setDirection(Lumongo.FieldSort.Direction.ASCENDING);
 				}
 				else {
-					return "Invalid sort direction <" + sortDir + "> for field <" + sortField + ">.  Expecting -1/1 or DESC/ASC";
+					Response.status(LumongoConstants.INTERNAL_ERROR)
+							.entity("Invalid sort direction <" + sortDir + "> for field <" + sortField + ">.  Expecting -1/1 or DESC/ASC").build();
 				}
 			}
 			fieldSort.setSortField(sortField);
@@ -141,11 +144,14 @@ public class QueryResource {
 			if (pretty) {
 				response = JsonWriter.formatJson(response);
 			}
-			return response;
+
+			return Response.status(LumongoConstants.SUCCESS)
+					.entity(response).build();
 		}
 		catch (Exception e) {
 			log.error(e.getClass().getSimpleName() + ":", e);
-			return e.getMessage();
+			return Response.status(LumongoConstants.INTERNAL_ERROR)
+					.entity(e.getClass().getSimpleName() + ":" + e.getMessage()).build();
 		}
 
 	}

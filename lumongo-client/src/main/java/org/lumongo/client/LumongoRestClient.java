@@ -37,17 +37,14 @@ public class LumongoRestClient {
 
 		try {
 			HashMap<String, String> parameters = new HashMap<String, String>();
-			parameters.put(LumongoConstants.UNIQUE_ID, uniqueId);
+			parameters.put(LumongoConstants.ID, uniqueId);
 			parameters.put(LumongoConstants.FILE_NAME, fileName);
 			parameters.put(LumongoConstants.INDEX, indexName);
 
 			String url = HttpHelper.createRequestUrl(server, restPort, LumongoConstants.ASSOCIATED_DOCUMENTS_URL, parameters);
 			conn = createGetConnection(url);
 
-			if (conn.getResponseCode() != LumongoConstants.SUCCESS) {
-				byte[] bytes = StreamHelper.getBytesFromStream(conn.getErrorStream());
-				throw new IOException("Request failed with <" + conn.getResponseCode() + ">: " + new String(bytes, LumongoConstants.UTF8));
-			}
+			handlePossibleError(conn);
 
 			source = conn.getInputStream();
 			StreamHelper.copyStream(source, destination);
@@ -66,8 +63,8 @@ public class LumongoRestClient {
 		OutputStream destination = null;
 		try {
 
-			HashMap<String, String> parameters = new HashMap<String, String>();
-			parameters.put(LumongoConstants.UNIQUE_ID, uniqueId);
+			HashMap<String, String> parameters = new HashMap<>();
+			parameters.put(LumongoConstants.ID, uniqueId);
 			parameters.put(LumongoConstants.FILE_NAME, fileName);
 			parameters.put(LumongoConstants.INDEX, indexName);
 
@@ -79,13 +76,23 @@ public class LumongoRestClient {
 
 			StreamHelper.copyStream(source, destination);
 
-			if (conn.getResponseCode() != LumongoConstants.SUCCESS) {
-				byte[] bytes = StreamHelper.getBytesFromStream(conn.getErrorStream());
-				throw new IOException("Request failed with <" + conn.getResponseCode() + ">: " + new String(bytes, LumongoConstants.UTF8));
-			}
+			handlePossibleError(conn);
 		}
 		finally {
 			closeStreams(source, destination, conn);
+		}
+	}
+
+	private void handlePossibleError(HttpURLConnection conn) throws IOException {
+		if (conn.getResponseCode() != LumongoConstants.SUCCESS) {
+			byte[] bytes;
+			if (conn.getErrorStream() != null) {
+				bytes = StreamHelper.getBytesFromStream(conn.getErrorStream());
+			}
+			else {
+				bytes = StreamHelper.getBytesFromStream(conn.getInputStream());
+			}
+			throw new IOException("Request failed with <" + conn.getResponseCode() + ">: " + new String(bytes, LumongoConstants.UTF8));
 		}
 	}
 
