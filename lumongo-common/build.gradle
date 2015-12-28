@@ -43,8 +43,6 @@ task compileProto << {
 		outputDir.mkdir();
 	}
 
-	String pythonOutput = rootProject.file("alt-clients" + File.separator + "python").toString();
-
 	if (protoDir.isDirectory() && protoDir.exists()) {
 		
 		String[] protos = protoDir.list()
@@ -56,7 +54,7 @@ task compileProto << {
 				exec {
 					setStandardOutput(System.out)
 					executable protocCommand
-					args '--proto_path=' + protoDir.getAbsolutePath(), '--python_out=' + pythonOutput, '--java_out=' + outputDir.getAbsolutePath(), protoFull
+					args '--proto_path=' + protoDir.getAbsolutePath(), '--java_out=' + outputDir.getAbsolutePath(), protoFull
 				}
 			}
 		}
