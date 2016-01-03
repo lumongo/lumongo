@@ -90,7 +90,7 @@ public class MongoDirectory implements NosqlDirectory {
 		synchronized (MongoDirectory.class) {
 			//get back a index number to use instead of the string
 			//this is not a persisted number and is just in memory
-			String key = ddName + "-" + indexName;
+			String key = dbname + "-" + indexName;
 			Short indexNumber = indexNameToNumberMap.get(key);
 			if (indexNumber == null) {
 				indexNameToNumberMap.put(key, indexCount);
@@ -291,6 +291,10 @@ public class MongoDirectory implements NosqlDirectory {
 	@Override
 	public void close() {
 		nameToFileMap.clear();
+		synchronized (MongoDirectory.class) {
+			//avoid cache conflicts on segment fail back over to node which had it loaded before
+			indexNameToNumberMap.remove(dbname + "-" + indexName);
+		}
 	}
 
 	@Override
