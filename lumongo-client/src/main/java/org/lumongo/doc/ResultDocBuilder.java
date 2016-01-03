@@ -1,8 +1,10 @@
 package org.lumongo.doc;
 
 import com.google.protobuf.ByteString;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.bson.BSON;
+import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 
@@ -28,6 +30,13 @@ public class ResultDocBuilder {
 		for (String key : metadata.keySet()) {
 			resultDocumentBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue(metadata.get(key)));
 		}
+		return this;
+	}
+
+	public ResultDocBuilder setDocument(Document document) {
+		DBObject dbObject = new BasicDBObject();
+		dbObject.putAll(document);
+		setDocument(dbObject);
 		return this;
 	}
 
