@@ -365,14 +365,11 @@ public class QueryCombiner {
 						compare = Long.compare(a, b);
 						dateIndex++;
 					}
-					else if (LMAnalyzer.KEYWORD.equals(lmAnalyzer) || LMAnalyzer.LC_KEYWORD.equals(lmAnalyzer)) {
+					else {
 						String a = o1.getSortTermList().get(stringIndex);
 						String b = o2.getSortTermList().get(stringIndex);
 						compare = a.compareTo(b);
 						stringIndex++;
-					}
-					else {
-						throw new RuntimeException("Unsupported analyzer <" + lmAnalyzer + "> for sort field <" + sortField + ">");
 					}
 
 					if (FieldSort.Direction.DESCENDING.equals(fs.getDirection())) {
