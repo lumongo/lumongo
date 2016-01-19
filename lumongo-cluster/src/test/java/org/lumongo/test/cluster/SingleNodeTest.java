@@ -62,6 +62,7 @@ public class SingleNodeTest extends ServerTestBase {
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT).sortAs("an", Lumongo.SortAs.SortType.NUMERIC_INT));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("country").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("date").indexAs(LMAnalyzer.DATE).facetAs(LMFacetType.DATE_YYYY_MM_DD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("keyword").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 
 		lumongoWorkPool.createIndex(MY_TEST_INDEX, 16, "uid", indexConfig);
 		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, "uid", indexConfig);
@@ -73,32 +74,32 @@ public class SingleNodeTest extends ServerTestBase {
 
 		final int COUNT_PER_ISSN = 10;
 		final String uniqueIdPrefix = "myId-";
-		
+
 		final String[] issns = new String[] { "1234-1234", "3333-1234", "1234-5555", "1234-4444", "2222-2222" };
 		int totalRecords = COUNT_PER_ISSN * issns.length;
-		
+
 		int id = 0;
 		{
 			for (String issn : issns) {
 				for (int i = 0; i < COUNT_PER_ISSN; i++) {
 					boolean half = (i % 2 == 0);
 					boolean tenth = (i % 10 == 0);
-					
+
 					id++;
-					
+
 					String uniqueId = uniqueIdPrefix + id;
-					
+
 					DBObject object = new BasicDBObject();
 					object.put("issn", issn);
 					object.put("title", "Facet Userguide");
-					
+
 					if (half) { // 1/2 of input
 						object.put("country", "US");
 					}
 					else { // 1/2 of input
 						object.put("country", "France");
 					}
-					
+
 					if (tenth) { // 1/10 of input
 						Date d = (new DateTime(DateTimeZone.UTC)).withDate(2014, 10, 4).toDate();
 						object.put("date", d);
@@ -111,13 +112,27 @@ public class SingleNodeTest extends ServerTestBase {
 						Date d = (new DateTime(DateTimeZone.UTC)).withDate(2013, 8, 4).toDate();
 						object.put("date", d);
 					}
-					
+
 					Store s = new Store(uniqueId, FACET_TEST_INDEX);
 					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
-					
+
 					lumongoWorkPool.store(s);
 				}
 			}
+		}
+
+		{
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest("keyword", 30);
+			QueryResult qr = lumongoWorkPool.query(q);
+
+			assertEquals("Facets should be 0 for keyword", qr.getFacetCounts("keyword").size(), 0);
+		}
+
+		{
+			Query q = new Query(FACET_TEST_INDEX, "title:userguide", 10).addCountRequest("keyword", 30);
+			QueryResult qr = lumongoWorkPool.query(q);
+
+			assertEquals("Facets should be 0 for keyword", qr.getFacetCounts("keyword").size(), 0);
 		}
 
 		{
