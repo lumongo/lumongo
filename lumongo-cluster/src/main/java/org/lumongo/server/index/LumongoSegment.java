@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -759,7 +760,7 @@ public class LumongoSegment {
 	private void handleSortForStoredField(Document d, String storedFieldName, FieldConfig fc, Object o) {
 
 		if (fc.hasSortAs()) {
-			Lumongo.SortAs sortAs = fc.getSortAs();
+			SortAs sortAs = fc.getSortAs();
 			String sortFieldName = sortAs.getSortFieldName();
 
 			if (IndexConfig.isNumericOrDateSortType(sortAs.getSortType())) {
@@ -768,16 +769,16 @@ public class LumongoSegment {
 
 						Number number = (Number) obj;
 						SortedNumericDocValuesField docValue = null;
-						if (Lumongo.SortAs.SortType.NUMERIC_INT.equals(sortAs.getSortType())) {
+						if (SortAs.SortType.NUMERIC_INT.equals(sortAs.getSortType())) {
 							docValue = new SortedNumericDocValuesField(sortFieldName, number.intValue());
 						}
-						else if (Lumongo.SortAs.SortType.NUMERIC_LONG.equals(sortAs.getSortType())) {
+						else if (SortAs.SortType.NUMERIC_LONG.equals(sortAs.getSortType())) {
 							docValue = new SortedNumericDocValuesField(sortFieldName, number.longValue());
 						}
-						else if (Lumongo.SortAs.SortType.NUMERIC_FLOAT.equals(sortAs.getSortType())) {
+						else if (SortAs.SortType.NUMERIC_FLOAT.equals(sortAs.getSortType())) {
 							docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.floatToSortableInt(number.floatValue()));
 						}
-						else if (Lumongo.SortAs.SortType.NUMERIC_DOUBLE.equals(sortAs.getSortType())) {
+						else if (SortAs.SortType.NUMERIC_DOUBLE.equals(sortAs.getSortType())) {
 							docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.doubleToSortableLong(number.doubleValue()));
 						}
 						else {
@@ -800,9 +801,27 @@ public class LumongoSegment {
 					}
 				});
 			}
-			else if (Lumongo.SortAs.SortType.STRING.equals(sortAs.getSortType())) {
+			else if (SortAs.SortType.STRING.equals(sortAs.getSortType())) {
 				LumongoUtil.handleLists(o, obj -> {
 					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(o.toString()));
+					d.add(docValue);
+				});
+			}
+			else if (SortAs.SortType.STRING_LC.equals(sortAs.getSortType())) {
+				LumongoUtil.handleLists(o, obj -> {
+					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(o.toString().toLowerCase()));
+					d.add(docValue);
+				});
+			}
+			else if (SortAs.SortType.STRING_FOLDING.equals(sortAs.getSortType())) {
+				LumongoUtil.handleLists(o, obj -> {
+					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(getFoldedString(o.toString())));
+					d.add(docValue);
+				});
+			}
+			else if (SortAs.SortType.STRING_LC_FOLDING.equals(sortAs.getSortType())) {
+				LumongoUtil.handleLists(o, obj -> {
+					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(getFoldedString(o.toString().toLowerCase())));
 					d.add(docValue);
 				});
 			}
@@ -813,6 +832,14 @@ public class LumongoSegment {
 			}
 
 		}
+	}
+
+	private static String getFoldedString(String text) {
+		char[] textChar = text.toCharArray();
+		char[] output = new char[textChar.length * 4];
+		int outputPos = ASCIIFoldingFilter.foldToASCII(textChar, 0, output, 0, textChar.length);
+		text = new String(output, 0, outputPos);
+		return text;
 	}
 
 	private void handleFacetsForStoredField(List<Field> facetFields, FieldConfig fc, Object o) throws Exception {
