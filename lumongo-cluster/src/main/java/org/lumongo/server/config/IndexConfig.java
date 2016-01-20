@@ -43,7 +43,6 @@ public class IndexConfig {
 	public static final String FACET_TYPE = "facetType";
 	public static final String SORT_TYPE = "sortType";
 	public static final String SORT_FIELD_NAME = "sortFieldName";
-	public static final String SEGMENT_DOCUMENT_CACHE_SIZE = "segmentDocumentCacheSize";
 
 	private String defaultSearchField;
 	private boolean applyUncommittedDeletes;

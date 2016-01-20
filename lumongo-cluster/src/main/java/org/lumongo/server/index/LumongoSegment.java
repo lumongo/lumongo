@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.lsh.LSHSimilarity;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -33,6 +34,9 @@ import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.index.TermsEnum.SeekStatus;
 import org.apache.lucene.search.*;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
+import org.apache.lucene.search.similarities.PerFieldSimilarityWrapper;
+import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
@@ -251,6 +255,18 @@ public class LumongoSegment {
 		openReaderIfChanges();
 
 		IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
+
+
+		indexSearcher.setSimilarity(new PerFieldSimilarityWrapper() {
+			@Override
+			public Similarity get(String name) {
+				if (indexConfig.getAnalyzer(name).equals(LMAnalyzer.LSH)) {
+					return new LSHSimilarity();
+				}
+				return new ClassicSimilarity();
+			}
+		});
+
 
 		int hasMoreAmount = amount + 1;
 

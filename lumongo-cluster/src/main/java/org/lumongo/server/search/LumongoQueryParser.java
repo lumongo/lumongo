@@ -1,6 +1,7 @@
 package org.lumongo.server.search;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.lsh.LSH;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
@@ -12,31 +13,34 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.config.IndexConfig;
 
+import java.io.IOException;
+import java.io.StringReader;
+
 public class LumongoQueryParser extends QueryParser {
-	
+
 	private static final DateTimeFormatter dateFormatter = ISODateTimeFormat.dateTimeNoMillis();
-	
+
 	private IndexConfig indexConfig;
-	
+
 	private int minimumNumberShouldMatch;
-	
+
 	public LumongoQueryParser(Analyzer analyzer, IndexConfig indexConfig) {
 		super(indexConfig.getDefaultSearchField(), analyzer);
 		this.indexConfig = indexConfig;
 		setAllowLeadingWildcard(true);
 	}
-	
+
 	public void setField(String field) {
 		if (field == null) {
 			throw new IllegalArgumentException("Field can not be null");
 		}
 		this.field = field;
 	}
-	
+
 	public void setMinimumNumberShouldMatch(int minimumNumberShouldMatch) {
 		this.minimumNumberShouldMatch = minimumNumberShouldMatch;
 	}
-	
+
 	@Override
 	protected Query getRangeQuery(String field, String start, String end, boolean startInclusive, boolean endInclusive) throws ParseException {
 
@@ -44,29 +48,33 @@ public class LumongoQueryParser extends QueryParser {
 		if (IndexConfig.isNumericOrDateAnalyzer(analyzer)) {
 			return getNumericOrDateRange(field, start, end, startInclusive, endInclusive);
 		}
-		
+
 		return super.getRangeQuery(field, start, end, startInclusive, endInclusive);
-		
+
 	}
-	
+
 	private NumericRangeQuery<?> getNumericOrDateRange(final String fieldName, final String start, final String end, final boolean startInclusive,
-					final boolean endInclusive) {
+			final boolean endInclusive) {
 		Lumongo.LMAnalyzer analyzer = indexConfig.getAnalyzer(fieldName);
 		if (IndexConfig.isNumericIntAnalyzer(analyzer)) {
-			return NumericRangeQuery.newIntRange(fieldName, start == null ? null : Integer.parseInt(start), end == null ? null : Integer.parseInt(end),
-							startInclusive, endInclusive);
+			return NumericRangeQuery
+					.newIntRange(fieldName, start == null ? null : Integer.parseInt(start), end == null ? null : Integer.parseInt(end), startInclusive,
+							endInclusive);
 		}
 		else if (IndexConfig.isNumericLongAnalyzer(analyzer)) {
-			return NumericRangeQuery.newLongRange(fieldName, start == null ? null : Long.parseLong(start), end == null ? null : Long.parseLong(end),
-							startInclusive, endInclusive);
+			return NumericRangeQuery
+					.newLongRange(fieldName, start == null ? null : Long.parseLong(start), end == null ? null : Long.parseLong(end), startInclusive,
+							endInclusive);
 		}
 		else if (IndexConfig.isNumericFloatAnalyzer(analyzer)) {
-			return NumericRangeQuery.newFloatRange(fieldName, start == null ? null : Float.parseFloat(start), end == null ? null : Float.parseFloat(end),
-							startInclusive, endInclusive);
+			return NumericRangeQuery
+					.newFloatRange(fieldName, start == null ? null : Float.parseFloat(start), end == null ? null : Float.parseFloat(end), startInclusive,
+							endInclusive);
 		}
 		else if (IndexConfig.isNumericDoubleAnalyzer(analyzer)) {
-			return NumericRangeQuery.newDoubleRange(fieldName, start == null ? null : Double.parseDouble(start), end == null ? null : Double.parseDouble(end),
-							startInclusive, endInclusive);
+			return NumericRangeQuery
+					.newDoubleRange(fieldName, start == null ? null : Double.parseDouble(start), end == null ? null : Double.parseDouble(end), startInclusive,
+							endInclusive);
 		}
 		else if (IndexConfig.isDateAnalyzer(analyzer)) {
 			Long startTime = null;
@@ -83,7 +91,7 @@ public class LumongoQueryParser extends QueryParser {
 		}
 		throw new RuntimeException("Not a valid numeric field <" + fieldName + ">");
 	}
-	
+
 	@Override
 	protected Query newTermQuery(org.apache.lucene.index.Term term) {
 		String field = term.field();
@@ -93,15 +101,28 @@ public class LumongoQueryParser extends QueryParser {
 		if (IndexConfig.isNumericOrDateAnalyzer(analyzer)) {
 			return getNumericOrDateRange(field, text, text, true, true);
 		}
-		
+
 		return super.newTermQuery(term);
 	}
-	
+
 	@Override
 	protected BooleanQuery.Builder newBooleanQuery(boolean disableCoord) {
 		BooleanQuery.Builder builder = new BooleanQuery.Builder();
 		builder.setDisableCoord(disableCoord);
 		builder.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
 		return builder;
+	}
+
+	@Override
+	protected Query getFieldQuery(String field, String queryText, int slop) throws ParseException {
+		Lumongo.LMAnalyzer lmAnalyzer = indexConfig.getAnalyzer(field);
+		if (Lumongo.LMAnalyzer.LSH.equals(lmAnalyzer)) {
+			try {
+				return LSH.createSlowQuery(getAnalyzer(), field, new StringReader(queryText), 64, slop / 100.0f);
+			}
+			catch (IOException e) {
+				throw new ParseException(e.getMessage());
+			}
+		} return super.getFieldQuery(field, queryText, slop);
 	}
 }
