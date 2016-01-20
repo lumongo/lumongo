@@ -57,24 +57,24 @@ public class LumongoQueryParser extends QueryParser {
 			final boolean endInclusive) {
 		Lumongo.LMAnalyzer analyzer = indexConfig.getAnalyzer(fieldName);
 		if (IndexConfig.isNumericIntAnalyzer(analyzer)) {
-			return NumericRangeQuery
-					.newIntRange(fieldName, start == null ? null : Integer.parseInt(start), end == null ? null : Integer.parseInt(end), startInclusive,
-							endInclusive);
+			Integer min = start == null ? null : Integer.parseInt(start);
+			Integer max = end == null ? null : Integer.parseInt(end);
+			return NumericRangeQuery.newIntRange(fieldName, min, max, startInclusive, endInclusive);
 		}
 		else if (IndexConfig.isNumericLongAnalyzer(analyzer)) {
-			return NumericRangeQuery
-					.newLongRange(fieldName, start == null ? null : Long.parseLong(start), end == null ? null : Long.parseLong(end), startInclusive,
-							endInclusive);
+			Long min = start == null ? null : Long.parseLong(start);
+			Long max = end == null ? null : Long.parseLong(end);
+			return NumericRangeQuery.newLongRange(fieldName, min, max, startInclusive, endInclusive);
 		}
 		else if (IndexConfig.isNumericFloatAnalyzer(analyzer)) {
-			return NumericRangeQuery
-					.newFloatRange(fieldName, start == null ? null : Float.parseFloat(start), end == null ? null : Float.parseFloat(end), startInclusive,
-							endInclusive);
+			Float min = start == null ? null : Float.parseFloat(start);
+			Float max = end == null ? null : Float.parseFloat(end);
+			return NumericRangeQuery.newFloatRange(fieldName, min, max, startInclusive, endInclusive);
 		}
 		else if (IndexConfig.isNumericDoubleAnalyzer(analyzer)) {
-			return NumericRangeQuery
-					.newDoubleRange(fieldName, start == null ? null : Double.parseDouble(start), end == null ? null : Double.parseDouble(end), startInclusive,
-							endInclusive);
+			Double min = start == null ? null : Double.parseDouble(start);
+			Double max = end == null ? null : Double.parseDouble(end);
+			return NumericRangeQuery.newDoubleRange(fieldName, min, max, startInclusive, endInclusive);
 		}
 		else if (IndexConfig.isDateAnalyzer(analyzer)) {
 			Long startTime = null;
@@ -123,6 +123,7 @@ public class LumongoQueryParser extends QueryParser {
 			catch (IOException e) {
 				throw new ParseException(e.getMessage());
 			}
-		} return super.getFieldQuery(field, queryText, slop);
+		}
+		return super.getFieldQuery(field, queryText, slop);
 	}
 }
