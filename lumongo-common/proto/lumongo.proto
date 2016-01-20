@@ -203,6 +203,9 @@ message SortAs {
 		NUMERIC_FLOAT = 4;
 		NUMERIC_DOUBLE = 5;
 		DATE = 6;
+		STRING_LC = 7;
+		STRING_FOLDING = 8;
+		STRING_LC_FOLDING = 9;
 	}
 	required string sortFieldName = 1;
 	required SortType sortType = 2;

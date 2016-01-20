@@ -322,5 +322,24 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return new QueryResult(queryResponse);
 		
 	}
-	
+
+	@Override
+	public String toString() {
+		return "Query{" +
+				"query='" + query + '\'' +
+				", amount=" + amount +
+				", indexes=" + indexes +
+				", lastResult=" + lastResult +
+				", countRequests=" + countRequests +
+				", drillDowns=" + drillDowns +
+				", fieldSorts=" + fieldSorts +
+				", queryFields=" + queryFields +
+				", filterQueries=" + filterQueries +
+				", minimumNumberShouldMatch=" + minimumNumberShouldMatch +
+				", defaultOperator=" + defaultOperator +
+				", resultFetchType=" + resultFetchType +
+				", documentFields=" + documentFields +
+				", documentMaskedFields=" + documentMaskedFields +
+				'}';
+	}
 }

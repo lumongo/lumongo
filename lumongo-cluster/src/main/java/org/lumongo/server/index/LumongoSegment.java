@@ -5,6 +5,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.lsh.LSHSimilarity;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -62,7 +63,6 @@ import org.lumongo.server.index.field.StringFieldIndexer;
 import org.lumongo.server.search.QueryCacheKey;
 import org.lumongo.server.search.QueryResultCache;
 import org.lumongo.server.search.QueryWithFilters;
-import org.lumongo.server.search.ServerDocumentCache;
 import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.util.LumongoUtil;
 
@@ -329,21 +329,38 @@ public class LumongoSegment {
 
 				String label = countRequest.getFacetField().getLabel();
 				String indexFieldName = facetsConfig.getDimConfig(label).indexFieldName;
-				DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(directoryReader, indexFieldName);
-				Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
+				if (indexFieldName.equals(FacetsConfig.DEFAULT_INDEX_FIELD_NAME)) {
+					throw new Exception(label + " is not defined as a facetable field");
+				}
 
-				int numOfFacets;
+				int numOfFacets = 0;
 				if (countRequest.getSegmentFacets() != 0) {
 					if (countRequest.getSegmentFacets() < countRequest.getMaxFacets()) {
 						throw new IllegalArgumentException("Segment facets must be greater than or equal to max facets");
 					}
 					numOfFacets = countRequest.getSegmentFacets() + 1;
 				}
-				else {
-					numOfFacets = state.getSize();
-				}
 
-				FacetResult facetResult = facets.getTopChildren(numOfFacets, label);
+				FacetResult facetResult = null;
+
+				try {
+					DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(directoryReader, indexFieldName);
+					Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
+
+					if (countRequest.getSegmentFacets() == 0) {
+						numOfFacets = state.getSize();
+					}
+
+					facetResult = facets.getTopChildren(numOfFacets, label);
+				}
+				catch (IllegalArgumentException e) {
+					if (e.getMessage().contains(" was not indexed with SortedSetDocValues")) {
+						//this is when no data has been indexing into a facet
+					}
+					else {
+						throw e;
+					}
+				}
 				handleFacetResult(builder, facetResult, countRequest);
 			}
 
@@ -723,8 +740,8 @@ public class LumongoSegment {
 			for (Field ff : facetFields) {
 				d.add(ff);
 			}
-			d = facetsConfig.build(d);
 
+			d = facetsConfig.build(d);
 		}
 
 		d.removeFields(indexConfig.getUniqueIdField());
@@ -759,7 +776,7 @@ public class LumongoSegment {
 	private void handleSortForStoredField(Document d, String storedFieldName, FieldConfig fc, Object o) {
 
 		if (fc.hasSortAs()) {
-			Lumongo.SortAs sortAs = fc.getSortAs();
+			SortAs sortAs = fc.getSortAs();
 			String sortFieldName = sortAs.getSortFieldName();
 
 			if (IndexConfig.isNumericOrDateSortType(sortAs.getSortType())) {
@@ -768,16 +785,16 @@ public class LumongoSegment {
 
 						Number number = (Number) obj;
 						SortedNumericDocValuesField docValue = null;
-						if (Lumongo.SortAs.SortType.NUMERIC_INT.equals(sortAs.getSortType())) {
+						if (SortAs.SortType.NUMERIC_INT.equals(sortAs.getSortType())) {
 							docValue = new SortedNumericDocValuesField(sortFieldName, number.intValue());
 						}
-						else if (Lumongo.SortAs.SortType.NUMERIC_LONG.equals(sortAs.getSortType())) {
+						else if (SortAs.SortType.NUMERIC_LONG.equals(sortAs.getSortType())) {
 							docValue = new SortedNumericDocValuesField(sortFieldName, number.longValue());
 						}
-						else if (Lumongo.SortAs.SortType.NUMERIC_FLOAT.equals(sortAs.getSortType())) {
+						else if (SortAs.SortType.NUMERIC_FLOAT.equals(sortAs.getSortType())) {
 							docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.floatToSortableInt(number.floatValue()));
 						}
-						else if (Lumongo.SortAs.SortType.NUMERIC_DOUBLE.equals(sortAs.getSortType())) {
+						else if (SortAs.SortType.NUMERIC_DOUBLE.equals(sortAs.getSortType())) {
 							docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.doubleToSortableLong(number.doubleValue()));
 						}
 						else {
@@ -800,9 +817,27 @@ public class LumongoSegment {
 					}
 				});
 			}
-			else if (Lumongo.SortAs.SortType.STRING.equals(sortAs.getSortType())) {
+			else if (SortAs.SortType.STRING.equals(sortAs.getSortType())) {
 				LumongoUtil.handleLists(o, obj -> {
 					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(o.toString()));
+					d.add(docValue);
+				});
+			}
+			else if (SortAs.SortType.STRING_LC.equals(sortAs.getSortType())) {
+				LumongoUtil.handleLists(o, obj -> {
+					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(o.toString().toLowerCase()));
+					d.add(docValue);
+				});
+			}
+			else if (SortAs.SortType.STRING_FOLDING.equals(sortAs.getSortType())) {
+				LumongoUtil.handleLists(o, obj -> {
+					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(getFoldedString(o.toString())));
+					d.add(docValue);
+				});
+			}
+			else if (SortAs.SortType.STRING_LC_FOLDING.equals(sortAs.getSortType())) {
+				LumongoUtil.handleLists(o, obj -> {
+					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(getFoldedString(o.toString().toLowerCase())));
 					d.add(docValue);
 				});
 			}
@@ -813,6 +848,14 @@ public class LumongoSegment {
 			}
 
 		}
+	}
+
+	private static String getFoldedString(String text) {
+		char[] textChar = text.toCharArray();
+		char[] output = new char[textChar.length * 4];
+		int outputPos = ASCIIFoldingFilter.foldToASCII(textChar, 0, output, 0, textChar.length);
+		text = new String(output, 0, outputPos);
+		return text;
 	}
 
 	private void handleFacetsForStoredField(List<Field> facetFields, FieldConfig fc, Object o) throws Exception {
