@@ -4,6 +4,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.lsh.LSH;
+import org.apache.lucene.analysis.lsh.LSHAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
@@ -60,10 +61,10 @@ public class LumongoAnalyzerFactory {
 			return new KeywordAnalyzer();
 		}
 		else if (LMAnalyzer.LSH.equals(lmAnalyzer)) {
-			return LSH.createMinHashAnalyzer(new StandardTokenizer(),64);
+			return new LSHAnalyzer(64);
 		}
 		
-		throw new Exception("Unsupport analyzer <" + lmAnalyzer + ">");
+		throw new Exception("Unsupported analyzer <" + lmAnalyzer + ">");
 		
 	}
 	

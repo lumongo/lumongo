@@ -19,7 +19,6 @@ package org.apache.lucene.analysis.lsh;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
@@ -45,16 +44,6 @@ public class LSH {
 		}
 		query.setMinimumNumberShouldMatch((int) (sim * numHash));
 		return query.build();
-	}
-
-	public static Analyzer createMinHashAnalyzer(final Tokenizer tokenizer, final int numHash) {
-		return new Analyzer() {
-			@Override
-			protected TokenStreamComponents createComponents(String fieldName) {
-				final TokenStream stream = new MinHashFilter(tokenizer, numHash);
-				return new TokenStreamComponents(tokenizer, stream);
-			}
-		};
 	}
 
 }
