@@ -1,22 +1,7 @@
 package org.lumongo.example.medline;
 
 import org.joda.time.DateTime;
-import org.lumongo.example.medline.schema.Article;
-import org.lumongo.example.medline.schema.Author;
-import org.lumongo.example.medline.schema.AuthorList;
-import org.lumongo.example.medline.schema.CollectiveName;
-import org.lumongo.example.medline.schema.Day;
-import org.lumongo.example.medline.schema.ForeName;
-import org.lumongo.example.medline.schema.Initials;
-import org.lumongo.example.medline.schema.Journal;
-import org.lumongo.example.medline.schema.JournalIssue;
-import org.lumongo.example.medline.schema.LastName;
-import org.lumongo.example.medline.schema.MedlineCitation;
-import org.lumongo.example.medline.schema.MedlineJournalInfo;
-import org.lumongo.example.medline.schema.Month;
-import org.lumongo.example.medline.schema.PubDate;
-import org.lumongo.example.medline.schema.Suffix;
-import org.lumongo.example.medline.schema.Year;
+import org.lumongo.example.medline.schema.*;
 import org.lumongo.xml.StaxJAXBReader;
 
 import javax.xml.bind.JAXBException;
@@ -105,9 +90,28 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 		
 		Journal journal = article.getJournal();
 		String journalTitle = journal.getTitle();
+		if (journalTitle != null) {
+			document.setJournalTitle(journalTitle);
+		}
+
 		JournalIssue journalIssue = journal.getJournalIssue();
 		
 		String title = medlineCitation.getArticle().getArticleTitle();
+
+		if (title != null) {
+			document.setTitle(title);
+		}
+
+
+		Abstract articleAbstract = article.getAbstract();
+		if (articleAbstract != null) {
+			StringBuilder text = new StringBuilder();
+			for (AbstractText abstractText : articleAbstract.getAbstractText()) {
+				text.append(abstractText.getvalue());
+				text.append(" ");
+			}
+			document.setAbstractText(text.toString().trim());
+		}
 		
 		MedlineJournalInfo medlineJournalInfo = medlineCitation.getMedlineJournalInfo();
 		if (medlineJournalInfo != null) {
@@ -191,12 +195,7 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 			}
 		}
 		
-		if (title != null) {
-			document.setTitle(title);
-		}
-		if (journalTitle != null) {
-			document.setJournalTitle(journalTitle);
-		}
+
 		
 		return document;
 		
