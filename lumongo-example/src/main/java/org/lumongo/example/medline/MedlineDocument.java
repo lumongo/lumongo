@@ -27,6 +27,9 @@ public class MedlineDocument {
     @DefaultSearch
     @Indexed(
             analyzer = LMAnalyzer.STANDARD)
+    @Indexed(
+            analyzer = LMAnalyzer.LSH, fieldName = "titleLSH")
+
     private String title;
 
     @Indexed(
