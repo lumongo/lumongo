@@ -118,7 +118,8 @@ public class LumongoQueryParser extends QueryParser {
 		Lumongo.LMAnalyzer lmAnalyzer = indexConfig.getAnalyzer(field);
 		if (Lumongo.LMAnalyzer.LSH.equals(lmAnalyzer)) {
 			try {
-				return LSH.createSlowQuery(getAnalyzer(), field, new StringReader(queryText), 64, slop / 100.0f);
+				float sim = slop / 100.0f;
+				return LSH.createSlowQuery(getAnalyzer(), field, new StringReader(queryText), 100, sim);
 			}
 			catch (IOException e) {
 				throw new ParseException(e.getMessage());

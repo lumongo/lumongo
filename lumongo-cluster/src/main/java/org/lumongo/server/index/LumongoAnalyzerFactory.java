@@ -61,7 +61,7 @@ public class LumongoAnalyzerFactory {
 			return new KeywordAnalyzer();
 		}
 		else if (LMAnalyzer.LSH.equals(lmAnalyzer)) {
-			return new LSHAnalyzer(64);
+			return new LSHAnalyzer(100);
 		}
 		
 		throw new Exception("Unsupported analyzer <" + lmAnalyzer + ">");
@@ -84,9 +84,8 @@ public class LumongoAnalyzerFactory {
 		
 		//All fields should have analyzers defined but user queries could search against non existing field?
 		Analyzer defaultAnalyzer = new KeywordAnalyzer();
-		
-		PerFieldAnalyzerWrapper aWrapper = new PerFieldAnalyzerWrapper(defaultAnalyzer, customAnalyzerMap);
-		return aWrapper;
+
+		return new PerFieldAnalyzerWrapper(defaultAnalyzer, customAnalyzerMap);
 	}
 	
 }
