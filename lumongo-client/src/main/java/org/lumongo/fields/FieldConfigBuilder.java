@@ -47,8 +47,13 @@ public class FieldConfigBuilder {
 		return this;
 	}
 
-	public FieldConfigBuilder sortAs(String sortFieldName, Lumongo.SortAs.SortType sortType) {
+	public FieldConfigBuilder sortAs(Lumongo.SortAs.SortType sortType, String sortFieldName) {
 		this.sortAs = Lumongo.SortAs.newBuilder().setSortFieldName(sortFieldName).setSortType(sortType).build();
+		return this;
+	}
+
+	public FieldConfigBuilder sortAs(Lumongo.SortAs.SortType sortType) {
+		this.sortAs = Lumongo.SortAs.newBuilder().setSortFieldName(storedFieldName).setSortType(sortType).build();
 		return this;
 	}
 
