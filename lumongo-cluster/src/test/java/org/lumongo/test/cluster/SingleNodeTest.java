@@ -59,7 +59,7 @@ public class SingleNodeTest extends ServerTestBase {
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("eissn").indexAs(LMAnalyzer.LC_KEYWORD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("uid").indexAs(LMAnalyzer.LC_KEYWORD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT).sortAs("an", Lumongo.SortAs.SortType.NUMERIC_INT));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT).sortAs(Lumongo.SortAs.SortType.NUMERIC_INT));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("country").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("date").indexAs(LMAnalyzer.DATE).facetAs(LMFacetType.DATE_YYYY_MM_DD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("keyword").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
