@@ -260,8 +260,11 @@ public class LumongoSegment {
 		indexSearcher.setSimilarity(new PerFieldSimilarityWrapper() {
 			@Override
 			public Similarity get(String name) {
-				if (indexConfig.getAnalyzer(name).equals(LMAnalyzer.LSH)) {
-					return new LSHSimilarity();
+				LMAnalyzer analyzer = indexConfig.getAnalyzer(name);
+				if (analyzer != null) {
+					if (analyzer.equals(LMAnalyzer.LSH)) {
+						return new LSHSimilarity();
+					}
 				}
 				return new ClassicSimilarity();
 			}
