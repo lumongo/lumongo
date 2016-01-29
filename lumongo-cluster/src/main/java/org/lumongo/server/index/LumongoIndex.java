@@ -758,8 +758,13 @@ public class LumongoIndex implements IndexSegmentInterface {
 				qp.setDefaultOperator(defaultOperator);
 
 				if (queryFields.isEmpty()) {
-					qp.setField(indexConfig.getDefaultSearchField());
-					return qp.parse(query);
+					if (indexConfig.getDefaultSearchField() != null) {
+						qp.setField(indexConfig.getDefaultSearchField());
+						return qp.parse(query);
+					}
+					else {
+						throw new Exception("Query field(s) required if default search field is not set");
+					}
 				}
 				else {
 					BooleanQuery.Builder bQuery = new BooleanQuery.Builder();

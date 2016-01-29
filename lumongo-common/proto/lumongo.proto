@@ -158,7 +158,7 @@ enum LMAnalyzer {
 }
 
 message IndexSettings {
-	required string defaultSearchField = 1;
+	optional string defaultSearchField = 1;
 	repeated FieldConfig fieldConfig = 2;
 	optional bool applyUncommittedDeletes = 3 [default = true];
 	optional double requestFactor = 4 [default = 2.0];

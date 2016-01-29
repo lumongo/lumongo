@@ -24,8 +24,8 @@ public class IndexConfig {
 
 	private TreeMap<String, FieldConfig> fieldMap;
 
-	protected IndexConfig() {
-
+	public IndexConfig() {
+		this(null);
 	}
 
 	public IndexConfig(String defaultSearchField) {
