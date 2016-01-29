@@ -128,9 +128,8 @@ message SegmentCountResponse {
 
 message IndexCreateRequest {
 	required string indexName = 1;
-	required string uniqueIdField = 2;
-	required uint32 numberOfSegments = 3;
-	required IndexSettings indexSettings = 4;
+	required uint32 numberOfSegments = 2;
+	required IndexSettings indexSettings = 3;
 }
 
 message IndexCreateResponse {

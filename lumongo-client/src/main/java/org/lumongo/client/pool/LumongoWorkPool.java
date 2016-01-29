@@ -4,25 +4,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.lumongo.client.command.*;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.config.LumongoPoolConfig;
-import org.lumongo.client.result.BatchDeleteResult;
-import org.lumongo.client.result.BatchFetchResult;
-import org.lumongo.client.result.ClearIndexResult;
-import org.lumongo.client.result.CreateIndexResult;
-import org.lumongo.client.result.CreateOrUpdateIndexResult;
-import org.lumongo.client.result.DeleteIndexResult;
-import org.lumongo.client.result.DeleteResult;
-import org.lumongo.client.result.FetchLargeAssociatedResult;
-import org.lumongo.client.result.FetchResult;
-import org.lumongo.client.result.GetFieldsResult;
-import org.lumongo.client.result.GetIndexesResult;
-import org.lumongo.client.result.GetMembersResult;
-import org.lumongo.client.result.GetNumberOfDocsResult;
-import org.lumongo.client.result.GetTermsResult;
-import org.lumongo.client.result.OptimizeIndexResult;
-import org.lumongo.client.result.QueryResult;
-import org.lumongo.client.result.StoreLargeAssociatedResult;
-import org.lumongo.client.result.StoreResult;
-import org.lumongo.client.result.UpdateIndexResult;
+import org.lumongo.client.result.*;
 
 public class LumongoWorkPool extends LumongoBaseWorkPool {
 
@@ -50,17 +32,16 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
 		return execute(createIndex);
 	}
 
-	public CreateIndexResult createIndex(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig) throws Exception {
-		return execute(new CreateIndex(indexName, segments, uniqueIdField, indexConfig));
+	public CreateIndexResult createIndex(String indexName, int segments, IndexConfig indexConfig) throws Exception {
+		return execute(new CreateIndex(indexName, segments, indexConfig));
 	}
 
 	public ListenableFuture<CreateIndexResult> createIndexAsync(CreateIndex createIndex) throws Exception {
 		return executeAsync(createIndex);
 	}
 
-	public ListenableFuture<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig)
-					throws Exception {
-		return executeAsync(new CreateIndex(indexName, segments, uniqueIdField, indexConfig));
+	public ListenableFuture<CreateIndexResult> createIndexAsync(String indexName, int segments, IndexConfig indexConfig) throws Exception {
+		return executeAsync(new CreateIndex(indexName, segments, indexConfig));
 	}
 
 	public CreateOrUpdateIndexResult createOrUpdateIndex(CreateOrUpdateIndex createOrUpdateIndex) throws Exception {

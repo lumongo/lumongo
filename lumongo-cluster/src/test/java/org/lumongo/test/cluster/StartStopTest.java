@@ -71,7 +71,7 @@ public class StartStopTest extends ServerTestBase {
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("country").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("date").indexAs(LMAnalyzer.DATE).facetAs(LMFacetType.DATE_YYYY_MM_DD));
 
-		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, "uid", indexConfig);
+		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, indexConfig);
 	}
 	
 	@Test

@@ -95,7 +95,7 @@ public class IndexCommonCrawl {
 		indexConfig.addFieldConfig(FieldConfigBuilder.create(TEXT_CONTENTS).indexAs(LMAnalyzer.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create(TITLE).indexAs(LMAnalyzer.STANDARD));
 		
-		CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(indexName, 16, UID, indexConfig);
+		CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(indexName, 16, indexConfig);
 		
 		lumongoWorkPool.createOrUpdateIndex(createOrUpdateIndex);
 		

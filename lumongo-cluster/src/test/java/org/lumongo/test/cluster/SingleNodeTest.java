@@ -64,8 +64,8 @@ public class SingleNodeTest extends ServerTestBase {
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("date").indexAs(LMAnalyzer.DATE).facetAs(LMFacetType.DATE_YYYY_MM_DD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("keyword").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 
-		lumongoWorkPool.createIndex(MY_TEST_INDEX, 16, "uid", indexConfig);
-		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, "uid", indexConfig);
+		lumongoWorkPool.createIndex(MY_TEST_INDEX, 16, indexConfig);
+		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, indexConfig);
 	}
 	
 	@Test
@@ -90,6 +90,7 @@ public class SingleNodeTest extends ServerTestBase {
 					String uniqueId = uniqueIdPrefix + id;
 
 					DBObject object = new BasicDBObject();
+					object.put("uid", uniqueId);
 					object.put("issn", issn);
 					object.put("title", "Facet Userguide");
 
@@ -242,6 +243,7 @@ public class SingleNodeTest extends ServerTestBase {
 				String uniqueId = uniqueIdPrefix + i;
 				
 				DBObject object = new BasicDBObject();
+				object.put("uid", uniqueId);
 				object.put("issn", "1333-1333");
 				object.put("title", "Search and Storage");
 				
@@ -253,6 +255,7 @@ public class SingleNodeTest extends ServerTestBase {
 				String uniqueId = uniqueIdPrefix + i;
 				
 				DBObject object = new BasicDBObject();
+				object.put("uid", uniqueId);
 				object.put("issn", "1234-1234");
 				object.put("title", "Distributed Search and Storage System");
 				object.put("an", i);
@@ -315,6 +318,7 @@ public class SingleNodeTest extends ServerTestBase {
 		{
 			
 			DBObject dbObject = new BasicDBObject();
+			dbObject.put("uid", uniqueId);
 			dbObject.put("someKey", "someValue");
 			dbObject.put("other key", "other value");
 			dbObject.put("issn", "4321-4321");
@@ -343,6 +347,7 @@ public class SingleNodeTest extends ServerTestBase {
 		{
 			{
 				DBObject dbObject = new BasicDBObject();
+				dbObject.put("uid", uniqueId);
 				dbObject.put("key1", "val1");
 				dbObject.put("key2", "val2");
 				dbObject.put("issn", "6666-6666");
@@ -490,11 +495,12 @@ public class SingleNodeTest extends ServerTestBase {
 		LumongoWorkPool lumongoWorkPool = getLumongoWorkPool();
 
 		{
+			String uniqueId = "myid123";
 			DBObject object = new BasicDBObject();
+			object.put("uid", uniqueId);
 			object.put("issn", "4444-1111");
 			object.put("title", "A really special title to search");
-			
-			String uniqueId = "myid123";
+
 			Store s = new Store(uniqueId, MY_TEST_INDEX);
 			
 			s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));

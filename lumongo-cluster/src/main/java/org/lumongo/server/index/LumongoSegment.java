@@ -89,7 +89,6 @@ public class LumongoSegment {
 	private final int segmentNumber;
 
 	private final IndexConfig indexConfig;
-	private final String uniqueIdField;
 	private final AtomicLong counter;
 	private final Set<String> fetchSet;
 	private final Set<String> fetchSetWithMeta;
@@ -125,15 +124,13 @@ public class LumongoSegment {
 
 		this.facetsConfig = facetsConfig;
 
-		this.uniqueIdField = indexConfig.getUniqueIdField();
-
-		this.fetchSet = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(uniqueIdField, LumongoConstants.TIMESTAMP_FIELD)));
+		this.fetchSet = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(LumongoConstants.ID_FIELD, LumongoConstants.TIMESTAMP_FIELD)));
 
 		this.fetchSetWithMeta = Collections
-				.unmodifiableSet(new HashSet<>(Arrays.asList(uniqueIdField, LumongoConstants.TIMESTAMP_FIELD, LumongoConstants.STORED_META_FIELD)));
+				.unmodifiableSet(new HashSet<>(Arrays.asList(LumongoConstants.ID_FIELD, LumongoConstants.TIMESTAMP_FIELD, LumongoConstants.STORED_META_FIELD)));
 
 		this.fetchSetWithDocument = Collections.unmodifiableSet(new HashSet<>(
-				Arrays.asList(uniqueIdField, LumongoConstants.TIMESTAMP_FIELD, LumongoConstants.STORED_META_FIELD, LumongoConstants.STORED_DOC_FIELD)));
+				Arrays.asList(LumongoConstants.ID_FIELD, LumongoConstants.TIMESTAMP_FIELD, LumongoConstants.STORED_META_FIELD, LumongoConstants.STORED_DOC_FIELD)));
 
 		this.counter = new AtomicLong();
 		this.lastCommit = null;
@@ -466,7 +463,7 @@ public class LumongoSegment {
 		long timestamp = f.numericValue().longValue();
 
 		ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
-		String uniqueId = d.get(indexConfig.getUniqueIdField());
+		String uniqueId = d.get(LumongoConstants.ID_FIELD);
 
 		if (!FetchType.NONE.equals(resultFetchType)) {
 			if (indexConfig.isStoreDocumentInIndex()) {
@@ -603,7 +600,7 @@ public class LumongoSegment {
 		}
 		else {
 
-			Query query = new TermQuery(new org.apache.lucene.index.Term(indexConfig.getUniqueIdField(), uniqueId));
+			Query query = new TermQuery(new org.apache.lucene.index.Term(LumongoConstants.ID_FIELD, uniqueId));
 
 			QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 
@@ -766,11 +763,8 @@ public class LumongoSegment {
 			d = facetsConfig.build(d);
 		}
 
-		d.removeFields(indexConfig.getUniqueIdField());
-		d.add(new TextField(indexConfig.getUniqueIdField(), uniqueId, Store.NO));
 
-		// make sure the update works because it is search on a term
-		d.add(new StringField(indexConfig.getUniqueIdField(), uniqueId, Store.YES));
+		d.add(new StringField(LumongoConstants.ID_FIELD, uniqueId, Store.YES));
 
 		d.add(new LongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
 
@@ -789,7 +783,7 @@ public class LumongoSegment {
 
 		}
 
-		Term term = new Term(indexConfig.getUniqueIdField(), uniqueId);
+		Term term = new Term(LumongoConstants.ID_FIELD, uniqueId);
 
 		indexWriter.updateDocument(term, d);
 		possibleCommit();
@@ -920,7 +914,7 @@ public class LumongoSegment {
 	}
 
 	public void deleteDocument(String uniqueId) throws Exception {
-		Term term = new Term(uniqueIdField, uniqueId);
+		Term term = new Term(LumongoConstants.ID_FIELD, uniqueId);
 		indexWriter.deleteDocuments(term);
 		if (indexConfig.getApplyUncommittedDeletes()) {
 			queryResultCache.clear();

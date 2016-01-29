@@ -17,13 +17,11 @@ import org.lumongo.client.result.UpdateIndexResult;
 public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
 	private String indexName;
 	private Integer numberOfSegments;
-	private String uniqueIdField;
 	private IndexConfig indexConfig;
-	
-	public CreateOrUpdateIndex(String indexName, Integer numberOfSegments, String uniqueIdField, IndexConfig indexConfig) {
+
+	public CreateOrUpdateIndex(String indexName, Integer numberOfSegments, IndexConfig indexConfig) {
 		this.indexName = indexName;
 		this.numberOfSegments = numberOfSegments;
-		this.uniqueIdField = uniqueIdField;
 		this.indexConfig = indexConfig;
 	}
 
@@ -31,12 +29,16 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
 		return indexName;
 	}
 
+	public void setIndexName(String indexName) {
+		this.indexName = indexName;
+	}
+
 	public Integer getNumberOfSegments() {
 		return numberOfSegments;
 	}
 
-	public String getUniqueIdField() {
-		return uniqueIdField;
+	public void setNumberOfSegments(Integer numberOfSegments) {
+		this.numberOfSegments = numberOfSegments;
 	}
 
 	public IndexConfig getIndexConfig() {
@@ -47,22 +49,10 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
 		this.indexConfig = indexConfig;
 	}
 
-	public void setIndexName(String indexName) {
-		this.indexName = indexName;
-	}
-	
-	public void setNumberOfSegments(Integer numberOfSegments) {
-		this.numberOfSegments = numberOfSegments;
-	}
-	
-	public void setUniqueIdField(String uniqueIdField) {
-		this.uniqueIdField = uniqueIdField;
-	}
-	
 	@Override
 	public CreateOrUpdateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
 		CreateOrUpdateIndexResult result = new CreateOrUpdateIndexResult();
-		
+
 		GetIndexes gt = new GetIndexes();
 		GetIndexesResult gtr = gt.execute(lumongoConnection);
 		if (gtr.containsIndex(indexName)) {
@@ -71,13 +61,13 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
 			result.setUpdateIndexResult(uir);
 			return result;
 		}
-		
-		CreateIndex ci = new CreateIndex(indexName, numberOfSegments, uniqueIdField, indexConfig);
-		
+
+		CreateIndex ci = new CreateIndex(indexName, numberOfSegments, indexConfig);
+
 		CreateIndexResult cir = ci.execute(lumongoConnection);
 		result.setCreateIndexResult(cir);
 		return result;
-		
+
 	}
-	
+
 }

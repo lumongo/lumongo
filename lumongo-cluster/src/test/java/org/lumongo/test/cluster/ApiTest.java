@@ -88,14 +88,13 @@ public class ApiTest {
 	public void createIndex() throws Exception {
 		String defaultSearchField = "title";
 		int numberOfSegments = 16;
-		String uniqueIdField = "uid";
-		
+
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
 		
-		CreateIndex createIndex = new CreateIndex(MY_INDEX_NAME, numberOfSegments, uniqueIdField, indexConfig);
+		CreateIndex createIndex = new CreateIndex(MY_INDEX_NAME, numberOfSegments, indexConfig);
 		lumongoWorkPool.createIndex(createIndex);
 	}
 	
@@ -116,8 +115,7 @@ public class ApiTest {
 	public void createOrUpdateIndex(String indexName) throws Exception {
 		String defaultSearchField = "abstract";
 		int numberOfSegments = 16;
-		String uniqueIdField = "uid";
-		
+
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
 		
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD));
@@ -125,7 +123,7 @@ public class ApiTest {
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("abstract").indexAs(LMAnalyzer.STANDARD));
 		
-		CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(indexName, numberOfSegments, uniqueIdField, indexConfig);
+		CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(indexName, numberOfSegments, indexConfig);
 		CreateOrUpdateIndexResult result = lumongoWorkPool.createOrUpdateIndex(createOrUpdateIndex);
 		System.out.println(result.isNewIndex());
 		System.out.println(result.isUpdatedIndex());

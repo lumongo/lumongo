@@ -43,7 +43,7 @@ public class DateTest {
 			indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD).facetAs(LMFacetType.STANDARD));
 			indexConfig.addFieldConfig(FieldConfigBuilder.create("date").indexAs(LMAnalyzer.DATE).facetAs(LMFacetType.STANDARD));
 			
-			CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(SingleNodeTest.MY_TEST_INDEX, 2, "id", indexConfig);
+			CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(SingleNodeTest.MY_TEST_INDEX, 2, indexConfig);
 			@SuppressWarnings("unused")
 			CreateOrUpdateIndexResult result = lumongoWorkPool.createOrUpdateIndex(createOrUpdateIndex);
 			DBObject dbObject = new BasicDBObject();

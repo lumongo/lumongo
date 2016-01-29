@@ -22,13 +22,11 @@ public class CreateIndex extends SimpleCommand<IndexCreateRequest, CreateIndexRe
 	
 	private String indexName;
 	private Integer numberOfSegments;
-	private String uniqueIdField;
 	private IndexConfig indexConfig;
 	
-	public CreateIndex(String indexName, Integer numberOfSegments, String uniqueIdField, IndexConfig indexConfig) {
+	public CreateIndex(String indexName, Integer numberOfSegments, IndexConfig indexConfig) {
 		this.indexName = indexName;
 		this.numberOfSegments = numberOfSegments;
-		this.uniqueIdField = uniqueIdField;
 		this.indexConfig = indexConfig;
 	}
 	
@@ -43,11 +41,7 @@ public class CreateIndex extends SimpleCommand<IndexCreateRequest, CreateIndexRe
 		if (numberOfSegments != null) {
 			indexCreateRequestBuilder.setNumberOfSegments(numberOfSegments);
 		}
-		
-		if (uniqueIdField != null) {
-			indexCreateRequestBuilder.setUniqueIdField(uniqueIdField);
-		}
-		
+
 		if (indexConfig != null) {
 			indexCreateRequestBuilder.setIndexSettings(indexConfig.getIndexSettings());
 		}

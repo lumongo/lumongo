@@ -146,7 +146,7 @@ public class Mapper<T> {
 			indexConfig.addFieldConfig(fieldConfig);
 		}
 
-		return new CreateOrUpdateIndex(settings.indexName(), settings.numberOfSegments(), uniqueIdField.getFieldName(), indexConfig);
+		return new CreateOrUpdateIndex(settings.indexName(), settings.numberOfSegments(), indexConfig);
 	}
 
 	public Class<T> getClazz() {

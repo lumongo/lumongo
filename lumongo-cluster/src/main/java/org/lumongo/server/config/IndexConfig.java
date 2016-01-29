@@ -24,7 +24,6 @@ public class IndexConfig {
 	public static final String MIN_SEGMENT_REQUEST = "minSegmentRequest";
 	public static final String NUMBER_OF_SEGMENTS = "numberOfSegments";
 	public static final String INDEX_NAME = "indexName";
-	public static final String UNIQUE_ID_FIELD = "uniqueIdField";
 	public static final String IDLE_TIME_WITHOUT_COMMIT = "idleTimeWithoutCommit";
 	public static final String SEGMENT_COMMIT_INTERVAL = "segmentCommitInterval";
 	public static final String SEGMENT_QUERY_CACHE_SIZE = "segmentQueryCacheSize";
@@ -50,7 +49,6 @@ public class IndexConfig {
 	private int minSegmentRequest;
 	private int numberOfSegments;
 	private String indexName;
-	private String uniqueIdField;
 	private int idleTimeWithoutCommit;
 	private int segmentCommitInterval;
 	private int segmentQueryCacheSize;
@@ -72,7 +70,6 @@ public class IndexConfig {
 
 		indexName = request.getIndexName();
 		numberOfSegments = request.getNumberOfSegments();
-		uniqueIdField = request.getUniqueIdField();
 
 		configure(request.getIndexSettings());
 	}
@@ -141,7 +138,6 @@ public class IndexConfig {
 		indexConfig.minSegmentRequest = (int) settings.get(MIN_SEGMENT_REQUEST);
 		indexConfig.numberOfSegments = (int) settings.get(NUMBER_OF_SEGMENTS);
 		indexConfig.indexName = (String) settings.get(INDEX_NAME);
-		indexConfig.uniqueIdField = (String) settings.get(UNIQUE_ID_FIELD);
 		indexConfig.idleTimeWithoutCommit = (int) settings.get(IDLE_TIME_WITHOUT_COMMIT);
 		indexConfig.segmentCommitInterval = (int) settings.get(SEGMENT_COMMIT_INTERVAL);
 		indexConfig.segmentTolerance = (double) settings.get(SEGMENT_TOLERANCE);
@@ -312,9 +308,6 @@ public class IndexConfig {
 		return indexName;
 	}
 
-	public String getUniqueIdField() {
-		return uniqueIdField;
-	}
 
 	public int getIdleTimeWithoutCommit() {
 		return idleTimeWithoutCommit;
@@ -352,7 +345,6 @@ public class IndexConfig {
 		dbObject.put(MIN_SEGMENT_REQUEST, minSegmentRequest);
 		dbObject.put(NUMBER_OF_SEGMENTS, numberOfSegments);
 		dbObject.put(INDEX_NAME, indexName);
-		dbObject.put(UNIQUE_ID_FIELD, uniqueIdField);
 		dbObject.put(IDLE_TIME_WITHOUT_COMMIT, idleTimeWithoutCommit);
 		dbObject.put(SEGMENT_COMMIT_INTERVAL, segmentCommitInterval);
 		dbObject.put(SEGMENT_TOLERANCE, segmentTolerance);
@@ -413,7 +405,6 @@ public class IndexConfig {
 				", minSegmentRequest=" + minSegmentRequest +
 				", numberOfSegments=" + numberOfSegments +
 				", indexName='" + indexName + '\'' +
-				", uniqueIdField='" + uniqueIdField + '\'' +
 				", idleTimeWithoutCommit=" + idleTimeWithoutCommit +
 				", segmentCommitInterval=" + segmentCommitInterval +
 				", segmentQueryCacheSize=" + segmentQueryCacheSize +
