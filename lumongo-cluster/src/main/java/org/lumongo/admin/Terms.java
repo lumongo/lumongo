@@ -1,5 +1,6 @@
 package org.lumongo.admin;
 
+import com.google.protobuf.ServiceException;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -9,9 +10,12 @@ import org.lumongo.client.command.GetAllTerms;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.pool.LumongoPool;
+import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.util.LogUtil;
+
+import java.io.IOException;
 
 public class Terms {
 	
@@ -30,9 +34,10 @@ public class Terms {
 		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME).withRequiredArg().ofType(Boolean.class).describedAs("Real time search");
 		OptionSpec<String> termFilterArg = parser.accepts(AdminConstants.TERM_FILTER).withRequiredArg().describedAs("Filter terms that match this regex");
 		OptionSpec<String> termMatchArg = parser.accepts(AdminConstants.TERM_MATCH).withRequiredArg().describedAs("Return terms that match this regex");
-		
-		LumongoBaseWorkPool lumongoWorkPool = null;
-		
+
+		int exitCode = 0;
+		LumongoWorkPool lumongoWorkPool = null;
+
 		try {
 			OptionSet options = parser.parse(args);
 			
@@ -48,7 +53,7 @@ public class Terms {
 			
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 			lumongoPoolConfig.addMember(address, port);
-			lumongoWorkPool = new LumongoBaseWorkPool(new LumongoPool(lumongoPoolConfig));
+			lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 			
 			GetTermsResult response = lumongoWorkPool.execute(new GetAllTerms(index, field).setStartTerm(startTerm).setMinDocFreq(minDocFreq)
 							.setRealTime(realTime).setTermFilter(termFilter).setTermMatch(termMatch));
@@ -67,11 +72,18 @@ public class Terms {
 			System.err.println("ERROR: " + e.getMessage());
 			parser.formatHelpWith(new LumongoHelpFormatter());
 			parser.printHelpOn(System.err);
+			exitCode = 2;
+		}
+		catch (ServiceException | IOException e) {
+			System.err.println("ERROR: " + e.getMessage());
+			exitCode = 1;
 		}
 		finally {
 			if (lumongoWorkPool != null) {
 				lumongoWorkPool.shutdown();
 			}
 		}
+
+		System.exit(exitCode);
 	}
 }

@@ -2,7 +2,7 @@ package org.lumongo.admin;
 
 public class AdminConstants {
 	
-	//comand line constants
+	//command line constants
 	public static final String MONGO_CONFIG = "mongoConfig";
 	public static final String NODE_CONFIG = "nodeConfig";
 	public static final String CLUSTER_CONFIG = "clusterConfig";
@@ -25,7 +25,6 @@ public class AdminConstants {
 	public static final String FACET = "facet";
 	public static final String FACET_COUNT = "facetCount";
 	public static final String FACET_SEGMENT_COUNT = "facetSegmentCount";
-	public static final String DRILL_DOWN = "drillDown";
 	public static final String SORT = "sort";
 	public static final String SORT_DESC = "sortDesc";
 	public static final String FETCH = "fetch";

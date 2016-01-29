@@ -25,6 +25,7 @@ public class StartNode {
 		OptionSpec<Integer> hazelcastPortArg = parser.accepts(AdminConstants.HAZELCAST_PORT).withRequiredArg().ofType(Integer.class)
 						.describedAs("Hazelcast port if multiple instances on one server (expert)");
 
+
 		try {
 			OptionSet options = parser.parse(args);
 
@@ -53,6 +54,7 @@ public class StartNode {
 			System.err.println("ERROR: " + e.getMessage());
 			parser.formatHelpWith(new LumongoHelpFormatter());
 			parser.printHelpOn(System.err);
+			System.exit(2);
 		}
 
 	}

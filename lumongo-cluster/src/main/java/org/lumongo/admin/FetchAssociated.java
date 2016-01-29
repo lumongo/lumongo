@@ -44,6 +44,7 @@ public class FetchAssociated {
 			System.err.println("ERROR: " + e.getMessage());
 			parser.formatHelpWith(new LumongoHelpFormatter());
 			parser.printHelpOn(System.out);
+			System.exit(2);
 		}
 	}
 }

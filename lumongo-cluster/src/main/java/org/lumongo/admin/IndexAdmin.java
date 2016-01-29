@@ -1,5 +1,6 @@
 package org.lumongo.admin;
 
+import com.google.protobuf.ServiceException;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -16,6 +17,7 @@ import org.lumongo.client.command.OptimizeIndex;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoBaseWorkPool;
 import org.lumongo.client.pool.LumongoPool;
+import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.ClearIndexResult;
 import org.lumongo.client.result.DeleteIndexResult;
 import org.lumongo.client.result.GetFieldsResult;
@@ -27,20 +29,10 @@ import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
 import org.lumongo.util.LogUtil;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 public class IndexAdmin {
-
-	public enum Command {
-		clear,
-		optimize,
-		getRealTimeCount,
-		getCount,
-		getFields,
-		getIndexes,
-		getCurrentMembers,
-		deleteIndex
-	}
 
 	public static void main(String[] args) throws Exception {
 		LogUtil.loadLogConfig();
@@ -48,12 +40,13 @@ public class IndexAdmin {
 		OptionParser parser = new OptionParser();
 		OptionSpec<String> addressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().defaultsTo("localhost").describedAs("Lumongo server address");
 		OptionSpec<Integer> portArg = parser.accepts(AdminConstants.PORT).withRequiredArg().ofType(Integer.class).defaultsTo(32191)
-						.describedAs("Lumongo external port");
+				.describedAs("Lumongo external port");
 		OptionSpec<String> indexArg = parser.accepts(AdminConstants.INDEX).withRequiredArg().describedAs("Index to perform action");
 		OptionSpec<Command> commandArg = parser.accepts(AdminConstants.COMMAND).withRequiredArg().ofType(Command.class).required()
-						.describedAs("Command to run " + Arrays.toString(Command.values()));
+				.describedAs("Command to run " + Arrays.toString(Command.values()));
 
-		LumongoBaseWorkPool lumongoWorkPool = null;
+		int exitCode = 0;
+		LumongoWorkPool lumongoWorkPool = null;
 
 		try {
 			OptionSet options = parser.parse(args);
@@ -65,7 +58,7 @@ public class IndexAdmin {
 
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 			lumongoPoolConfig.addMember(address, port);
-			lumongoWorkPool = new LumongoBaseWorkPool(new LumongoPool(lumongoPoolConfig));
+			lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 
 			if (Command.getRealTimeCount.equals(command)) {
 				if (index == null) {
@@ -105,8 +98,7 @@ public class IndexAdmin {
 				}
 
 				System.out.println("Optimizing Index:\n" + index);
-				@SuppressWarnings("unused")
-				OptimizeIndexResult response = lumongoWorkPool.execute(new OptimizeIndex(index));
+				@SuppressWarnings("unused") OptimizeIndexResult response = lumongoWorkPool.execute(new OptimizeIndex(index));
 				System.out.println("Done");
 			}
 			else if (Command.clear.equals(command)) {
@@ -114,8 +106,7 @@ public class IndexAdmin {
 					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
 				}
 				System.out.println("Clearing Index:\n" + index);
-				@SuppressWarnings("unused")
-				ClearIndexResult response = lumongoWorkPool.execute(new ClearIndex(index));
+				@SuppressWarnings("unused") ClearIndexResult response = lumongoWorkPool.execute(new ClearIndex(index));
 				System.out.println("Done");
 			}
 			else if (Command.getIndexes.equals(command)) {
@@ -138,8 +129,7 @@ public class IndexAdmin {
 				}
 
 				System.out.println("Deleting index <" + index + ">");
-				@SuppressWarnings("unused")
-				DeleteIndexResult response = lumongoWorkPool.execute(new DeleteIndex(index));
+				@SuppressWarnings("unused") DeleteIndexResult response = lumongoWorkPool.execute(new DeleteIndex(index));
 
 				System.out.println("Deleted index <" + index + ">");
 
@@ -153,11 +143,29 @@ public class IndexAdmin {
 			System.err.println("ERROR: " + e.getMessage());
 			parser.formatHelpWith(new LumongoHelpFormatter());
 			parser.printHelpOn(System.err);
+			exitCode = 2;
+		}
+		catch (ServiceException | IOException e) {
+			System.err.println("ERROR: " + e.getMessage());
+			exitCode = 1;
 		}
 		finally {
 			if (lumongoWorkPool != null) {
 				lumongoWorkPool.shutdown();
 			}
 		}
+
+		System.exit(exitCode);
+	}
+
+	public enum Command {
+		clear,
+		optimize,
+		getRealTimeCount,
+		getCount,
+		getFields,
+		getIndexes,
+		getCurrentMembers,
+		deleteIndex
 	}
 }
