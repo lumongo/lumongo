@@ -202,7 +202,6 @@ public class QueryCombiner {
 				if (facetCountCount < segmentFacets || (segmentFacets == 0)) {
 					fullResults.set(segIndex);
 					minForSegment[segIndex] = 0;
-					System.out.println(segIndex + ":" + facetCountCount + ":" + segmentFacets);
 				}
 			}
 
