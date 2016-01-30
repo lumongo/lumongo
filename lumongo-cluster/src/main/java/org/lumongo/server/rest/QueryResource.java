@@ -175,7 +175,7 @@ public class QueryResource {
 				}
 				responseBuilder.append("{");
 				responseBuilder.append("\"id\": ");
-				responseBuilder.append(sr.getUniqueId());
+				responseBuilder.append("\"").append(sr.getUniqueId()).append("\"");
 				responseBuilder.append(",");
 				responseBuilder.append("\"score\": ");
 				responseBuilder.append(sr.getScore());
