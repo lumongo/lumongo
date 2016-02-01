@@ -14,7 +14,6 @@ import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.Facets;
 import org.apache.lucene.facet.FacetsCollector;
@@ -85,9 +84,9 @@ public class LumongoSegment {
 	private final static DateTimeFormatter FORMATTER_YYYY_MM_DD = DateTimeFormat.forPattern("yyyyMMdd").withZoneUTC();
 
 	private final static Logger log = Logger.getLogger(LumongoSegment.class);
-
+	private static Pattern sortedDocValuesMessage = Pattern.compile(
+			"unexpected docvalues type NONE for field '(.*)' \\(expected one of \\[SORTED, SORTED_SET\\]\\)\\. Use UninvertingReader or index with docvalues\\.");
 	private final int segmentNumber;
-
 	private final IndexConfig indexConfig;
 	private final AtomicLong counter;
 	private final Set<String> fetchSet;
@@ -95,20 +94,14 @@ public class LumongoSegment {
 	private final Set<String> fetchSetWithDocument;
 	private final IndexSegmentInterface indexSegmentInterface;
 	private final DocumentStorage documentStorage;
-
 	private IndexWriter indexWriter;
 	private DirectoryReader directoryReader;
-
 	private Long lastCommit;
 	private Long lastChange;
 	private String indexName;
 	private QueryResultCache queryResultCache;
-
 	private FacetsConfig facetsConfig;
-
 	private int segmentQueryCacheMaxAmount;
-
-	private static Pattern sortedDocValuesMessage = Pattern.compile("unexpected docvalues type NONE for field '(.*)' \\(expected one of \\[SORTED, SORTED_SET\\]\\)\\. Use UninvertingReader or index with docvalues\\.");
 
 	public LumongoSegment(int segmentNumber, IndexSegmentInterface indexSegmentInterface, IndexConfig indexConfig, FacetsConfig facetsConfig,
 			DocumentStorage documentStorage) throws Exception {
@@ -130,7 +123,8 @@ public class LumongoSegment {
 				.unmodifiableSet(new HashSet<>(Arrays.asList(LumongoConstants.ID_FIELD, LumongoConstants.TIMESTAMP_FIELD, LumongoConstants.STORED_META_FIELD)));
 
 		this.fetchSetWithDocument = Collections.unmodifiableSet(new HashSet<>(
-				Arrays.asList(LumongoConstants.ID_FIELD, LumongoConstants.TIMESTAMP_FIELD, LumongoConstants.STORED_META_FIELD, LumongoConstants.STORED_DOC_FIELD)));
+				Arrays.asList(LumongoConstants.ID_FIELD, LumongoConstants.TIMESTAMP_FIELD, LumongoConstants.STORED_META_FIELD,
+						LumongoConstants.STORED_DOC_FIELD)));
 
 		this.counter = new AtomicLong();
 		this.lastCommit = null;
@@ -413,7 +407,7 @@ public class LumongoSegment {
 			Matcher m = sortedDocValuesMessage.matcher(e.getMessage());
 			if (m.matches()) {
 				String field = m.group(1);
-				throw new Exception ("Field <" + field + "> must have sortAs defined to be sortable");
+				throw new Exception("Field <" + field + "> must have sortAs defined to be sortable");
 			}
 
 			throw e;
@@ -525,67 +519,47 @@ public class LumongoSegment {
 		if (sorting) {
 			FieldDoc result = (FieldDoc) results[i];
 
+			SortValues.Builder sortValues = SortValues.newBuilder();
+
 			int c = 0;
 			for (Object o : result.fields) {
+				if (o == null) {
+					sortValues.addSortValue(SortValue.newBuilder().setExists(false));
+					continue;
+				}
+
 				FieldSort fieldSort = sortRequest.getFieldSort(c);
 				String sortField = fieldSort.getSortField();
 
 				Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
+
+				SortValue.Builder sortValueBuilder = SortValue.newBuilder().setExists(true);
 				if (IndexConfig.isNumericOrDateSortType(sortType)) {
 					if (IndexConfig.isNumericIntSortType(sortType)) {
-						if (o == null) {
-							srBuilder.addSortInteger(0); // TODO what should nulls value be?
-						}
-						else {
-							srBuilder.addSortInteger((Integer) o);
-						}
+						sortValueBuilder.setIntegerValue((Integer) o);
 					}
 					else if (IndexConfig.isNumericLongSortType(sortType)) {
-						if (o == null) {
-							srBuilder.addSortLong(0L);// TODO what should nulls value be?
-						}
-						else {
-							srBuilder.addSortLong((Long) o);
-						}
+						sortValueBuilder.setLongValue((Long) o);
 					}
 					else if (IndexConfig.isNumericFloatSortType(sortType)) {
-						if (o == null) {
-							srBuilder.addSortFloat(0f);// TODO what should nulls value be?
-							// value be?
-						}
-						else {
-							srBuilder.addSortFloat((Float) o);
-						}
+						sortValueBuilder.setFloatValue((Float) o);
 					}
 					else if (IndexConfig.isNumericDoubleSortType(sortType)) {
-						if (o == null) {
-							srBuilder.addSortDouble(0);// TODO what should nulls value be?
-						}
-						else {
-							srBuilder.addSortDouble((Double) o);
-						}
+						sortValueBuilder.setDoubleValue((Double) o);
 					}
 					else if (IndexConfig.isNumericDateSortType(sortType)) {
-						if (o == null) {
-							srBuilder.addSortDate(0L);// TODO what should nulls value be?
-						}
-						else {
-							srBuilder.addSortDate(((Long) o));
-						}
+						sortValueBuilder.setDateValue((Long) o);
 					}
 				}
 				else {
-					if (o == null) {
-						srBuilder.addSortTerm(""); // TODO what should nulls value be?
-					}
-					else {
-						BytesRef b = (BytesRef) o;
-						srBuilder.addSortTerm(b.utf8ToString());
-					}
+					BytesRef b = (BytesRef) o;
+					sortValueBuilder.setStringValue(b.utf8ToString());
 				}
+				sortValues.addSortValue(sortValueBuilder);
 
 				c++;
 			}
+			srBuilder.setSortValues(sortValues);
 		}
 		return srBuilder;
 	}
@@ -762,7 +736,6 @@ public class LumongoSegment {
 
 			d = facetsConfig.build(d);
 		}
-
 
 		d.add(new StringField(LumongoConstants.ID_FIELD, uniqueId, Store.YES));
 
@@ -1049,13 +1022,12 @@ public class LumongoSegment {
 		termsMap.get(textStr).addAndGet(termsEnum.docFreq());
 	}
 
-	public SegmentCountResponse getNumberOfDocs(boolean realTime) throws IOException {
+	public SegmentCountResponse getNumberOfDocs() throws IOException {
 
 		openReaderIfChanges();
 		int count = directoryReader.numDocs();
 		return SegmentCountResponse.newBuilder().setNumberOfDocs(count).setSegmentNumber(segmentNumber).build();
 
 	}
-
 
 }

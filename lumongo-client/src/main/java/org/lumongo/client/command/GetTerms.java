@@ -17,7 +17,6 @@ public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 	
 	private Integer minDocFreq;
 	private String startTerm;
-	private Boolean realTime;
 	private String termFilter;
 	private String termMatch;
 	
@@ -45,15 +44,7 @@ public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 		return startTerm;
 	}
 	
-	public GetTerms setRealTime(Boolean realTime) {
-		this.realTime = realTime;
-		return this;
-	}
-	
-	public Boolean getRealTime() {
-		return realTime;
-	}
-	
+
 	public GetTerms setTermFilter(String termFilter) {
 		this.termFilter = termFilter;
 		return this;
@@ -77,9 +68,6 @@ public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 		GetTermsRequest.Builder getTermsRequestBuilder = GetTermsRequest.newBuilder().setIndexName(indexName).setFieldName(fieldName).setAmount(amount);
 		if (startTerm != null) {
 			getTermsRequestBuilder.setStartingTerm(startTerm);
-		}
-		if (realTime != null) {
-			getTermsRequestBuilder.setRealTime(realTime);
 		}
 		if (minDocFreq != null) {
 			getTermsRequestBuilder.setMinDocFreq(minDocFreq);

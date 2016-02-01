@@ -67,7 +67,6 @@ message GetTermsRequest {
 	required uint32 amount = 3;
 	optional string startingTerm = 4;
 	optional uint32 minDocFreq = 5 [default = 1];
-	optional bool realTime = 6 [default = true];
 	optional string termFilter = 7;
 	optional string termMatch = 8;
 }
@@ -113,7 +112,6 @@ message GetIndexesResponse {
 
 message GetNumberOfDocsRequest {
 	required string indexName = 1;
-	optional bool realTime = 2 [default = true];
 }
 
 message GetNumberOfDocsResponse {
@@ -275,20 +273,29 @@ message Metadata {
 }
 
 message ScoredResult {
-	required string uniqueId = 1;
-	required float score = 2;
-	required uint32 docId = 3;
-	required string indexName = 4;
-	required uint32 segment = 5;
-	required uint32 resultIndex = 6;
-	repeated string sortTerm = 7;
-	repeated int32 sortInteger = 8;
-	repeated int64 sortLong = 9;
-	repeated float sortFloat = 10;
-	repeated double sortDouble = 11;
-	repeated int64 sortDate = 12;
-	required int64 timestamp = 13;
-	optional ResultDocument resultDocument = 14;
+	optional string uniqueId = 1;
+	optional float score = 2;//
+	optional uint32 docId = 3;//
+	optional string indexName = 4;
+	optional uint32 segment = 5;//
+	optional uint32 resultIndex = 6;
+	optional SortValues sortValues = 7;//
+	optional int64 timestamp = 8;
+	optional ResultDocument resultDocument = 9;
+}
+
+message SortValues {
+	repeated SortValue sortValue = 1;
+}
+
+message SortValue {
+	required bool exists = 1;
+	optional string stringValue = 7;
+	optional int32 integerValue = 8;
+	optional int64 longValue = 9;
+	optional float floatValue = 10;
+	optional double doubleValue = 11;
+	optional int64 dateValue = 12;
 }
 
 message SortRequest {
@@ -299,8 +306,7 @@ message FieldSort {
 	enum Direction {
 		ASCENDING = 1;
 		DESCENDING = 2;
-	}
-	;
+	};
 
 	required string sortField = 1;
 	optional Direction direction = 2 [default = ASCENDING];

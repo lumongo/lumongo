@@ -782,7 +782,7 @@ public class LumongoIndexManager {
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
-			return i.getNumberOfDocs(request.getRealTime());
+			return i.getNumberOfDocs();
 		}
 		finally {
 			globalLock.readLock().unlock();

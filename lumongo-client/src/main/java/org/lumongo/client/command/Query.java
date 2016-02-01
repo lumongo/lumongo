@@ -36,7 +36,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private String query;
 	private int amount;
 	private Collection<String> indexes;
-	private QueryResult lastResult;
+	private Lumongo.LastResult lastResult;
 	private List<CountRequest> countRequests = Collections.emptyList();
 	private List<LMFacet> drillDowns = Collections.emptyList();
 	private List<FieldSort> fieldSorts = Collections.emptyList();
@@ -99,12 +99,17 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	}
 
 
-	public Query setLastResult(QueryResult lastResult) {
+	public Query setLastResult(QueryResult lastQueryResult) {
+		this.lastResult = lastQueryResult.getLastResult();
+		return this;
+	}
+
+	public Query setLastResult(Lumongo.LastResult lastResult) {
 		this.lastResult = lastResult;
 		return this;
 	}
 	
-	public QueryResult getLastResult() {
+	public Lumongo.LastResult getLastResult() {
 		return lastResult;
 	}
 	
@@ -223,8 +228,9 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return resultFetchType;
 	}
 
-	public void setResultFetchType(Lumongo.FetchType resultFetchType) {
+	public Query setResultFetchType(Lumongo.FetchType resultFetchType) {
 		this.resultFetchType = resultFetchType;
+		return this;
 	}
 
 	public Set<String> getDocumentMaskedFields() {
@@ -266,7 +272,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		}
 
 		if (lastResult != null) {
-			requestBuilder.setLastResult(lastResult.getLastResult());
+			requestBuilder.setLastResult(lastResult);
 		}
 		
 		for (String index : indexes) {

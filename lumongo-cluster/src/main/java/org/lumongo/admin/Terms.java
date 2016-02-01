@@ -31,7 +31,6 @@ public class Terms {
 		OptionSpec<Integer> minDocFreqArg = parser.accepts(AdminConstants.MIN_DOC_FREQ).withRequiredArg().ofType(Integer.class)
 						.describedAs("Minimum number of documents for a term to exist");
 		OptionSpec<String> startTermArg = parser.accepts(AdminConstants.START_TERM).withRequiredArg().describedAs("Term to start search from");
-		OptionSpec<Boolean> realTimeArg = parser.accepts(AdminConstants.REAL_TIME).withRequiredArg().ofType(Boolean.class).describedAs("Real time search");
 		OptionSpec<String> termFilterArg = parser.accepts(AdminConstants.TERM_FILTER).withRequiredArg().describedAs("Filter terms that match this regex");
 		OptionSpec<String> termMatchArg = parser.accepts(AdminConstants.TERM_MATCH).withRequiredArg().describedAs("Return terms that match this regex");
 
@@ -47,7 +46,6 @@ public class Terms {
 			String field = options.valueOf(fieldArg);
 			Integer minDocFreq = options.valueOf(minDocFreqArg);
 			String startTerm = options.valueOf(startTermArg);
-			Boolean realTime = options.valueOf(realTimeArg);
 			String termFilter = options.valueOf(termFilterArg);
 			String termMatch = options.valueOf(termMatchArg);
 			
@@ -56,7 +54,7 @@ public class Terms {
 			lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 			
 			GetTermsResult response = lumongoWorkPool.execute(new GetAllTerms(index, field).setStartTerm(startTerm).setMinDocFreq(minDocFreq)
-							.setRealTime(realTime).setTermFilter(termFilter).setTermMatch(termMatch));
+							.setTermFilter(termFilter).setTermMatch(termMatch));
 			
 			System.out.print("Term");
 			System.out.print("\t");

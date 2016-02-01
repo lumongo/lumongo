@@ -187,6 +187,10 @@ public class LumongoIndex implements IndexSegmentInterface {
 		return indexConfig.getAnalyzer(fieldName);
 	}
 
+	public SortAs.SortType getSortType(String fieldName) {
+		return indexConfig.getSortType(fieldName);
+	}
+
 	private void doCommit(boolean force) {
 		indexLock.readLock().lock();
 		try {
@@ -816,41 +820,44 @@ public class LumongoIndex implements IndexSegmentInterface {
 							Object[] sortTerms = new Object[sortRequest.getFieldSortCount()];
 
 							int sortTermsIndex = 0;
-							int stringIndex = 0;
-							int intIndex = 0;
-							int longIndex = 0;
-							int floatIndex = 0;
-							int doubleIndex = 0;
-							int dateIndex = 0;
 
+							SortValues sortValues = sr.getSortValues();
 							for (FieldSort fs : sortRequest.getFieldSortList()) {
 
 								String sortField = fs.getSortField();
 								Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
 
-								if (IndexConfig.isNumericOrDateSortType(sortType)) {
-									if (IndexConfig.isNumericIntSortType(sortType)) {
-										sortTerms[sortTermsIndex] = sr.getSortInteger(intIndex++);
+								SortValue sortValue = sortValues.getSortValue(sortTermsIndex);
+
+								if (sortValue.getExists()) {
+									if (IndexConfig.isNumericOrDateSortType(sortType)) {
+										if (IndexConfig.isNumericIntSortType(sortType)) {
+											sortTerms[sortTermsIndex] = sortValue.getIntegerValue();
+										}
+										else if (IndexConfig.isNumericLongSortType(sortType)) {
+											sortTerms[sortTermsIndex] = sortValue.getLongValue();
+										}
+										else if (IndexConfig.isNumericFloatSortType(sortType)) {
+											sortTerms[sortTermsIndex] = sortValue.getFloatValue();
+										}
+										else if (IndexConfig.isNumericDoubleSortType(sortType)) {
+											sortTerms[sortTermsIndex] = sortValue.getDoubleValue();
+										}
+										else if (IndexConfig.isNumericDateSortType(sortType)) {
+											sortTerms[sortTermsIndex] = sortValue.getDateValue();
+										}
+										else {
+											throw new Exception("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
+										}
 									}
-									else if (IndexConfig.isNumericLongSortType(sortType)) {
-										sortTerms[sortTermsIndex] = sr.getSortLong(longIndex++);
-									}
-									else if (IndexConfig.isNumericFloatSortType(sortType)) {
-										sortTerms[sortTermsIndex] = sr.getSortFloat(floatIndex++);
-									}
-									else if (IndexConfig.isNumericDoubleSortType(sortType)) {
-										sortTerms[sortTermsIndex] = sr.getSortDouble(doubleIndex++);
-									}
-									else if (IndexConfig.isNumericDateSortType(sortType)) {
-										sortTerms[sortTermsIndex] = sr.getSortDate(dateIndex++);
-									}
-									else {
-										throw new Exception("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
+									else { //string
+										sortTerms[sortTermsIndex] = sortValue.getStringValue();
 									}
 								}
-								else { //string
-									sortTerms[sortTermsIndex] = sr.getSortTerm(stringIndex++);
+								else {
+									sortTerms[sortTermsIndex] = null;
 								}
+
 								sortTermsIndex++;
 							}
 
@@ -969,14 +976,14 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	public GetNumberOfDocsResponse getNumberOfDocs(final boolean realTime) throws Exception {
+	public GetNumberOfDocsResponse getNumberOfDocs() throws Exception {
 		indexLock.readLock().lock();
 		try {
 			List<Future<SegmentCountResponse>> responses = new ArrayList<>();
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<SegmentCountResponse> response = segmentPool.submit(() -> segment.getNumberOfDocs(realTime));
+				Future<SegmentCountResponse> response = segmentPool.submit(segment::getNumberOfDocs);
 
 				responses.add(response);
 

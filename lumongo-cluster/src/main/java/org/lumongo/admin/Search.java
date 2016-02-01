@@ -25,6 +25,7 @@ import org.lumongo.util.LogUtil;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Date;
 import java.util.List;
 
 public class Search {
@@ -158,35 +159,35 @@ public class Search {
 
 				StringBuffer sb = new StringBuffer();
 
-				for (String s : sr.getSortTermList()) {
-					if (sb.length() != 0) {
-						sb.append(",");
+				if (sr.hasSortValues()) {
+					for (Lumongo.SortValue sortValue : sr.getSortValues().getSortValueList()) {
+						if (sb.length() != 0) {
+							sb.append(",");
+						}
+						if (sortValue.getExists()) {
+							if (sortValue.hasDateValue()) {
+								sb.append(new Date(sortValue.getDateValue()));
+							}
+							else if (sortValue.hasDoubleValue()) {
+								sb.append(sortValue.getDoubleValue());
+							}
+							else if (sortValue.hasFloatValue()) {
+								sb.append(sortValue.getFloatValue());
+							}
+							else if (sortValue.hasIntegerValue()) {
+								sb.append(sortValue.getIntegerValue());
+							}
+							else if (sortValue.hasLongValue()) {
+								sb.append(sortValue.getLongValue());
+							}
+							else if (sortValue.hasStringValue()) {
+								sb.append(sortValue.getStringValue());
+							}
+						}
+						else {
+							sb.append("!NULL!");
+						}
 					}
-					sb.append(s);
-				}
-				for (Integer i : sr.getSortIntegerList()) {
-					if (sb.length() != 0) {
-						sb.append(",");
-					}
-					sb.append(i);
-				}
-				for (Long l : sr.getSortLongList()) {
-					if (sb.length() != 0) {
-						sb.append(",");
-					}
-					sb.append(l);
-				}
-				for (Float f : sr.getSortFloatList()) {
-					if (sb.length() != 0) {
-						sb.append(",");
-					}
-					sb.append(f);
-				}
-				for (Double d : sr.getSortDoubleList()) {
-					if (sb.length() != 0) {
-						sb.append(",");
-					}
-					sb.append(d);
 				}
 
 				if (sb.length() != 0) {
