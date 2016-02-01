@@ -146,7 +146,7 @@ public class FieldConfigMapper<T> {
 		if (!sorted.fieldName().isEmpty()) {
 			sortFieldName = sorted.fieldName();
 		}
-		fieldConfigBuilder.setSortAs(Lumongo.SortAs.newBuilder().setSortType(sorted.type()).setSortFieldName(sortFieldName));
+		fieldConfigBuilder.addSortAs(Lumongo.SortAs.newBuilder().setSortType(sorted.type()).setSortFieldName(sortFieldName));
 	}
 
 

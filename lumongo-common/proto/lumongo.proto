@@ -174,7 +174,7 @@ message FieldConfig {
 	required string storedFieldName = 1;
 	repeated IndexAs indexAs = 2;
 	repeated FacetAs facetAs = 3;
-	optional SortAs sortAs = 4;
+	repeated SortAs sortAs = 4;
 }
 
 message IndexAs {

@@ -9,12 +9,13 @@ public class FieldConfigBuilder {
 	private String storedFieldName;
 	private List<Lumongo.IndexAs> indexAsList;
 	private List<Lumongo.FacetAs> facetAsList;
-	private Lumongo.SortAs sortAs;
+	private List<Lumongo.SortAs> sortAsList;
 
 	public FieldConfigBuilder(String storedFieldName) {
 		this.storedFieldName = storedFieldName;
 		this.indexAsList = new ArrayList<>();
 		this.facetAsList = new ArrayList<>();
+		this.sortAsList = new ArrayList<>();
 	}
 
 	public static FieldConfigBuilder create(String storedFieldName) {
@@ -35,7 +36,7 @@ public class FieldConfigBuilder {
 	}
 
 	public FieldConfigBuilder facetAs(Lumongo.FacetAs.LMFacetType facetType) {
-		return facetAs(Lumongo.FacetAs.newBuilder().setFacetName(storedFieldName).setFacetType(facetType).build());
+		return facetAs(facetType, storedFieldName);
 	}
 
 	public FieldConfigBuilder facetAs(Lumongo.FacetAs.LMFacetType facetType, String facetName) {
@@ -47,18 +48,16 @@ public class FieldConfigBuilder {
 		return this;
 	}
 
-	public FieldConfigBuilder sortAs(Lumongo.SortAs.SortType sortType, String sortFieldName) {
-		this.sortAs = Lumongo.SortAs.newBuilder().setSortFieldName(sortFieldName).setSortType(sortType).build();
-		return this;
+	public FieldConfigBuilder sortAs(Lumongo.SortAs.SortType sortType) {
+		return sortAs(sortType, storedFieldName);
 	}
 
-	public FieldConfigBuilder sortAs(Lumongo.SortAs.SortType sortType) {
-		this.sortAs = Lumongo.SortAs.newBuilder().setSortFieldName(storedFieldName).setSortType(sortType).build();
-		return this;
+	public FieldConfigBuilder sortAs(Lumongo.SortAs.SortType sortType, String sortFieldName) {
+		return sortAs(Lumongo.SortAs.newBuilder().setSortFieldName(sortFieldName).setSortType(sortType).build());
 	}
 
 	public FieldConfigBuilder sortAs(Lumongo.SortAs sortAs) {
-		this.sortAs = sortAs;
+		this.sortAsList.add(sortAs);
 		return this;
 	}
 
@@ -67,9 +66,8 @@ public class FieldConfigBuilder {
 		fcBuilder.setStoredFieldName(storedFieldName);
 		fcBuilder.addAllIndexAs(indexAsList);
 		fcBuilder.addAllFacetAs(facetAsList);
-		if (sortAs != null) {
-			fcBuilder.setSortAs(sortAs);
-		}
+		fcBuilder.addAllSortAs(sortAsList);
+
 		return fcBuilder.build();
 	}
 }
