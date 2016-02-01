@@ -764,8 +764,7 @@ public class LumongoSegment {
 
 	private void handleSortForStoredField(Document d, String storedFieldName, FieldConfig fc, Object o) {
 
-		if (fc.hasSortAs()) {
-			SortAs sortAs = fc.getSortAs();
+		for (SortAs sortAs : fc.getSortAsList()) {
 			String sortFieldName = sortAs.getSortFieldName();
 
 			if (IndexConfig.isNumericOrDateSortType(sortAs.getSortType())) {

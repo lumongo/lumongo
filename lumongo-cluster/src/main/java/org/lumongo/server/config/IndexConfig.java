@@ -172,12 +172,12 @@ public class IndexConfig {
 				}
 			}
 			{
-				Document sortAsDoc = (Document) fieldConfig.get(SORT_AS);
-				if (sortAsDoc != null) {
-					String sortFieldName = (String) sortAsDoc.get(SORT_FIELD_NAME);
-					Lumongo.SortAs.SortType sortType = Lumongo.SortAs.SortType.valueOf((String) sortAsDoc.get(SORT_TYPE));
+				List<Document> sortAsDocList = (List<Document>) fieldConfig.get(SORT_AS);
+				for (Document sortAsObj : sortAsDocList) {
+					String sortFieldName = (String) sortAsObj.get(SORT_FIELD_NAME);
+					Lumongo.SortAs.SortType sortType = Lumongo.SortAs.SortType.valueOf((String) sortAsObj.get(SORT_TYPE));
 					Lumongo.SortAs sortAs = Lumongo.SortAs.newBuilder().setSortFieldName(sortFieldName).setSortType(sortType).build();
-					fcBuilder.setSortAs(sortAs);
+					fcBuilder.addSortAs(sortAs);
 				}
 			}
 
@@ -248,8 +248,7 @@ public class IndexConfig {
 		ConcurrentHashMap<String, Lumongo.SortAs> sortAsMap = new ConcurrentHashMap<>();
 		for (String storedFieldName : fieldConfigMap.keySet()) {
 			FieldConfig fc = fieldConfigMap.get(storedFieldName);
-			Lumongo.SortAs sortAs = fc.getSortAs();
-			if (sortAs != null) {
+			for (Lumongo.SortAs sortAs : fc.getSortAsList()) {
 				sortAsMap.put(sortAs.getSortFieldName(), sortAs);
 			}
 		}
@@ -378,13 +377,15 @@ public class IndexConfig {
 				fieldConfig.put(FACET_AS, facetAsObjList);
 			}
 			{
-				if (fc.hasSortAs()) {
-					Lumongo.SortAs sortAs = fc.getSortAs();
+
+				List<Document> sortAsObjList = new ArrayList<>();
+				for (Lumongo.SortAs sortAs : fc.getSortAsList()) {
 					Document sortAsObj = new Document();
 					sortAsObj.put(SORT_TYPE, sortAs.getSortType().name());
 					sortAsObj.put(SORT_FIELD_NAME, sortAs.getSortFieldName());
-					fieldConfig.put(SORT_AS, sortAsObj);
+					sortAsObjList.add(sortAsObj);
 				}
+				fieldConfig.put(SORT_AS, sortAsObjList);
 			}
 
 			fieldConfigs.add(fieldConfig);
