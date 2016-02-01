@@ -1,9 +1,6 @@
 package org.lumongo.fields;
 
-import com.google.protobuf.ByteString;
-import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import org.bson.BSON;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
@@ -11,6 +8,7 @@ import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.doc.ResultDocBuilder;
+import org.lumongo.doc.ResultHelper;
 import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Embedded;
@@ -63,11 +61,11 @@ public class Mapper<T> {
 
 				if (f.isAnnotationPresent(AsField.class)) {
 					throw new RuntimeException("Cannot use AsField with UniqueId on field <" + f.getName() + "> for class <" + clazz.getSimpleName()
-									+ ">.  Unique id always stored as _id.");
+							+ ">.  Unique id always stored as _id.");
 				}
 				if (f.isAnnotationPresent(Embedded.class)) {
 					throw new RuntimeException(
-									"Cannot use Embedded with UniqueId with on field <" + f.getName() + "> for class <" + clazz.getSimpleName() + ">");
+							"Cannot use Embedded with UniqueId with on field <" + f.getName() + "> for class <" + clazz.getSimpleName() + ">");
 				}
 
 				@SuppressWarnings("unused") UniqueId uniqueId = f.getAnnotation(UniqueId.class);
@@ -180,15 +178,7 @@ public class Mapper<T> {
 	}
 
 	public T fromScoredResult(Lumongo.ScoredResult scoredResult) throws Exception {
-		if (scoredResult.hasResultDocument()) {
-			Lumongo.ResultDocument rd = scoredResult.getResultDocument();
-
-			ByteString bs = rd.getDocument();
-			DBObject document = new BasicDBObject();
-			document.putAll(BSON.decode(bs.toByteArray()));
-			return fromDBObject(document);
-		}
-		return null;
+		return fromDBObject(ResultHelper.getDBObjectFromScoredResult(scoredResult));
 	}
 
 	public ResultDocBuilder toResultDocumentBuilder(T object) throws Exception {
@@ -204,9 +194,12 @@ public class Mapper<T> {
 	}
 
 	public T fromDBObject(DBObject savedDBObject) throws Exception {
-		T newInstance = savedFieldsMapper.fromDBObject(savedDBObject);
-		uniqueIdField.populate(newInstance, savedDBObject);
-		return newInstance;
+		if (savedDBObject != null) {
+			T newInstance = savedFieldsMapper.fromDBObject(savedDBObject);
+			uniqueIdField.populate(newInstance, savedDBObject);
+			return newInstance;
+		}
+		return null;
 	}
 
 }
