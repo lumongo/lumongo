@@ -40,7 +40,6 @@ public class QueryTest {
 				for (ScoredResult sr : queryResult.getResults()) {
 
 					MedlineDocument d = getMedlineDocument(mapper, sr);
-
 					System.out.println("Matching document <" + sr.getUniqueId() + "> with score <" + sr.getScore() + "> <" + d.getIssn() + ">");
 				}
 			}
