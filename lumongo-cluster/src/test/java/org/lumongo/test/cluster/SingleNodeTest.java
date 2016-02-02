@@ -5,6 +5,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.lumongo.client.command.CursorHelper;
 import org.lumongo.client.command.DeleteAllAssociated;
 import org.lumongo.client.command.DeleteAssociated;
 import org.lumongo.client.command.DeleteFull;
@@ -312,6 +313,46 @@ public class SingleNodeTest extends ServerTestBase {
 			assertEquals("Result size is not 3", 3, second.getResults().size());
 
 			sortQuery.setLastResult(second).setAmount(10);
+			QueryResult third = lumongoWorkPool.query(sortQuery);
+			assertEquals("Result size is not 0", 0, third.getResults().size());
+		}
+
+		{
+			Query sortQuery = new Query(MY_TEST_INDEX, "an:[0 TO 5]", 2).addFieldSort("an").setResultFetchType(Lumongo.FetchType.FULL);
+			QueryResult first = lumongoWorkPool.query(sortQuery);
+			assertEquals("Result size is not 2", 2, first.getResults().size());
+
+
+			String cursor = CursorHelper.getStaticIndexCursor(first.getLastResult());
+			sortQuery.setLastResult(CursorHelper.getLastResultFromCursor(cursor)).setAmount(10);
+
+			QueryResult second = lumongoWorkPool.query(sortQuery);
+			assertEquals("Result size is not 3", 3, second.getResults().size());
+
+
+			cursor = CursorHelper.getStaticIndexCursor(second.getLastResult());
+			sortQuery.setLastResult(CursorHelper.getLastResultFromCursor(cursor)).setAmount(10);
+
+			QueryResult third = lumongoWorkPool.query(sortQuery);
+			assertEquals("Result size is not 0", 0, third.getResults().size());
+		}
+
+		{
+			Query sortQuery = new Query(MY_TEST_INDEX, "an:[0 TO 5]", 2).addFieldSort("an").setResultFetchType(Lumongo.FetchType.FULL);
+			QueryResult first = lumongoWorkPool.query(sortQuery);
+			assertEquals("Result size is not 2", 2, first.getResults().size());
+
+
+			String cursor = CursorHelper.getUniqueSortedCursor(first.getLastResult());
+			sortQuery.setLastResult(CursorHelper.getLastResultFromCursor(cursor)).setAmount(10);
+
+			QueryResult second = lumongoWorkPool.query(sortQuery);
+			assertEquals("Result size is not 3", 3, second.getResults().size());
+
+
+			cursor = CursorHelper.getUniqueSortedCursor(second.getLastResult());
+			sortQuery.setLastResult(CursorHelper.getLastResultFromCursor(cursor)).setAmount(10);
+
 			QueryResult third = lumongoWorkPool.query(sortQuery);
 			assertEquals("Result size is not 0", 0, third.getResults().size());
 		}
