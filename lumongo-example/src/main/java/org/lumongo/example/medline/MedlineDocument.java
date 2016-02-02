@@ -27,9 +27,8 @@ public class MedlineDocument {
     @DefaultSearch
     @Indexed(
             analyzer = LMAnalyzer.STANDARD)
-    @Indexed(
-            analyzer = LMAnalyzer.LSH, fieldName = "titleLSH")
-
+    @Sorted(type= Lumongo.SortAs.SortType.STRING)
+    @Sorted(type= Lumongo.SortAs.SortType.STRING_LC, fieldName="titleLC")
     private String title;
 
     @Indexed(
