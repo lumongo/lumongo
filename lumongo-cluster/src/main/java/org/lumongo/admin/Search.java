@@ -44,6 +44,9 @@ public class Search {
 		OptionSpec<String> queryArg = parser.accepts(AdminConstants.QUERY, "Lucene query (matches all docs by default)").withRequiredArg();
 		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT, "Amount of results to return").withRequiredArg().ofType(Integer.class)
 				.defaultsTo(10);
+
+		OptionSpec<Integer> startArg = parser.accepts(AdminConstants.START, "Start index").withRequiredArg().ofType(Integer.class)
+				.defaultsTo(0);
 		OptionSpec<String> facetsArg = parser.accepts(AdminConstants.FACET, "Count facets on").withRequiredArg();
 		OptionSpec<Integer> facetsCountArg = parser.accepts(AdminConstants.FACET_COUNT, "Number of facets to return").withRequiredArg().ofType(Integer.class)
 				.defaultsTo(10);
@@ -73,6 +76,7 @@ public class Search {
 			int port = options.valueOf(portArg);
 			String query = options.valueOf(queryArg);
 			int amount = options.valueOf(amountArg);
+			int start = options.valueOf(startArg);
 			List<String> facets = options.valuesOf(facetsArg);
 			Integer facetCount = options.valueOf(facetsCountArg);
 			Integer facetSegmentCount = options.valueOf(facetSegmentCountArg);
@@ -93,6 +97,8 @@ public class Search {
 			lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 
 			Query q = new Query(indexes, query, amount);
+
+			q.setStart(start);
 
 			if (fetch) {
 				q.setResultFetchType(Lumongo.FetchType.FULL);

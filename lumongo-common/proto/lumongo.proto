@@ -387,6 +387,7 @@ message QueryRequest {
 	optional Operator defaultOperator = 14 [default = OR];
 	repeated string documentFields = 15;
 	repeated string documentMaskedFields = 16;
+	optional uint32 start = 17;
 }
 
 message QueryResponse {

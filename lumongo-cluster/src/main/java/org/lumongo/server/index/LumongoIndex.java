@@ -797,9 +797,9 @@ public class LumongoIndex implements IndexSegmentInterface {
 	public IndexSegmentResponse queryInternal(final QueryWithFilters queryWithFilters, final QueryRequest queryRequest) throws Exception {
 		indexLock.readLock().lock();
 		try {
-			int amount = queryRequest.getAmount();
+			int amount = queryRequest.getAmount() + queryRequest.getStart();
 			if (!queryRequest.getFetchFull() && (amount > 0)) {
-				amount = (int) (((queryRequest.getAmount() / numberOfSegments) + indexConfig.getMinSegmentRequest()) * indexConfig.getRequestFactor());
+				amount = (int) (((amount / numberOfSegments) + indexConfig.getMinSegmentRequest()) * indexConfig.getRequestFactor());
 			}
 
 			final int requestedAmount = amount;

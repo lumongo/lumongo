@@ -43,6 +43,7 @@ public class QueryCombiner {
 	private final List<SegmentResponse> segmentResponses;
 
 	private final int amount;
+	private final int start;
 	private final LastResult lastResult;
 
 	private boolean isShort;
@@ -56,13 +57,14 @@ public class QueryCombiner {
 	public QueryCombiner(Map<String, LumongoIndex> usedIndexMap, QueryRequest request, List<InternalQueryResponse> responses) {
 		this.usedIndexMap = usedIndexMap;
 		this.responses = responses;
-		this.amount = request.getAmount();
+		this.amount = request.getAmount() + request.getStart();
 		this.indexToSegmentResponseMap = new HashMap<>();
 		this.segmentResponses = new ArrayList<>();
 		this.lastResult = request.getLastResult();
 		this.sortRequest = request.getSortRequest();
-
+		this.start = request.getStart();
 		this.query = request.getQuery();
+
 		this.isShort = false;
 		this.results = Collections.emptyList();
 		this.resultsSize = 0;
@@ -391,6 +393,8 @@ public class QueryCombiner {
 
 		if (!mergedResults.isEmpty()) {
 			Collections.sort(mergedResults, myCompare);
+
+
 			results = mergedResults.subList(0, resultsSize);
 
 			for (ScoredResult sr : results) {
@@ -473,16 +477,24 @@ public class QueryCombiner {
 
 		}
 
-		builder.addAllResults(results);
+
+		int i = 0;
+		for (ScoredResult scoredResult : results) {
+			if (i >= start) {
+				builder.addResults(scoredResult);
+			}
+			i++;
+		}
+
 
 		LastResult.Builder newLastResultBuilder = LastResult.newBuilder();
 		for (String indexName : lastIndexResultMap.keySet()) {
 			ScoredResult[] lastForSegmentArr = lastIndexResultMap.get(indexName);
 			int numberOfSegments = usedIndexMap.get(indexName).getNumberOfSegments();
 			List<ScoredResult> indexList = new ArrayList<>();
-			for (int i = 0; i < numberOfSegments; i++) {
-				if (lastForSegmentArr[i] != null) {
-					ScoredResult.Builder minimalSR = ScoredResult.newBuilder(lastForSegmentArr[i]);
+			for (int seg = 0; seg < numberOfSegments; seg++) {
+				if (lastForSegmentArr[seg] != null) {
+					ScoredResult.Builder minimalSR = ScoredResult.newBuilder(lastForSegmentArr[seg]);
 					minimalSR = minimalSR.clearUniqueId().clearIndexName().clearResultIndex().clearTimestamp().clearResultDocument();
 					indexList.add(minimalSR.build());
 				}

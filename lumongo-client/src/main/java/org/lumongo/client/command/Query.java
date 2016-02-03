@@ -35,6 +35,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	
 	private String query;
 	private int amount;
+	private int start;
 	private Collection<String> indexes;
 	private Lumongo.LastResult lastResult;
 	private List<CountRequest> countRequests = Collections.emptyList();
@@ -80,7 +81,15 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		this.amount = amount;
 		return this;
 	}
-	
+
+	public int getStart() {
+		return start;
+	}
+
+	public void setStart(int start) {
+		this.start = start;
+	}
+
 	public Integer getMinimumNumberShouldMatch() {
 		return minimumNumberShouldMatch;
 	}
@@ -262,6 +271,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	public QueryRequest getRequest() {
 		QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
 		requestBuilder.setAmount(amount);
+		requestBuilder.setStart(start);
 		
 		if (minimumNumberShouldMatch != null) {
 			requestBuilder.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
