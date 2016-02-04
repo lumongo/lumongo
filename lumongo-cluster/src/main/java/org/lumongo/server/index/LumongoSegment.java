@@ -227,6 +227,10 @@ public class LumongoSegment {
 	public SegmentResponse querySegment(QueryWithFilters queryWithFilters, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest,
 			QueryCacheKey queryCacheKey, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception {
 		try {
+			reopenIndexWritersIfNecessary();
+
+			openReaderIfChanges();
+
 			QueryResultCache qrc = queryResultCache;
 
 			boolean useCache = (qrc != null) && ((segmentQueryCacheMaxAmount <= 0) || (segmentQueryCacheMaxAmount >= amount)) && queryCacheKey != null;
@@ -235,7 +239,6 @@ public class LumongoSegment {
 				if (cacheSegmentResponse != null) {
 					return cacheSegmentResponse;
 				}
-
 			}
 
 			Query q = queryWithFilters.getQuery();
@@ -252,9 +255,7 @@ public class LumongoSegment {
 				q = booleanQuery.build();
 			}
 
-			reopenIndexWritersIfNecessary();
 
-			openReaderIfChanges();
 
 			IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
@@ -417,11 +418,11 @@ public class LumongoSegment {
 	private void openReaderIfChanges() throws IOException {
 		DirectoryReader newDirectoryReader = DirectoryReader.openIfChanged(directoryReader, indexWriter, indexConfig.getApplyUncommittedDeletes());
 		if (newDirectoryReader != null) {
+			directoryReader = newDirectoryReader;
 			QueryResultCache qrc = queryResultCache;
 			if (qrc != null) {
 				qrc.clear();
 			}
-			directoryReader = newDirectoryReader;
 		}
 	}
 
