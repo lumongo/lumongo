@@ -417,6 +417,10 @@ public class LumongoSegment {
 	private void openReaderIfChanges() throws IOException {
 		DirectoryReader newDirectoryReader = DirectoryReader.openIfChanged(directoryReader, indexWriter, indexConfig.getApplyUncommittedDeletes());
 		if (newDirectoryReader != null) {
+			QueryResultCache qrc = queryResultCache;
+			if (qrc != null) {
+				qrc.clear();
+			}
 			directoryReader = newDirectoryReader;
 		}
 	}
@@ -647,11 +651,6 @@ public class LumongoSegment {
 
 		indexWriter.commit();
 
-		QueryResultCache qrc = queryResultCache;
-		if (qrc != null) {
-			qrc.clear();
-		}
-
 		lastCommit = currentTime;
 
 	}
@@ -682,6 +681,7 @@ public class LumongoSegment {
 	}
 
 	public void index(String uniqueId, long timestamp, BasicBSONObject document, List<Metadata> metadataList) throws Exception {
+
 		reopenIndexWritersIfNecessary();
 
 		Document d = new Document();
@@ -759,6 +759,7 @@ public class LumongoSegment {
 		Term term = new Term(LumongoConstants.ID_FIELD, uniqueId);
 
 		indexWriter.updateDocument(term, d);
+
 		possibleCommit();
 	}
 
@@ -888,9 +889,6 @@ public class LumongoSegment {
 	public void deleteDocument(String uniqueId) throws Exception {
 		Term term = new Term(LumongoConstants.ID_FIELD, uniqueId);
 		indexWriter.deleteDocuments(term);
-		if (indexConfig.getApplyUncommittedDeletes()) {
-			queryResultCache.clear();
-		}
 		possibleCommit();
 
 	}
