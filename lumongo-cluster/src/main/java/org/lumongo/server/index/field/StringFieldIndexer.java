@@ -28,7 +28,9 @@ public class StringFieldIndexer extends FieldIndexer {
 	
 	@Override
 	protected void handleValue(Document d, String storedFieldName, Object value, String indexedFieldName) throws Exception {
-		d.add((new Field(indexedFieldName, value.toString(), notStoredTextField)));
+		if (value != null) {
+			d.add((new Field(indexedFieldName, value.toString(), notStoredTextField)));
+		}
 	}
 	
 }
