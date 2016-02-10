@@ -3,11 +3,10 @@ package org.lumongo.server.index;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
-import org.apache.lucene.analysis.lsh.LSH;
 import org.apache.lucene.analysis.lsh.LSHAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.standard.StandardTokenizer;
+import org.lumongo.analyzer.BooleanAnalyzer;
 import org.lumongo.analyzer.LowercaseKeywordAnalyzer;
 import org.lumongo.analyzer.LowercaseWhitespaceAnalyzer;
 import org.lumongo.analyzer.StandardFoldingAnalyzer;
@@ -62,6 +61,9 @@ public class LumongoAnalyzerFactory {
 		}
 		else if (LMAnalyzer.LSH.equals(lmAnalyzer)) {
 			return new LSHAnalyzer(100);
+		}
+		else if (LMAnalyzer.BOOL.equals(lmAnalyzer)) {
+			return new BooleanAnalyzer();
 		}
 		
 		throw new Exception("Unsupported analyzer <" + lmAnalyzer + ">");
