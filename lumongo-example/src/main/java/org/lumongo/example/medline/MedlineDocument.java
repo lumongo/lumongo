@@ -37,6 +37,10 @@ public class MedlineDocument {
 
     @Indexed(
             analyzer = LMAnalyzer.STANDARD)
+    private String journalIso;
+
+    @Indexed(
+            analyzer = LMAnalyzer.STANDARD)
     private String abstractText;
 
     @Faceted
@@ -141,6 +145,14 @@ public class MedlineDocument {
 
     public void setJournalCountry(String journalCountry) {
         this.journalCountry = journalCountry;
+    }
+
+    public String getJournalIso() {
+        return journalIso;
+    }
+
+    public void setJournalIso(String journalIso) {
+        this.journalIso = journalIso;
     }
 
     public void addAuthor(String author) {

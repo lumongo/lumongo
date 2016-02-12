@@ -89,10 +89,9 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 		document.setPmid(pmid);
 		
 		Journal journal = article.getJournal();
-		String journalTitle = journal.getTitle();
-		if (journalTitle != null) {
-			document.setJournalTitle(journalTitle);
-		}
+
+		document.setJournalTitle(journal.getTitle());
+		document.setJournalIso(journal.getISOAbbreviation());
 
 		JournalIssue journalIssue = journal.getJournalIssue();
 		
