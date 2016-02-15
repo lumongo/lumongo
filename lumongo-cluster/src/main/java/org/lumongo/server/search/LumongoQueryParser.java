@@ -18,7 +18,9 @@ import java.io.StringReader;
 
 public class LumongoQueryParser extends QueryParser {
 
-	private static final DateTimeFormatter dateFormatter = ISODateTimeFormat.dateTimeNoMillis();
+	private static final DateTimeFormatter dateTimeFormatter = ISODateTimeFormat.dateTimeNoMillis();
+
+	private static final DateTimeFormatter dateFormatter = ISODateTimeFormat.date();
 
 	private IndexConfig indexConfig;
 
@@ -80,16 +82,25 @@ public class LumongoQueryParser extends QueryParser {
 			Long startTime = null;
 			Long endTime = null;
 			if (start != null) {
-				DateTime startDate = dateFormatter.parseDateTime(start);
-				startTime = startDate.toDate().getTime();
+				startTime = getDateAsLong(start);
 			}
 			if (end != null) {
-				DateTime endDate = dateFormatter.parseDateTime(end);
-				endTime = endDate.toDate().getTime();
+				endTime = getDateAsLong(end);
 			}
 			return NumericRangeQuery.newLongRange(fieldName, startTime, endTime, startInclusive, endInclusive);
 		}
 		throw new RuntimeException("Not a valid numeric field <" + fieldName + ">");
+	}
+
+	private Long getDateAsLong(String dateString) {
+		DateTime dateTime;
+		if (dateString.contains(":")) {
+			dateTime = dateTimeFormatter.parseDateTime(dateString);
+		}
+		else {
+			dateTime = dateFormatter.parseDateTime(dateString);
+		}
+		return dateTime.toDate().getTime();
 	}
 
 	@Override
