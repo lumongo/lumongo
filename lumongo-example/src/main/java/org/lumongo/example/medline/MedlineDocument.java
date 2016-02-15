@@ -22,6 +22,8 @@ import java.util.List;
 public class MedlineDocument {
 
     @UniqueId
+    @Indexed(
+            analyzer = LMAnalyzer.STANDARD)
     private String pmid;
 
     @DefaultSearch
@@ -48,23 +50,28 @@ public class MedlineDocument {
             analyzer = LMAnalyzer.DATE)
     private Date publicationDate;
 
+    @Faceted
     @Indexed(
-            analyzer = LMAnalyzer.LC_KEYWORD)
+            analyzer = LMAnalyzer.STANDARD)
+    private String pubYear;
+
+    @Indexed(
+            analyzer = LMAnalyzer.STANDARD)
     private String journalVolume;
 
     @Indexed(
-            analyzer = LMAnalyzer.LC_KEYWORD)
+            analyzer = LMAnalyzer.STANDARD)
     private String journalIssue;
 
     @Faceted
     @Indexed(
-            analyzer = LMAnalyzer.LC_KEYWORD)
+            analyzer = LMAnalyzer.STANDARD)
     private String journalCountry;
 
 
     @Faceted
     @Indexed(
-            analyzer = LMAnalyzer.LC_KEYWORD)
+            analyzer = LMAnalyzer.STANDARD)
     @Sorted(type = Lumongo.SortAs.SortType.STRING)
     private String issn;
 
@@ -74,6 +81,13 @@ public class MedlineDocument {
     @Indexed(analyzer = LMAnalyzer.LC_KEYWORD, fieldName = "authorsExact")
     private List<String> authors;
 
+    @Indexed(
+            analyzer = LMAnalyzer.STANDARD)
+    private String pagination;
+
+    @Indexed(
+            analyzer = LMAnalyzer.STANDARD)
+    private String citation;
 
     public String getPmid() {
         return pmid;
@@ -155,6 +169,36 @@ public class MedlineDocument {
         this.journalIso = journalIso;
     }
 
+
+    public void setPagination(String pagination) {
+        this.pagination = pagination;
+    }
+
+    public String getPagination() {
+        return pagination;
+    }
+
+
+    public String getPubYear() {
+        return pubYear;
+    }
+
+    public void setPubYear(String pubYear) {
+        this.pubYear = pubYear;
+    }
+
+    public String getCitation() {
+        return citation;
+    }
+
+    public void setCitation(String citation) {
+        this.citation = citation;
+    }
+
+    public void setAuthors(List<String> authors) {
+        this.authors = authors;
+    }
+
     public void addAuthor(String author) {
         if (this.authors == null) {
             this.authors = new ArrayList<String>();
@@ -170,9 +214,23 @@ public class MedlineDocument {
 
     @Override
     public String toString() {
-        return "Document [title=" + title + ", journalTitle=" + journalTitle + ", abstractText=" + abstractText + ", publicationDate=" + publicationDate
-                + ", journalVolume=" + journalVolume + ", journalIssue=" + journalIssue + ", journalCountry=" + journalCountry + ", issn=" + issn
-                + ", authors=" + authors + ", pmid=" + pmid + "]\n";
+        return "MedlineDocument{" +
+                "pmid='" + pmid + '\'' +
+                ", title='" + title + '\'' +
+                ", journalTitle='" + journalTitle + '\'' +
+                ", journalIso='" + journalIso + '\'' +
+                ", abstractText='" + abstractText + '\'' +
+                ", publicationDate=" + publicationDate +
+                ", pubYear='" + pubYear + '\'' +
+                ", journalVolume='" + journalVolume + '\'' +
+                ", journalIssue='" + journalIssue + '\'' +
+                ", journalCountry='" + journalCountry + '\'' +
+                ", issn='" + issn + '\'' +
+                ", authors=" + authors +
+                ", pagination='" + pagination + '\'' +
+                ", citation='" + citation + '\'' +
+                '}';
     }
+
 
 }

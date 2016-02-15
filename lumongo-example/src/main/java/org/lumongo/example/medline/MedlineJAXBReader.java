@@ -1,5 +1,7 @@
 package org.lumongo.example.medline;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import org.joda.time.DateTime;
 import org.lumongo.example.medline.schema.*;
 import org.lumongo.xml.StaxJAXBReader;
@@ -13,7 +15,8 @@ import java.util.List;
 public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> {
 	
 	private static List<String> shortMonths = Arrays.asList(new DateFormatSymbols().getShortMonths());
-	
+	private static Joiner joiner = Joiner.on(",");
+
 	protected MedlineJAXBReader(Class<MedlineCitation> documentJAXBClass, String documentElementName) throws JAXBException {
 		super(documentJAXBClass, documentElementName);
 	}
@@ -83,7 +86,38 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 				}
 			}
 		}
-		
+		List<Object> paginationOrELocationID = medlineCitation.getArticle().getPaginationOrELocationID();
+		StringBuilder fullPagination = new StringBuilder();
+		for (Object obj : paginationOrELocationID) {
+			if (obj instanceof Pagination) {
+				Pagination page = (Pagination) obj;
+				List<Object> startPageOrEndPageOrMedlinePgn = page.getStartPageOrEndPageOrMedlinePgn();
+				String start = null;
+				String end = null;
+				for (Object o : startPageOrEndPageOrMedlinePgn) {
+					if (o instanceof StartPage) {
+						StartPage startPage = (StartPage) o;
+						start = startPage.getvalue();
+					}
+					if (o instanceof EndPage) {
+						EndPage endPage = (EndPage) o;
+						end = endPage.getvalue();
+					}
+					if (o instanceof MedlinePgn) {
+						MedlinePgn medlinePgn = (MedlinePgn) o;
+						fullPagination.append(medlinePgn.getvalue());
+					}
+				}
+				if (start != null && !start.isEmpty()) {
+					fullPagination.append(start);
+				}
+				if (!Strings.isNullOrEmpty(end)) {
+					fullPagination.append("-").append(end);
+				}
+			}
+		}
+		document.setPagination(fullPagination.toString());
+
 		String pmid = medlineCitation.getPMID().getvalue();
 		
 		document.setPmid(pmid);
@@ -134,6 +168,8 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 			if (volume != null) {
 				document.setJournalVolume(volume);
 			}
+
+
 			
 			PubDate pubDate = journalIssue.getPubDate();
 			if (pubDate != null) {
@@ -168,7 +204,11 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 				}
 				Date d = null;
 				if (year != null) {
-					DateTime dateTime = new DateTime().withYear(Integer.parseInt(year));
+					document.setPubYear(year);
+
+					int yearInt = Integer.parseInt(year);
+
+					DateTime dateTime = new DateTime().withYear(yearInt);
 					
 					if (month != null) {
 						dateTime = dateTime.withMonthOfYear(shortMonths.indexOf(month) + 1);
@@ -184,7 +224,7 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 						dateTime = dateTime.withDayOfMonth(1);
 					}
 					
-					d = dateTime.toDate();
+					d = dateTime.withTimeAtStartOfDay().toDate();
 				}
 				
 				if (d != null) {
@@ -193,7 +233,33 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 				
 			}
 		}
-		
+
+		String citation = "";
+		if (document.getAuthors() != null) {
+			citation = joiner.join(document.getAuthors()) + ". ";
+		}
+		if (document.getTitle() != null) {
+			citation = citation + title + ". ";
+		}
+		if (document.getJournalIso() != null) {
+			citation = citation + document.getJournalIso() + ". ";
+		}
+		if (document.getPubYear() != null) {
+			citation = citation + document.getPubYear() + ". ";
+		}
+		if (document.getJournalVolume() != null) {
+			citation = citation + document.getJournalVolume() + " ";
+		}
+
+		if (document.getJournalIssue() != null) {
+			citation = citation + "(" + document.getJournalVolume() + ") ";
+		}
+		if (document.getPagination() != null) {
+			citation = citation + ":" + document.getPagination() + " ";
+		}
+		citation = citation.trim();
+		document.setCitation(citation);
+
 
 		
 		return document;
