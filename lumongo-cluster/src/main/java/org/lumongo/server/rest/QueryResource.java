@@ -41,13 +41,18 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.FIELDS) List<String> fields, @QueryParam(LumongoConstants.FETCH) Boolean fetch,
 			@QueryParam(LumongoConstants.ROWS) int rows, @QueryParam(LumongoConstants.FACET) List<String> facet,
 			@QueryParam(LumongoConstants.SORT) List<String> sort, @QueryParam(LumongoConstants.PRETTY) boolean pretty,
-			@QueryParam(LumongoConstants.FORMAT) String format, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError) {
+			@QueryParam(LumongoConstants.FORMAT) String format, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError,
+			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		if (query != null) {
 			qrBuilder.setQuery(query);
 		}
 		qrBuilder.setAmount(rows);
+
+		if (mm != null) {
+			qrBuilder.setMinimumNumberShouldMatch(mm);
+		}
 
 		if (queryFields != null) {
 			for (String queryField : queryFields) {
@@ -87,8 +92,7 @@ public class QueryResource {
 					count = Integer.parseInt(countString);
 				}
 				catch (Exception e) {
-					Response.status(LumongoConstants.INTERNAL_ERROR)
-							.entity("Invalid facet count <" + countString + "> for facet <" + f + ">").build();
+					Response.status(LumongoConstants.INTERNAL_ERROR).entity("Invalid facet count <" + countString + "> for facet <" + f + ">").build();
 				}
 			}
 
@@ -145,13 +149,11 @@ public class QueryResource {
 				response = JsonWriter.formatJson(response);
 			}
 
-			return Response.status(LumongoConstants.SUCCESS)
-					.entity(response).build();
+			return Response.status(LumongoConstants.SUCCESS).entity(response).build();
 		}
 		catch (Exception e) {
 			log.error(e.getClass().getSimpleName() + ":", e);
-			return Response.status(LumongoConstants.INTERNAL_ERROR)
-					.entity(e.getClass().getSimpleName() + ":" + e.getMessage()).build();
+			return Response.status(LumongoConstants.INTERNAL_ERROR).entity(e.getClass().getSimpleName() + ":" + e.getMessage()).build();
 		}
 
 	}

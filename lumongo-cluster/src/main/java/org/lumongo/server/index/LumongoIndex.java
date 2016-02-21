@@ -18,6 +18,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
@@ -773,8 +774,21 @@ public class LumongoIndex implements IndexSegmentInterface {
 				else {
 					BooleanQuery.Builder bQuery = new BooleanQuery.Builder();
 					for (String queryField : queryFields) {
+						Float boost = null;
+						if (queryField.contains("^")) {
+							try {
+								boost = Float.parseFloat(queryField.substring(queryField.indexOf("^") + 1));
+							}
+							catch (Exception e) {
+								throw new IllegalArgumentException("Invalid query field boost <" + queryField + ">");
+							}
+							queryField = queryField.substring(0, queryField.indexOf("^"));
+						}
 						qp.setField(queryField);
 						Query q = qp.parse(query);
+						if (boost != null) {
+							q = new BoostQuery(q, boost);
+						}
 						if ((q != null) && // q never null, just being defensive
 								(!(q instanceof BooleanQuery) || (((BooleanQuery) q).clauses().size() > 0))) {
 							bQuery.add(q, BooleanClause.Occur.SHOULD);

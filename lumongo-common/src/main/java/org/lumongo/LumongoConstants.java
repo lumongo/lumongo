@@ -38,6 +38,7 @@ public class LumongoConstants {
 	public static final String PRETTY = "pretty";
 	public static final String FORMAT = "format";
 	public static final String COMPUTE_FACET_ERROR = "computeFacetError";
+	public static final String MIN_MATCH = "mm";
 	
 	//General
 	public static final String UTF8 = "UTF-8";
