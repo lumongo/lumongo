@@ -4,6 +4,7 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+import org.apache.lucene.search.BooleanQuery;
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.server.LumongoNode;
@@ -43,6 +44,8 @@ public class StartNode {
 			if (hazelcastPort == null) {
 				hazelcastPort = LumongoConstants.DEFAULT_HAZELCAST_PORT;
 			}
+
+			BooleanQuery.setMaxClauseCount(4096);
 
 			LumongoNode luceneNode = new LumongoNode(mongoConfig, serverAddress, hazelcastPort);
 
