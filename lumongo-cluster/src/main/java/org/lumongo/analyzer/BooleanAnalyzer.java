@@ -5,6 +5,7 @@ import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 import java.io.IOException;
+import java.io.Reader;
 
 /**
  * Created by Matt Davis on 2/10/16.
@@ -14,6 +15,7 @@ public class BooleanAnalyzer extends Analyzer{
 
 	protected final static char[] TRUE_TOKEN = {'T'};
 	protected final static char[] FALSE_TOKEN = {'F'};
+
 
 	@Override
 	protected TokenStreamComponents createComponents(String fieldName) {

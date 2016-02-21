@@ -17,6 +17,7 @@ import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.server.config.IndexConfig;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class LumongoAnalyzerFactory {
 	public static Analyzer getAnalyzer(LMAnalyzer lmAnalyzer) throws Exception {
@@ -77,7 +78,7 @@ public class LumongoAnalyzerFactory {
 	}
 	
 	public Analyzer getAnalyzer() throws Exception {
-		HashMap<String, Analyzer> customAnalyzerMap = new HashMap<String, Analyzer>();
+		Map<String, Analyzer> customAnalyzerMap = new HashMap<>();
 		for (IndexAs indexAs : indexConfig.getIndexAsValues()) {
 			Analyzer a = getAnalyzer(indexAs.getAnalyzer());
 			customAnalyzerMap.put(indexAs.getIndexFieldName(), a);
