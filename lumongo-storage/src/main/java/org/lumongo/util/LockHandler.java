@@ -9,7 +9,7 @@ public class LockHandler {
 	private ReadWriteLock[] readWriteLock;
 	
 	public LockHandler() {
-		this.segmentIndexer = new LockIndexer(8);
+		this.segmentIndexer = new LockIndexer(10);
 		
 		readWriteLock = new ReadWriteLock[segmentIndexer.getSegmentSize()];
 		for (int i = 0; i < segmentIndexer.getSegmentSize(); i++) {
