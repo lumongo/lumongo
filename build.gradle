@@ -15,16 +15,13 @@ subprojects {
 	version = '0.43-SNAPSHOT'
 	ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 	ext.luceneVersion = '5.5.0'
-	ext.mongoJavaVersion = '3.2.0'
+	ext.mongoJavaVersion = '3.2.1'
 
 	group = 'org.lumongo'
 	
 	
 	repositories {
 		mavenCentral()
-		maven {
-			url "https://dist.apache.org/repos/dist/dev/lucene/lucene-solr-5.5.0-RC2-rev528fb8702b91aaeb7a0491a638ed10ae8ae57f2c/lucene/maven/"
-		}
 	}
 
     dependencies {
