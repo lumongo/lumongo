@@ -53,6 +53,7 @@ import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.server.config.IndexConfig;
+import org.lumongo.server.index.field.BooleanFieldIndexer;
 import org.lumongo.server.index.field.DateFieldIndexer;
 import org.lumongo.server.index.field.DoubleFieldIndexer;
 import org.lumongo.server.index.field.FloatFieldIndexer;
@@ -719,6 +720,9 @@ public class LumongoSegment {
 						}
 						else if (LMAnalyzer.DATE.equals(indexFieldAnalyzer)) {
 							DateFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
+						}
+						else if (LMAnalyzer.BOOL.equals(indexFieldAnalyzer)) {
+							BooleanFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
 						else {
 							StringFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);

@@ -153,6 +153,7 @@ enum LMAnalyzer {
 	STANDARD_FOLDING_NO_STOP = 12;
 	DATE = 13;
 	LSH = 14;
+	BOOL = 15;
 }
 
 message IndexSettings {

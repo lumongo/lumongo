@@ -11,7 +11,7 @@ public abstract class FieldIndexer {
 	}
 	
 	public void index(Document document, String storedFieldName, Object storedValue, String indexedFieldName) throws Exception {
-		
+
 		if (storedValue instanceof Collection) {
 			Collection<?> collection = (Collection<?>) storedValue;
 			for (Object co : collection) {
