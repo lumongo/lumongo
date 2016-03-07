@@ -13,6 +13,8 @@ import org.lumongo.client.command.DeleteIndex;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.command.FetchDocumentAndAssociated;
 import org.lumongo.client.command.FetchLargeAssociated;
+import org.lumongo.client.command.GetAllTerms;
+import org.lumongo.client.command.GetFields;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
@@ -65,7 +67,7 @@ public class SingleNodeTest extends ServerTestBase {
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("country").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("date").indexAs(LMAnalyzer.DATE).facetAs(LMFacetType.DATE_YYYY_MM_DD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("keyword").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("flag1").indexAs(LMAnalyzer.BOOL));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("flag").indexAs(LMAnalyzer.BOOL));
 
 		lumongoWorkPool.createIndex(MY_TEST_INDEX, 16, indexConfig);
 		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, indexConfig);
@@ -248,7 +250,7 @@ public class SingleNodeTest extends ServerTestBase {
 				object.put("uid", uniqueId);
 				object.put("issn", "1333-1333");
 				object.put("title", "Search and Storage");
-				object.put("flag1", "true");
+				object.put("flag", i % 2 == 0);
 				
 				Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
 				lumongoWorkPool.store(s);
@@ -262,7 +264,7 @@ public class SingleNodeTest extends ServerTestBase {
 				object.put("issn", "1234-1234");
 				object.put("title", "Distributed Search and Storage System");
 				object.put("an", i);
-				object.put("flag1", false);
+				object.put("flag", i % 2 == 0);
 				
 				Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
 				lumongoWorkPool.store(s);
@@ -302,8 +304,10 @@ public class SingleNodeTest extends ServerTestBase {
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "title:cluster", 10));
 			assertEquals("Total hits is not 0", 0, qr.getTotalHits());
 
-			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "flag1:true", 10));
-			assertEquals("Total hits is not " + DOCUMENTS_LOADED/2, DOCUMENTS_LOADED/2, qr.getTotalHits());
+			System.out.println(lumongoWorkPool.getAllTerms(new GetAllTerms(MY_TEST_INDEX, "flag")));
+
+			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "flag:true", 10));
+			assertEquals("Total hits is not " + (DOCUMENTS_LOADED+1)/2, (DOCUMENTS_LOADED+1)/2, qr.getTotalHits());
 			
 		}
 
