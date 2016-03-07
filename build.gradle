@@ -12,7 +12,7 @@ subprojects {
 	sourceCompatibility = 1.8
 	targetCompatibility = 1.8
 	
-	version = '0.43-SNAPSHOT'
+	version = '0.43'
 	ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 	ext.luceneVersion = '5.5.0'
 	ext.mongoJavaVersion = '3.2.1'
