@@ -29,7 +29,7 @@ public class DistributedIndexOutput extends IndexOutput {
 	private long position;
 
 	public DistributedIndexOutput(NosqlFile nosqlFile) throws IOException {
-		super(nosqlFile.getFileName());
+		super("DistributedIndexOutput(name=\"" + nosqlFile.getFileName() + "\")", nosqlFile.getFileName());
 		this.nosqlFile = nosqlFile;
 		nosqlFile.resetChecksum();
 		this.isOpen = true;

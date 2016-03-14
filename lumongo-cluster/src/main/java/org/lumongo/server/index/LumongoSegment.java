@@ -9,7 +9,7 @@ import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.LegacyLongField;
 import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StoredField;
@@ -183,7 +183,7 @@ public class LumongoSegment {
 			synchronized (this) {
 				if (!indexWriter.isOpen()) {
 					this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
-					this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommittedDeletes());
+					this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommittedDeletes(), false);
 				}
 			}
 		}
@@ -195,7 +195,7 @@ public class LumongoSegment {
 			indexWriter.close();
 		}
 		this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
-		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommittedDeletes());
+		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommittedDeletes(), false);
 	}
 
 	private void setupCaches(IndexConfig indexConfig) {
@@ -255,8 +255,6 @@ public class LumongoSegment {
 
 				q = booleanQuery.build();
 			}
-
-
 
 			IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
@@ -744,7 +742,7 @@ public class LumongoSegment {
 
 		d.add(new StringField(LumongoConstants.ID_FIELD, uniqueId, Store.YES));
 
-		d.add(new LongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
+		d.add(new LegacyLongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
 
 		if (indexConfig.isStoreDocumentInIndex()) {
 			byte[] documentBytes = BSON.encode(document);

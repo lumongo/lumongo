@@ -13,7 +13,6 @@ dependencies {
 	testCompile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
 	testCompile "org.apache.lucene:lucene-queryparser:$luceneVersion"
 	testCompile "org.apache.lucene:lucene-facet:$luceneVersion"
-	testCompile "org.apache.lucene:lucene-test-framework:$luceneVersion"
-	luceneTestFramework "org.apache.lucene:lucene-test-framework:$luceneVersion"
+
 }
 

@@ -50,6 +50,11 @@ public class DistributedDirectory extends BaseDirectory {
 	}
 
 	@Override
+	public IndexOutput createTempOutput(String s, String s1, IOContext ioContext) throws IOException {
+		return null;
+	}
+
+	@Override
 	public void sync(Collection<String> names) throws IOException {
 		for (String name : names) {
 			NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name, true);
