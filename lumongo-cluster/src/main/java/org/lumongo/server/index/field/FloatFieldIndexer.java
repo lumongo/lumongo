@@ -1,8 +1,7 @@
 package org.lumongo.server.index.field;
 
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.LegacyFloatField;
+import org.apache.lucene.document.FloatPoint;
 
 public class FloatFieldIndexer extends NumericFieldIndexer {
 
@@ -14,7 +13,7 @@ public class FloatFieldIndexer extends NumericFieldIndexer {
 
 	@Override
 	protected Field createField(Number o, String indexedFieldName) {
-		return new LegacyFloatField(indexedFieldName, o.floatValue(), Store.YES);
+		return new FloatPoint(indexedFieldName, o.floatValue());
 	}
 
 }

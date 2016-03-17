@@ -2,10 +2,13 @@ package org.lumongo.server.search;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.lsh.LSH;
+import org.apache.lucene.document.DoublePoint;
+import org.apache.lucene.document.FloatPoint;
+import org.apache.lucene.document.IntPoint;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
@@ -55,39 +58,69 @@ public class LumongoQueryParser extends QueryParser {
 
 	}
 
-	private LegacyNumericRangeQuery<?> getNumericOrDateRange(final String fieldName, final String start, final String end, final boolean startInclusive,
+	private Query getNumericOrDateRange(final String fieldName, final String start, final String end, final boolean startInclusive,
 			final boolean endInclusive) {
 		Lumongo.LMAnalyzer analyzer = indexConfig.getAnalyzer(fieldName);
 		if (IndexConfig.isNumericIntAnalyzer(analyzer)) {
-			Integer min = start == null ? null : Integer.parseInt(start);
-			Integer max = end == null ? null : Integer.parseInt(end);
-			return LegacyNumericRangeQuery.newIntRange(fieldName, min, max, startInclusive, endInclusive);
+			int min = start == null ? Integer.MIN_VALUE : Integer.parseInt(start);
+			int max = end == null ? Integer.MAX_VALUE : Integer.parseInt(end);
+			if (!startInclusive) {
+				min += 1;
+			}
+			if (!endInclusive) {
+				max -= 1;
+			}
+			return IntPoint.newRangeQuery(fieldName, min, max);
 		}
 		else if (IndexConfig.isNumericLongAnalyzer(analyzer)) {
-			Long min = start == null ? null : Long.parseLong(start);
-			Long max = end == null ? null : Long.parseLong(end);
-			return LegacyNumericRangeQuery.newLongRange(fieldName, min, max, startInclusive, endInclusive);
+			long min = start == null ? Long.MIN_VALUE : Long.parseLong(start);
+			long max = end == null ? Long.MAX_VALUE : Long.parseLong(end);
+			if (!startInclusive) {
+				min += 1;
+			}
+			if (!endInclusive) {
+				max -= 1;
+			}
+			return LongPoint.newRangeQuery(fieldName, min, max);
 		}
 		else if (IndexConfig.isNumericFloatAnalyzer(analyzer)) {
-			Float min = start == null ? null : Float.parseFloat(start);
-			Float max = end == null ? null : Float.parseFloat(end);
-			return LegacyNumericRangeQuery.newFloatRange(fieldName, min, max, startInclusive, endInclusive);
+			float min = start == null ? Float.NEGATIVE_INFINITY : Float.parseFloat(start);
+			float max = end == null ? Float.POSITIVE_INFINITY : Float.parseFloat(end);
+			if (!startInclusive) {
+				min += Math.nextUp(min);
+			}
+			if (!endInclusive) {
+				max -= Math.nextDown(max);
+			}
+			return FloatPoint.newRangeQuery(fieldName, min, max);
 		}
 		else if (IndexConfig.isNumericDoubleAnalyzer(analyzer)) {
-			Double min = start == null ? null : Double.parseDouble(start);
-			Double max = end == null ? null : Double.parseDouble(end);
-			return LegacyNumericRangeQuery.newDoubleRange(fieldName, min, max, startInclusive, endInclusive);
+			double min = start == null ? Double.NEGATIVE_INFINITY : Double.parseDouble(start);
+			double max = end == null ? Double.POSITIVE_INFINITY : Double.parseDouble(end);
+			if (!startInclusive) {
+				min += Math.nextUp(min);
+			}
+			if (!endInclusive) {
+				max -= Math.nextDown(max);
+			}
+			return DoublePoint.newRangeQuery(fieldName, min, max);
 		}
 		else if (IndexConfig.isDateAnalyzer(analyzer)) {
-			Long startTime = null;
-			Long endTime = null;
+			long min = Long.MIN_VALUE;
+			long max = Long.MAX_VALUE;
 			if (start != null) {
-				startTime = getDateAsLong(start);
+				min = getDateAsLong(start);
 			}
 			if (end != null) {
-				endTime = getDateAsLong(end);
+				max = getDateAsLong(end);
 			}
-			return LegacyNumericRangeQuery.newLongRange(fieldName, startTime, endTime, startInclusive, endInclusive);
+			if (!startInclusive) {
+				min += 1;
+			}
+			if (!endInclusive) {
+				max -= 1;
+			}
+			return LongPoint.newRangeQuery(fieldName, min, max);
 		}
 		throw new RuntimeException("Not a valid numeric field <" + fieldName + ">");
 	}

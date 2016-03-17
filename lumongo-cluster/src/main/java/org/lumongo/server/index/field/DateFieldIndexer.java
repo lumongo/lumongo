@@ -2,8 +2,7 @@ package org.lumongo.server.index.field;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.LegacyLongField;
+import org.apache.lucene.document.LongPoint;
 
 import java.util.Date;
 
@@ -27,7 +26,7 @@ public class DateFieldIndexer extends FieldIndexer {
 	}
 
 	protected Field createField(Date o, String indexedFieldName) {
-		return new LegacyLongField(indexedFieldName, o.getTime(), Store.YES);
+		return new LongPoint(indexedFieldName, o.getTime());
 	}
 
 }

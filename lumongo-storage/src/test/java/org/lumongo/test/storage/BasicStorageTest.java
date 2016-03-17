@@ -4,8 +4,8 @@ import com.mongodb.MongoClient;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.LegacyIntField;
-import org.apache.lucene.document.LegacyLongField;
+import org.apache.lucene.document.IntPoint;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StringField;
@@ -18,7 +18,6 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
@@ -77,9 +76,9 @@ public class BasicStorageTest {
 		doc.add(new TextField("title", title, Field.Store.YES));
 		doc.add(new TextField("uid", uid, Field.Store.YES));
 		doc.add(new StringField("uid", uid, Field.Store.YES));
-		doc.add(new LegacyIntField("testIntField", 3, Field.Store.YES));
+		doc.add(new IntPoint("testIntField", 3));
 		long date = System.currentTimeMillis();
-		doc.add(new LegacyLongField("date", date, Field.Store.YES));
+		doc.add(new LongPoint("date", date));
 		doc.add(new NumericDocValuesField("date", date));
 		doc.add(new SortedSetDocValuesField("category", new BytesRef("Anything")));
 		Term uidTerm = new Term("uid", uid);
@@ -103,7 +102,7 @@ public class BasicStorageTest {
 
 		sort.setSort(new SortedSetSortField("category", false));
 
-		TopFieldCollector collector = TopFieldCollector.create(sort, 10, null, true, true, true);
+		TopFieldCollector collector = TopFieldCollector.create(sort, count, null, true, true, true);
 
 		searcher.search(q, collector);
 
@@ -137,7 +136,16 @@ public class BasicStorageTest {
 					final boolean endInclusive) throws ParseException {
 
 				if ("testIntField".equals(fieldName)) {
-					return LegacyNumericRangeQuery.newIntRange(fieldName, Integer.parseInt(start), Integer.parseInt(end), startInclusive, endInclusive);
+					int startInt = Integer.parseInt(start);
+					int endInt = Integer.parseInt(end);
+					if (!startInclusive) {
+						startInt += 1;
+					}
+					if (!endInclusive) {
+						endInt -= 1;
+					}
+					return IntPoint.newRangeQuery(fieldName, startInt, endInt);
+
 				}
 
 				// return default
@@ -151,14 +159,14 @@ public class BasicStorageTest {
 				String text = term.text();
 				if ("testIntField".equals(field)) {
 					int value = Integer.parseInt(text);
-					return LegacyNumericRangeQuery.newIntRange(field, value, value, true, true);
+					return IntPoint.newExactQuery(field, value);
 				}
 				return super.newTermQuery(term);
 			}
 		};
 		qp.setAllowLeadingWildcard(true);
 
-		int hits = 0;
+		int hits;
 
 		hits = runQuery(indexReader, qp, "java", 10);
 		assertEquals("Expected 2 hits", 2, hits);

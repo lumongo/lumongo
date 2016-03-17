@@ -1,8 +1,7 @@
 package org.lumongo.server.index.field;
 
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.LegacyLongField;
+import org.apache.lucene.document.LongPoint;
 
 public class LongFieldIndexer extends NumericFieldIndexer {
 
@@ -14,7 +13,7 @@ public class LongFieldIndexer extends NumericFieldIndexer {
 
 	@Override
 	protected Field createField(Number o, String indexedFieldName) {
-		return new LegacyLongField(indexedFieldName, o.longValue(), Store.YES);
+		return new LongPoint(indexedFieldName, o.longValue());
 	}
 
 }
