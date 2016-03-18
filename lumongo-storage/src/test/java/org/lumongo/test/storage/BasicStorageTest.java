@@ -180,14 +180,13 @@ public class BasicStorageTest {
 		assertEquals("Expected 1 hit", 1, hits);
 		hits = runQuery(indexReader, qp, "java AND awesome", 10);
 		assertEquals("Expected 1 hit", 1, hits);
-		hits = runQuery(indexReader, qp, "testIntField:[1 TO 10]", 10);
-		assertEquals("Expected 5 hits", 5, hits);
 		hits = runQuery(indexReader, qp, "testIntField:1", 10);
 		assertEquals("Expected 0 hits", 0, hits);
 		hits = runQuery(indexReader, qp, "testIntField:3", 10);
 		assertEquals("Expected 5 hits", 5, hits);
-		hits = runQuery(indexReader, qp, "date:*", 10);
+		hits = runQuery(indexReader, qp, "testIntField:[1 TO 10]", 10);
 		assertEquals("Expected 5 hits", 5, hits);
+
 
 		indexReader.close();
 	}
