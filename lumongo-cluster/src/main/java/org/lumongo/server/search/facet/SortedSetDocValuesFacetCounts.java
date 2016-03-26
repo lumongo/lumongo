@@ -43,8 +43,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.LongValues;
 
 /** Compute facets counts from previously
- *  indexed {@link SortedSetDocValuesFacetField},
- *  without require a separate taxonomy index.  Faceting is
+ *  indexed without require a separate taxonomy index.  Faceting is
  *  a bit slower (~25%), and there is added cost on every
  *  {@link IndexReader} open to create a new {@link
  *  SortedSetDocValuesReaderState}.  Furthermore, this does
@@ -136,8 +135,7 @@ public class SortedSetDocValuesFacetCounts extends Facets {
     for(int i=labelValues.length-1;i>=0;i--) {
       TopOrdAndIntQueue.OrdAndValue ordAndValue = q.pop();
       final BytesRef term = dv.lookupOrd(ordAndValue.ord);
-      String[] parts = FacetsConfig.stringToPath(term.utf8ToString());
-      labelValues[i] = new LabelAndValue(parts[1], ordAndValue.value);
+      labelValues[i] = new LabelAndValue(term.utf8ToString(), ordAndValue.value);
     }
 
     return new FacetResult(dim, new String[0], dimCount, labelValues, childCount);

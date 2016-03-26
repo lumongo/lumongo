@@ -48,9 +48,9 @@ public class DefaultSortedSetDocValuesReaderState extends SortedSetDocValuesRead
     /** {@link IndexReader} passed to the constructor. */
     public final IndexReader origReader;
 
-    private final Map<String,OrdinalMap> cachedOrdMaps = new HashMap<>();
+    private OrdinalMap ordinalMap;
 
-    private final Map<String,OrdRange> prefixToOrdRange = new HashMap<>();
+    private OrdRange ordRange;
 
     /** Creates this, pulling doc values from the default {@link
      *  FacetsConfig#DEFAULT_INDEX_FIELD_NAME}. */
@@ -75,57 +75,26 @@ public class DefaultSortedSetDocValuesReaderState extends SortedSetDocValuesRead
         }
         valueCount = (int) dv.getValueCount();
 
-        // TODO: we can make this more efficient if eg we can be
-        // "involved" when OrdinalMap is being created?  Ie see
-        // each term/ord it's assigning as it goes...
-        String lastDim = null;
-        int startOrd = -1;
-
-        // TODO: this approach can work for full hierarchy?;
-        // TaxoReader can't do this since ords are not in
-        // "sorted order" ... but we should generalize this to
-        // support arbitrary hierarchy:
-        for(int ord=0;ord<valueCount;ord++) {
-            final BytesRef term = dv.lookupOrd(ord);
-            String[] components = FacetsConfig.stringToPath(term.utf8ToString());
-            if (components.length != 2) {
-                throw new IllegalArgumentException("this class can only handle 2 level hierarchy (dim/value); got: " + Arrays.toString(components) + " " + term.utf8ToString());
-            }
-            if (!components[0].equals(lastDim)) {
-                if (lastDim != null) {
-                    prefixToOrdRange.put(lastDim, new OrdRange(startOrd, ord-1));
-                }
-                startOrd = ord;
-                lastDim = components[0];
-            }
-        }
-
-        if (lastDim != null) {
-            prefixToOrdRange.put(lastDim, new OrdRange(startOrd, valueCount-1));
-        }
+        ordRange = new OrdRange(0, valueCount-1);
     }
 
     /** Return top-level doc values. */
     @Override
     public SortedSetDocValues getDocValues() throws IOException {
         // TODO: this is dup'd from slow composite reader wrapper ... can we factor it out to share?
-        OrdinalMap map = null;
-        synchronized (cachedOrdMaps) {
-            map = cachedOrdMaps.get(field);
-            if (map == null) {
+
+        synchronized (this) {
+
+            if (ordinalMap == null) {
                 // uncached, or not a multi dv
                 SortedSetDocValues dv = MultiDocValues.getSortedSetValues(origReader, field);
                 if (dv instanceof MultiSortedSetDocValues) {
-                    map = ((MultiSortedSetDocValues)dv).mapping;
-                    if (map.owner == origReader.getCoreCacheKey()) {
-                        cachedOrdMaps.put(field, map);
-                    }
+                    ordinalMap = ((MultiSortedSetDocValues)dv).mapping;
                 }
                 return dv;
             }
         }
 
-        assert map != null;
         int size = origReader.leaves().size();
         final SortedSetDocValues[] values = new SortedSetDocValues[size];
         final int[] starts = new int[size+1];
@@ -144,19 +113,22 @@ public class DefaultSortedSetDocValuesReaderState extends SortedSetDocValuesRead
             starts[i] = context.docBase;
         }
         starts[size] = origReader.maxDoc();
-        return new MultiSortedSetDocValues(values, starts, map);
+        return new MultiSortedSetDocValues(values, starts, ordinalMap);
     }
 
     /** Returns mapping from prefix to {@link OrdRange}. */
     @Override
     public Map<String,OrdRange> getPrefixToOrdRange() {
-        return prefixToOrdRange;
+        HashMap<String, OrdRange> map = new HashMap<>();
+        map.put(field, ordRange);
+        return map;
     }
 
     /** Returns the {@link OrdRange} for this dimension. */
     @Override
     public OrdRange getOrdRange(String dim) {
-        return prefixToOrdRange.get(dim);
+        assert dim.equals(field);
+        return ordRange;
     }
 
     /** Indexed field we are reading. */
