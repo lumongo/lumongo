@@ -24,7 +24,7 @@ public class QueryWithFilters {
 	
 	public void addFilterQuery(Query filterQuery) {
 		if (filterQueries.isEmpty()) {
-			filterQueries = new ArrayList<Query>();
+			filterQueries = new ArrayList<>();
 		}
 		
 		filterQueries.add(filterQuery);

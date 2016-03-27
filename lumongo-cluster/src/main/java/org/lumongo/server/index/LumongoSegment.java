@@ -1,5 +1,6 @@
 package org.lumongo.server.index;
 
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -10,7 +11,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LegacyLongField;
-import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StoredField;
@@ -20,9 +20,7 @@ import org.apache.lucene.facet.Facets;
 import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.LabelAndValue;
-import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
-import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
-import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
+import org.apache.lucene.facet.sortedset.SortedSetDocValuesReaderState;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
@@ -61,9 +59,11 @@ import org.lumongo.server.index.field.FloatFieldIndexer;
 import org.lumongo.server.index.field.IntFieldIndexer;
 import org.lumongo.server.index.field.LongFieldIndexer;
 import org.lumongo.server.index.field.StringFieldIndexer;
+import org.lumongo.server.search.FacetStateCache;
 import org.lumongo.server.search.QueryCacheKey;
 import org.lumongo.server.search.QueryResultCache;
 import org.lumongo.server.search.QueryWithFilters;
+import org.lumongo.server.search.facet.LumongoSortedSetDocValuesFacetCounts;
 import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.util.LumongoUtil;
 
@@ -102,6 +102,8 @@ public class LumongoSegment {
 	private Long lastChange;
 	private String indexName;
 	private QueryResultCache queryResultCache;
+	private FacetStateCache facetStateCache;
+
 	private FacetsConfig facetsConfig;
 	private int segmentQueryCacheMaxAmount;
 
@@ -209,6 +211,8 @@ public class LumongoSegment {
 		else {
 			this.queryResultCache = null;
 		}
+
+		this.facetStateCache = new FacetStateCache(10, 8);
 
 	}
 
@@ -348,8 +352,10 @@ public class LumongoSegment {
 					FacetResult facetResult = null;
 
 					try {
-						DefaultSortedSetDocValuesReaderState state = new DefaultSortedSetDocValuesReaderState(directoryReader, indexFieldName);
-						Facets facets = new SortedSetDocValuesFacetCounts(state, facetsCollector);
+
+						SortedSetDocValuesReaderState state = facetStateCache.getFacetState(directoryReader, indexFieldName);
+
+						Facets facets = new LumongoSortedSetDocValuesFacetCounts(state, facetsCollector);
 
 						if (countRequest.getSegmentFacets() == 0) {
 							numOfFacets = state.getSize();
@@ -357,8 +363,9 @@ public class LumongoSegment {
 
 						facetResult = facets.getTopChildren(numOfFacets, label);
 					}
-					catch (IllegalArgumentException e) {
-						if (e.getMessage().contains(" was not indexed with SortedSetDocValues")) {
+					catch (UncheckedExecutionException e) {
+						Throwable cause = e.getCause();
+						if (cause.getMessage().contains(" was not indexed with SortedSetDocValues")) {
 							//this is when no data has been indexing into a facet
 						}
 						else {
@@ -422,6 +429,10 @@ public class LumongoSegment {
 			QueryResultCache qrc = queryResultCache;
 			if (qrc != null) {
 				qrc.clear();
+			}
+			FacetStateCache fsc = facetStateCache;
+			if (fsc != null) {
+				fsc.clear();
 			}
 		}
 	}
@@ -687,7 +698,6 @@ public class LumongoSegment {
 
 		Document d = new Document();
 
-		List<Field> facetFields = new ArrayList<>();
 		for (String storedFieldName : indexConfig.getIndexedStoredFieldNames()) {
 
 			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
@@ -697,7 +707,7 @@ public class LumongoSegment {
 				Object o = getValueFromDocument(document, storedFieldName);
 
 				if (o != null) {
-					handleFacetsForStoredField(facetFields, fc, o);
+					handleFacetsForStoredField(d, fc, o);
 
 					handleSortForStoredField(d, storedFieldName, fc, o);
 
@@ -730,15 +740,6 @@ public class LumongoSegment {
 				}
 			}
 
-		}
-
-		if (!facetFields.isEmpty()) {
-
-			for (Field ff : facetFields) {
-				d.add(ff);
-			}
-
-			d = facetsConfig.build(d);
 		}
 
 		d.add(new StringField(LumongoConstants.ID_FIELD, uniqueId, Store.YES));
@@ -843,15 +844,16 @@ public class LumongoSegment {
 		}
 	}
 
-	private void handleFacetsForStoredField(List<Field> facetFields, FieldConfig fc, Object o) throws Exception {
+	private void handleFacetsForStoredField(Document doc, FieldConfig fc, Object o) throws Exception {
 		for (FacetAs fa : fc.getFacetAsList()) {
+
+			String facetName = fa.getFacetName();
+			String facetFieldName = facetsConfig.getDimConfig(facetName).indexFieldName;
 
 			if (LMFacetType.STANDARD.equals(fa.getFacetType())) {
 				LumongoUtil.handleLists(o, obj -> {
 					String string = obj.toString();
-					if (!string.isEmpty()) {
-						facetFields.add(new SortedSetDocValuesFacetField(fa.getFacetName(), string));
-					}
+					addFacet(doc, facetFieldName, string);
 				});
 			}
 			else if (IndexConfig.isDateFacetType(fa.getFacetType())) {
@@ -859,20 +861,18 @@ public class LumongoSegment {
 					if (obj instanceof Date) {
 						DateTime dt = new DateTime(obj).withZone(DateTimeZone.UTC);
 
-						Field facetField;
 						if (LMFacetType.DATE_YYYYMMDD.equals(fa.getFacetType())) {
-							String facetValue = FORMATTER_YYYY_MM_DD.print(dt);
-							facetField = new SortedSetDocValuesFacetField(fa.getFacetName(), facetValue);
+							String date = FORMATTER_YYYY_MM_DD.print(dt);
+							addFacet(doc, facetFieldName, date);
 						}
 						else if (LMFacetType.DATE_YYYY_MM_DD.equals(fa.getFacetType())) {
 							String date = String.format("%04d-%02d-%02d", dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth());
-							facetField = new SortedSetDocValuesFacetField(fa.getFacetName(), date);
+							addFacet(doc, facetFieldName, date);
 						}
 						else {
 							throw new RuntimeException("Not handled date facet type <" + fa.getFacetType() + "> for facet <" + fa.getFacetName() + ">");
 						}
 
-						facetFields.add(facetField);
 
 					}
 					else {
@@ -887,6 +887,13 @@ public class LumongoSegment {
 								+ ">");
 			}
 
+		}
+	}
+
+	private void addFacet(Document doc, String facetFieldName, String value) {
+		if (!value.isEmpty()) {
+			doc.add(new SortedSetDocValuesField(facetFieldName, new BytesRef(value)));
+			doc.add(new StringField(facetFieldName, new BytesRef(value), Store.NO));
 		}
 	}
 

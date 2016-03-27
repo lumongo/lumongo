@@ -7,10 +7,12 @@ import com.mongodb.MongoException;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import org.apache.log4j.Logger;
-import org.apache.lucene.facet.DrillDownQuery;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
@@ -29,6 +31,7 @@ import org.lumongo.server.search.QueryCombiner;
 import org.lumongo.server.search.QueryWithFilters;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LumongoThreadFactory;
+import org.lumongo.util.QueryHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -472,7 +475,8 @@ public class LumongoIndexManager {
 					timestamp = fetchRequest.getTimestamp();
 				}
 
-				ResultDocument resultDoc = i.getSourceDocument(uniqueId, timestamp, resultFetchType, fetchRequest.getDocumentFieldsList(), fetchRequest.getDocumentMaskedFieldsList());
+				ResultDocument resultDoc = i.getSourceDocument(uniqueId, timestamp, resultFetchType, fetchRequest.getDocumentFieldsList(),
+						fetchRequest.getDocumentMaskedFieldsList());
 				if (null != resultDoc) {
 					frBuilder.setResultDocument(resultDoc);
 				}
@@ -634,26 +638,42 @@ public class LumongoIndexManager {
 
 				Query query = i.getQuery(queryRequest.getQuery(), queryRequest.getQueryFieldList(), minimumShouldMatch, operator);
 
+				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
+
 				if (queryRequest.hasFacetRequest()) {
 					FacetRequest facetRequest = queryRequest.getFacetRequest();
 
 					List<LMFacet> drillDownList = facetRequest.getDrillDownList();
 					if (!drillDownList.isEmpty()) {
 						FacetsConfig facetsConfig = i.getFacetsConfig();
-						DrillDownQuery ddQuery = new DrillDownQuery(facetsConfig, query);
 
-						for (LMFacet or : drillDownList) {
-							ddQuery.add(or.getLabel(), or.getPath());
+						Map<String, Set<String>> dimToValues = new HashMap<>();
+						for (LMFacet drillDown : drillDownList) {
+							String key = drillDown.getLabel();
+							String value = drillDown.getPath();
+							if (!dimToValues.containsKey(key)) {
+								dimToValues.put(key, new HashSet<>());
+							}
+							dimToValues.get(key).add(value);
 						}
 
-						query = ddQuery;
+						for (Map.Entry<String, Set<String>> entry : dimToValues.entrySet()) {
+							String indexFieldName = facetsConfig.getDimConfig(entry.getKey()).indexFieldName;
+
+							BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
+							for (String value : entry.getValue()) {
+								booleanQuery.add(new BooleanClause(new TermQuery(new org.apache.lucene.index.Term(indexFieldName, value)),
+										BooleanClause.Occur.SHOULD));
+							}
+
+							queryWithFilters.addFilterQuery(booleanQuery.build());
+						}
+
 					}
 				}
 
-				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
-
 				for (String filter : queryRequest.getFilterQueryList()) {
-					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.<String>emptyList(), 0, operator));
+					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.emptyList(), 0, operator));
 				}
 
 				queryMap.put(indexName, queryWithFilters);

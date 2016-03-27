@@ -17,30 +17,26 @@
 package org.lumongo.server.search.facet;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesReaderState;
-import org.apache.lucene.facet.sortedset.SortedSetDocValuesReaderState.OrdRange;
 import org.apache.lucene.index.DocValues;
 import org.apache.lucene.index.DocValuesType;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.MultiDocValues.MultiSortedDocValues;
 import org.apache.lucene.index.MultiDocValues.MultiSortedSetDocValues;
 import org.apache.lucene.index.MultiDocValues.OrdinalMap;
 import org.apache.lucene.index.MultiDocValues;
 import org.apache.lucene.index.SortedSetDocValues;
-import org.apache.lucene.util.BytesRef;
 
 /**
- * Default implementation of {@link SortedSetDocValuesFacetCounts}
+ * Default implementation of {@link LumongoSortedSetDocValuesFacetCounts}
  */
-public class DefaultSortedSetDocValuesReaderState extends SortedSetDocValuesReaderState {
+public class LumongoSortedSetDocValuesReaderState extends SortedSetDocValuesReaderState {
 
     private final String field;
     private final int valueCount;
@@ -54,13 +50,13 @@ public class DefaultSortedSetDocValuesReaderState extends SortedSetDocValuesRead
 
     /** Creates this, pulling doc values from the default {@link
      *  FacetsConfig#DEFAULT_INDEX_FIELD_NAME}. */
-    public DefaultSortedSetDocValuesReaderState(IndexReader reader) throws IOException {
+    public LumongoSortedSetDocValuesReaderState(IndexReader reader) throws IOException {
         this(reader, FacetsConfig.DEFAULT_INDEX_FIELD_NAME);
     }
 
     /** Creates this, pulling doc values from the specified
      *  field. */
-    public DefaultSortedSetDocValuesReaderState(IndexReader reader, String field) throws IOException {
+    public LumongoSortedSetDocValuesReaderState(IndexReader reader, String field) throws IOException {
         this.field = field;
         this.origReader = reader;
 
@@ -127,7 +123,7 @@ public class DefaultSortedSetDocValuesReaderState extends SortedSetDocValuesRead
     /** Returns the {@link OrdRange} for this dimension. */
     @Override
     public OrdRange getOrdRange(String dim) {
-        assert dim.equals(field);
+
         return ordRange;
     }
 

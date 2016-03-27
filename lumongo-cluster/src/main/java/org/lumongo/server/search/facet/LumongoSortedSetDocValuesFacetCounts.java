@@ -58,7 +58,7 @@ import org.apache.lucene.util.LongValues;
  * <p><b>NOTE:</b>: tie-break is by unicode sort order
  *
  * @lucene.experimental */
-public class SortedSetDocValuesFacetCounts extends Facets {
+public class LumongoSortedSetDocValuesFacetCounts extends Facets {
 
   final SortedSetDocValuesReaderState state;
   final SortedSetDocValues dv;
@@ -67,7 +67,7 @@ public class SortedSetDocValuesFacetCounts extends Facets {
 
   /** Sparse faceting: returns any dimension that had any
    *  hits, topCount labels per dimension. */
-  public SortedSetDocValuesFacetCounts(SortedSetDocValuesReaderState state, FacetsCollector hits)
+  public LumongoSortedSetDocValuesFacetCounts(SortedSetDocValuesReaderState state, FacetsCollector hits)
       throws IOException {
     this.state = state;
     this.field = state.getField();
