@@ -147,7 +147,7 @@ public class SingleNodeTest extends ServerTestBase {
 			
 			assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
 			
-			assertEquals("Total facets not " + issns.length, qr.getFacetCounts("issn").size(), issns.length);
+			assertEquals("Total facets not " + issns.length, issns.length, qr.getFacetCounts("issn").size());
 			for (FacetCount fc : qr.getFacetCounts("issn")) {
 				assertEquals("Count for facet <" + fc.getFacet() + "> not <" + COUNT_PER_ISSN + ">", COUNT_PER_ISSN, fc.getCount());
 			}
