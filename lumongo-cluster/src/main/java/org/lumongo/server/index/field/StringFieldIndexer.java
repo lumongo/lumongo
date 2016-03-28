@@ -11,10 +11,6 @@ public class StringFieldIndexer extends FieldIndexer {
 	
 	static {
 		notStoredTextField = new FieldType(TextField.TYPE_NOT_STORED);
-
-		// For PostingsHighlighter in Lucene 4.1 +
-		// notStoredTextField.setIndexOptions(FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
-		// example: https://svn.apache.org/repos/asf/lucene/dev/trunk/lucene/highlighter/src/test/org/apache/lucene/search/postingshighlight/TestPostingsHighlighter.java
 		notStoredTextField.freeze();
 	}
 	
