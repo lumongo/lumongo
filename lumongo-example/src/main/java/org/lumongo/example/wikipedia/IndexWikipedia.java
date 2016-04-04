@@ -68,7 +68,7 @@ public class IndexWikipedia {
 		@SuppressWarnings("unused")
 		CreateOrUpdateIndexResult createOrUpdateIndexResult = lumongoWorkPool.createOrUpdateIndex(mapper.createOrUpdateIndex());
 
-		StaxJAXBReader<PageType> s = new StaxJAXBReader<PageType>(PageType.class, "page") {
+		StaxJAXBReader<PageType> s = new StaxJAXBReader<PageType>(PageType.class, "page", 1) {
 
 			private int counter = 0;
 			private long start = System.currentTimeMillis();

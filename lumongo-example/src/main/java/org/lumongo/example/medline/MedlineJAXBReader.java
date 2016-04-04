@@ -17,8 +17,8 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 	private static List<String> shortMonths = Arrays.asList(new DateFormatSymbols().getShortMonths());
 	private static Joiner joiner = Joiner.on(",");
 
-	protected MedlineJAXBReader(Class<MedlineCitation> documentJAXBClass, String documentElementName) throws JAXBException {
-		super(documentJAXBClass, documentElementName);
+	protected MedlineJAXBReader(Class<MedlineCitation> documentJAXBClass, String documentElementName, int threads) throws JAXBException {
+		super(documentJAXBClass, documentElementName, threads);
 	}
 	
 	@Override

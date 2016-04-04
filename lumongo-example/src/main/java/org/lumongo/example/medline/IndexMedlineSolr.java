@@ -39,31 +39,36 @@ public class IndexMedlineSolr {
 
 		LogUtil.loadLogConfig();
 
-		//SolrClient solrClient = new HttpSolrClient(server);
-		SolrClient solrClient = new ConcurrentUpdateSolrClient(server, 100, 1);
+		SolrClient solrClient = new HttpSolrClient(server);
 
 		final AtomicInteger counter = new AtomicInteger();
 		final long start = System.currentTimeMillis();
 
-		StaxJAXBReader<MedlineCitation> s = new MedlineJAXBReader(MedlineCitation.class, "MedlineCitation") {
+		StaxJAXBReader<MedlineCitation> s = new MedlineJAXBReader(MedlineCitation.class, "MedlineCitation", 8) {
 
 			@Override
 			public void handleMedlineDocument(MedlineDocument medlineDocument) throws Exception {
 
 				SolrInputDocument solrDoc = new SolrInputDocument();
 				solrDoc.addField("id", medlineDocument.getPmid());
-				solrDoc.addField("title", medlineDocument.getTitle());
-				solrDoc.addField("journalTitle", medlineDocument.getJournalTitle());
+				solrDoc.addField("titleText", medlineDocument.getTitle());
+				solrDoc.addField("journalTitleText", medlineDocument.getJournalTitle());
+				solrDoc.addField("journalIsoText", medlineDocument.getJournalIso());
 				solrDoc.addField("abstractText", medlineDocument.getAbstractText());
 				solrDoc.addField("publicationDate", medlineDocument.getPublicationDate());
-				solrDoc.addField("journalVolume", medlineDocument.getJournalVolume());
-				solrDoc.addField("journalIssue", medlineDocument.getJournalIssue());
-				solrDoc.addField("journalCountry", medlineDocument.getJournalCountry());
-				solrDoc.addField("journalCountryFacet", medlineDocument.getJournalCountry());
-				solrDoc.addField("issn", medlineDocument.getIssn());
-				solrDoc.addField("issnFacet", medlineDocument.getIssn());
-				solrDoc.addField("authors", medlineDocument.getAuthors());
-				solrDoc.addField("authorsExact", medlineDocument.getAuthors());
+				solrDoc.addField("publicationDateExact", medlineDocument.getPublicationDate());
+				solrDoc.addField("publicationYearText", medlineDocument.getPubYear());
+				solrDoc.addField("publicationYearExact", medlineDocument.getPubYear());
+				solrDoc.addField("journalVolumeText", medlineDocument.getJournalVolume());
+				solrDoc.addField("journalIssueText", medlineDocument.getJournalIssue());
+				solrDoc.addField("journalCountryText", medlineDocument.getJournalCountry());
+				solrDoc.addField("journalCountryExact", medlineDocument.getJournalCountry());
+				solrDoc.addField("issnText", medlineDocument.getIssn());
+				solrDoc.addField("issnExact", medlineDocument.getIssn());
+				solrDoc.addField("authorsTextMulti", medlineDocument.getAuthors());
+				solrDoc.addField("authorsExactMulti", medlineDocument.getAuthors());
+				solrDoc.addField("paginationText", medlineDocument.getPagination());
+				solrDoc.addField("citationText", medlineDocument.getCitation());
 
 				solrClient.add(solrDoc);
 

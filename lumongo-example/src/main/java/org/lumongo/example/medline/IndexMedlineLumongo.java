@@ -61,14 +61,13 @@ public class IndexMedlineLumongo {
 		final AtomicInteger counter = new AtomicInteger();
 		final long start = System.currentTimeMillis();
 		
-		StaxJAXBReader<MedlineCitation> s = new MedlineJAXBReader(MedlineCitation.class, "MedlineCitation") {
+		StaxJAXBReader<MedlineCitation> s = new MedlineJAXBReader(MedlineCitation.class, "MedlineCitation", 8) {
 			
 			@Override
 			public void handleMedlineDocument(MedlineDocument document) throws Exception {
 				Store store = mapper.createStore(document);
 				
-				@SuppressWarnings("unused")
-				Future<StoreResult> sr = lumongoWorkPool.storeAsync(store);
+				@SuppressWarnings("unused") StoreResult sr = lumongoWorkPool.store(store);
 				
 				int c = counter.incrementAndGet();
 				if (c % 50000 == 0) {
@@ -94,7 +93,9 @@ public class IndexMedlineLumongo {
 				}
 			}
 		}
-		
+
+		s.shutdown();
+
 		lumongoWorkPool.shutdown();
 	}
 	
