@@ -1,3 +1,3 @@
-include 'lumongo-common', 'lumongo-storage', 'lumongo-client', 'lumongo-cluster', 'lumongo-example'
+include 'lumongo-common', 'lumongo-storage', 'lumongo-client', 'lumongo-cluster', 'lumongo-example', 'lumongo-ui'
 
 rootProject.name = "Lumongo"

@@ -1,7 +1,4 @@
-apply from: '../gwtBuild.gradle'
+//apply from: 'http://plugins.jasoft.fi/vaadin.plugin?version=0.11-SNAPSHOT'
+apply from: 'http://plugins.jasoft.fi/vaadin.plugin'
 
-compileGwt.modules = ['org.lumongo.somongo.SoMongo']
 
-dependencies {
-    compile project(':lumongo-client')	
-}

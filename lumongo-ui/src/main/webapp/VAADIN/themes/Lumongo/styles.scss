@@ -1,0 +1,11 @@
+@import "addons.scss";
+@import "lumongo.scss";
+
+/* This file prefixes all rules with the theme name to avoid causing conflicts with other themes. */
+/* The actual styles should be defined in lumongo.scss */
+.Lumongo {
+  @include addons;
+  @include lumongo;
+
+
+}
