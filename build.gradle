@@ -57,11 +57,19 @@ subprojects {
 		testCompile 'junit:junit:[4.10,)'
 	}
 
+	[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+	compileJava {
+		options.debug = true
+		options.debugOptions.debugLevel = "source,lines,vars"
+	}
+
+
 	javadoc {
 		options.addStringOption("sourcepath", "src/main/java")
 		exclude '**/schema/**'
 	}
-	
+
 	sourceSets {
 		main {
 			resources {
@@ -71,23 +79,26 @@ subprojects {
 		test {
 			resources {
 				srcDir 'src/test/java'
-			} 
+			}
 		}
 	}
 
-	task sourcesJar(type: Jar, dependsOn:classes) {
+	task sourceJar(type: Jar) {
 		classifier = 'sources'
 		from sourceSets.main.allSource
 	}
-	
-	artifacts {
-		archives jar
-		archives sourcesJar
+
+	jar {
+		dependsOn 'sourceJar'
 	}
-	
-	compileJava {
-		options.debug = true
-		options.debugOptions.debugLevel = "source,lines,vars"
+
+	configurations {
+		source
+	}
+
+
+	artifacts {
+		source sourceJar
 	}
 
 }
