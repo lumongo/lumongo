@@ -1,6 +1,8 @@
 package org.lumongo.ui.client;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.dom.client.StyleElement;
+import com.google.gwt.dom.client.StyleInjector;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.vaadin.polymer.Polymer;
@@ -21,7 +23,16 @@ public class LumongoUI implements EntryPoint {
 	@Override
 	public void onModuleLoad() {
 
-		Polymer.importHref(Arrays.asList("iron-icons/iron-icons.html", "iron-flex-layout/iron-flex-layout.html"));
+		Polymer.importHref(Arrays.asList("iron-icons/iron-icons.html", "iron-flex-layout/classes/iron-flex-layout.html"), o -> {
+			loadPage();
+
+			return null;
+		});
+
+
+	}
+
+	private void loadPage() {
 
 		PaperDrawerPanel paperDrawerPanel = new PaperDrawerPanel();
 
@@ -65,11 +76,14 @@ public class LumongoUI implements EntryPoint {
 		headerWrapper.addStyleName("layout");
 		headerWrapper.addStyleName("horizontal");
 		headerWrapper.addStyleName("center");
+		headerWrapper.setWidth("100%");
+
 		PaperIconButton menu = new PaperIconButton();
 		menu.setIcon("menu");
 		menu.setAttributes("paper-drawer-toggle");
 		headerWrapper.add(menu);
-		HTMLPanel main = new HTMLPanel("Main");
+
+		HTMLPanel main = new HTMLPanel("Search");
 		main.addStyleName("flex");
 		headerWrapper.add(main);
 
@@ -80,6 +94,23 @@ public class LumongoUI implements EntryPoint {
 		toolbar.add(headerWrapper);
 
 		drawerHeaderPanel.add(toolbar);
+
+		HTMLPanel content = new HTMLPanel("");
+
+		PaperMaterial card1 = new PaperMaterial();
+		card1.setElevation(2);
+		PaperItem item1 = new PaperItem("Item 1");
+		card1.add(item1);
+		content.add(card1);
+
+
+		PaperMaterial card2 = new PaperMaterial();
+		card2.setElevation(2);
+		PaperItem item2= new PaperItem("Item 2");
+		card2.add(item2);
+		content.add(card2);
+
+		drawerHeaderPanel.add(content);
 
 		return drawerHeaderPanel;
 	}

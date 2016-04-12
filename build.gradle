@@ -22,6 +22,7 @@ subprojects {
 	
 	repositories {
 		mavenCentral()
+		flatDir name: 'directoryRepository', dirs: rootProject.file('notInMaven')
 	}
 
     dependencies {
