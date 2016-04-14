@@ -251,7 +251,7 @@ war {
 
 task setProjectArtifacts << {
 	def allProjects = [] as LinkedHashSet
-	GwtBase.collectDependedUponProjects(project, allProjects, "runtime")
+	CompileGwt.collectDependedUponProjects(project, allProjects, "runtime")
 
 	def allProjectArtifacts = [] as LinkedHashSet
 
