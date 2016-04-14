@@ -35,6 +35,7 @@ public class RestServiceManager {
 		config.register(new AssociatedResource(indexManager));
 		config.register(new QueryResource(indexManager));
 		config.register(new FetchResource(indexManager));
+		config.register(new FieldsResource(indexManager));
 		server = GrizzlyHttpServerFactory.createHttpServer(baseUri, config);
 		
 	}
