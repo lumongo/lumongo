@@ -51,7 +51,7 @@ public class DistributedDirectory extends BaseDirectory {
 
 	@Override
 	public IndexOutput createTempOutput(String s, String s1, IOContext ioContext) throws IOException {
-		return null;
+		throw new IOException("Not supported");
 	}
 
 	@Override
