@@ -24,6 +24,8 @@ public class LumongoConstants {
 	public static final String QUERY_URL = "query";
 	public static final String FETCH_URL = "fetch";
 	public static final String FIELDS_URL = "fields";
+	public static final String TERMS_URL = "terms";
+	public static final String INDEXES_URL = "indexes";
 
 	public static final String QUERY = "q";
 	public static final String QUERY_FIELD = "qf";
@@ -40,6 +42,7 @@ public class LumongoConstants {
 	public static final String FORMAT = "format";
 	public static final String COMPUTE_FACET_ERROR = "computeFacetError";
 	public static final String MIN_MATCH = "mm";
+
 	
 	//General
 	public static final String UTF8 = "UTF-8";
