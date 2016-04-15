@@ -60,19 +60,7 @@ public class IndexAdmin {
 			lumongoPoolConfig.addMember(address, port);
 			lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 
-			if (Command.getRealTimeCount.equals(command)) {
-				if (index == null) {
-					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
-				}
-
-				GetNumberOfDocsResult response = lumongoWorkPool.execute(new GetNumberOfDocs(index).setRealTime(true));
-				System.out.println("Segments:\n" + response.getSegmentCountResponseCount());
-				System.out.println("Count:\n" + response.getNumberOfDocs());
-				for (SegmentCountResponse scr : response.getSegmentCountResponses()) {
-					System.out.println("Segment " + scr.getSegmentNumber() + " Count:\n" + scr.getNumberOfDocs());
-				}
-			}
-			else if (Command.getCount.equals(command)) {
+			if (Command.getCount.equals(command)) {
 				if (index == null) {
 					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
 				}
@@ -161,7 +149,6 @@ public class IndexAdmin {
 	public enum Command {
 		clear,
 		optimize,
-		getRealTimeCount,
 		getCount,
 		getFields,
 		getIndexes,
