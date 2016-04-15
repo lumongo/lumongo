@@ -65,7 +65,7 @@ public class IndexAdmin {
 					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
 				}
 
-				GetNumberOfDocsResult response = lumongoWorkPool.execute(new GetNumberOfDocs(index).setRealTime(false));
+				GetNumberOfDocsResult response = lumongoWorkPool.execute(new GetNumberOfDocs(index));
 				System.out.println("Segments:\n" + response.getSegmentCountResponseCount());
 				System.out.println("Count:\n" + response.getNumberOfDocs());
 				for (SegmentCountResponse scr : response.getSegmentCountResponses()) {
