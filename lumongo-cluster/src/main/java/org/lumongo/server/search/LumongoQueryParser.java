@@ -1,5 +1,7 @@
 package org.lumongo.server.search;
 
+import com.google.common.primitives.Doubles;
+import com.google.common.primitives.Floats;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.lsh.LSH;
 import org.apache.lucene.document.DoublePoint;
@@ -143,7 +145,10 @@ public class LumongoQueryParser extends QueryParser {
 
 		Lumongo.LMAnalyzer analyzer = indexConfig.getAnalyzer(field);
 		if (IndexConfig.isNumericOrDateAnalyzer(analyzer)) {
-			return getNumericOrDateRange(field, text, text, true, true);
+			if (Doubles.tryParse(text) != null) {
+				return getNumericOrDateRange(field, text, text, true, true);
+			}
+			return null;
 		}
 
 		return super.newTermQuery(term);
