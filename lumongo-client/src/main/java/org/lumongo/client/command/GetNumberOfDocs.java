@@ -12,19 +12,9 @@ import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
 public class GetNumberOfDocs extends SimpleCommand<GetNumberOfDocsRequest, GetNumberOfDocsResult> {
 
 	private String indexName;
-	private Boolean realTime;
 
 	public GetNumberOfDocs(String indexName) {
 		this.indexName = indexName;
-	}
-
-	public Boolean getRealTime() {
-		return realTime;
-	}
-
-	public GetNumberOfDocs setRealTime(Boolean realTime) {
-		this.realTime = realTime;
-		return this;
 	}
 
 	@Override
