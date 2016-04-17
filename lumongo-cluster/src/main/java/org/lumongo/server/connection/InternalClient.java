@@ -365,7 +365,7 @@ public class InternalClient {
 		}
 	}
 	
-	public GetTermsResponse getTerms(Member m, GetTermsRequest request) throws Exception {
+	public Lumongo.GetTermsResponseInternal getTerms(Member m, GetTermsRequest request) throws Exception {
 		ReadWriteLock lock = getLockForMember(m);
 		lock.readLock().lock();
 		
@@ -373,7 +373,7 @@ public class InternalClient {
 		try {
 			rpcConnection = getInternalRpcConnection(m);
 			RpcController controller = rpcConnection.getClientRPCController();
-			GetTermsResponse response = rpcConnection.getService().getTerms(controller, request);
+			Lumongo.GetTermsResponseInternal response = rpcConnection.getService().getTerms(controller, request);
 			if (controller.failed()) {
 				throw new Exception(m + ":" + controller.errorText());
 			}

@@ -13,8 +13,8 @@ import org.lumongo.client.command.DeleteIndex;
 import org.lumongo.client.command.FetchDocument;
 import org.lumongo.client.command.FetchDocumentAndAssociated;
 import org.lumongo.client.command.FetchLargeAssociated;
-import org.lumongo.client.command.GetAllTerms;
 import org.lumongo.client.command.GetFields;
+import org.lumongo.client.command.GetTerms;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
@@ -303,8 +303,6 @@ public class SingleNodeTest extends ServerTestBase {
 
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "title:cluster", 10));
 			assertEquals("Total hits is not 0", 0, qr.getTotalHits());
-
-			System.out.println(lumongoWorkPool.getAllTerms(new GetAllTerms(MY_TEST_INDEX, "flag")));
 
 			qr = lumongoWorkPool.query(new Query(MY_TEST_INDEX, "flag:true", 10));
 			assertEquals("Total hits is not " + (DOCUMENTS_LOADED+1)/2, (DOCUMENTS_LOADED+1)/2, qr.getTotalHits());

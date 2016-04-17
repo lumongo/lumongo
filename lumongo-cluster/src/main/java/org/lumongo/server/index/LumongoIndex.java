@@ -23,6 +23,7 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.NRTCachingDirectory;
+import org.apache.lucene.util.BytesRef;
 import org.bson.BSON;
 import org.bson.BasicBSONObject;
 import org.bson.Document;
@@ -182,10 +183,6 @@ public class LumongoIndex implements IndexSegmentInterface {
 		finally {
 			indexLock.writeLock().unlock();
 		}
-	}
-
-	public LMAnalyzer getLMAnalyzer(String fieldName) {
-		return indexConfig.getAnalyzer(fieldName);
 	}
 
 	public SortAs.SortType getSortType(String fieldName) {
@@ -1124,7 +1121,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	public GetTermsResponse getTerms(final GetTermsRequest request) throws Exception {
+	public GetTermsResponseInternal getTerms(final GetTermsRequest request) throws Exception {
 		indexLock.readLock().lock();
 		try {
 			List<Future<GetTermsResponse>> responses = new ArrayList<>();
@@ -1137,20 +1134,11 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			}
 
-			GetTermsResponse.Builder responseBuilder = GetTermsResponse.newBuilder();
-
-			//not threaded but atomic long is convenient
-			TreeMap<String, AtomicLong> terms = new TreeMap<>();
-
+			GetTermsResponseInternal.Builder getTermsResponseInternalBuilder = GetTermsResponseInternal.newBuilder();
 			for (Future<GetTermsResponse> response : responses) {
 				try {
 					GetTermsResponse gtr = response.get();
-					for (Term term : gtr.getTermList()) {
-						if (!terms.containsKey(term.getValue())) {
-							terms.put(term.getValue(), new AtomicLong());
-						}
-						terms.get(term.getValue()).addAndGet(term.getDocFreq());
-					}
+					getTermsResponseInternalBuilder.addGetTermsResponse(gtr);
 				}
 				catch (ExecutionException e) {
 					Throwable cause = e.getCause();
@@ -1163,13 +1151,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				}
 			}
 
-			int amountToReturn = Math.min(request.getAmount(), terms.size());
-			for (int i = 0; i < amountToReturn; i++) {
-				String value = terms.firstKey();
-				AtomicLong docFreq = terms.remove(value);
-				responseBuilder.addTerm(Term.newBuilder().setValue(value).setDocFreq(docFreq.get()));
-			}
-			return responseBuilder.build();
+			return getTermsResponseInternalBuilder.build();
 		}
 		finally {
 			indexLock.readLock().unlock();

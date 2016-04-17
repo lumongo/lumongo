@@ -11,15 +11,11 @@ public class LumongoConstants {
 	public static final int SUCCESS = 200;
 	public static final int BAD_REQUEST = 400;
 	public static final int NOT_FOUND = 404;
-	public static final int METHOD_NOT_ALLOWED = 405;
 	public static final int INTERNAL_ERROR = 500;
 	
 	public static final String GET = "GET";
 	public static final String POST = "POST";
-	public static final String HEAD = "HEAD";
-	public static final String PUT = "PUT";
-	public static final String DELETE = "DELETE";
-	
+
 	public static final String ASSOCIATED_DOCUMENTS_URL = "/associatedDocs";
 	public static final String QUERY_URL = "query";
 	public static final String FETCH_URL = "fetch";
@@ -39,9 +35,13 @@ public class LumongoConstants {
 	public static final String FETCH = "fetch";
 	public static final String FIELDS = "fl";
 	public static final String PRETTY = "pretty";
-	public static final String FORMAT = "format";
 	public static final String COMPUTE_FACET_ERROR = "computeFacetError";
 	public static final String MIN_MATCH = "mm";
+	public static final String AMOUNT = "amount";
+	public static final String MIN_DOC_FREQ = "minDocFreq";
+	public static final String MIN_TERM_FREQ = "minTermFreq";
+	public static final String START_TERM = "startTerm";
+	public static final String END_TERM = "endTerm";
 
 	
 	//General

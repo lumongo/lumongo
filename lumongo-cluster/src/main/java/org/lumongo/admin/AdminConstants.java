@@ -18,8 +18,9 @@ public class AdminConstants {
 	public static final String INDEX = "index";
 	public static final String FIELD = "field";
 	public static final String MIN_DOC_FREQ = "minDocFreq";
+	public static final String MIN_TERM_FREQ = "minTermFreq";
 	public static final String START_TERM = "startTerm";
-	public static final String REAL_TIME = "realTime";
+	public static final String END_TERM = "endTerm";
 	public static final String QUERY = "query";
 	public static final String AMOUNT = "amount";
 	public static final String START = "start";

@@ -74,6 +74,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -943,10 +944,19 @@ public class LumongoSegment {
 		GetTermsResponse.Builder builder = GetTermsResponse.newBuilder();
 
 		String fieldName = request.getFieldName();
-		String startTerm = "";
 
-		if (request.hasStartingTerm()) {
-			startTerm = request.getStartingTerm();
+		BytesRef startTermBytes;
+		BytesRef endTermBytes = null;
+
+		if (request.hasStartTerm()) {
+			startTermBytes = new BytesRef(request.getStartTerm());
+		}
+		else {
+			startTermBytes = new BytesRef("");
+		}
+
+		if (request.hasEndTerm()) {
+			endTermBytes  = new BytesRef(request.getEndTerm());
 		}
 
 		Pattern termFilter = null;
@@ -959,9 +969,10 @@ public class LumongoSegment {
 			termMatch = Pattern.compile(request.getTermMatch());
 		}
 
-		BytesRef startTermBytes = new BytesRef(startTerm);
 
-		SortedMap<String, AtomicLong> termsMap = new TreeMap<>();
+
+
+		SortedMap<String, Lumongo.Term.Builder> termsMap = new TreeMap<>();
 
 		for (LeafReaderContext subReaderContext : directoryReader.leaves()) {
 			Fields fields = subReaderContext.reader().fields();
@@ -969,7 +980,7 @@ public class LumongoSegment {
 
 				Terms terms = fields.terms(fieldName);
 				if (terms != null) {
-					// TODO reuse?
+
 					TermsEnum termsEnum = terms.iterator();
 					SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
 
@@ -977,57 +988,62 @@ public class LumongoSegment {
 					if (!seekStatus.equals(SeekStatus.END)) {
 						text = termsEnum.term();
 
-						handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
-
-						while ((text = termsEnum.next()) != null) {
+						if (endTermBytes == null || (text.compareTo(endTermBytes) < 0 )) {
 							handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
-						}
 
+							while ((text = termsEnum.next()) != null) {
+
+								if (endTermBytes == null || (text.compareTo(endTermBytes) < 0 )) {
+									handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+								}
+								else {
+									break;
+								}
+							}
+						}
 					}
+
 				}
 			}
 
 		}
 
-		int amount = Math.min(request.getAmount(), termsMap.size());
 
-		int i = 0;
-		for (String term : termsMap.keySet()) {
-			AtomicLong docFreq = termsMap.get(term);
-			builder.addTerm(Lumongo.Term.newBuilder().setValue(term).setDocFreq(docFreq.get()));
 
-			// TODO remove the limit and paging and just return all?
-			i++;
-			if (i > amount) {
-				break;
-			}
 
+		for (Lumongo.Term.Builder termBuilder: termsMap.values()) {
+			builder.addTerm(termBuilder.build());
 		}
 
 		return builder.build();
 
 	}
 
-	private void handleTerm(SortedMap<String, AtomicLong> termsMap, TermsEnum termsEnum, BytesRef text, Pattern termFilter, Pattern termMatch)
+	private void handleTerm(SortedMap<String, Lumongo.Term.Builder> termsMap, TermsEnum termsEnum, BytesRef text, Pattern termFilter, Pattern termMatch)
 			throws IOException {
+
 		String textStr = text.utf8ToString();
+		if (termFilter != null || termMatch != null) {
 
-		if (termFilter != null) {
-			if (termFilter.matcher(textStr).matches()) {
-				return;
+			if (termFilter != null) {
+				if (termFilter.matcher(textStr).matches()) {
+					return;
+				}
 			}
-		}
 
-		if (termMatch != null) {
-			if (!termMatch.matcher(textStr).matches()) {
-				return;
+			if (termMatch != null) {
+				if (!termMatch.matcher(textStr).matches()) {
+					return;
+				}
 			}
 		}
 
 		if (!termsMap.containsKey(textStr)) {
-			termsMap.put(textStr, new AtomicLong());
+			termsMap.put(textStr, Lumongo.Term.newBuilder().setValue(textStr).setDocFreq(0).setTermFreq(0));
 		}
-		termsMap.get(textStr).addAndGet(termsEnum.docFreq());
+		Lumongo.Term.Builder builder = termsMap.get(textStr);
+		builder.setDocFreq(builder.getDocFreq() + termsEnum.docFreq());
+		builder.setTermFreq(builder.getTermFreq() + termsEnum.totalTermFreq());
 	}
 
 	public SegmentCountResponse getNumberOfDocs() throws IOException {

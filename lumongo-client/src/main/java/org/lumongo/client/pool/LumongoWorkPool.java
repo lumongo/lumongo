@@ -100,14 +100,6 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
 		return executeAsync(fetchLargeAssociated);
 	}
 
-	public GetTermsResult getAllTerms(GetAllTerms getTerms) throws Exception {
-		return execute(getTerms);
-	}
-
-	public ListenableFuture<GetTermsResult> getAllTermsAsync(GetAllTerms getTerms) throws Exception {
-		return executeAsync(getTerms);
-	}
-
 	public GetFieldsResult getFields(GetFields getFields) throws Exception {
 		return execute(getFields);
 	}

@@ -5,24 +5,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import org.lumongo.client.command.BatchFetch;
-import org.lumongo.client.command.CreateIndex;
-import org.lumongo.client.command.CreateOrUpdateIndex;
-import org.lumongo.client.command.DeleteAllAssociated;
-import org.lumongo.client.command.DeleteAssociated;
-import org.lumongo.client.command.DeleteFromIndex;
-import org.lumongo.client.command.DeleteFull;
-import org.lumongo.client.command.FetchAllAssociated;
-import org.lumongo.client.command.FetchAssociated;
-import org.lumongo.client.command.FetchDocument;
-import org.lumongo.client.command.FetchLargeAssociated;
-import org.lumongo.client.command.GetAllTerms;
-import org.lumongo.client.command.GetFields;
-import org.lumongo.client.command.GetNumberOfDocs;
-import org.lumongo.client.command.Query;
-import org.lumongo.client.command.Store;
-import org.lumongo.client.command.StoreLargeAssociated;
-import org.lumongo.client.command.UpdateIndex;
+import org.lumongo.client.command.*;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
@@ -429,7 +412,7 @@ public class ApiTest {
 	}
 	
 	public void getTerms() throws Exception {
-		GetTermsResult getTermsResult = lumongoWorkPool.getAllTerms(new GetAllTerms(MY_INDEX_NAME, "title"));
+		GetTermsResult getTermsResult = lumongoWorkPool.getTerms(new GetTerms(MY_INDEX_NAME, "title"));
 		for (Term term : getTermsResult.getTerms()) {
 			System.out.println(term.getValue() + ": " + term.getDocFreq());
 		}

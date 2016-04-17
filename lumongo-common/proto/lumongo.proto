@@ -1,3 +1,6 @@
+
+syntax = "proto2";
+
 option java_generic_services = true;
 
 option java_package = "org.lumongo.cluster.message";
@@ -31,7 +34,7 @@ service InternalService {
 	rpc Clear (ClearRequest) returns (ClearResponse);
 	rpc Optimize (OptimizeRequest) returns (OptimizeResponse);
 	rpc GetFieldNames (GetFieldNamesRequest) returns (GetFieldNamesResponse);
-	rpc GetTerms (GetTermsRequest) returns (GetTermsResponse);
+	rpc GetTerms (GetTermsRequest) returns (GetTermsResponseInternal);
 }
 
 message GetMembersRequest {
@@ -64,11 +67,13 @@ message SegmentMapping {
 message GetTermsRequest {
 	required string indexName = 1;
 	required string fieldName = 2;
-	required uint32 amount = 3;
-	optional string startingTerm = 4;
-	optional uint32 minDocFreq = 5 [default = 1];
-	optional string termFilter = 7;
-	optional string termMatch = 8;
+	optional uint32 amount = 3 [default = 0];
+	optional string startTerm = 4;
+	optional string endTerm = 5;
+	optional uint32 minDocFreq = 6 [default = 1];
+	optional uint32 minTermFreq = 7 [default = 1];
+	optional string termFilter = 8;
+	optional string termMatch = 9;
 }
 
 message GetTermsResponse {
@@ -76,9 +81,14 @@ message GetTermsResponse {
 	optional Term lastTerm = 2;
 }
 
+message GetTermsResponseInternal {
+	repeated GetTermsResponse getTermsResponse = 1;
+}
+
 message Term {
 	required string value = 1;
 	optional uint64 docFreq = 2;
+	optional uint64 termFreq = 3;
 }
 
 message GetFieldNamesRequest {

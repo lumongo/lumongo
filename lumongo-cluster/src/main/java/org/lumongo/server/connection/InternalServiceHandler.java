@@ -34,6 +34,7 @@ import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.index.LumongoIndexManager;
 
+import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -211,9 +212,9 @@ public class InternalServiceHandler extends InternalService {
 	}
 	
 	@Override
-	public void getTerms(RpcController controller, GetTermsRequest request, RpcCallback<GetTermsResponse> done) {
+	public void getTerms(RpcController controller, GetTermsRequest request, RpcCallback<Lumongo.GetTermsResponseInternal> done) {
 		try {
-			GetTermsResponse r = indexManager.getTermsInternal(request);
+			Lumongo.GetTermsResponseInternal r = indexManager.getTermsInternal(request);
 			done.run(r);
 		}
 		catch (Exception e) {

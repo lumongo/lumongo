@@ -13,6 +13,7 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.util.BytesRef;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
@@ -38,6 +39,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1015,53 +1017,61 @@ public class LumongoIndexManager {
 		globalLock.readLock().lock();
 		try {
 
-			SocketRequestFederator<GetTermsRequest, GetTermsResponse> federator = new SocketRequestFederator<GetTermsRequest, GetTermsResponse>(
+			SocketRequestFederator<GetTermsRequest, GetTermsResponseInternal> federator = new SocketRequestFederator<GetTermsRequest, GetTermsResponseInternal>(
 					hazelcastManager, pool) {
 
 				@Override
-				public GetTermsResponse processExternal(Member m, GetTermsRequest request) throws Exception {
+				public GetTermsResponseInternal processExternal(Member m, GetTermsRequest request) throws Exception {
 					return internalClient.getTerms(m, request);
 				}
 
 				@Override
-				public GetTermsResponse processInternal(GetTermsRequest request) throws Exception {
+				public GetTermsResponseInternal processInternal(GetTermsRequest request) throws Exception {
 					return getTermsInternal(request);
 				}
 
 			};
 
-			List<GetTermsResponse> responses = federator.send(request);
+			List<GetTermsResponseInternal> responses = federator.send(request);
 
 			//not threaded but atomic long is convenient
-			//TODO: maybe change to something else for speed
-			TreeMap<String, AtomicLong> terms = new TreeMap<String, AtomicLong>();
-			for (GetTermsResponse gtr : responses) {
-				for (Term term : gtr.getTermList()) {
-					if (!terms.containsKey(term.getValue())) {
-						terms.put(term.getValue(), new AtomicLong());
+			TreeMap<String, Term.Builder> terms = new TreeMap<>();
+			for (GetTermsResponseInternal response : responses) {
+				for (GetTermsResponse gtr : response.getGetTermsResponseList()) {
+					for (Term term : gtr.getTermList()) {
+						String key = term.getValue();
+						if (!terms.containsKey(key)) {
+							terms.put(key, Term.newBuilder().setValue(key).setDocFreq(0).setTermFreq(0));
+						}
+						Term.Builder builder = terms.get(key);
+						builder.setDocFreq(builder.getDocFreq() + term.getDocFreq());
+						builder.setTermFreq(builder.getTermFreq() + term.getTermFreq());
 					}
-					terms.get(term.getValue()).addAndGet(term.getDocFreq());
 				}
 			}
 
 			GetTermsResponse.Builder responseBuilder = GetTermsResponse.newBuilder();
 
-			int amountToReturn = Math.min(request.getAmount(), terms.size());
+			Term.Builder value = null;
 
-			String value = null;
-			Long frequency = null;
 
-			for (int i = 0; (i < amountToReturn) && !terms.isEmpty(); ) {
-				value = terms.firstKey();
-				AtomicLong docFreq = terms.remove(value);
-				frequency = docFreq.get();
-				if (frequency >= request.getMinDocFreq()) {
-					i++;
-					responseBuilder.addTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(frequency));
+			int count = 0;
+
+			int amount = request.getAmount();
+			for (Term.Builder builder : terms.values()) {
+				value = builder;
+				if (builder.getDocFreq() >= request.getMinDocFreq() && builder.getTermFreq() >= request.getMinTermFreq()) {
+					responseBuilder.addTerm(builder.build());
+					count++;
+				}
+
+				if (amount != 0 && count >= amount) {
+					break;
 				}
 			}
-			if ((value != null) && (frequency != null)) {
-				responseBuilder.setLastTerm(Lumongo.Term.newBuilder().setValue(value).setDocFreq(frequency).build());
+
+			if (value != null) {
+				responseBuilder.setLastTerm(value.build());
 			}
 
 			return responseBuilder.build();
@@ -1071,7 +1081,7 @@ public class LumongoIndexManager {
 		}
 	}
 
-	public GetTermsResponse getTermsInternal(GetTermsRequest request) throws Exception {
+	public GetTermsResponseInternal getTermsInternal(GetTermsRequest request) throws Exception {
 		globalLock.readLock().lock();
 		try {
 			String indexName = request.getIndexName();

@@ -2,7 +2,6 @@ package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.util.JsonFormat;
 import com.mongodb.BasicDBObject;
 import org.apache.log4j.Logger;
 import org.bson.BSON;
@@ -41,8 +40,7 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.FIELDS) List<String> fields, @QueryParam(LumongoConstants.FETCH) Boolean fetch,
 			@QueryParam(LumongoConstants.ROWS) int rows, @QueryParam(LumongoConstants.FACET) List<String> facet,
 			@QueryParam(LumongoConstants.SORT) List<String> sort, @QueryParam(LumongoConstants.PRETTY) boolean pretty,
-			@QueryParam(LumongoConstants.FORMAT) String format, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError,
-			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm) {
+			@QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError, @QueryParam(LumongoConstants.MIN_MATCH) Integer mm) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		if (query != null) {
@@ -137,13 +135,7 @@ public class QueryResource {
 		try {
 			QueryResponse qr = indexManager.query(qrBuilder.build());
 
-			String response;
-			if ("proto".equalsIgnoreCase(format)) {
-				response = JsonFormat.printer().print(qr);
-			}
-			else {
-				response = getStandardResponse(qr);
-			}
+			String response = getStandardResponse(qr);
 
 			if (pretty) {
 				response = JsonWriter.formatJson(response);
