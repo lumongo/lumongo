@@ -110,7 +110,7 @@ public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 
 	@Override
 	public GetTermsRequest getRequest() {
-		GetTermsRequest.Builder getTermsRequestBuilder = GetTermsRequest.newBuilder().setIndexName(indexName).setFieldName(fieldName).setAmount(amount);
+		GetTermsRequest.Builder getTermsRequestBuilder = GetTermsRequest.newBuilder().setIndexName(indexName).setFieldName(fieldName);
 		if (startTerm != null) {
 			getTermsRequestBuilder.setStartTerm(startTerm);
 		}
