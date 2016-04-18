@@ -22,6 +22,7 @@ public class LumongoConstants {
 	public static final String FIELDS_URL = "fields";
 	public static final String TERMS_URL = "terms";
 	public static final String INDEXES_URL = "indexes";
+	public static final String MEMBERS_URL = "members";
 
 	public static final String QUERY = "q";
 	public static final String QUERY_FIELD = "qf";
