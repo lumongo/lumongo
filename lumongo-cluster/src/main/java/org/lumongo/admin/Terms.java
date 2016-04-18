@@ -63,13 +63,13 @@ public class Terms {
 
 			System.out.print("Term");
 			System.out.print("\t");
-			System.out.println("DocFreq");
+			System.out.print("DocFreq");
 			System.out.print("\t");
 			System.out.println("TermFreq");
 			for (Lumongo.Term term : response.getTerms()) {
 				System.out.print(term.getValue());
 				System.out.print("\t");
-				System.out.println(term.getDocFreq());
+				System.out.print(term.getDocFreq());
 				System.out.print("\t");
 				System.out.println(term.getTermFreq());
 			}
