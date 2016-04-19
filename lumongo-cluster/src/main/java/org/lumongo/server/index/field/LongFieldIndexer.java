@@ -16,4 +16,9 @@ public class LongFieldIndexer extends NumericFieldIndexer {
 		return new LongPoint(indexedFieldName, o.longValue());
 	}
 
+	@Override
+	protected Number parseString(String value) {
+		return Long.parseLong(value);
+	}
+
 }

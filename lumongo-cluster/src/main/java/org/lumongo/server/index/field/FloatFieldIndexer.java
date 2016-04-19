@@ -16,4 +16,9 @@ public class FloatFieldIndexer extends NumericFieldIndexer {
 		return new FloatPoint(indexedFieldName, o.floatValue());
 	}
 
+	@Override
+	protected Number parseString(String value) {
+		return Float.parseFloat(value);
+	}
+
 }

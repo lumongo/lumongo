@@ -16,4 +16,9 @@ public class DoubleFieldIndexer extends NumericFieldIndexer {
 		return new DoublePoint(indexedFieldName, o.doubleValue());
 	}
 
+	@Override
+	protected Number parseString(String value) {
+		return Double.parseDouble(value);
+	}
+
 }

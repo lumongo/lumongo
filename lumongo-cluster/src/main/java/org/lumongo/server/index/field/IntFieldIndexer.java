@@ -16,4 +16,9 @@ public class IntFieldIndexer extends NumericFieldIndexer {
 		return new IntPoint(indexedFieldName, o.intValue());
 	}
 
+	@Override
+	protected Number parseString(String value) {
+		return Integer.parseInt(value);
+	}
+
 }
