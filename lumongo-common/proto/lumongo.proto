@@ -1,4 +1,3 @@
-
 syntax = "proto2";
 
 option java_generic_services = true;
@@ -148,22 +147,46 @@ message IndexSettingsRequest {
 	required IndexSettings indexSettings = 4;
 }
 
-enum LMAnalyzer {
+enum FieldType {
+	STRING = 1;
+	NUMERIC_INT = 2;
+	NUMERIC_LONG = 3;
+	NUMERIC_FLOAT = 4;
+	NUMERIC_DOUBLE = 5;
+	DATE = 6;
+	BOOL = 7;
+}
+
+enum Tokenizer {
 	KEYWORD = 1;
-	LC_KEYWORD = 2;
-	WHITESPACE = 3;
-	LC_WHITESPACE = 4;
-	STANDARD = 5;
-	NUMERIC_INT = 6;
-	NUMERIC_LONG = 7;
-	NUMERIC_FLOAT = 8;
-	NUMERIC_DOUBLE = 9;
-	STANDARD_FOLDING = 10;
-	STANDARD_NO_STOP = 11;
-	STANDARD_FOLDING_NO_STOP = 12;
-	DATE = 13;
-	LSH = 14;
-	BOOL = 15;
+	WHITESPACE = 2;
+	STANDARD = 3;
+}
+
+enum Filter {
+	STANDARD = 1;
+	LOWERCASE = 2;
+	UPPERCASE = 3;
+	STOPWORDS = 4;
+	ASCII_FOLDING = 5;
+	KSTEM = 6;
+	ENGLISH_MIN_STEM = 7;
+	SNOWBALL_STEM = 8;
+	ENGLISH_POSSESSIVE = 9;
+	MINHASH = 10;
+}
+
+
+enum Similarity {
+	TFIDF_CLASSIC = 1;
+	BM25 = 2;
+	CONSTANT = 3;
+}
+
+message AnalyzerSettings {
+	optional Tokenizer tokenizer = 1 [default = STANDARD];
+	repeated Filter filter = 2;
+	optional Similarity similarity = 3 [default = BM25];
 }
 
 message IndexSettings {
@@ -190,8 +213,11 @@ message FieldConfig {
 
 message IndexAs {
 	required string indexFieldName = 1;
-	required LMAnalyzer analyzer = 2;
+	required FieldType fieldType = 2;
+	optional AnalyzerSettings analyzerSetting = 3;
+	optional bool minHash = 4 [default = false];
 }
+
 
 message FacetAs {
 	enum LMFacetType {
@@ -285,12 +311,12 @@ message Metadata {
 
 message ScoredResult {
 	optional string uniqueId = 1;
-	optional float score = 2;//
-	optional uint32 docId = 3;//
+	optional float score = 2; //
+	optional uint32 docId = 3; //
 	optional string indexName = 4;
-	optional uint32 segment = 5;//
+	optional uint32 segment = 5; //
 	optional uint32 resultIndex = 6;
-	optional SortValues sortValues = 7;//
+	optional SortValues sortValues = 7; //
 	optional int64 timestamp = 8;
 	optional ResultDocument resultDocument = 9;
 }
@@ -317,7 +343,8 @@ message FieldSort {
 	enum Direction {
 		ASCENDING = 1;
 		DESCENDING = 2;
-	};
+	}
+	;
 
 	required string sortField = 1;
 	optional Direction direction = 2 [default = ASCENDING];
@@ -327,7 +354,7 @@ message FacetGroup {
 	required CountRequest countRequest = 1;
 	repeated FacetCount facetCount = 2;
 	optional bool possibleMissing = 3 [default = false];
-	optional uint64 maxValuePossibleMissing = 4 [ default = 0];
+	optional uint64 maxValuePossibleMissing = 4 [default = 0];
 }
 
 message FacetCount {
