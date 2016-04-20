@@ -22,12 +22,38 @@ public class FieldConfigBuilder {
 		return new FieldConfigBuilder(storedFieldName);
 	}
 
-	public FieldConfigBuilder indexAs(Lumongo.LMAnalyzer analyzer) {
-		return indexAs(Lumongo.IndexAs.newBuilder().setIndexFieldName(storedFieldName).setAnalyzer(analyzer).build());
+	public FieldConfigBuilder indexAs(Lumongo.IndexAs.FieldType fieldType) {
+		return indexAs(fieldType, storedFieldName);
 	}
 
-	public FieldConfigBuilder indexAs(Lumongo.LMAnalyzer analyzer, String indexedFieldName) {
-		return indexAs(Lumongo.IndexAs.newBuilder().setIndexFieldName(indexedFieldName).setAnalyzer(analyzer).build());
+	public FieldConfigBuilder indexAs(Lumongo.IndexAs.FieldType fieldType, String indexedFieldName) {
+		return indexAs(fieldType, indexedFieldName, null);
+	}
+
+	public FieldConfigBuilder indexAs(Lumongo.IndexAs.FieldType fieldType, String indexedFieldName, Lumongo.AnalyzerSettings.Tokenizer tokenizer,
+			List<Lumongo.AnalyzerSettings.Filter> filters, Lumongo.AnalyzerSettings.Similarity similarity) {
+		Lumongo.AnalyzerSettings.Builder analyzerSettingsBuilder = Lumongo.AnalyzerSettings.newBuilder();
+		if (tokenizer != null) {
+			analyzerSettingsBuilder.setTokenizer(tokenizer);
+		}
+		if (filters != null) {
+			analyzerSettingsBuilder.addAllFilter(filters);
+		}
+		if (similarity != null) {
+			analyzerSettingsBuilder.setSimilarity(similarity);
+		}
+
+		return indexAs(fieldType,indexedFieldName,analyzerSettingsBuilder.build());
+	}
+
+	public FieldConfigBuilder indexAs(Lumongo.IndexAs.FieldType fieldType, String indexedFieldName, Lumongo.AnalyzerSettings analyzerSettings) {
+		Lumongo.IndexAs.Builder builder = Lumongo.IndexAs.newBuilder();
+		builder.setIndexFieldName(indexedFieldName);
+		builder.setFieldType(fieldType);
+		if (analyzerSettings != null) {
+			builder.setAnalyzerSetting(analyzerSettings);
+		}
+		return indexAs(builder.build());
 	}
 
 	public FieldConfigBuilder indexAs(Lumongo.IndexAs indexAs) {

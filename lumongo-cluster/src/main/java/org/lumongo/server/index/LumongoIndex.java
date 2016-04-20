@@ -23,7 +23,6 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.NRTCachingDirectory;
-import org.apache.lucene.util.BytesRef;
 import org.bson.BSON;
 import org.bson.BasicBSONObject;
 import org.bson.Document;
@@ -61,14 +60,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -144,7 +141,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			@Override
 			public LumongoQueryParser makeObject() throws Exception {
-				return new LumongoQueryParser(lumongoAnalyzerFactory.getAnalyzer(), LumongoIndex.this.indexConfig);
+				return new LumongoQueryParser(lumongoAnalyzerFactory.getStringAnalyzer(), LumongoIndex.this.indexConfig);
 			}
 
 		});
@@ -359,7 +356,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				clusterConfig.getIndexBlockSize());
 		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 
-		IndexWriterConfig config = new IndexWriterConfig(lumongoAnalyzerFactory.getAnalyzer());
+		IndexWriterConfig config = new IndexWriterConfig(lumongoAnalyzerFactory.getStringAnalyzer());
 
 		//use flush interval to flush
 		config.setMaxBufferedDocs(Integer.MAX_VALUE);
@@ -959,7 +956,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 			parsers.clear();
 
 			//force analyzer to be fetched first so it doesn't fail only on one segment below
-			lumongoAnalyzerFactory.getAnalyzer();
+			lumongoAnalyzerFactory.getStringAnalyzer();
 			for (LumongoSegment s : segmentMap.values()) {
 				try {
 					s.updateIndexSettings(indexSettings, facetsConfig);
