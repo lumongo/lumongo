@@ -5,10 +5,9 @@ import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.lsh.LSHSimilarity;
+import org.lumongo.similarity.ConstantSimilarity;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LegacyLongField;
 import org.apache.lucene.document.SortedNumericDocValuesField;
@@ -33,6 +32,7 @@ import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.index.TermsEnum.SeekStatus;
 import org.apache.lucene.search.*;
+import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.search.similarities.PerFieldSimilarityWrapper;
 import org.apache.lucene.search.similarities.Similarity;
@@ -74,7 +74,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -267,13 +266,19 @@ public class LumongoSegment {
 			indexSearcher.setSimilarity(new PerFieldSimilarityWrapper() {
 				@Override
 				public Similarity get(String name) {
-					LMAnalyzer analyzer = indexConfig.getAnalyzer(name);
-					if (analyzer != null) {
-						if (analyzer.equals(LMAnalyzer.LSH)) {
-							return new LSHSimilarity();
-						}
+					AnalyzerSettings.Similarity similarity = indexConfig.getSimilarity(name);
+					if (AnalyzerSettings.Similarity.TFIDF_CLASSIC.equals(similarity)) {
+						return new ClassicSimilarity();
 					}
-					return new ClassicSimilarity();
+					else if (AnalyzerSettings.Similarity.BM25.equals(similarity)) {
+						return new BM25Similarity();
+					}
+					else if (AnalyzerSettings.Similarity.CONSTANT.equals(similarity)) {
+						return new ConstantSimilarity();
+					}
+					else {
+						throw new RuntimeException("Unknown similarity type <" + similarity + ">");
+					}
 				}
 			});
 
@@ -715,27 +720,30 @@ public class LumongoSegment {
 					for (IndexAs indexAs : fc.getIndexAsList()) {
 
 						String indexedFieldName = indexAs.getIndexFieldName();
-						LMAnalyzer indexFieldAnalyzer = indexAs.getAnalyzer();
-						if (LMAnalyzer.NUMERIC_INT.equals(indexFieldAnalyzer)) {
+						IndexAs.FieldType fieldType = indexAs.getFieldType();
+						if (IndexAs.FieldType.NUMERIC_INT.equals(fieldType)) {
 							IntFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (LMAnalyzer.NUMERIC_LONG.equals(indexFieldAnalyzer)) {
+						else if (IndexAs.FieldType.NUMERIC_LONG.equals(fieldType)) {
 							LongFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (LMAnalyzer.NUMERIC_FLOAT.equals(indexFieldAnalyzer)) {
+						else if (IndexAs.FieldType.NUMERIC_FLOAT.equals(fieldType)) {
 							FloatFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (LMAnalyzer.NUMERIC_DOUBLE.equals(indexFieldAnalyzer)) {
+						else if (IndexAs.FieldType.NUMERIC_DOUBLE.equals(fieldType)) {
 							DoubleFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (LMAnalyzer.DATE.equals(indexFieldAnalyzer)) {
+						else if (IndexAs.FieldType.DATE.equals(fieldType)) {
 							DateFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (LMAnalyzer.BOOL.equals(indexFieldAnalyzer)) {
+						else if (IndexAs.FieldType.BOOL.equals(fieldType)) {
 							BooleanFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else {
+						else if (IndexAs.FieldType.STRING.equals(fieldType)) {
 							StringFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
+						}
+						else {
+							throw new RuntimeException("Unsupported field type <" + fieldType + ">");
 						}
 					}
 				}

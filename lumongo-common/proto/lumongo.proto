@@ -147,47 +147,7 @@ message IndexSettingsRequest {
 	required IndexSettings indexSettings = 4;
 }
 
-enum FieldType {
-	STRING = 1;
-	NUMERIC_INT = 2;
-	NUMERIC_LONG = 3;
-	NUMERIC_FLOAT = 4;
-	NUMERIC_DOUBLE = 5;
-	DATE = 6;
-	BOOL = 7;
-}
 
-enum Tokenizer {
-	KEYWORD = 1;
-	WHITESPACE = 2;
-	STANDARD = 3;
-}
-
-enum Filter {
-	STANDARD = 1;
-	LOWERCASE = 2;
-	UPPERCASE = 3;
-	STOPWORDS = 4;
-	ASCII_FOLDING = 5;
-	KSTEM = 6;
-	ENGLISH_MIN_STEM = 7;
-	SNOWBALL_STEM = 8;
-	ENGLISH_POSSESSIVE = 9;
-	MINHASH = 10;
-}
-
-
-enum Similarity {
-	TFIDF_CLASSIC = 1;
-	BM25 = 2;
-	CONSTANT = 3;
-}
-
-message AnalyzerSettings {
-	optional Tokenizer tokenizer = 1 [default = STANDARD];
-	repeated Filter filter = 2;
-	optional Similarity similarity = 3 [default = BM25];
-}
 
 message IndexSettings {
 	optional string defaultSearchField = 1;
@@ -212,12 +172,56 @@ message FieldConfig {
 }
 
 message IndexAs {
+	enum FieldType {
+		STRING = 1;
+		NUMERIC_INT = 2;
+		NUMERIC_LONG = 3;
+		NUMERIC_FLOAT = 4;
+		NUMERIC_DOUBLE = 5;
+		DATE = 6;
+		BOOL = 7;
+	}
+
 	required string indexFieldName = 1;
 	required FieldType fieldType = 2;
 	optional AnalyzerSettings analyzerSetting = 3;
 	optional bool minHash = 4 [default = false];
 }
 
+
+
+message AnalyzerSettings {
+
+	enum Tokenizer {
+		KEYWORD = 1;
+		WHITESPACE = 2;
+		STANDARD = 3;
+	}
+
+	enum Filter {
+		STANDARD_BASE = 1;
+		LOWERCASE = 2;
+		UPPERCASE = 3;
+		STOPWORDS = 4;
+		ASCII_FOLDING = 5;
+		KSTEM = 6;
+		ENGLISH_MIN_STEM = 7;
+		SNOWBALL_STEM = 8;
+		ENGLISH_POSSESSIVE = 9;
+		MINHASH = 10;
+	}
+
+
+	enum Similarity {
+		TFIDF_CLASSIC = 1;
+		BM25 = 2;
+		CONSTANT = 3;
+	}
+
+	optional Tokenizer tokenizer = 1 [default = STANDARD];
+	repeated Filter filter = 2;
+	optional Similarity similarity = 3 [default = BM25];
+}
 
 message FacetAs {
 	enum LMFacetType {

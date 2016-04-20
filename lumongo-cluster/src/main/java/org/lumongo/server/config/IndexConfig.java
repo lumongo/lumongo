@@ -8,7 +8,6 @@ import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.IndexAs;
 import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
-import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,10 +37,15 @@ public class IndexConfig {
 	public static final String FACET_AS = "facetAs";
 	public static final String SORT_AS = "sortAs";
 	public static final String FACET_NAME = "facetName";
-	public static final String ANALYZER = "analyzer";
+	public static final String FIELD_TYPE = "fieldType";
 	public static final String FACET_TYPE = "facetType";
 	public static final String SORT_TYPE = "sortType";
 	public static final String SORT_FIELD_NAME = "sortFieldName";
+
+	public static final String TOKENIZER = "tokenizer";
+	public static final String SIMILARITY = "similarity";
+	public static final String FILTERS = "filters";
+	public static final String ANALYZER_SETTINGS = "analyzerSettings";
 
 	private String defaultSearchField;
 	private boolean applyUncommittedDeletes;
@@ -104,29 +108,29 @@ public class IndexConfig {
 		return Lumongo.SortAs.SortType.DATE.equals(sortType);
 	}
 
-	public static boolean isNumericIntAnalyzer(LMAnalyzer analyzer) {
-		return LMAnalyzer.NUMERIC_INT.equals(analyzer);
+	public static boolean isNumericIntFieldType(IndexAs.FieldType fieldType) {
+		return IndexAs.FieldType.NUMERIC_INT.equals(fieldType);
 	}
 
-	public static boolean isNumericLongAnalyzer(LMAnalyzer analyzer) {
-		return LMAnalyzer.NUMERIC_LONG.equals(analyzer);
+	public static boolean isNumericLongFieldType(IndexAs.FieldType fieldType) {
+		return IndexAs.FieldType.NUMERIC_LONG.equals(fieldType);
 	}
 
-	public static boolean isNumericFloatAnalyzer(LMAnalyzer analyzer) {
-		return LMAnalyzer.NUMERIC_FLOAT.equals(analyzer);
+	public static boolean isNumericFloatFieldType(IndexAs.FieldType fieldType) {
+		return IndexAs.FieldType.NUMERIC_FLOAT.equals(fieldType);
 	}
 
-	public static boolean isNumericDoubleAnalyzer(LMAnalyzer analyzer) {
-		return LMAnalyzer.NUMERIC_DOUBLE.equals(analyzer);
+	public static boolean isNumericDoubleFieldType(IndexAs.FieldType fieldType) {
+		return IndexAs.FieldType.NUMERIC_DOUBLE.equals(fieldType);
 	}
 
-	public static boolean isDateAnalyzer(LMAnalyzer analyzer) {
-		return LMAnalyzer.DATE.equals(analyzer);
+	public static boolean isDateFieldType(IndexAs.FieldType fieldType) {
+		return IndexAs.FieldType.DATE.equals(fieldType);
 	}
 
-	public static boolean isNumericOrDateAnalyzer(LMAnalyzer analyzer) {
-		return isNumericIntAnalyzer(analyzer) || isNumericLongAnalyzer(analyzer) || isNumericFloatAnalyzer(analyzer) || isNumericDoubleAnalyzer(analyzer)
-				|| isDateAnalyzer(analyzer);
+	public static boolean isNumericOrDateFieldType(IndexAs.FieldType fieldType) {
+		return isNumericIntFieldType(fieldType) || isNumericLongFieldType(fieldType) || isNumericFloatFieldType(fieldType) || isNumericDoubleFieldType(
+				fieldType) || isDateFieldType(fieldType);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -157,9 +161,24 @@ public class IndexConfig {
 			{
 				List<Document> indexAsObjList = (List<Document>) fieldConfig.get(INDEX_AS);
 				for (Document indexAsObj : indexAsObjList) {
-					LMAnalyzer analyzer = LMAnalyzer.valueOf((String) indexAsObj.get(ANALYZER));
+					IndexAs.FieldType fieldType = IndexAs.FieldType.valueOf((String) indexAsObj.get(FIELD_TYPE));
 					String indexFieldName = (String) indexAsObj.get(INDEXED_FIELD_NAME);
-					fcBuilder.addIndexAs(IndexAs.newBuilder().setAnalyzer(analyzer).setIndexFieldName(indexFieldName));
+					Document analyzerSettingsDoc = (Document) indexAsObj.get(ANALYZER_SETTINGS);
+
+					Lumongo.AnalyzerSettings.Builder analyzerSettings = Lumongo.AnalyzerSettings.newBuilder();
+					Lumongo.AnalyzerSettings.Similarity similarity = Lumongo.AnalyzerSettings.Similarity
+							.valueOf(analyzerSettingsDoc.getString(SIMILARITY));
+					analyzerSettings.setSimilarity(similarity);
+					Lumongo.AnalyzerSettings.Tokenizer tokenizer = Lumongo.AnalyzerSettings.Tokenizer
+							.valueOf(analyzerSettingsDoc.getString(TOKENIZER));
+					analyzerSettings.setTokenizer(tokenizer);
+
+					List<String> filters = (List<String>) analyzerSettingsDoc.get(FILTERS);
+					for (String filter : filters) {
+						analyzerSettings.addFilter(Lumongo.AnalyzerSettings.Filter.valueOf(filter));
+					}
+
+					fcBuilder.addIndexAs(IndexAs.newBuilder().setFieldType(fieldType).setIndexFieldName(indexFieldName));
 				}
 			}
 			{
@@ -255,10 +274,18 @@ public class IndexConfig {
 		return sortAsMap;
 	}
 
-	public LMAnalyzer getAnalyzer(String fieldName) {
+	public IndexAs.FieldType getFieldType(String fieldName) {
 		IndexAs indexAs = indexAsMap.get(fieldName);
 		if (indexAs != null) {
-			return indexAs.getAnalyzer();
+			return indexAs.getFieldType();
+		}
+		return null;
+	}
+
+	public Lumongo.AnalyzerSettings.Similarity getSimilarity(String fieldName) {
+		IndexAs indexAs = indexAsMap.get(fieldName);
+		if (indexAs != null) {
+			return indexAs.getAnalyzerSetting().getSimilarity();
 		}
 		return null;
 	}
@@ -306,7 +333,6 @@ public class IndexConfig {
 	public String getIndexName() {
 		return indexName;
 	}
-
 
 	public int getIdleTimeWithoutCommit() {
 		return idleTimeWithoutCommit;
@@ -360,7 +386,18 @@ public class IndexConfig {
 				List<Document> indexAsObjList = new ArrayList<>();
 				for (IndexAs indexAs : fc.getIndexAsList()) {
 					Document indexAsObj = new Document();
-					indexAsObj.put(ANALYZER, indexAs.getAnalyzer().name());
+					indexAsObj.put(FIELD_TYPE, indexAs.getFieldType().name());
+					Document analyzerSettingsDoc = new Document();
+					Lumongo.AnalyzerSettings analyzerSetting = indexAs.getAnalyzerSetting();
+					analyzerSettingsDoc.put(TOKENIZER, analyzerSetting.getTokenizer().name());
+					analyzerSettingsDoc.put(SIMILARITY, analyzerSetting.getSimilarity().name());
+					List<String> filtersList = new ArrayList<>();
+					for (Lumongo.AnalyzerSettings.Filter filter : analyzerSetting.getFilterList()) {
+						filtersList.add(filter.name());
+					}
+					analyzerSettingsDoc.put(FILTERS, filtersList);
+
+					indexAsObj.put(ANALYZER_SETTINGS, analyzerSettingsDoc);
 					indexAsObj.put(INDEXED_FIELD_NAME, indexAs.getIndexFieldName());
 					indexAsObjList.add(indexAsObj);
 				}

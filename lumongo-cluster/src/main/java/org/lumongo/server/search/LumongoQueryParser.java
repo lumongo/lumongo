@@ -1,7 +1,6 @@
 package org.lumongo.server.search;
 
 import com.google.common.primitives.Doubles;
-import com.google.common.primitives.Floats;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.lsh.LSH;
 import org.apache.lucene.document.DoublePoint;
@@ -51,8 +50,8 @@ public class LumongoQueryParser extends QueryParser {
 	@Override
 	protected Query getRangeQuery(String field, String start, String end, boolean startInclusive, boolean endInclusive) throws ParseException {
 
-		Lumongo.LMAnalyzer analyzer = indexConfig.getAnalyzer(field);
-		if (IndexConfig.isNumericOrDateAnalyzer(analyzer)) {
+		Lumongo.LMAnalyzer analyzer = indexConfig.getFieldType(field);
+		if (IndexConfig.isNumericOrDateFieldType(analyzer)) {
 			return getNumericOrDateRange(field, start, end, startInclusive, endInclusive);
 		}
 
@@ -62,8 +61,8 @@ public class LumongoQueryParser extends QueryParser {
 
 	private Query getNumericOrDateRange(final String fieldName, final String start, final String end, final boolean startInclusive,
 			final boolean endInclusive) {
-		Lumongo.LMAnalyzer analyzer = indexConfig.getAnalyzer(fieldName);
-		if (IndexConfig.isNumericIntAnalyzer(analyzer)) {
+		Lumongo.LMAnalyzer analyzer = indexConfig.getFieldType(fieldName);
+		if (IndexConfig.isNumericIntFieldType(analyzer)) {
 			int min = start == null ? Integer.MIN_VALUE : Integer.parseInt(start);
 			int max = end == null ? Integer.MAX_VALUE : Integer.parseInt(end);
 			if (!startInclusive) {
@@ -74,7 +73,7 @@ public class LumongoQueryParser extends QueryParser {
 			}
 			return IntPoint.newRangeQuery(fieldName, min, max);
 		}
-		else if (IndexConfig.isNumericLongAnalyzer(analyzer)) {
+		else if (IndexConfig.isNumericLongFieldType(analyzer)) {
 			long min = start == null ? Long.MIN_VALUE : Long.parseLong(start);
 			long max = end == null ? Long.MAX_VALUE : Long.parseLong(end);
 			if (!startInclusive) {
@@ -85,7 +84,7 @@ public class LumongoQueryParser extends QueryParser {
 			}
 			return LongPoint.newRangeQuery(fieldName, min, max);
 		}
-		else if (IndexConfig.isNumericFloatAnalyzer(analyzer)) {
+		else if (IndexConfig.isNumericFloatFieldType(analyzer)) {
 			float min = start == null ? Float.NEGATIVE_INFINITY : Float.parseFloat(start);
 			float max = end == null ? Float.POSITIVE_INFINITY : Float.parseFloat(end);
 			if (!startInclusive) {
@@ -96,7 +95,7 @@ public class LumongoQueryParser extends QueryParser {
 			}
 			return FloatPoint.newRangeQuery(fieldName, min, max);
 		}
-		else if (IndexConfig.isNumericDoubleAnalyzer(analyzer)) {
+		else if (IndexConfig.isNumericDoubleFieldType(analyzer)) {
 			double min = start == null ? Double.NEGATIVE_INFINITY : Double.parseDouble(start);
 			double max = end == null ? Double.POSITIVE_INFINITY : Double.parseDouble(end);
 			if (!startInclusive) {
@@ -107,7 +106,7 @@ public class LumongoQueryParser extends QueryParser {
 			}
 			return DoublePoint.newRangeQuery(fieldName, min, max);
 		}
-		else if (IndexConfig.isDateAnalyzer(analyzer)) {
+		else if (IndexConfig.isDateFieldType(analyzer)) {
 			long min = Long.MIN_VALUE;
 			long max = Long.MAX_VALUE;
 			if (start != null) {
@@ -143,8 +142,8 @@ public class LumongoQueryParser extends QueryParser {
 		String field = term.field();
 		String text = term.text();
 
-		Lumongo.LMAnalyzer analyzer = indexConfig.getAnalyzer(field);
-		if (IndexConfig.isNumericOrDateAnalyzer(analyzer)) {
+		Lumongo.LMAnalyzer analyzer = indexConfig.getFieldType(field);
+		if (IndexConfig.isNumericOrDateFieldType(analyzer)) {
 			if (Doubles.tryParse(text) != null) {
 				return getNumericOrDateRange(field, text, text, true, true);
 			}
@@ -163,7 +162,7 @@ public class LumongoQueryParser extends QueryParser {
 
 	@Override
 	protected Query getFieldQuery(String field, String queryText, int slop) throws ParseException {
-		Lumongo.LMAnalyzer lmAnalyzer = indexConfig.getAnalyzer(field);
+		Lumongo.LMAnalyzer lmAnalyzer = indexConfig.getFieldType(field);
 		if (Lumongo.LMAnalyzer.LSH.equals(lmAnalyzer)) {
 			try {
 				float sim = slop / 100.0f;

@@ -1,4 +1,4 @@
-package org.apache.lucene.analysis.lsh;
+package org.lumongo.similarity;
 
 import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.search.similarities.TFIDFSimilarity;
@@ -21,7 +21,7 @@ import org.apache.lucene.util.BytesRef;
  * limitations under the License.
  */
 
-public class LSHSimilarity extends TFIDFSimilarity {
+public class ConstantSimilarity extends TFIDFSimilarity {
 
 	@Override
 	public float coord(int overlap, int maxOverlap) {
