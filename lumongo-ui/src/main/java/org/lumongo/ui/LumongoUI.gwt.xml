@@ -9,6 +9,9 @@
 
     <entry-point class='org.lumongo.ui.client.LumongoUI'/>
 
+    <set-configuration-property name="CssResource.enableGss" value="true" />
+
+
     <source path='client'/>
     <source path='shared'/>
 
