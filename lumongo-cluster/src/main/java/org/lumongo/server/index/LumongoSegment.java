@@ -294,7 +294,7 @@ public class LumongoSegment {
 					boolean reverse = Direction.DESCENDING.equals(fs.getDirection());
 
 					String sortField = fs.getSortField();
-					Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
+					Lumongo.SortAs.SortType sortType = indexConfig.getFieldTypeForSortField(sortField);
 
 					if (IndexConfig.isNumericOrDateSortType(sortType)) {
 						SortField.Type type;
@@ -553,7 +553,7 @@ public class LumongoSegment {
 				FieldSort fieldSort = sortRequest.getFieldSort(c);
 				String sortField = fieldSort.getSortField();
 
-				Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
+				Lumongo.SortAs.SortType sortType = indexConfig.getFieldTypeForSortField(sortField);
 
 				SortValue.Builder sortValueBuilder = SortValue.newBuilder().setExists(true);
 				if (IndexConfig.isNumericOrDateSortType(sortType)) {
@@ -710,6 +710,9 @@ public class LumongoSegment {
 
 			if (fc != null) {
 
+
+				FieldConfig.FieldType fieldType = fc.getFieldType();
+
 				Object o = getValueFromDocument(document, storedFieldName);
 
 				if (o != null) {
@@ -720,26 +723,26 @@ public class LumongoSegment {
 					for (IndexAs indexAs : fc.getIndexAsList()) {
 
 						String indexedFieldName = indexAs.getIndexFieldName();
-						IndexAs.FieldType fieldType = indexAs.getFieldType();
-						if (IndexAs.FieldType.NUMERIC_INT.equals(fieldType)) {
+
+						if (FieldConfig.FieldType.NUMERIC_INT.equals(fieldType)) {
 							IntFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (IndexAs.FieldType.NUMERIC_LONG.equals(fieldType)) {
+						else if (FieldConfig.FieldType.NUMERIC_LONG.equals(fieldType)) {
 							LongFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (IndexAs.FieldType.NUMERIC_FLOAT.equals(fieldType)) {
+						else if (FieldConfig.FieldType.NUMERIC_FLOAT.equals(fieldType)) {
 							FloatFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (IndexAs.FieldType.NUMERIC_DOUBLE.equals(fieldType)) {
+						else if (FieldConfig.FieldType.NUMERIC_DOUBLE.equals(fieldType)) {
 							DoubleFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (IndexAs.FieldType.DATE.equals(fieldType)) {
+						else if (FieldConfig.FieldType.DATE.equals(fieldType)) {
 							DateFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (IndexAs.FieldType.BOOL.equals(fieldType)) {
+						else if (FieldConfig.FieldType.BOOL.equals(fieldType)) {
 							BooleanFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
-						else if (IndexAs.FieldType.STRING.equals(fieldType)) {
+						else if (FieldConfig.FieldType.STRING.equals(fieldType)) {
 							StringFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
 						}
 						else {
@@ -779,74 +782,88 @@ public class LumongoSegment {
 
 	private void handleSortForStoredField(Document d, String storedFieldName, FieldConfig fc, Object o) {
 
+		FieldConfig.FieldType fieldType = fc.getFieldType();
 		for (SortAs sortAs : fc.getSortAsList()) {
 			String sortFieldName = sortAs.getSortFieldName();
 
-			if (IndexConfig.isNumericOrDateSortType(sortAs.getSortType())) {
+			if (IndexConfig.isNumericOrDateFieldType(fieldType)) {
 				LumongoUtil.handleLists(o, obj -> {
-					if (obj instanceof Number) {
 
-						Number number = (Number) obj;
-						SortedNumericDocValuesField docValue = null;
-						if (SortAs.SortType.NUMERIC_INT.equals(sortAs.getSortType())) {
-							docValue = new SortedNumericDocValuesField(sortFieldName, number.intValue());
-						}
-						else if (SortAs.SortType.NUMERIC_LONG.equals(sortAs.getSortType())) {
-							docValue = new SortedNumericDocValuesField(sortFieldName, number.longValue());
-						}
-						else if (SortAs.SortType.NUMERIC_FLOAT.equals(sortAs.getSortType())) {
-							docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.floatToSortableInt(number.floatValue()));
-						}
-						else if (SortAs.SortType.NUMERIC_DOUBLE.equals(sortAs.getSortType())) {
-							docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.doubleToSortableLong(number.doubleValue()));
+					if (FieldConfig.FieldType.DATE.equals(fieldType)) {
+						if (obj instanceof Date) {
+
+							Date date = (Date) obj;
+							SortedNumericDocValuesField docValue = new SortedNumericDocValuesField(sortFieldName, date.getTime());
+							d.add(docValue);
 						}
 						else {
 							throw new RuntimeException(
-									"Not handled numeric sort type <" + sortAs.getSortType() + "> for document field <" + storedFieldName + "> / sort field <"
-											+ sortFieldName + ">");
+									"Expecting date for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">, found <" + o.getClass()
+											+ ">");
 						}
-
-						d.add(docValue);
 					}
-					else if (obj instanceof Date) {
-						Date date = (Date) obj;
-						SortedNumericDocValuesField docValue = new SortedNumericDocValuesField(sortFieldName, date.getTime());
-						d.add(docValue);
+					else {
+						if (obj instanceof Number) {
+
+							Number number = (Number) obj;
+							SortedNumericDocValuesField docValue = null;
+							if (FieldConfig.FieldType.NUMERIC_INT.equals(fieldType)) {
+								docValue = new SortedNumericDocValuesField(sortFieldName, number.intValue());
+							}
+							else if (FieldConfig.FieldType.NUMERIC_LONG.equals(fieldType)) {
+								docValue = new SortedNumericDocValuesField(sortFieldName, number.longValue());
+							}
+							else if (FieldConfig.FieldType.NUMERIC_FLOAT.equals(fieldType)) {
+								docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.floatToSortableInt(number.floatValue()));
+							}
+							else if (FieldConfig.FieldType.NUMERIC_DOUBLE.equals(fieldType)) {
+								docValue = new SortedNumericDocValuesField(sortFieldName, NumericUtils.doubleToSortableLong(number.doubleValue()));
+							}
+							else {
+								throw new RuntimeException(
+										"Not handled numeric field type <" + fieldType + "> for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">");
+							}
+
+							d.add(docValue);
+						}
+						else {
+							throw new RuntimeException(
+									"Expecting number for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">, found <" + o.getClass()
+											+ ">");
+						}
+					}
+				});
+			}
+			else if (FieldConfig.FieldType.STRING.equals(fieldType)) {
+				LumongoUtil.handleLists(o, obj -> {
+					String text = o.toString();
+
+					SortAs.StringHandling stringHandling = sortAs.getStringHandling();
+					if (SortAs.StringHandling.STANDARD.equals(stringHandling)) {
+						//no op
+					}
+					else if (SortAs.StringHandling.LOWERCASE.equals(stringHandling)) {
+						text = text.toLowerCase();
+					}
+					else if (SortAs.StringHandling.FOLDING.equals(stringHandling)) {
+						text = getFoldedString(text);
+					}
+					else if (SortAs.StringHandling.LOWERCASE_FOLDING.equals(stringHandling)) {
+						text = getFoldedString(text).toLowerCase();
 					}
 					else {
 						throw new RuntimeException(
-								"Expecting number for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">, found <" + o.getClass()
+								"Not handled string handling <" + stringHandling+ "> for document field <" + storedFieldName + "> / sort field <" + sortFieldName
 										+ ">");
 					}
-				});
-			}
-			else if (SortAs.SortType.STRING.equals(sortAs.getSortType())) {
-				LumongoUtil.handleLists(o, obj -> {
-					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(o.toString()));
-					d.add(docValue);
-				});
-			}
-			else if (SortAs.SortType.STRING_LC.equals(sortAs.getSortType())) {
-				LumongoUtil.handleLists(o, obj -> {
-					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(o.toString().toLowerCase()));
-					d.add(docValue);
-				});
-			}
-			else if (SortAs.SortType.STRING_FOLDING.equals(sortAs.getSortType())) {
-				LumongoUtil.handleLists(o, obj -> {
-					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(getFoldedString(o.toString())));
-					d.add(docValue);
-				});
-			}
-			else if (SortAs.SortType.STRING_LC_FOLDING.equals(sortAs.getSortType())) {
-				LumongoUtil.handleLists(o, obj -> {
-					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(getFoldedString(o.toString().toLowerCase())));
+
+					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(text));
 					d.add(docValue);
 				});
 			}
 			else {
 				throw new RuntimeException(
-						"Not handled sort type <" + sortAs.getSortType() + "> for document field <" + storedFieldName + "> / sort field <" + sortFieldName
+						"Not handled field type <" + fieldType+ "> for document field <" + storedFieldName + "> / sort field <" + sortFieldName
 								+ ">");
 			}
 
@@ -859,27 +876,24 @@ public class LumongoSegment {
 			String facetName = fa.getFacetName();
 			String facetFieldName = facetsConfig.getDimConfig(facetName).indexFieldName;
 
-			if (LMFacetType.STANDARD.equals(fa.getFacetType())) {
-				LumongoUtil.handleLists(o, obj -> {
-					String string = obj.toString();
-					addFacet(doc, facetFieldName, string);
-				});
-			}
-			else if (IndexConfig.isDateFacetType(fa.getFacetType())) {
+
+
+			if (FieldConfig.FieldType.DATE.equals(fc.getFieldType())) {
+				FacetAs.DateHandling dateHandling = fa.getDateHandling();
 				LumongoUtil.handleLists(o, obj -> {
 					if (obj instanceof Date) {
 						DateTime dt = new DateTime(obj).withZone(DateTimeZone.UTC);
 
-						if (LMFacetType.DATE_YYYYMMDD.equals(fa.getFacetType())) {
+						if (FacetAs.DateHandling.DATE_YYYYMMDD.equals(dateHandling)) {
 							String date = FORMATTER_YYYY_MM_DD.print(dt);
 							addFacet(doc, facetFieldName, date);
 						}
-						else if (LMFacetType.DATE_YYYY_MM_DD.equals(fa.getFacetType())) {
+						else if (FacetAs.DateHandling.DATE_YYYY_MM_DD.equals(dateHandling)) {
 							String date = String.format("%04d-%02d-%02d", dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth());
 							addFacet(doc, facetFieldName, date);
 						}
 						else {
-							throw new RuntimeException("Not handled date facet type <" + fa.getFacetType() + "> for facet <" + fa.getFacetName() + ">");
+							throw new RuntimeException("Not handled date handling <" + dateHandling + "> for facet <" + fa.getFacetName() + ">");
 						}
 
 
@@ -891,10 +905,12 @@ public class LumongoSegment {
 				});
 			}
 			else {
-				throw new Exception(
-						"Not handled facet type <" + fa.getFacetType() + "> for document field <" + fc.getStoredFieldName() + "> / facet <" + fa.getFacetName()
-								+ ">");
+				LumongoUtil.handleLists(o, obj -> {
+					String string = obj.toString();
+					addFacet(doc, facetFieldName, string);
+				});
 			}
+
 
 		}
 	}

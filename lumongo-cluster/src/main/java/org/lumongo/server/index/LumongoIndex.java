@@ -183,7 +183,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 	}
 
 	public SortAs.SortType getSortType(String fieldName) {
-		return indexConfig.getSortType(fieldName);
+		return indexConfig.getFieldTypeForSortField(fieldName);
 	}
 
 	private void doCommit(boolean force) {
@@ -833,7 +833,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 							for (FieldSort fs : sortRequest.getFieldSortList()) {
 
 								String sortField = fs.getSortField();
-								Lumongo.SortAs.SortType sortType = indexConfig.getSortType(sortField);
+								Lumongo.SortAs.SortType sortType = indexConfig.getFieldTypeForSortField(sortField);
 
 								SortValue sortValue = sortValues.getSortValue(sortTermsIndex);
 

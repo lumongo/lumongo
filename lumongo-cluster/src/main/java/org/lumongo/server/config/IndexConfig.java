@@ -63,7 +63,7 @@ public class IndexConfig {
 	private double segmentTolerance;
 	private ConcurrentHashMap<String, FieldConfig> fieldConfigMap;
 	private ConcurrentHashMap<String, Lumongo.IndexAs> indexAsMap;
-	private ConcurrentHashMap<String, Lumongo.SortAs> sortAsMap;
+	private ConcurrentHashMap<String, FieldConfig.FieldType> sortAsMap;
 
 	protected IndexConfig() {
 
@@ -78,57 +78,27 @@ public class IndexConfig {
 		configure(request.getIndexSettings());
 	}
 
-	public static boolean isDateFacetType(LMFacetType facetType) {
-		return LMFacetType.DATE_YYYY_MM_DD.equals(facetType) || LMFacetType.DATE_YYYYMMDD.equals(facetType);
+	public static boolean isNumericIntFieldType(FieldConfig.FieldType fieldType) {
+		return FieldConfig.FieldType.NUMERIC_INT.equals(fieldType);
 	}
 
-	public static boolean isNumericOrDateSortType(Lumongo.SortAs.SortType sortType) {
-		return sortType != null && (Lumongo.SortAs.SortType.NUMERIC_INT.equals(sortType) || Lumongo.SortAs.SortType.NUMERIC_LONG.equals(sortType)
-				|| Lumongo.SortAs.SortType.NUMERIC_FLOAT.equals(sortType) || Lumongo.SortAs.SortType.NUMERIC_DOUBLE.equals(sortType)
-				|| Lumongo.SortAs.SortType.DATE.equals(sortType));
+	public static boolean isNumericLongFieldType(FieldConfig.FieldType fieldType) {
+		return FieldConfig.FieldType.NUMERIC_LONG.equals(fieldType);
 	}
 
-	public static boolean isNumericIntSortType(Lumongo.SortAs.SortType sortType) {
-		return Lumongo.SortAs.SortType.NUMERIC_INT.equals(sortType);
+	public static boolean isNumericFloatFieldType(FieldConfig.FieldType fieldType) {
+		return FieldConfig.FieldType.NUMERIC_FLOAT.equals(fieldType);
 	}
 
-	public static boolean isNumericLongSortType(Lumongo.SortAs.SortType sortType) {
-		return Lumongo.SortAs.SortType.NUMERIC_LONG.equals(sortType);
+	public static boolean isNumericDoubleFieldType(FieldConfig.FieldType fieldType) {
+		return FieldConfig.FieldType.NUMERIC_DOUBLE.equals(fieldType);
 	}
 
-	public static boolean isNumericFloatSortType(Lumongo.SortAs.SortType sortType) {
-		return Lumongo.SortAs.SortType.NUMERIC_FLOAT.equals(sortType);
+	public static boolean isDateFieldType(FieldConfig.FieldType fieldType) {
+		return FieldConfig.FieldType.DATE.equals(fieldType);
 	}
 
-	public static boolean isNumericDoubleSortType(Lumongo.SortAs.SortType sortType) {
-		return Lumongo.SortAs.SortType.NUMERIC_DOUBLE.equals(sortType);
-	}
-
-	public static boolean isNumericDateSortType(Lumongo.SortAs.SortType sortType) {
-		return Lumongo.SortAs.SortType.DATE.equals(sortType);
-	}
-
-	public static boolean isNumericIntFieldType(IndexAs.FieldType fieldType) {
-		return IndexAs.FieldType.NUMERIC_INT.equals(fieldType);
-	}
-
-	public static boolean isNumericLongFieldType(IndexAs.FieldType fieldType) {
-		return IndexAs.FieldType.NUMERIC_LONG.equals(fieldType);
-	}
-
-	public static boolean isNumericFloatFieldType(IndexAs.FieldType fieldType) {
-		return IndexAs.FieldType.NUMERIC_FLOAT.equals(fieldType);
-	}
-
-	public static boolean isNumericDoubleFieldType(IndexAs.FieldType fieldType) {
-		return IndexAs.FieldType.NUMERIC_DOUBLE.equals(fieldType);
-	}
-
-	public static boolean isDateFieldType(IndexAs.FieldType fieldType) {
-		return IndexAs.FieldType.DATE.equals(fieldType);
-	}
-
-	public static boolean isNumericOrDateFieldType(IndexAs.FieldType fieldType) {
+	public static boolean isNumericOrDateFieldType(FieldConfig.FieldType fieldType) {
 		return isNumericIntFieldType(fieldType) || isNumericLongFieldType(fieldType) || isNumericFloatFieldType(fieldType) || isNumericDoubleFieldType(
 				fieldType) || isDateFieldType(fieldType);
 	}
@@ -263,18 +233,18 @@ public class IndexConfig {
 		return indexAsMap;
 	}
 
-	private ConcurrentHashMap<String, Lumongo.SortAs> buildSortConfig() {
-		ConcurrentHashMap<String, Lumongo.SortAs> sortAsMap = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<String, FieldConfig.FieldType> buildSortConfig() {
+		ConcurrentHashMap<String, FieldConfig.FieldType> sortAsMap = new ConcurrentHashMap<>();
 		for (String storedFieldName : fieldConfigMap.keySet()) {
 			FieldConfig fc = fieldConfigMap.get(storedFieldName);
 			for (Lumongo.SortAs sortAs : fc.getSortAsList()) {
-				sortAsMap.put(sortAs.getSortFieldName(), sortAs);
+				sortAsMap.put(sortAs.getSortFieldName(), fc.getFieldType());
 			}
 		}
 		return sortAsMap;
 	}
 
-	public IndexAs.FieldType getFieldType(String fieldName) {
+	public FieldConfig.FieldType getFieldType(String fieldName) {
 		IndexAs indexAs = indexAsMap.get(fieldName);
 		if (indexAs != null) {
 			return indexAs.getFieldType();
@@ -290,8 +260,8 @@ public class IndexConfig {
 		return null;
 	}
 
-	public Lumongo.SortAs.SortType getSortType(String sortField) {
-		Lumongo.SortAs sortAs = sortAsMap.get(sortField);
+	public FieldConfig.FieldType getFieldTypeForSortField(String sortField) {
+		FieldConfig.FieldType sortAs = sortAsMap.get(sortField);
 		if (sortAs != null) {
 			return sortAs.getSortType();
 		}
@@ -381,12 +351,13 @@ public class IndexConfig {
 		List<Document> fieldConfigs = new ArrayList<>();
 		for (FieldConfig fc : fieldConfigMap.values()) {
 			Document fieldConfig = new Document();
+			fieldConfig.put(FIELD_TYPE, fc.getFieldType().name());
 			fieldConfig.put(STORED_FIELD_NAME, fc.getStoredFieldName());
 			{
 				List<Document> indexAsObjList = new ArrayList<>();
 				for (IndexAs indexAs : fc.getIndexAsList()) {
 					Document indexAsObj = new Document();
-					indexAsObj.put(FIELD_TYPE, indexAs.getFieldType().name());
+
 					Document analyzerSettingsDoc = new Document();
 					Lumongo.AnalyzerSettings analyzerSetting = indexAs.getAnalyzerSetting();
 					analyzerSettingsDoc.put(TOKENIZER, analyzerSetting.getTokenizer().name());
