@@ -13,8 +13,6 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.util.BytesRef;
-import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
@@ -32,14 +30,12 @@ import org.lumongo.server.search.QueryCombiner;
 import org.lumongo.server.search.QueryWithFilters;
 import org.lumongo.util.ClusterHelper;
 import org.lumongo.util.LumongoThreadFactory;
-import org.lumongo.util.QueryHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,7 +48,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -1053,7 +1048,6 @@ public class LumongoIndexManager {
 			GetTermsResponse.Builder responseBuilder = GetTermsResponse.newBuilder();
 
 			Term.Builder value = null;
-
 
 			int count = 0;
 

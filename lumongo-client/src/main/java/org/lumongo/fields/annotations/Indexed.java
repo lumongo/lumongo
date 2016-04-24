@@ -1,7 +1,5 @@
 package org.lumongo.fields.annotations;
 
-import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -25,7 +23,7 @@ public @interface Indexed {
 	 * Sets the analyzer to use to index the field
 	 *
 	 */
-	LMAnalyzer analyzer();
-	
+	String analyzerName() default "";
+
 	String fieldName() default "";
 }

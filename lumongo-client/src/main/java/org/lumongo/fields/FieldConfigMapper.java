@@ -1,6 +1,7 @@
 package org.lumongo.fields;
 
 import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Embedded;
@@ -26,7 +27,7 @@ public class FieldConfigMapper<T> {
 
 	private final Class<T> clazz;
 
-	private HashMap<String, Lumongo.FieldConfig> fieldConfigMap;
+	private HashMap<String, FieldConfig> fieldConfigMap;
 
 	private List<FieldConfigMapper<?>> embeddedFieldConfigMappers;
 
@@ -77,7 +78,7 @@ public class FieldConfigMapper<T> {
 			embeddedFieldConfigMappers.add(fieldConfigMapper);
 		}
 		else {
-			Lumongo.FieldConfig.Builder fieldConfigBuilder = Lumongo.FieldConfig.newBuilder();
+			FieldConfig.Builder fieldConfigBuilder = FieldConfig.newBuilder();
 			fieldConfigBuilder.setStoredFieldName(fieldName);
 
 			if (f.isAnnotationPresent(IndexedFields.class)) {
@@ -119,42 +120,50 @@ public class FieldConfigMapper<T> {
 
 	}
 
-	private void addIndexedField(Indexed in, String fieldName, Lumongo.FieldConfig.Builder fieldConfigBuilder) {
-		Lumongo.LMAnalyzer analyzer = in.analyzer();
+	private void addIndexedField(Indexed in, String fieldName, FieldConfig.Builder fieldConfigBuilder) {
+		String analyzerName = in.analyzerName();
 
 		String indexedFieldName = fieldName;
 		if (!in.fieldName().isEmpty()) {
 			indexedFieldName = in.fieldName();
 		}
 
-		fieldConfigBuilder.addIndexAs(Lumongo.IndexAs.newBuilder().setIndexFieldName(indexedFieldName).setAnalyzer(analyzer));
+		Lumongo.IndexAs.Builder builder = Lumongo.IndexAs.newBuilder().setIndexFieldName(indexedFieldName);
+		if (!analyzerName.isEmpty()) {
+			builder.setAnalyzerName(analyzerName);
+		}
+		fieldConfigBuilder.addIndexAs(builder);
 	}
 
-	private void addFacetedField(String fieldName, Lumongo.FieldConfig.Builder fieldConfigBuilder, Faceted faceted) {
+	private void addFacetedField(String fieldName, FieldConfig.Builder fieldConfigBuilder, Faceted faceted) {
 		String facetName = fieldName;
 		if (!faceted.name().isEmpty()) {
 			facetName = faceted.name();
 		}
 
-		Lumongo.FacetAs.LMFacetType facetType = faceted.type();
+		Lumongo.FacetAs.DateHandling dateHandling = faceted.dateHandling();
 
-		fieldConfigBuilder.addFacetAs(Lumongo.FacetAs.newBuilder().setFacetName(facetName).setFacetType(facetType));
+		Lumongo.FacetAs.Builder builder = Lumongo.FacetAs.newBuilder().setFacetName(facetName);
+		builder.setDateHandling(dateHandling);
+		fieldConfigBuilder.addFacetAs(builder);
 	}
 
-	private void addSortedField(String fieldName, Lumongo.FieldConfig.Builder fieldConfigBuilder, Sorted sorted) {
+	private void addSortedField(String fieldName, FieldConfig.Builder fieldConfigBuilder, Sorted sorted) {
 		String sortFieldName = fieldName;
 		if (!sorted.fieldName().isEmpty()) {
 			sortFieldName = sorted.fieldName();
 		}
-		fieldConfigBuilder.addSortAs(Lumongo.SortAs.newBuilder().setSortType(sorted.type()).setSortFieldName(sortFieldName));
+		Lumongo.SortAs.Builder builder = Lumongo.SortAs.newBuilder().setSortFieldName(sortFieldName);
+		builder.setStringHandling(sorted.stringHandling());
+		fieldConfigBuilder.addSortAs(builder);
 	}
 
 
 
-	public List<Lumongo.FieldConfig> getFieldConfigs() {
-		List<Lumongo.FieldConfig> configs = new ArrayList<>();
+	public List<FieldConfig> getFieldConfigs() {
+		List<FieldConfig> configs = new ArrayList<>();
 		for (String fieldName : fieldConfigMap.keySet()) {
-			Lumongo.FieldConfig fieldConfig = fieldConfigMap.get(fieldName);
+			FieldConfig fieldConfig = fieldConfigMap.get(fieldName);
 			configs.add(fieldConfig);
 		}
 		for (FieldConfigMapper fcm : embeddedFieldConfigMappers) {

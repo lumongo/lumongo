@@ -1,7 +1,6 @@
 package org.lumongo.fields.annotations;
 
-import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
+import org.lumongo.cluster.message.Lumongo.SortAs.StringHandling;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -17,8 +16,8 @@ import java.lang.annotation.Target;
 @Target({ ElementType.FIELD })
 @Repeatable(SortedFields.class)
 public @interface Sorted {
-	
-	Lumongo.SortAs.SortType type();
-	
+
+	StringHandling stringHandling() default StringHandling.STANDARD;
+
 	String fieldName() default "";
 }

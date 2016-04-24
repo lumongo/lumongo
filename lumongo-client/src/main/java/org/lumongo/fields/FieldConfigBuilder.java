@@ -1,95 +1,89 @@
 package org.lumongo.fields;
 
-import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.Lumongo.FacetAs;
+import org.lumongo.cluster.message.Lumongo.FieldConfig;
+import org.lumongo.cluster.message.Lumongo.IndexAs;
+import org.lumongo.cluster.message.Lumongo.SortAs;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class FieldConfigBuilder {
+	private final FieldConfig.FieldType fieldType;
 	private String storedFieldName;
-	private List<Lumongo.IndexAs> indexAsList;
-	private List<Lumongo.FacetAs> facetAsList;
-	private List<Lumongo.SortAs> sortAsList;
+	private List<IndexAs> indexAsList;
+	private List<FacetAs> facetAsList;
+	private List<SortAs> sortAsList;
 
-	public FieldConfigBuilder(String storedFieldName) {
+	public FieldConfigBuilder(String storedFieldName, FieldConfig.FieldType fieldType) {
 		this.storedFieldName = storedFieldName;
+		this.fieldType = fieldType;
 		this.indexAsList = new ArrayList<>();
 		this.facetAsList = new ArrayList<>();
 		this.sortAsList = new ArrayList<>();
 	}
 
-	public static FieldConfigBuilder create(String storedFieldName) {
-		return new FieldConfigBuilder(storedFieldName);
+	public static FieldConfigBuilder create(String storedFieldName, FieldConfig.FieldType fieldType) {
+		return new FieldConfigBuilder(storedFieldName, fieldType);
 	}
 
-	public FieldConfigBuilder indexAs(Lumongo.IndexAs.FieldType fieldType) {
-		return indexAs(fieldType, storedFieldName);
+	public FieldConfigBuilder indexAs(String analyzerName) {
+		return indexAs(analyzerName, storedFieldName);
 	}
 
-	public FieldConfigBuilder indexAs(Lumongo.IndexAs.FieldType fieldType, String indexedFieldName) {
-		return indexAs(fieldType, indexedFieldName, null);
-	}
+	public FieldConfigBuilder indexAs(String analyzerName, String indexedFieldName) {
 
-	public FieldConfigBuilder indexAs(Lumongo.IndexAs.FieldType fieldType, String indexedFieldName, Lumongo.AnalyzerSettings.Tokenizer tokenizer,
-			List<Lumongo.AnalyzerSettings.Filter> filters, Lumongo.AnalyzerSettings.Similarity similarity) {
-		Lumongo.AnalyzerSettings.Builder analyzerSettingsBuilder = Lumongo.AnalyzerSettings.newBuilder();
-		if (tokenizer != null) {
-			analyzerSettingsBuilder.setTokenizer(tokenizer);
-		}
-		if (filters != null) {
-			analyzerSettingsBuilder.addAllFilter(filters);
-		}
-		if (similarity != null) {
-			analyzerSettingsBuilder.setSimilarity(similarity);
-		}
-
-		return indexAs(fieldType,indexedFieldName,analyzerSettingsBuilder.build());
-	}
-
-	public FieldConfigBuilder indexAs(Lumongo.IndexAs.FieldType fieldType, String indexedFieldName, Lumongo.AnalyzerSettings analyzerSettings) {
-		Lumongo.IndexAs.Builder builder = Lumongo.IndexAs.newBuilder();
+		IndexAs.Builder builder = IndexAs.newBuilder();
 		builder.setIndexFieldName(indexedFieldName);
-		builder.setFieldType(fieldType);
-		if (analyzerSettings != null) {
-			builder.setAnalyzerSetting(analyzerSettings);
+		if (analyzerName != null) {
+			builder.setAnalyzerName(analyzerName);
 		}
 		return indexAs(builder.build());
 	}
 
-	public FieldConfigBuilder indexAs(Lumongo.IndexAs indexAs) {
+	public FieldConfigBuilder indexAs(IndexAs indexAs) {
 		this.indexAsList.add(indexAs);
 		return this;
 	}
 
-	public FieldConfigBuilder facetAs(Lumongo.FacetAs.LMFacetType facetType) {
-		return facetAs(facetType, storedFieldName);
+	public FieldConfigBuilder facetAs(FacetAs.DateHandling dateHandling) {
+		return facetAs(dateHandling, storedFieldName);
 	}
 
-	public FieldConfigBuilder facetAs(Lumongo.FacetAs.LMFacetType facetType, String facetName) {
-		return facetAs(Lumongo.FacetAs.newBuilder().setFacetName(facetName).setFacetType(facetType).build());
+	public FieldConfigBuilder facetAs(FacetAs.DateHandling dateHandling, String facetName) {
+		FacetAs.Builder builder = FacetAs.newBuilder().setFacetName(facetName);
+		if (dateHandling != null) {
+			builder.setDateHandling(dateHandling);
+		}
+		return facetAs(builder.build());
 	}
 
-	public FieldConfigBuilder facetAs(Lumongo.FacetAs facetAs) {
+	public FieldConfigBuilder facetAs(FacetAs facetAs) {
 		this.facetAsList.add(facetAs);
 		return this;
 	}
 
-	public FieldConfigBuilder sortAs(Lumongo.SortAs.SortType sortType) {
-		return sortAs(sortType, storedFieldName);
+	public FieldConfigBuilder sortAs(SortAs.StringHandling stringHandling) {
+		return sortAs(stringHandling, storedFieldName);
 	}
 
-	public FieldConfigBuilder sortAs(Lumongo.SortAs.SortType sortType, String sortFieldName) {
-		return sortAs(Lumongo.SortAs.newBuilder().setSortFieldName(sortFieldName).setSortType(sortType).build());
+	public FieldConfigBuilder sortAs(SortAs.StringHandling stringHandling, String sortFieldName) {
+		SortAs.Builder builder = SortAs.newBuilder().setSortFieldName(sortFieldName);
+		if (stringHandling != null) {
+			builder.setStringHandling(stringHandling);
+		}
+		return sortAs(builder.build());
 	}
 
-	public FieldConfigBuilder sortAs(Lumongo.SortAs sortAs) {
+	public FieldConfigBuilder sortAs(SortAs sortAs) {
 		this.sortAsList.add(sortAs);
 		return this;
 	}
 
-	public Lumongo.FieldConfig build() {
-		Lumongo.FieldConfig.Builder fcBuilder = Lumongo.FieldConfig.newBuilder();
+	public FieldConfig build() {
+		FieldConfig.Builder fcBuilder = FieldConfig.newBuilder();
 		fcBuilder.setStoredFieldName(storedFieldName);
+		fcBuilder.setFieldType(fieldType);
 		fcBuilder.addAllIndexAs(indexAsList);
 		fcBuilder.addAllFacetAs(facetAsList);
 		fcBuilder.addAllSortAs(sortAsList);

@@ -5,7 +5,6 @@ import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.apache.log4j.Logger;
-import org.lumongo.similarity.ConstantSimilarity;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
@@ -49,9 +48,9 @@ import org.joda.time.format.DateTimeFormatter;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
-import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.server.config.IndexConfig;
+import org.lumongo.server.config.IndexConfigUtil;
 import org.lumongo.server.index.field.BooleanFieldIndexer;
 import org.lumongo.server.index.field.DateFieldIndexer;
 import org.lumongo.server.index.field.DoubleFieldIndexer;
@@ -64,6 +63,7 @@ import org.lumongo.server.search.QueryCacheKey;
 import org.lumongo.server.search.QueryResultCache;
 import org.lumongo.server.search.QueryWithFilters;
 import org.lumongo.server.search.facet.LumongoSortedSetDocValuesFacetCounts;
+import org.lumongo.similarity.ConstantSimilarity;
 import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.util.LumongoUtil;
 
@@ -186,7 +186,7 @@ public class LumongoSegment {
 			synchronized (this) {
 				if (!indexWriter.isOpen()) {
 					this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
-					this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommittedDeletes(), false);
+					this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getIndexSettings().getApplyUncommittedDeletes(), false);
 				}
 			}
 		}
@@ -198,13 +198,13 @@ public class LumongoSegment {
 			indexWriter.close();
 		}
 		this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
-		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getApplyUncommittedDeletes(), false);
+		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getIndexSettings().getApplyUncommittedDeletes(), false);
 	}
 
 	private void setupCaches(IndexConfig indexConfig) {
-		segmentQueryCacheMaxAmount = indexConfig.getSegmentQueryCacheMaxAmount();
+		segmentQueryCacheMaxAmount = indexConfig.getIndexSettings().getSegmentQueryCacheMaxAmount();
 
-		int segmentQueryCacheSize = indexConfig.getSegmentQueryCacheSize();
+		int segmentQueryCacheSize = indexConfig.getIndexSettings().getSegmentQueryCacheSize();
 		if ((segmentQueryCacheSize > 0)) {
 			this.queryResultCache = new QueryResultCache(segmentQueryCacheSize, 8);
 		}
@@ -266,7 +266,11 @@ public class LumongoSegment {
 			indexSearcher.setSimilarity(new PerFieldSimilarityWrapper() {
 				@Override
 				public Similarity get(String name) {
-					AnalyzerSettings.Similarity similarity = indexConfig.getSimilarity(name);
+					AnalyzerSettings analyzerSettings = indexConfig.getAnalyzerSettingsForIndexField(name);
+					AnalyzerSettings.Similarity similarity = AnalyzerSettings.Similarity.BM25;
+					if (analyzerSettings != null) {
+						similarity = analyzerSettings.getSimilarity();
+					}
 					if (AnalyzerSettings.Similarity.TFIDF_CLASSIC.equals(similarity)) {
 						return new ClassicSimilarity();
 					}
@@ -294,27 +298,27 @@ public class LumongoSegment {
 					boolean reverse = Direction.DESCENDING.equals(fs.getDirection());
 
 					String sortField = fs.getSortField();
-					Lumongo.SortAs.SortType sortType = indexConfig.getFieldTypeForSortField(sortField);
+					FieldConfig.FieldType sortFieldType = indexConfig.getFieldTypeForSortField(sortField);
 
-					if (IndexConfig.isNumericOrDateSortType(sortType)) {
+					if (IndexConfigUtil.isNumericOrDateFieldType(sortFieldType)) {
 						SortField.Type type;
-						if (IndexConfig.isNumericIntSortType(sortType)) {
+						if (IndexConfigUtil.isNumericIntFieldType(sortFieldType)) {
 							type = SortField.Type.INT;
 						}
-						else if (IndexConfig.isNumericLongSortType(sortType)) {
+						else if (IndexConfigUtil.isNumericLongFieldType(sortFieldType)) {
 							type = SortField.Type.LONG;
 						}
-						else if (IndexConfig.isNumericFloatSortType(sortType)) {
+						else if (IndexConfigUtil.isNumericFloatFieldType(sortFieldType)) {
 							type = SortField.Type.FLOAT;
 						}
-						else if (IndexConfig.isNumericDoubleSortType(sortType)) {
+						else if (IndexConfigUtil.isNumericDoubleFieldType(sortFieldType)) {
 							type = SortField.Type.DOUBLE;
 						}
-						else if (IndexConfig.isNumericDateSortType(sortType)) {
+						else if (IndexConfigUtil.isDateFieldType(sortFieldType)) {
 							type = SortField.Type.LONG;
 						}
 						else {
-							throw new Exception("Invalid numeric sort type <" + sortType + "> for sort field <" + sortField + ">");
+							throw new Exception("Invalid numeric sort type <" + sortFieldType + "> for sort field <" + sortField + ">");
 						}
 						sortFields.add(new SortedNumericSortField(sortField, type, reverse));
 					}
@@ -429,7 +433,8 @@ public class LumongoSegment {
 	}
 
 	private void openReaderIfChanges() throws IOException {
-		DirectoryReader newDirectoryReader = DirectoryReader.openIfChanged(directoryReader, indexWriter, indexConfig.getApplyUncommittedDeletes());
+		DirectoryReader newDirectoryReader = DirectoryReader
+				.openIfChanged(directoryReader, indexWriter, indexConfig.getIndexSettings().getApplyUncommittedDeletes());
 		if (newDirectoryReader != null) {
 			directoryReader = newDirectoryReader;
 			QueryResultCache qrc = queryResultCache;
@@ -464,7 +469,7 @@ public class LumongoSegment {
 		int docId = results[i].doc;
 
 		Set<String> fieldsToFetch = fetchSet;
-		if (indexConfig.isStoreDocumentInIndex()) {
+		if (indexConfig.getIndexSettings().getStoreDocumentInIndex()) {
 			if (FetchType.FULL.equals(resultFetchType)) {
 				fieldsToFetch = fetchSetWithDocument;
 			}
@@ -482,7 +487,7 @@ public class LumongoSegment {
 		String uniqueId = d.get(LumongoConstants.ID_FIELD);
 
 		if (!FetchType.NONE.equals(resultFetchType)) {
-			if (indexConfig.isStoreDocumentInIndex()) {
+			if (indexConfig.getIndexSettings().getStoreDocumentInIndex()) {
 				ResultDocument.Builder rdBuilder = ResultDocument.newBuilder();
 				rdBuilder.setUniqueId(uniqueId);
 				rdBuilder.setIndexName(indexName);
@@ -515,7 +520,7 @@ public class LumongoSegment {
 
 				srBuilder.setResultDocument(resultDocument);
 			}
-			else if (indexConfig.isStoreDocumentInMongo()) {
+			else if (indexConfig.getIndexSettings().getStoreDocumentInMongo()) {
 
 				ResultDocument rd = documentStorage.getSourceDocument(uniqueId, resultFetchType);
 
@@ -553,23 +558,23 @@ public class LumongoSegment {
 				FieldSort fieldSort = sortRequest.getFieldSort(c);
 				String sortField = fieldSort.getSortField();
 
-				Lumongo.SortAs.SortType sortType = indexConfig.getFieldTypeForSortField(sortField);
+				FieldConfig.FieldType fieldTypeForSortField = indexConfig.getFieldTypeForSortField(sortField);
 
 				SortValue.Builder sortValueBuilder = SortValue.newBuilder().setExists(true);
-				if (IndexConfig.isNumericOrDateSortType(sortType)) {
-					if (IndexConfig.isNumericIntSortType(sortType)) {
+				if (IndexConfigUtil.isNumericOrDateFieldType(fieldTypeForSortField)) {
+					if (IndexConfigUtil.isNumericIntFieldType(fieldTypeForSortField)) {
 						sortValueBuilder.setIntegerValue((Integer) o);
 					}
-					else if (IndexConfig.isNumericLongSortType(sortType)) {
+					else if (IndexConfigUtil.isNumericLongFieldType(fieldTypeForSortField)) {
 						sortValueBuilder.setLongValue((Long) o);
 					}
-					else if (IndexConfig.isNumericFloatSortType(sortType)) {
+					else if (IndexConfigUtil.isNumericFloatFieldType(fieldTypeForSortField)) {
 						sortValueBuilder.setFloatValue((Float) o);
 					}
-					else if (IndexConfig.isNumericDoubleSortType(sortType)) {
+					else if (IndexConfigUtil.isNumericDoubleFieldType(fieldTypeForSortField)) {
 						sortValueBuilder.setDoubleValue((Double) o);
 					}
-					else if (IndexConfig.isNumericDateSortType(sortType)) {
+					else if (IndexConfigUtil.isDateFieldType(fieldTypeForSortField)) {
 						sortValueBuilder.setDateValue((Long) o);
 					}
 				}
@@ -591,7 +596,7 @@ public class LumongoSegment {
 
 		ResultDocument rd = null;
 
-		if (indexConfig.isStoreDocumentInMongo()) {
+		if (indexConfig.getIndexSettings().getStoreDocumentInMongo()) {
 			rd = documentStorage.getSourceDocument(uniqueId, resultFetchType);
 		}
 		else {
@@ -658,7 +663,7 @@ public class LumongoSegment {
 		lastChange = System.currentTimeMillis();
 
 		long count = counter.incrementAndGet();
-		if ((count % indexConfig.getSegmentCommitInterval()) == 0) {
+		if ((count % indexConfig.getIndexSettings().getSegmentCommitInterval()) == 0) {
 			forceCommit();
 		}
 
@@ -681,7 +686,7 @@ public class LumongoSegment {
 		// if changes since started
 
 		if (lastCh != null) {
-			if ((currentTime - lastCh) > (indexConfig.getIdleTimeWithoutCommit() * 1000)) {
+			if ((currentTime - lastCh) > (indexConfig.getIndexSettings().getIdleTimeWithoutCommit() * 1000)) {
 				if ((lastCommit == null) || (lastCh > lastCommit)) {
 					log.info("Flushing segment <" + segmentNumber + "> for index <" + indexName + ">");
 					forceCommit();
@@ -709,7 +714,6 @@ public class LumongoSegment {
 			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
 
 			if (fc != null) {
-
 
 				FieldConfig.FieldType fieldType = fc.getFieldType();
 
@@ -758,7 +762,7 @@ public class LumongoSegment {
 
 		d.add(new LegacyLongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
 
-		if (indexConfig.isStoreDocumentInIndex()) {
+		if (indexConfig.getIndexSettings().getStoreDocumentInIndex()) {
 			byte[] documentBytes = BSON.encode(document);
 			d.add(new StoredField(LumongoConstants.STORED_DOC_FIELD, new BytesRef(documentBytes)));
 
@@ -786,7 +790,7 @@ public class LumongoSegment {
 		for (SortAs sortAs : fc.getSortAsList()) {
 			String sortFieldName = sortAs.getSortFieldName();
 
-			if (IndexConfig.isNumericOrDateFieldType(fieldType)) {
+			if (IndexConfigUtil.isNumericOrDateFieldType(fieldType)) {
 				LumongoUtil.handleLists(o, obj -> {
 
 					if (FieldConfig.FieldType.DATE.equals(fieldType)) {
@@ -821,7 +825,8 @@ public class LumongoSegment {
 							}
 							else {
 								throw new RuntimeException(
-										"Not handled numeric field type <" + fieldType + "> for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">");
+										"Not handled numeric field type <" + fieldType + "> for document field <" + storedFieldName + "> / sort field <"
+												+ sortFieldName + ">");
 							}
 
 							d.add(docValue);
@@ -853,8 +858,8 @@ public class LumongoSegment {
 					}
 					else {
 						throw new RuntimeException(
-								"Not handled string handling <" + stringHandling+ "> for document field <" + storedFieldName + "> / sort field <" + sortFieldName
-										+ ">");
+								"Not handled string handling <" + stringHandling + "> for document field <" + storedFieldName + "> / sort field <"
+										+ sortFieldName + ">");
 					}
 
 					SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(text));
@@ -863,8 +868,7 @@ public class LumongoSegment {
 			}
 			else {
 				throw new RuntimeException(
-						"Not handled field type <" + fieldType+ "> for document field <" + storedFieldName + "> / sort field <" + sortFieldName
-								+ ">");
+						"Not handled field type <" + fieldType + "> for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">");
 			}
 
 		}
@@ -875,8 +879,6 @@ public class LumongoSegment {
 
 			String facetName = fa.getFacetName();
 			String facetFieldName = facetsConfig.getDimConfig(facetName).indexFieldName;
-
-
 
 			if (FieldConfig.FieldType.DATE.equals(fc.getFieldType())) {
 				FacetAs.DateHandling dateHandling = fa.getDateHandling();
@@ -896,7 +898,6 @@ public class LumongoSegment {
 							throw new RuntimeException("Not handled date handling <" + dateHandling + "> for facet <" + fa.getFacetName() + ">");
 						}
 
-
 					}
 					else {
 						throw new RuntimeException("Cannot facet date for document field <" + fc.getStoredFieldName() + "> / facet <" + fa.getFacetName()
@@ -910,7 +911,6 @@ public class LumongoSegment {
 					addFacet(doc, facetFieldName, string);
 				});
 			}
-
 
 		}
 	}
@@ -980,7 +980,7 @@ public class LumongoSegment {
 		}
 
 		if (request.hasEndTerm()) {
-			endTermBytes  = new BytesRef(request.getEndTerm());
+			endTermBytes = new BytesRef(request.getEndTerm());
 		}
 
 		Pattern termFilter = null;
@@ -992,9 +992,6 @@ public class LumongoSegment {
 		if (request.hasTermMatch()) {
 			termMatch = Pattern.compile(request.getTermMatch());
 		}
-
-
-
 
 		SortedMap<String, Lumongo.Term.Builder> termsMap = new TreeMap<>();
 
@@ -1012,12 +1009,12 @@ public class LumongoSegment {
 					if (!seekStatus.equals(SeekStatus.END)) {
 						text = termsEnum.term();
 
-						if (endTermBytes == null || (text.compareTo(endTermBytes) < 0 )) {
+						if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
 							handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
 
 							while ((text = termsEnum.next()) != null) {
 
-								if (endTermBytes == null || (text.compareTo(endTermBytes) < 0 )) {
+								if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
 									handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
 								}
 								else {
@@ -1032,10 +1029,7 @@ public class LumongoSegment {
 
 		}
 
-
-
-
-		for (Lumongo.Term.Builder termBuilder: termsMap.values()) {
+		for (Lumongo.Term.Builder termBuilder : termsMap.values()) {
 			builder.addTerm(termBuilder.build());
 		}
 

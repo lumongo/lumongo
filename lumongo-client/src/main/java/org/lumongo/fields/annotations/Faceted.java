@@ -1,6 +1,6 @@
 package org.lumongo.fields.annotations;
 
-import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
+import org.lumongo.cluster.message.Lumongo;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -16,8 +16,8 @@ import java.lang.annotation.Target;
 @Target({ ElementType.FIELD })
 @Repeatable(FacetedFields.class)
 public @interface Faceted {
-	
-	LMFacetType type() default LMFacetType.STANDARD;
-	
+
+	Lumongo.FacetAs.DateHandling dateHandling() default Lumongo.FacetAs.DateHandling.DATE_YYYY_MM_DD;
+
 	String name() default "";
 }

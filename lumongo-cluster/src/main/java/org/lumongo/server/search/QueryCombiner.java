@@ -6,6 +6,7 @@ import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetGroup;
+import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
 import org.lumongo.cluster.message.Lumongo.InternalQueryResponse;
@@ -296,16 +297,16 @@ public class QueryCombiner {
 		if (sorting) {
 			final List<FieldSort> fieldSortList = sortRequest.getFieldSortList();
 
-			final HashMap<String, Lumongo.SortAs.SortType> sortTypeMap = new HashMap<>();
+			final HashMap<String, FieldConfig.FieldType> sortTypeMap = new HashMap<>();
 
 			for (FieldSort fieldSort : fieldSortList) {
 				String sortField = fieldSort.getSortField();
 
 				for (String indexName : usedIndexMap.keySet()) {
 					LumongoIndex index = usedIndexMap.get(indexName);
-					Lumongo.SortAs.SortType currentSortType = sortTypeMap.get(sortField);
+					FieldConfig.FieldType currentSortType = sortTypeMap.get(sortField);
 
-					Lumongo.SortAs.SortType indexSortType = index.getSortType(sortField);
+					FieldConfig.FieldType indexSortType = index.getSortFieldType(sortField);
 					if (currentSortType == null) {
 						sortTypeMap.put(sortField, indexSortType);
 					}
@@ -332,9 +333,9 @@ public class QueryCombiner {
 				for (FieldSort fs : fieldSortList) {
 					String sortField = fs.getSortField();
 
-					Lumongo.SortAs.SortType sortType = sortTypeMap.get(sortField);
+					FieldConfig.FieldType sortType = sortTypeMap.get(sortField);
 
-					if (Lumongo.SortAs.SortType.NUMERIC_INT.equals(sortType)) {
+					if (FieldConfig.FieldType.NUMERIC_INT.equals(sortType)) {
 						Integer a = null;
 						Integer b = null;
 						a = sortValues1.getSortValue(sortValueIndex).getIntegerValue();
@@ -342,7 +343,7 @@ public class QueryCombiner {
 
 						compare = Comparator.nullsLast(Integer::compareTo).compare(a, b);
 					}
-					else if (Lumongo.SortAs.SortType.NUMERIC_LONG.equals(sortType) || Lumongo.SortAs.SortType.DATE.equals(sortType)) {
+					else if (FieldConfig.FieldType.NUMERIC_LONG.equals(sortType) || FieldConfig.FieldType.DATE.equals(sortType)) {
 						Long a = null;
 						Long b = null;
 						a = sortValues1.getSortValue(sortValueIndex).getLongValue();
@@ -350,7 +351,7 @@ public class QueryCombiner {
 
 						compare = Comparator.nullsLast(Long::compareTo).compare(a, b);
 					}
-					else if (Lumongo.SortAs.SortType.NUMERIC_FLOAT.equals(sortType)) {
+					else if (FieldConfig.FieldType.NUMERIC_FLOAT.equals(sortType)) {
 						Float a = null;
 						Float b = null;
 						a = sortValues1.getSortValue(sortValueIndex).getFloatValue();
@@ -358,7 +359,7 @@ public class QueryCombiner {
 
 						compare = Comparator.nullsLast(Float::compareTo).compare(a, b);
 					}
-					else if (Lumongo.SortAs.SortType.NUMERIC_DOUBLE.equals(sortType)) {
+					else if (FieldConfig.FieldType.NUMERIC_DOUBLE.equals(sortType)) {
 						Double a = null;
 						Double b = null;
 						a = sortValues1.getSortValue(sortValueIndex).getDoubleValue();

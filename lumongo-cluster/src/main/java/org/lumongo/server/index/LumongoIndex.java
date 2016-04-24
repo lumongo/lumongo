@@ -27,10 +27,10 @@ import org.bson.BSON;
 import org.bson.BasicBSONObject;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
-import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
+import org.lumongo.server.config.IndexConfigUtil;
 import org.lumongo.server.config.MongoConfig;
 import org.lumongo.server.exceptions.InvalidIndexConfig;
 import org.lumongo.server.exceptions.SegmentDoesNotExist;
@@ -70,44 +70,35 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LumongoIndex implements IndexSegmentInterface {
-	public static final String STORAGE_DB_SUFFIX = "_rs";
+
+	public static final String CONFIG_SUFFIX = "_config";
+
+	private static final String STORAGE_DB_SUFFIX = "_rs";
 
 	private static final String RESULT_STORAGE_COLLECTION = "resultStorage";
 
 	private final static Logger log = Logger.getLogger(LumongoIndex.class);
 	private static final String SETTINGS_ID = "settings";
-	public static final String CONFIG_SUFFIX = "_config";
 
 	private final IndexConfig indexConfig;
 	private final MongoConfig mongoConfig;
 	private final ClusterConfig clusterConfig;
 
 	private final MongoClient mongo;
-	private MongoClient storageMongoClient;
-
 	private final GenericObjectPool<LumongoQueryParser> parsers;
-
-	private Map<Member, Set<Integer>> memberToSegmentMap;
-	private Map<Integer, Member> segmentToMemberMap;
-
 	private final ConcurrentHashMap<Integer, LumongoSegment> segmentMap;
 	private final ConcurrentHashMap<Integer, ILock> hazelLockMap;
-
 	private final ReadWriteLock indexLock;
-
-	private Timer commitTimer;
-
 	private final ExecutorService segmentPool;
-
 	private final int numberOfSegments;
 	private final String indexName;
-
-	private TimerTask commitTask;
-
 	private final HazelcastManager hazelcastManager;
-
 	private final DocumentStorage documentStorage;
-
+	private MongoClient storageMongoClient;
+	private Map<Member, Set<Integer>> memberToSegmentMap;
+	private Map<Integer, Member> segmentToMemberMap;
+	private Timer commitTimer;
+	private TimerTask commitTask;
 	private LumongoAnalyzerFactory lumongoAnalyzerFactory;
 
 	private LockHandler documentLockHandler;
@@ -141,7 +132,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			@Override
 			public LumongoQueryParser makeObject() throws Exception {
-				return new LumongoQueryParser(lumongoAnalyzerFactory.getStringAnalyzer(), LumongoIndex.this.indexConfig);
+				return new LumongoQueryParser(lumongoAnalyzerFactory.getPerFieldAnalyzer(), LumongoIndex.this.indexConfig);
 			}
 
 		});
@@ -156,7 +147,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			@Override
 			public void run() {
-				if (LumongoIndex.this.indexConfig.getIdleTimeWithoutCommit() != 0) {
+				if (LumongoIndex.this.indexConfig.getIndexSettings().getIdleTimeWithoutCommit() != 0) {
 					doCommit(false);
 				}
 
@@ -167,6 +158,34 @@ public class LumongoIndex implements IndexSegmentInterface {
 		commitTimer.scheduleAtFixedRate(commitTask, 1000, 1000);
 
 		this.lumongoAnalyzerFactory = new LumongoAnalyzerFactory(indexConfig);
+
+	}
+
+	private static IndexConfig loadIndexSettings(MongoClient mongo, String database, String indexName) throws InvalidIndexConfig {
+		MongoDatabase db = mongo.getDatabase(database);
+		MongoCollection<Document> dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
+		Document settings = dbCollection.find(new BasicDBObject(MongoConstants.StandardFields._ID, SETTINGS_ID)).first();
+		if (settings == null) {
+			throw new InvalidIndexConfig(indexName, "Index settings not found");
+		}
+		return IndexConfigUtil.fromDocument(settings);
+	}
+
+	public static LumongoIndex loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, MongoClient mongo, ClusterConfig clusterConfig,
+			String indexName) throws InvalidIndexConfig, UnknownHostException, MongoException {
+		IndexConfig indexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
+		log.info("Loading index <" + indexName + ">");
+
+		return new LumongoIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
+
+	}
+
+	public static LumongoIndex createIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig)
+			throws UnknownHostException, MongoException {
+		log.info("Creating index <" + indexConfig.getIndexName() + ">: " + indexConfig);
+		LumongoIndex i = new LumongoIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
+		i.storeIndexSettings();
+		return i;
 
 	}
 
@@ -182,7 +201,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	public SortAs.SortType getSortType(String fieldName) {
+	public FieldConfig.FieldType getSortFieldType(String fieldName) {
 		return indexConfig.getFieldTypeForSortField(fieldName);
 	}
 
@@ -307,8 +326,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 		FacetsConfig facetsConfig = new FacetsConfig();
 		for (String storedFieldName : indexConfig.getIndexedStoredFieldNames()) {
 
-			Lumongo.FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
-			for (Lumongo.FacetAs fa : fc.getFacetAsList()) {
+			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
+			for (FacetAs fa : fc.getFacetAsList()) {
 				facetsConfig.setMultiValued(fa.getFacetName(), true);
 				facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME + "." + fa.getFacetName());
 			}
@@ -356,7 +375,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				clusterConfig.getIndexBlockSize());
 		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 
-		IndexWriterConfig config = new IndexWriterConfig(lumongoAnalyzerFactory.getStringAnalyzer());
+		IndexWriterConfig config = new IndexWriterConfig(lumongoAnalyzerFactory.getPerFieldAnalyzer());
 
 		//use flush interval to flush
 		config.setMaxBufferedDocs(Integer.MAX_VALUE);
@@ -681,7 +700,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 					LumongoSegment s = findSegmentFromUniqueId(uniqueId);
 					s.index(uniqueId, timestamp, document, storeRequest.getResultDocument().getMetadataList());
 
-					if (indexConfig.isStoreDocumentInMongo()) {
+					if (indexConfig.getIndexSettings().getStoreDocumentInMongo()) {
 						documentStorage
 								.storeSourceDocument(storeRequest.getUniqueId(), timestamp, document, storeRequest.getResultDocument().getMetadataList());
 					}
@@ -757,8 +776,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 				qp.setDefaultOperator(defaultOperator);
 
 				if (queryFields.isEmpty()) {
-					if (indexConfig.getDefaultSearchField() != null) {
-						qp.setField(indexConfig.getDefaultSearchField());
+					if (indexConfig.getIndexSettings().hasDefaultSearchField()) {
+						qp.setField(indexConfig.getIndexSettings().getDefaultSearchField());
 						return qp.parse(query);
 					}
 					else {
@@ -807,7 +826,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 		try {
 			int amount = queryRequest.getAmount() + queryRequest.getStart();
 			if (!queryRequest.getFetchFull() && (amount > 0)) {
-				amount = (int) (((amount / numberOfSegments) + indexConfig.getMinSegmentRequest()) * indexConfig.getRequestFactor());
+				amount = (int) (((amount / numberOfSegments) + indexConfig.getIndexSettings().getMinSegmentRequest()) * indexConfig.getIndexSettings()
+						.getRequestFactor());
 			}
 
 			final int requestedAmount = amount;
@@ -833,25 +853,25 @@ public class LumongoIndex implements IndexSegmentInterface {
 							for (FieldSort fs : sortRequest.getFieldSortList()) {
 
 								String sortField = fs.getSortField();
-								Lumongo.SortAs.SortType sortType = indexConfig.getFieldTypeForSortField(sortField);
+								FieldConfig.FieldType sortType = indexConfig.getFieldTypeForSortField(sortField);
 
 								SortValue sortValue = sortValues.getSortValue(sortTermsIndex);
 
 								if (sortValue.getExists()) {
-									if (IndexConfig.isNumericOrDateSortType(sortType)) {
-										if (IndexConfig.isNumericIntSortType(sortType)) {
+									if (IndexConfigUtil.isNumericOrDateFieldType(sortType)) {
+										if (IndexConfigUtil.isNumericIntFieldType(sortType)) {
 											sortTerms[sortTermsIndex] = sortValue.getIntegerValue();
 										}
-										else if (IndexConfig.isNumericLongSortType(sortType)) {
+										else if (IndexConfigUtil.isNumericLongFieldType(sortType)) {
 											sortTerms[sortTermsIndex] = sortValue.getLongValue();
 										}
-										else if (IndexConfig.isNumericFloatSortType(sortType)) {
+										else if (IndexConfigUtil.isNumericFloatFieldType(sortType)) {
 											sortTerms[sortTermsIndex] = sortValue.getFloatValue();
 										}
-										else if (IndexConfig.isNumericDoubleSortType(sortType)) {
+										else if (IndexConfigUtil.isNumericDoubleFieldType(sortType)) {
 											sortTerms[sortTermsIndex] = sortValue.getDoubleValue();
 										}
-										else if (IndexConfig.isNumericDateSortType(sortType)) {
+										else if (IndexConfigUtil.isDateFieldType(sortType)) {
 											sortTerms[sortTermsIndex] = sortValue.getDateValue();
 										}
 										else {
@@ -884,7 +904,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 				Future<SegmentResponse> response = segmentPool.submit(() -> segment
 						.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
-								queryRequest.getSortRequest(), new QueryCacheKey(queryRequest), queryRequest.getResultFetchType(), queryRequest.getDocumentFieldsList(), queryRequest.getDocumentMaskedFieldsList()));
+								queryRequest.getSortRequest(), new QueryCacheKey(queryRequest), queryRequest.getResultFetchType(),
+								queryRequest.getDocumentFieldsList(), queryRequest.getDocumentMaskedFieldsList()));
 
 				responses.add(response);
 
@@ -920,7 +941,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 	}
 
 	public double getSegmentTolerance() {
-		return indexConfig.getSegmentTolerance();
+		return indexConfig.getIndexSettings().getSegmentTolerance();
 	}
 
 	private void storeIndexSettings() {
@@ -928,7 +949,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 		try {
 			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			MongoCollection<Document> dbCollection = db.getCollection(indexConfig.getIndexName() + CONFIG_SUFFIX);
-			Document settings = indexConfig.toDocument();
+			Document settings = IndexConfigUtil.toDocument(indexConfig);
 			settings.put(MongoConstants.StandardFields._ID, SETTINGS_ID);
 
 			Document query = new Document();
@@ -956,7 +977,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 			parsers.clear();
 
 			//force analyzer to be fetched first so it doesn't fail only on one segment below
-			lumongoAnalyzerFactory.getStringAnalyzer();
+			lumongoAnalyzerFactory.getPerFieldAnalyzer();
 			for (LumongoSegment s : segmentMap.values()) {
 				try {
 					s.updateIndexSettings(indexSettings, facetsConfig);
@@ -1153,34 +1174,6 @@ public class LumongoIndex implements IndexSegmentInterface {
 		finally {
 			indexLock.readLock().unlock();
 		}
-	}
-
-	private static IndexConfig loadIndexSettings(MongoClient mongo, String database, String indexName) throws InvalidIndexConfig {
-		MongoDatabase db = mongo.getDatabase(database);
-		MongoCollection<Document> dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
-		Document settings = dbCollection.find(new BasicDBObject(MongoConstants.StandardFields._ID, SETTINGS_ID)).first();
-		if (settings == null) {
-			throw new InvalidIndexConfig(indexName, "Index settings not found");
-		}
-		return IndexConfig.fromDocument(settings);
-	}
-
-	public static LumongoIndex loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, MongoClient mongo, ClusterConfig clusterConfig,
-			String indexName) throws InvalidIndexConfig, UnknownHostException, MongoException {
-		IndexConfig indexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
-		log.info("Loading index <" + indexName + ">");
-
-		return new LumongoIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
-
-	}
-
-	public static LumongoIndex createIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig)
-			throws UnknownHostException, MongoException {
-		log.info("Creating index <" + indexConfig.getIndexName() + ">: " + indexConfig);
-		LumongoIndex i = new LumongoIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
-		i.storeIndexSettings();
-		return i;
-
 	}
 
 	//handle forwarding, and locking here like other store requests

@@ -20,7 +20,8 @@ import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.apache.lucene.analysis.standard.StandardFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.lumongo.analyzer.BooleanAnalyzer;
-import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.Lumongo.AnalyzerSettings;
+import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.IndexAs;
 import org.lumongo.server.config.IndexConfig;
 
@@ -29,28 +30,34 @@ import java.util.List;
 import java.util.Map;
 
 public class LumongoAnalyzerFactory {
-	public static Analyzer getStringAnalyzer(Lumongo.AnalyzerSettings analyzerSettings) throws Exception {
+	private IndexConfig indexConfig;
+
+	public LumongoAnalyzerFactory(IndexConfig indexConfig) {
+		this.indexConfig = indexConfig;
+	}
+
+	public static Analyzer getPerFieldAnalyzer(AnalyzerSettings analyzerSettings) throws Exception {
 
 		return new Analyzer() {
 			@Override
 			protected TokenStreamComponents createComponents(String fieldName) {
-				Lumongo.AnalyzerSettings.Tokenizer tokenizer = analyzerSettings.getTokenizer();
-				List<Lumongo.AnalyzerSettings.Filter> filterList = analyzerSettings.getFilterList();
+				AnalyzerSettings.Tokenizer tokenizer = analyzerSettings.getTokenizer();
+				List<AnalyzerSettings.Filter> filterList = analyzerSettings.getFilterList();
 
 				Tokenizer src;
 				TokenStream tok;
 				TokenStream lastTok;
-				if (Lumongo.AnalyzerSettings.Tokenizer.KEYWORD.equals(tokenizer)) {
+				if (AnalyzerSettings.Tokenizer.KEYWORD.equals(tokenizer)) {
 					src = new KeywordTokenizer();
 					tok = src;
 					lastTok = src;
 				}
-				else if (Lumongo.AnalyzerSettings.Tokenizer.WHITESPACE.equals(tokenizer)) {
+				else if (AnalyzerSettings.Tokenizer.WHITESPACE.equals(tokenizer)) {
 					src = new WhitespaceTokenizer();
 					tok = src;
 					lastTok = src;
 				}
-				else if (Lumongo.AnalyzerSettings.Tokenizer.STANDARD.equals(tokenizer)) {
+				else if (AnalyzerSettings.Tokenizer.STANDARD.equals(tokenizer)) {
 					src = new StandardTokenizer();
 					tok = new StandardFilter(src);
 					lastTok = tok;
@@ -59,32 +66,32 @@ public class LumongoAnalyzerFactory {
 					throw new RuntimeException("Unknown tokenizer type <" + tokenizer);
 				}
 
-				for (Lumongo.AnalyzerSettings.Filter filter : filterList) {
-					if (Lumongo.AnalyzerSettings.Filter.LOWERCASE.equals(filter)) {
+				for (AnalyzerSettings.Filter filter : filterList) {
+					if (AnalyzerSettings.Filter.LOWERCASE.equals(filter)) {
 						tok = new LowerCaseFilter(lastTok);
 					}
-					else if (Lumongo.AnalyzerSettings.Filter.UPPERCASE.equals(filter)) {
+					else if (AnalyzerSettings.Filter.UPPERCASE.equals(filter)) {
 						tok = new UpperCaseFilter(lastTok);
 					}
-					else if (Lumongo.AnalyzerSettings.Filter.ASCII_FOLDING.equals(filter)) {
+					else if (AnalyzerSettings.Filter.ASCII_FOLDING.equals(filter)) {
 						tok = new ASCIIFoldingFilter(lastTok);
 					}
-					else if (Lumongo.AnalyzerSettings.Filter.KSTEM.equals(filter)) {
+					else if (AnalyzerSettings.Filter.KSTEM.equals(filter)) {
 						tok = new KStemFilter(lastTok);
 					}
-					else if (Lumongo.AnalyzerSettings.Filter.STOPWORDS.equals(filter)) {
+					else if (AnalyzerSettings.Filter.STOPWORDS.equals(filter)) {
 						tok = new StopFilter(lastTok, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
 					}
-					else if (Lumongo.AnalyzerSettings.Filter.ENGLISH_MIN_STEM.equals(filter)) {
+					else if (AnalyzerSettings.Filter.ENGLISH_MIN_STEM.equals(filter)) {
 						tok = new EnglishMinimalStemFilter(lastTok);
 					}
-					else if (Lumongo.AnalyzerSettings.Filter.SNOWBALL_STEM.equals(filter)) {
+					else if (AnalyzerSettings.Filter.SNOWBALL_STEM.equals(filter)) {
 						tok = new SnowballFilter(lastTok, "English");
 					}
-					else if (Lumongo.AnalyzerSettings.Filter.ENGLISH_POSSESSIVE.equals(filter)) {
+					else if (AnalyzerSettings.Filter.ENGLISH_POSSESSIVE.equals(filter)) {
 						tok = new EnglishPossessiveFilter(lastTok);
 					}
-					else if (Lumongo.AnalyzerSettings.Filter.MINHASH.equals(filter)) {
+					else if (AnalyzerSettings.Filter.MINHASH.equals(filter)) {
 						tok = new MinHashFilter(lastTok, 100);
 					}
 					else {
@@ -92,50 +99,45 @@ public class LumongoAnalyzerFactory {
 					}
 				}
 
-
 				return new TokenStreamComponents(src, tok);
 			}
-		} ;
+		};
 
+	}
 
-		
-	}
-	
-	private IndexConfig indexConfig;
-	
-	public LumongoAnalyzerFactory(IndexConfig indexConfig) {
-		this.indexConfig = indexConfig;
-	}
-	
-	public Analyzer getStringAnalyzer() throws Exception {
+	public Analyzer getPerFieldAnalyzer() throws Exception {
 		Map<String, Analyzer> customAnalyzerMap = new HashMap<>();
 		for (IndexAs indexAs : indexConfig.getIndexAsValues()) {
+			String indexFieldName = indexAs.getIndexFieldName();
+
+			FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(indexFieldName);
+			AnalyzerSettings analyzerSettings = indexConfig.getAnalyzerSettingsForIndexField(indexFieldName);
 
 			Analyzer a;
-			if (IndexAs.FieldType.STRING.equals(indexAs.getFieldType())) {
-				Lumongo.AnalyzerSettings analyzerSetting = indexAs.getAnalyzerSetting();
-				if (analyzerSetting != null) {
-					a = getStringAnalyzer(analyzerSetting);
+
+			if (FieldConfig.FieldType.STRING.equals(fieldType)) {
+				if (analyzerSettings != null) {
+					a = getPerFieldAnalyzer(analyzerSettings);
 				}
 				else {
 					a = new KeywordAnalyzer();
 				}
 			}
-			else if (IndexAs.FieldType.BOOL.equals(indexAs.getFieldType())) {
+			else if (FieldConfig.FieldType.BOOL.equals(fieldType)) {
 				a = new BooleanAnalyzer();
 			}
 			else {
 				a = new KeywordAnalyzer();
 			}
 
-			customAnalyzerMap.put(indexAs.getIndexFieldName(), a);
-			
+			customAnalyzerMap.put(indexFieldName, a);
+
 		}
-		
+
 		//All fields should have analyzers defined but user queries could search against non existing field?
 		Analyzer defaultAnalyzer = new KeywordAnalyzer();
 
 		return new PerFieldAnalyzerWrapper(defaultAnalyzer, customAnalyzerMap);
+
 	}
-	
 }

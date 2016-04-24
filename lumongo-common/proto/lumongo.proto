@@ -185,19 +185,9 @@ message FieldConfig {
 }
 
 message IndexAs {
-
-	enum QueryHandling {
-		STANDARD = 1;
-		LSH = 2;
-	}
-
 	required string indexFieldName = 1;
-	optional string stringAnalyzerName = 2;
-	optional QueryHandling queryHandling = 3 [default = STANDARD];
+	optional string analyzerName = 2;
 }
-
-
-
 
 message FacetAs {
 	enum DateHandling {
@@ -222,7 +212,13 @@ message SortAs {
 }
 
 
+
 message AnalyzerSettings {
+
+	enum QueryHandling {
+		NORMAL = 1;
+		MINHASH_QUERY = 2;
+	}
 
 	enum Tokenizer {
 		KEYWORD = 1;
@@ -253,6 +249,7 @@ message AnalyzerSettings {
 	optional Tokenizer tokenizer = 2 [default = STANDARD];
 	repeated Filter filter = 3;
 	optional Similarity similarity = 4 [default = BM25];
+	optional QueryHandling queryHandling = 5 [default = NORMAL];
 }
 
 message IndexSettingsResponse {
