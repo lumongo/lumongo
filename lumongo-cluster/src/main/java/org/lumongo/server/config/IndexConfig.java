@@ -43,6 +43,13 @@ public class IndexConfig {
 		analyzerMap.put(DefaultAnalyzers.STANDARD, Lumongo.AnalyzerSettings.newBuilder().addFilter(Filter.LOWERCASE).addFilter(Filter.STOPWORDS).build());
 		analyzerMap.put(DefaultAnalyzers.KEYWORD, Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).build());
 		analyzerMap.put(DefaultAnalyzers.LC_KEYWORD, Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).build());
+		analyzerMap.put(DefaultAnalyzers.MIN_STEM,
+				Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).addFilter(Filter.ENGLISH_MIN_STEM).build());
+		analyzerMap.put(DefaultAnalyzers.KSTEMMED,
+				Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).addFilter(Filter.KSTEM).build());
+		analyzerMap.put(DefaultAnalyzers.MIN_STEM,
+				Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).addFilter(Filter.ASCII_FOLDING)
+						.addFilter(Filter.KSTEM).addFilter(Filter.MINHASH).build());
 
 		for (Lumongo.AnalyzerSettings analyzerSettings : indexSettings.getAnalyzerSettingsList()) {
 			analyzerMap.put(analyzerSettings.getName(), analyzerSettings);
