@@ -1,7 +1,9 @@
 package org.lumongo.example.medline;
 
+import org.lumongo.DefaultAnalyzers;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
+import org.lumongo.cluster.message.Lumongo.SortAs;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Faceted;
 import org.lumongo.fields.annotations.Indexed;
@@ -23,70 +25,69 @@ public class MedlineDocument {
 
     @UniqueId
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
+            analyzerName = DefaultAnalyzers.STANDARD)
     private String pmid;
 
     @DefaultSearch
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
-    @Sorted(type= Lumongo.SortAs.SortType.STRING)
-    @Sorted(type= Lumongo.SortAs.SortType.STRING_LC, fieldName="titleLC")
+            analyzerName = DefaultAnalyzers.STANDARD)
+    @Sorted(stringHandling = SortAs.StringHandling.STANDARD)
+    @Sorted(stringHandling = SortAs.StringHandling.LOWERCASE, fieldName="titleLC")
     private String title;
 
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
+            analyzerName = DefaultAnalyzers.STANDARD)
     private String journalTitle;
 
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
+            analyzerName = DefaultAnalyzers.STANDARD)
     private String journalIso;
 
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
+            analyzerName = DefaultAnalyzers.STANDARD)
     private String abstractText;
 
     @Faceted
-    @Indexed(
-            analyzer = LMAnalyzer.DATE)
+    @Indexed
     private Date publicationDate;
 
     @Faceted
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
+            analyzerName = DefaultAnalyzers.STANDARD)
     private String pubYear;
 
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
+            analyzerName = DefaultAnalyzers.STANDARD)
     private String journalVolume;
 
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
+            analyzerName = DefaultAnalyzers.STANDARD)
     private String journalIssue;
 
     @Faceted
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
+            analyzerName = DefaultAnalyzers.STANDARD)
     private String journalCountry;
 
 
     @Faceted
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
-    @Sorted(type = Lumongo.SortAs.SortType.STRING)
+            analyzerName = DefaultAnalyzers.STANDARD)
+    @Sorted(stringHandling = SortAs.StringHandling.LOWERCASE)
     private String issn;
 
     @Faceted
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
-    @Indexed(analyzer = LMAnalyzer.LC_KEYWORD, fieldName = "authorsExact")
+            analyzerName = DefaultAnalyzers.STANDARD)
+    @Indexed(analyzerName = DefaultAnalyzers.KEYWORD, fieldName = "authorsExact")
     private List<String> authors;
 
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
+            analyzerName = DefaultAnalyzers.STANDARD)
     private String pagination;
 
     @Indexed(
-            analyzer = LMAnalyzer.STANDARD)
+            analyzerName = DefaultAnalyzers.STANDARD)
     private String citation;
 
     public String getPmid() {

@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import org.lumongo.DefaultAnalyzers;
 import org.lumongo.client.command.*;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.config.LumongoPoolConfig;
@@ -19,10 +20,10 @@ import org.lumongo.client.result.GetMembersResult;
 import org.lumongo.client.result.GetNumberOfDocsResult;
 import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.client.result.QueryResult;
-import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
+import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
-import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.Term;
@@ -73,7 +74,7 @@ public class ApiTest {
 		int numberOfSegments = 16;
 
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("title", FieldConfig.FieldType.STRING).indexAs(DefaultAnalyzers.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
 		
