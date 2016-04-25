@@ -1,6 +1,9 @@
 package org.lumongo.server.config;
 
+import org.lumongo.DefaultAnalyzers;
 import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Filter;
+import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Tokenizer;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.IndexAs;
 import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
@@ -34,6 +37,16 @@ public class IndexConfig {
 
 	public void configure(IndexSettings indexSettings) {
 		this.indexSettings = indexSettings;
+
+		this.analyzerMap = new ConcurrentHashMap<>();
+
+		analyzerMap.put(DefaultAnalyzers.STANDARD, Lumongo.AnalyzerSettings.newBuilder().addFilter(Filter.LOWERCASE).addFilter(Filter.STOPWORDS).build());
+		analyzerMap.put(DefaultAnalyzers.KEYWORD, Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).build());
+		analyzerMap.put(DefaultAnalyzers.LC_KEYWORD, Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).build());
+
+		for (Lumongo.AnalyzerSettings analyzerSettings : indexSettings.getAnalyzerSettingsList()) {
+			analyzerMap.put(analyzerSettings.getName(), analyzerSettings);
+		}
 
 		this.fieldConfigMap = new ConcurrentHashMap<>();
 		for (FieldConfig fc : indexSettings.getFieldConfigList()) {

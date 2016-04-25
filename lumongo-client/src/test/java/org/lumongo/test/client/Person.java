@@ -15,12 +15,12 @@ public class Person {
 	@UniqueId
 	protected String id;
 
-	@Indexed(analyzerName = DefaultAnalyzers.LOWERCASE_KEYWORD, fieldName = "firstNameExact")
+	@Indexed(analyzerName = DefaultAnalyzers.LC_KEYWORD, fieldName = "firstNameExact")
 	@Indexed(analyzerName = DefaultAnalyzers.STANDARD, fieldName = "firstName")
 	@Faceted
 	protected String firstName;
 
-	@Indexed(analyzerName = DefaultAnalyzers.LOWERCASE_KEYWORD, fieldName = "lastNameExact")
+	@Indexed(analyzerName = DefaultAnalyzers.LC_KEYWORD, fieldName = "lastNameExact")
 	@Indexed(analyzerName = DefaultAnalyzers.STANDARD, fieldName = "lastName")
 	@Faceted
 	protected String lastName;

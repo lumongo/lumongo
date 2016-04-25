@@ -8,7 +8,7 @@ import org.lumongo.fields.annotations.NotSaved;
 
 public class PhoneNumber {
 
-	@Indexed(analyzerName = DefaultAnalyzers.LOWERCASE_KEYWORD)
+	@Indexed(analyzerName = DefaultAnalyzers.LC_KEYWORD)
 	@Faceted
 	protected String type;
 
