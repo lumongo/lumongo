@@ -15,12 +15,15 @@ import org.jwat.arc.ArcReader;
 import org.jwat.arc.ArcReaderFactory;
 import org.jwat.arc.ArcRecord;
 import org.jwat.common.Payload;
+import org.lumongo.DefaultAnalyzers;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
-import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
+import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.Lumongo.FieldConfig;
+import org.lumongo.cluster.message.Lumongo.FieldConfig.FieldType;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.FieldConfigBuilder;
 import org.lumongo.util.LogUtil;
@@ -91,9 +94,9 @@ public class IndexCommonCrawl {
 		lumongoWorkPool = new LumongoWorkPool(clientConfig);
 		
 		IndexConfig indexConfig = new IndexConfig(CONTENTS);
-		indexConfig.addFieldConfig(FieldConfigBuilder.create(URL).indexAs(LMAnalyzer.LC_KEYWORD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create(TEXT_CONTENTS).indexAs(LMAnalyzer.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create(TITLE).indexAs(LMAnalyzer.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create(URL, FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create(TEXT_CONTENTS, FieldType.STRING).indexAs(DefaultAnalyzers.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create(TITLE, FieldType.STRING).indexAs(DefaultAnalyzers.STANDARD));
 		
 		CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(indexName, 16, indexConfig);
 		

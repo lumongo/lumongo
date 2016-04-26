@@ -1,5 +1,6 @@
 package org.lumongo.test.cluster.mapper;
 
+import org.lumongo.DefaultAnalyzers;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.fields.annotations.Faceted;
 import org.lumongo.fields.annotations.Indexed;
@@ -7,11 +8,11 @@ import org.lumongo.fields.annotations.NotSaved;
 
 public class PhoneNumber {
 
-	@Indexed(analyzer = Lumongo.LMAnalyzer.LC_KEYWORD)
+	@Indexed(analyzerName = DefaultAnalyzers.LC_KEYWORD)
 	@Faceted
 	protected String type;
 
-	@Indexed(analyzer = Lumongo.LMAnalyzer.STANDARD)
+	@Indexed(analyzerName = DefaultAnalyzers.STANDARD)
 	protected String number;
 
 	@NotSaved

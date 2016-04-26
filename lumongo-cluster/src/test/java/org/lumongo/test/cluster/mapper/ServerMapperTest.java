@@ -29,9 +29,7 @@ public class ServerMapperTest extends ServerTestBase {
 	@Test
 	public void test02Create() throws Exception {
 		LumongoWorkPool lumongoWorkPool = getLumongoWorkPool();
-
 		lumongoWorkPool.createOrUpdateIndex(mapper.createOrUpdateIndex());
-
 	}
 
 	@Test

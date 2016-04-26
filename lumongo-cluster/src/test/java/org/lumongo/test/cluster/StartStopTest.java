@@ -1,47 +1,32 @@
 package org.lumongo.test.cluster;
 
-import com.hazelcast.core.Hazelcast;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.joda.time.DateTime;
-import org.lumongo.client.command.DeleteAllAssociated;
-import org.lumongo.client.command.DeleteAssociated;
-import org.lumongo.client.command.DeleteFull;
-import org.lumongo.client.command.DeleteIndex;
-import org.lumongo.client.command.FetchDocument;
-import org.lumongo.client.command.FetchDocumentAndAssociated;
-import org.lumongo.client.command.FetchLargeAssociated;
+import org.lumongo.DefaultAnalyzers;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
-import org.lumongo.client.result.FetchResult;
-import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.QueryResult;
-import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
+import org.lumongo.cluster.message.Lumongo.FacetAs.DateHandling;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
-import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
-import org.lumongo.cluster.message.Lumongo.ScoredResult;
-import org.lumongo.doc.AssociatedBuilder;
+import org.lumongo.cluster.message.Lumongo.FieldConfig.FieldType;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.FieldConfigBuilder;
 import org.lumongo.storage.lucene.MongoFile;
-import org.lumongo.test.cluster.ServerTestBase;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.util.Date;
 
 import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertTrue;
 
 public class StartStopTest extends ServerTestBase {
 
 	public static final String FACET_TEST_INDEX = "plugged-54a725bc148f6dd7d62bc600";
 	//public static final String FACET_TEST_INDEX = "plugged";
-
 
 	private final int COUNT_PER_ISSN = 10;
 	private final String uniqueIdPrefix = "myId-";
@@ -53,55 +38,53 @@ public class StartStopTest extends ServerTestBase {
 	public void test01Start() throws Exception {
 		startSuite(1);
 	}
-	
+
 	@Test
 	public void test02Init() throws Exception {
 
 		LumongoWorkPool lumongoWorkPool = getLumongoWorkPool();
-		
+
 		String defaultSearchField = "title";
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
-		
+
 		indexConfig.setSegmentTolerance(0.05);
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("eissn").indexAs(LMAnalyzer.LC_KEYWORD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("uid").indexAs(LMAnalyzer.LC_KEYWORD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("country").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("date").indexAs(LMAnalyzer.DATE).facetAs(LMFacetType.DATE_YYYY_MM_DD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("title", FieldType.STRING).indexAs(DefaultAnalyzers.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn", FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD).facet());
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("eissn", FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("uid", FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("an", FieldType.NUMERIC_INT).index());
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("country", FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD).facet());
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("date", FieldType.DATE).index().facetAs(DateHandling.DATE_YYYY_MM_DD));
 
 		lumongoWorkPool.createIndex(FACET_TEST_INDEX, 1, indexConfig);
 	}
-	
+
 	@Test
 	public void test03Facet() throws Exception {
 		LumongoWorkPool lumongoWorkPool = getLumongoWorkPool();
 
-
-		
 		int id = 0;
 		{
 			for (String issn : issns) {
 				for (int i = 0; i < COUNT_PER_ISSN; i++) {
 					boolean half = (i % 2 == 0);
 					boolean tenth = (i % 10 == 0);
-					
+
 					id++;
-					
+
 					String uniqueId = uniqueIdPrefix + id;
-					
+
 					DBObject object = new BasicDBObject();
 					object.put("issn", issn);
 					object.put("title", "Facet Userguide");
-					
+
 					if (half) { // 1/2 of input
 						object.put("country", "US");
 					}
 					else { // 1/2 of input
 						object.put("country", "France");
 					}
-					
+
 					if (tenth) { // 1/10 of input
 						Date d = (new DateTime()).withDate(2014, 10, 4).toDate();
 						object.put("date", d);
@@ -114,16 +97,15 @@ public class StartStopTest extends ServerTestBase {
 						Date d = (new DateTime()).withDate(2013, 8, 4).toDate();
 						object.put("date", d);
 					}
-					
+
 					Store s = new Store(uniqueId, FACET_TEST_INDEX);
 					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
-					
+
 					lumongoWorkPool.store(s);
 				}
 			}
 		}
 
-		
 	}
 
 	@Test
@@ -135,7 +117,6 @@ public class StartStopTest extends ServerTestBase {
 		startServer(1);
 		startClient();
 	}
-
 
 	@Test
 	public void test05ConfirmCounts() throws Exception {
@@ -162,8 +143,7 @@ public class StartStopTest extends ServerTestBase {
 			assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
 
 			assertEquals("Total facets not " + 3, 3, qr.getFacetCounts("date").size());
-			for (@SuppressWarnings("unused")
-			FacetCount fc : qr.getFacetCounts("date")) {
+			for (@SuppressWarnings("unused") FacetCount fc : qr.getFacetCounts("date")) {
 				//System.out.println(fc);
 			}
 

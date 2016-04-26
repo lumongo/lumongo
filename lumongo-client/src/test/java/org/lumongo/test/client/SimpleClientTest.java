@@ -7,6 +7,7 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.lumongo.DefaultAnalyzers;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.cluster.message.Lumongo;
@@ -40,13 +41,13 @@ public class SimpleClientTest {
 		Assert.assertEquals("address", ic.getDefaultSearchField());
 
 		Lumongo.FieldConfig field1 = ic.getFieldConfig("firstName");
-		Assert.assertEquals(Lumongo.LMAnalyzer.LC_KEYWORD, field1.getIndexAsList().get(0).getAnalyzer());
+		Assert.assertEquals(DefaultAnalyzers.LC_KEYWORD, field1.getIndexAsList().get(0).getAnalyzerName());
 		Assert.assertEquals("firstNameExact", field1.getIndexAsList().get(0).getIndexFieldName());
-		Assert.assertEquals(Lumongo.LMAnalyzer.STANDARD, field1.getIndexAsList().get(1).getAnalyzer());
+		Assert.assertEquals(DefaultAnalyzers.STANDARD, field1.getIndexAsList().get(1).getAnalyzerName());
 		Assert.assertEquals("firstName", field1.getIndexAsList().get(1).getIndexFieldName());
 
 		Lumongo.FieldConfig field2 = ic.getFieldConfig("address");
-		Assert.assertEquals(Lumongo.LMAnalyzer.STANDARD, field2.getIndexAsList().get(0).getAnalyzer());
+		Assert.assertEquals(DefaultAnalyzers.STANDARD, field2.getIndexAsList().get(0).getAnalyzerName());
 		Assert.assertEquals("address", field2.getIndexAsList().get(0).getIndexFieldName());
 
 		System.out.println(ci.getIndexConfig().getIndexSettings().getFieldConfigList());

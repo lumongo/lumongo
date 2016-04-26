@@ -1,7 +1,7 @@
 package org.lumongo.example.twitter;
 
 import org.apache.solr.client.solrj.beans.Field;
-import org.lumongo.cluster.message.Lumongo.LMAnalyzer;
+import org.lumongo.DefaultAnalyzers;
 import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Indexed;
@@ -11,13 +11,13 @@ import org.lumongo.fields.annotations.UniqueId;
 import java.util.Date;
 
 @Settings(
-				indexName = Tweet.INDEX_NAME,
-				numberOfSegments = 4,
-				segmentCommitInterval = 6000)
+		indexName = Tweet.INDEX_NAME,
+		numberOfSegments = 4,
+		segmentCommitInterval = 6000)
 public class Tweet {
-	
+
 	public static final String INDEX_NAME = "twitter";
-	
+
 	//using constant for field names is not required but allows referencing from
 	//other parts of the code
 	//if no field annotation is present, the name of the java field is used
@@ -28,115 +28,109 @@ public class Tweet {
 	public static final String CREATED_DATE = "createdDate";
 	public static final String LATITUDE = "latitude";
 	public static final String LONGITUDE = "longitude";
-	
+
 	public static final String TEXT = "text";
-	
-	public Tweet() {
-		
-	}
-	
+
 	@UniqueId
 	@AsField(ID)
 	private String id;
-	
-	@Indexed(
-					analyzer = LMAnalyzer.NUMERIC_INT)
+
+	@Indexed
 	@Field(FAVORITE_COUNT)
 	private Integer favoriteCount;
-	
-	@Indexed(
-					analyzer = LMAnalyzer.NUMERIC_INT)
+
+	@Indexed
 	@Field(RETWEET_COUNT)
 	private Integer retweetCount;
-	
-	@Indexed(
-					analyzer = LMAnalyzer.LC_KEYWORD)
+
+	@Indexed(analyzerName = DefaultAnalyzers.LC_KEYWORD)
 	@Field(USER_NAME)
 	private String username;
-	
-	@Indexed(
-					analyzer = LMAnalyzer.STANDARD)
+
+	@Indexed(analyzerName = DefaultAnalyzers.STANDARD)
+
 	@Field(TEXT)
 	@DefaultSearch
 	private String text;
-	
-	@Indexed(
-					analyzer = LMAnalyzer.NUMERIC_LONG)
+
+	@Indexed
 	@Field(CREATED_DATE)
 	private Date createdDate;
-	
-	@Indexed(
-					analyzer = LMAnalyzer.NUMERIC_DOUBLE)
+
+	@Indexed
 	@Field(LATITUDE)
 	private Double latitude;
-	
-	@Indexed(
-					analyzer = LMAnalyzer.NUMERIC_DOUBLE)
+
+	@Indexed
 	@Field(LONGITUDE)
 	private Double longitude;
-	
+
+	public Tweet() {
+
+	}
+
 	public String getId() {
 		return id;
 	}
-	
+
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
 	public Integer getFavoriteCount() {
 		return favoriteCount;
 	}
-	
+
 	public void setFavoriteCount(Integer favoriteCount) {
 		this.favoriteCount = favoriteCount;
 	}
-	
+
 	public Integer getRetweetCount() {
 		return retweetCount;
 	}
-	
+
 	public void setRetweetCount(Integer retweetCount) {
 		this.retweetCount = retweetCount;
 	}
-	
+
 	public String getUsername() {
 		return username;
 	}
-	
+
 	public void setUsername(String username) {
 		this.username = username;
 	}
-	
+
 	public String getText() {
 		return text;
 	}
-	
+
 	public void setText(String text) {
 		this.text = text;
 	}
-	
+
 	public Date getCreatedDate() {
 		return createdDate;
 	}
-	
+
 	public void setCreatedDate(Date createdDate) {
 		this.createdDate = createdDate;
 	}
-	
+
 	public Double getLatitude() {
 		return latitude;
 	}
-	
+
 	public void setLatitude(Double latitude) {
 		this.latitude = latitude;
 	}
-	
+
 	public Double getLongitude() {
 		return longitude;
 	}
-	
+
 	public void setLongitude(Double longitude) {
 		this.longitude = longitude;
 	}
-	
+
 }

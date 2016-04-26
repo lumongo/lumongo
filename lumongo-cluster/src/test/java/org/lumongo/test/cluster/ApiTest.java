@@ -23,6 +23,7 @@ import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
+import org.lumongo.cluster.message.Lumongo.FieldConfig.FieldType;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
@@ -74,9 +75,9 @@ public class ApiTest {
 		int numberOfSegments = 16;
 
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("title", FieldConfig.FieldType.STRING).indexAs(DefaultAnalyzers.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("title", FieldType.STRING).indexAs(DefaultAnalyzers.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn", FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD).facet());
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("an", FieldType.NUMERIC_INT).index());
 		
 		CreateIndex createIndex = new CreateIndex(MY_INDEX_NAME, numberOfSegments, indexConfig);
 		lumongoWorkPool.createIndex(createIndex);
@@ -87,10 +88,10 @@ public class ApiTest {
 		String defaultSearchField = "abstract";
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
 		
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("abstract").indexAs(LMAnalyzer.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("title", FieldType.STRING).indexAs(DefaultAnalyzers.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn", FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD).facet());
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("an", FieldType.NUMERIC_INT).index());
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("abstract", FieldType.STRING).indexAs(DefaultAnalyzers.STANDARD));
 		
 		UpdateIndex updateIndex = new UpdateIndex(MY_INDEX_NAME, indexConfig);
 		lumongoWorkPool.updateIndex(updateIndex);
@@ -102,10 +103,10 @@ public class ApiTest {
 
 		IndexConfig indexConfig = new IndexConfig(defaultSearchField);
 		
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("title").indexAs(LMAnalyzer.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn").indexAs(LMAnalyzer.LC_KEYWORD).facetAs(LMFacetType.STANDARD));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("an").indexAs(LMAnalyzer.NUMERIC_INT));
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("abstract").indexAs(LMAnalyzer.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("title", FieldType.STRING).indexAs(DefaultAnalyzers.STANDARD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("issn", FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD).facet());
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("an", FieldType.NUMERIC_INT).index());
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("abstract", FieldType.STRING).indexAs(DefaultAnalyzers.STANDARD));
 		
 		CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(indexName, numberOfSegments, indexConfig);
 		CreateOrUpdateIndexResult result = lumongoWorkPool.createOrUpdateIndex(createOrUpdateIndex);

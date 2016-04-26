@@ -27,6 +27,10 @@ public class FieldConfigBuilder {
 		return new FieldConfigBuilder(storedFieldName, fieldType);
 	}
 
+	public FieldConfigBuilder index() {
+		return indexAs(null, storedFieldName);
+	}
+
 	public FieldConfigBuilder indexAs(String analyzerName) {
 		return indexAs(analyzerName, storedFieldName);
 	}
@@ -46,6 +50,14 @@ public class FieldConfigBuilder {
 		return this;
 	}
 
+	public FieldConfigBuilder facet() {
+		return facetAs(null, storedFieldName);
+	}
+
+	public FieldConfigBuilder facetAs(String facetName) {
+		return facetAs(null, facetName);
+	}
+
 	public FieldConfigBuilder facetAs(FacetAs.DateHandling dateHandling) {
 		return facetAs(dateHandling, storedFieldName);
 	}
@@ -61,6 +73,10 @@ public class FieldConfigBuilder {
 	public FieldConfigBuilder facetAs(FacetAs facetAs) {
 		this.facetAsList.add(facetAs);
 		return this;
+	}
+
+	public FieldConfigBuilder sort() {
+		return sortAs(null, storedFieldName);
 	}
 
 	public FieldConfigBuilder sortAs(SortAs.StringHandling stringHandling) {

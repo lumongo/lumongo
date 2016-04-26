@@ -40,15 +40,15 @@ public class IndexConfig {
 
 		this.analyzerMap = new ConcurrentHashMap<>();
 
-		analyzerMap.put(DefaultAnalyzers.STANDARD, Lumongo.AnalyzerSettings.newBuilder().addFilter(Filter.LOWERCASE).addFilter(Filter.STOPWORDS).build());
-		analyzerMap.put(DefaultAnalyzers.KEYWORD, Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).build());
-		analyzerMap.put(DefaultAnalyzers.LC_KEYWORD, Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).build());
+		analyzerMap.put(DefaultAnalyzers.STANDARD, Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.STANDARD).addFilter(Filter.LOWERCASE).addFilter(Filter.STOPWORDS).build());
+		analyzerMap.put(DefaultAnalyzers.KEYWORD, Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.KEYWORD).setTokenizer(Tokenizer.KEYWORD).build());
+		analyzerMap.put(DefaultAnalyzers.LC_KEYWORD, Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.LC_KEYWORD).setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).build());
 		analyzerMap.put(DefaultAnalyzers.MIN_STEM,
-				Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).addFilter(Filter.ENGLISH_MIN_STEM).build());
+				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.MIN_STEM).setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).addFilter(Filter.ENGLISH_MIN_STEM).build());
 		analyzerMap.put(DefaultAnalyzers.KSTEMMED,
-				Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).addFilter(Filter.KSTEM).build());
-		analyzerMap.put(DefaultAnalyzers.MIN_STEM,
-				Lumongo.AnalyzerSettings.newBuilder().setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).addFilter(Filter.ASCII_FOLDING)
+				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.KSTEMMED).setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).addFilter(Filter.KSTEM).build());
+		analyzerMap.put(DefaultAnalyzers.LSH,
+				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.LSH).setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).addFilter(Filter.ASCII_FOLDING)
 						.addFilter(Filter.KSTEM).addFilter(Filter.MINHASH).build());
 
 		for (Lumongo.AnalyzerSettings analyzerSettings : indexSettings.getAnalyzerSettingsList()) {

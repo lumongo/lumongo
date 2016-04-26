@@ -1,5 +1,6 @@
 package org.lumongo.test.cluster.mapper;
 
+import org.lumongo.DefaultAnalyzers;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Embedded;
@@ -16,22 +17,23 @@ public class Person {
 	@UniqueId
 	protected String id;
 
-	@Indexed(analyzer = Lumongo.LMAnalyzer.LC_KEYWORD, fieldName = "firstNameExact")
-	@Indexed(analyzer = Lumongo.LMAnalyzer.STANDARD, fieldName = "firstName")
+	@Indexed(analyzerName = DefaultAnalyzers.LC_KEYWORD, fieldName = "firstNameExact")
+	@Indexed(analyzerName = DefaultAnalyzers.STANDARD, fieldName = "firstName")
 	@Faceted
 	protected String firstName;
 
-	@Indexed(analyzer = Lumongo.LMAnalyzer.LC_KEYWORD, fieldName = "lastNameExact")
-	@Indexed(analyzer = Lumongo.LMAnalyzer.STANDARD, fieldName = "lastName")
+	@Indexed(analyzerName = DefaultAnalyzers.LC_KEYWORD, fieldName = "lastNameExact")
+	@Indexed(analyzerName = DefaultAnalyzers.STANDARD, fieldName = "lastName")
 	@Faceted
 	protected String lastName;
 
 	@DefaultSearch
-	@Indexed(analyzer = Lumongo.LMAnalyzer.STANDARD)
+	@Indexed(analyzerName = DefaultAnalyzers.STANDARD)
 	protected String address;
 
 	@Embedded
 	protected List<PhoneNumber> phoneNumbers;
+
 
 	@Override
 	public String toString() {

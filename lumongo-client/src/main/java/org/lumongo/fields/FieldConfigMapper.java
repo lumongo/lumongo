@@ -2,6 +2,7 @@ package org.lumongo.fields;
 
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
+import org.lumongo.cluster.message.Lumongo.FieldConfig.FieldType;
 import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Embedded;
@@ -50,6 +51,16 @@ public class FieldConfigMapper<T> {
 			fieldName = prefix + "." + fieldName;
 		}
 
+		Class<?> fieldType = f.getType();
+
+		if (List.class.isAssignableFrom(fieldType)) {
+			Type genericType = f.getGenericType();
+			if (genericType instanceof ParameterizedType) {
+				ParameterizedType pType = (ParameterizedType) genericType;
+				fieldType = (Class<?>) pType.getActualTypeArguments()[0];
+			}
+		}
+
 		if (f.isAnnotationPresent(Embedded.class)) {
 			if (f.isAnnotationPresent(IndexedFields.class) || f.isAnnotationPresent(Indexed.class) || f.isAnnotationPresent(Faceted.class) || f
 							.isAnnotationPresent(UniqueId.class) || f.isAnnotationPresent(DefaultSearch.class)) {
@@ -57,19 +68,10 @@ public class FieldConfigMapper<T> {
 								.getSimpleName() + ">");
 			}
 
-			Class<?> type = f.getType();
 
-			if (List.class.isAssignableFrom(type)) {
-				Type genericType = f.getGenericType();
-				if (genericType instanceof ParameterizedType) {
-					ParameterizedType pType = (ParameterizedType) genericType;
-					type = (Class<?>) pType.getActualTypeArguments()[0];
-				}
-			}
+			FieldConfigMapper fieldConfigMapper = new FieldConfigMapper<>(fieldType, fieldName);
 
-			FieldConfigMapper fieldConfigMapper = new FieldConfigMapper<>(type, fieldName);
-
-			List<Field> allFields = AnnotationUtil.getNonStaticFields(type, true);
+			List<Field> allFields = AnnotationUtil.getNonStaticFields(fieldType, true);
 
 			for (Field ef : allFields) {
 				ef.setAccessible(true);
@@ -80,6 +82,28 @@ public class FieldConfigMapper<T> {
 		else {
 			FieldConfig.Builder fieldConfigBuilder = FieldConfig.newBuilder();
 			fieldConfigBuilder.setStoredFieldName(fieldName);
+
+
+
+			if (fieldType.equals(String.class)) {
+				fieldConfigBuilder.setFieldType(FieldType.STRING);
+			}
+			else if (fieldType.equals(int.class) || fieldType.equals(Integer.class)) {
+				fieldConfigBuilder.setFieldType(FieldType.NUMERIC_INT);
+			}
+			else if (fieldType.equals(long.class) || fieldType.equals(Long.class)) {
+				fieldConfigBuilder.setFieldType(FieldType.NUMERIC_LONG);
+			}
+			else if (fieldType.equals(float.class) || fieldType.equals(Float.class)) {
+				fieldConfigBuilder.setFieldType(FieldType.NUMERIC_FLOAT);
+			}
+			else if (fieldType.equals(double.class) || fieldType.equals(Double.class)) {
+				fieldConfigBuilder.setFieldType(FieldType.NUMERIC_DOUBLE);
+			}
+			else if (fieldType.equals(boolean.class) || fieldType.equals(Boolean.class)) {
+				fieldConfigBuilder.setFieldType(FieldType.BOOL);
+			}
+
 
 			if (f.isAnnotationPresent(IndexedFields.class)) {
 				IndexedFields in = f.getAnnotation(IndexedFields.class);
