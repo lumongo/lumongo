@@ -1,15 +1,17 @@
 package org.lumongo.client.result;
 
 import com.google.protobuf.ByteString;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import org.bson.BSON;
+import org.bson.BsonBinaryReader;
+import org.bson.Document;
+import org.bson.codecs.DecoderContext;
+import org.bson.codecs.DocumentCodec;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.fields.Mapper;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,24 +67,23 @@ public class FetchResult extends Result {
 		}
 		return null;
 	}
-	
-	public DBObject getDocument() {
+
+	public Document getDocument() {
 		if (fetchResponse.hasResultDocument()) {
 			ResultDocument rd = fetchResponse.getResultDocument();
-			
+
 			ByteString bs = rd.getDocument();
-			DBObject document = new BasicDBObject();
-			document.putAll(BSON.decode(bs.toByteArray()));
-			return document;
-			
+			BsonBinaryReader bsonReader = new BsonBinaryReader(ByteBuffer.wrap(bs.toByteArray()));
+			return new DocumentCodec().decode(bsonReader, DecoderContext.builder().build());
+
 		}
 		return null;
 	}
 	
 	public <T> T getDocument(Mapper<T> mapper) throws Exception {
 		if (fetchResponse.hasResultDocument()) {
-			DBObject document = getDocument();
-			return mapper.fromDBObject(document);
+			Document document = getDocument();
+			return mapper.fromDocument(document);
 		}
 		return null;
 	}

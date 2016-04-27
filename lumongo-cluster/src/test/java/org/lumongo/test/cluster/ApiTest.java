@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import org.bson.Document;
 import org.lumongo.DefaultAnalyzers;
 import org.lumongo.client.command.*;
 import org.lumongo.client.config.IndexConfig;
@@ -20,9 +21,7 @@ import org.lumongo.client.result.GetMembersResult;
 import org.lumongo.client.result.GetNumberOfDocsResult;
 import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.client.result.QueryResult;
-import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.FieldConfig.FieldType;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.LMMember;
@@ -148,7 +147,7 @@ public class ApiTest {
 		FetchResult fetchResult = lumongoWorkPool.fetch(fetchDocument);
 		
 		if (fetchResult.hasResultDocument()) {
-			DBObject object = fetchResult.getDocument();
+			Document object = fetchResult.getDocument();
 			System.out.println(object);
 		}
 		
@@ -157,7 +156,7 @@ public class ApiTest {
 		FetchResult fetchResult1 = lumongoWorkPool.fetch(fetchDocument1);
 		
 		if (fetchResult1.hasResultDocument()) {
-			DBObject object = fetchResult1.getDocument();
+			Document object = fetchResult1.getDocument();
 			System.out.println(object);
 			
 			Map<String, String> meta = fetchResult1.getMeta();

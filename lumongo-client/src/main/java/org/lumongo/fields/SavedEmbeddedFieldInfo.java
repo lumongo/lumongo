@@ -1,6 +1,6 @@
 package org.lumongo.fields;
 
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.lumongo.util.AnnotationUtil;
 
 import java.lang.reflect.Field;
@@ -52,32 +52,32 @@ public class SavedEmbeddedFieldInfo<T> {
 			Object o = field.get(object);
 			List<?> l = (List<?>) o;
 
-			List<DBObject> retValues = new ArrayList<>();
+			List<Document> retValues = new ArrayList<>();
 			for (Object o2 : l) {
-				DBObject retVal = savedFieldMapper.toDbObject(o2);
+				Document retVal = savedFieldMapper.toDocument(o2);
 				retValues.add(retVal);
 			}
 			return retValues;
 		}
 		else {
 			Object o = field.get(object);
-			DBObject returnValue = savedFieldMapper.toDbObject(o);
+			Document returnValue = savedFieldMapper.toDocument(o);
 			return returnValue;
 		}
 	}
 
-	public void populate(T newInstance, DBObject savedDBObject) throws Exception {
+	public void populate(T newInstance, Document document) throws Exception {
 
-		Object value = savedDBObject.get(fieldName);
+		Object value = document.get(fieldName);
 
 		boolean valuesIsList = value instanceof List;
 
 		if (valuesIsList) {
-			List<DBObject> embeddedValues = (List<DBObject>) value;
+			List<Document> embeddedValues = (List<Document>) value;
 			if (fieldIsList) {
 
 				List<Object> objs = new ArrayList<>();
-				for (DBObject embeddedValue : embeddedValues) {
+				for (Document embeddedValue : embeddedValues) {
 					objs.add(savedFieldMapper.fromDBObject(embeddedValue));
 				}
 				field.set(newInstance, objs);
@@ -87,7 +87,7 @@ public class SavedEmbeddedFieldInfo<T> {
 				if (valueList.size() == 1) {
 					Object first = valueList.iterator().next();
 					if (first != null) {
-						field.set(newInstance, savedFieldMapper.fromDBObject((DBObject) first));
+						field.set(newInstance, savedFieldMapper.fromDBObject((Document) first));
 					}
 				}
 				else if (valueList.isEmpty()) {
@@ -100,7 +100,7 @@ public class SavedEmbeddedFieldInfo<T> {
 			}
 		}
 		else {
-			Object obj = savedFieldMapper.fromDBObject((DBObject) value);
+			Object obj = savedFieldMapper.fromDBObject((Document) value);
 			if (fieldIsList) {
 				if (value != null) {
 					field.set(newInstance, new ArrayList<>(Arrays.asList(obj)));

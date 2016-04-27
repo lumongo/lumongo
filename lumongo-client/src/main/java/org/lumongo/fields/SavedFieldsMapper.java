@@ -1,7 +1,6 @@
 package org.lumongo.fields;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Embedded;
@@ -64,8 +63,8 @@ public class SavedFieldsMapper<T> {
 		}
 	}
 
-	protected DBObject toDbObject(T object) throws Exception {
-		DBObject document = new BasicDBObject();
+	protected Document toDocument(T object) throws Exception {
+		Document document = new Document();
 		for (SavedFieldInfo<T> sfi : savedFields) {
 			Object o = sfi.getValue(object);
 			document.put(sfi.getFieldName(), o);
@@ -78,13 +77,13 @@ public class SavedFieldsMapper<T> {
 		return document;
 	}
 
-	protected T fromDBObject(DBObject savedDBObject) throws Exception {
+	protected T fromDBObject(Document savedDocument) throws Exception {
 		T newInstance = clazz.newInstance();
 		for (SavedFieldInfo<T> sfi : savedFields) {
-			sfi.populate(newInstance, savedDBObject);
+			sfi.populate(newInstance, savedDocument);
 		}
 		for (SavedEmbeddedFieldInfo<T> sefi : savedEmbeddedFields) {
-			sefi.populate(newInstance, savedDBObject);
+			sefi.populate(newInstance, savedDocument);
 		}
 
 		return newInstance;

@@ -1,7 +1,6 @@
 package org.lumongo.test.cluster;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.lumongo.DefaultAnalyzers;
@@ -91,33 +90,33 @@ public class SingleNodeTest extends ServerTestBase {
 
 					String uniqueId = uniqueIdPrefix + id;
 
-					DBObject object = new BasicDBObject();
-					object.put("uid", uniqueId);
-					object.put("issn", issn);
-					object.put("title", "Facet Userguide");
+					Document document = new Document();
+					document.put("uid", uniqueId);
+					document.put("issn", issn);
+					document.put("title", "Facet Userguide");
 
 					if (half) { // 1/2 of input
-						object.put("country", "US");
+						document.put("country", "US");
 					}
 					else { // 1/2 of input
-						object.put("country", "France");
+						document.put("country", "France");
 					}
 
 					if (tenth) { // 1/10 of input
 						Date d = (new DateTime(DateTimeZone.UTC)).withDate(2014, 10, 4).toDate();
-						object.put("date", d);
+						document.put("date", d);
 					}
 					else if (half) { // 2/5 of input
 						Date d = (new DateTime(DateTimeZone.UTC)).withDate(2013, 9, 4).toDate();
-						object.put("date", d);
+						document.put("date", d);
 					}
 					else { // 1/2 of input
 						Date d = (new DateTime(DateTimeZone.UTC)).withDate(2013, 8, 4).toDate();
-						object.put("date", d);
+						document.put("date", d);
 					}
 
 					Store s = new Store(uniqueId, FACET_TEST_INDEX);
-					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
+					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(document));
 
 					lumongoWorkPool.store(s);
 				}
@@ -158,7 +157,7 @@ public class SingleNodeTest extends ServerTestBase {
 
 			assertEquals("Total record count not " + totalRecords, totalRecords, qr.getTotalHits());
 
-			for (@SuppressWarnings("unused") FacetCount fc : qr.getFacetCounts("date")) {
+			for (FacetCount fc : qr.getFacetCounts("date")) {
 				System.out.println("Date: " + fc);
 			}
 
@@ -242,27 +241,27 @@ public class SingleNodeTest extends ServerTestBase {
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
 				String uniqueId = uniqueIdPrefix + i;
 
-				DBObject object = new BasicDBObject();
-				object.put("uid", uniqueId);
-				object.put("issn", "1333-1333");
-				object.put("title", "Search and Storage");
-				object.put("flag", i % 2 == 0);
+				Document document = new Document();
+				document.put("uid", uniqueId);
+				document.put("issn", "1333-1333");
+				document.put("title", "Search and Storage");
+				document.put("flag", i % 2 == 0);
 
-				Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
+				Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(document));
 				lumongoWorkPool.store(s);
 			}
 
 			for (int i = 0; i < DOCUMENTS_LOADED; i++) {
 				String uniqueId = uniqueIdPrefix + i;
 
-				DBObject object = new BasicDBObject();
-				object.put("uid", uniqueId);
-				object.put("issn", "1234-1234");
-				object.put("title", "Distributed Search and Storage System");
-				object.put("an", i);
-				object.put("flag", i % 2 == 0);
+				Document document = new Document();
+				document.put("uid", uniqueId);
+				document.put("issn", "1234-1234");
+				document.put("title", "Distributed Search and Storage System");
+				document.put("an", i);
+				document.put("flag", i % 2 == 0);
 
-				Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
+				Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(document));
 				lumongoWorkPool.store(s);
 			}
 		}
@@ -374,24 +373,24 @@ public class SingleNodeTest extends ServerTestBase {
 		String uniqueId = "bsonTestObjectId";
 		{
 
-			DBObject dbObject = new BasicDBObject();
-			dbObject.put("uid", uniqueId);
-			dbObject.put("someKey", "someValue");
-			dbObject.put("other key", "other value");
-			dbObject.put("issn", "4321-4321");
-			dbObject.put("title", "Magic Java Beans");
-			dbObject.put("eissn", "3333-3333");
+			Document document = new Document();
+			document.put("uid", uniqueId);
+			document.put("someKey", "someValue");
+			document.put("other key", "other value");
+			document.put("issn", "4321-4321");
+			document.put("title", "Magic Java Beans");
+			document.put("eissn", "3333-3333");
 
-			Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(dbObject));
+			Store s = new Store(uniqueId, MY_TEST_INDEX).setResultDocument(ResultDocBuilder.newBuilder().setDocument(document));
 			lumongoWorkPool.store(s);
 		}
 
 		{
 			FetchResult response = lumongoWorkPool.fetch(new FetchDocument(uniqueId, MY_TEST_INDEX));
 			assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
-			DBObject dbObject = response.getDocument();
-			assertEquals("BSON object is missing field", "someValue", dbObject.get("someKey"));
-			assertEquals("BSON object is missing field", "other value", dbObject.get("other key"));
+			Document document = response.getDocument();
+			assertEquals("BSON object is missing field", "someValue", document.get("someKey"));
+			assertEquals("BSON object is missing field", "other value", document.get("other key"));
 		}
 
 	}
@@ -403,13 +402,13 @@ public class SingleNodeTest extends ServerTestBase {
 		String uniqueId = "id3333";
 		{
 			{
-				DBObject dbObject = new BasicDBObject();
-				dbObject.put("uid", uniqueId);
-				dbObject.put("key1", "val1");
-				dbObject.put("key2", "val2");
-				dbObject.put("issn", "6666-6666");
-				dbObject.put("title", "More Magic Java Beans");
-				dbObject.put("eissn", 2222 - 1111);
+				Document document = new Document();
+				document.put("uid", uniqueId);
+				document.put("key1", "val1");
+				document.put("key2", "val2");
+				document.put("issn", "6666-6666");
+				document.put("title", "More Magic Java Beans");
+				document.put("eissn", 2222 - 1111);
 
 				AssociatedBuilder associatedBuilder = new AssociatedBuilder();
 				associatedBuilder.setFilename("myfile");
@@ -419,7 +418,7 @@ public class SingleNodeTest extends ServerTestBase {
 				associatedBuilder.addMetaData("sometypeinfo", "text file");
 
 				Store s = new Store(uniqueId, MY_TEST_INDEX);
-				s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(dbObject));
+				s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(document));
 				s.addAssociatedDocument(associatedBuilder);
 
 				lumongoWorkPool.store(s);
@@ -455,10 +454,9 @@ public class SingleNodeTest extends ServerTestBase {
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX, true));
 
 				assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
-				DBObject dbObject = response.getDocument();
-				;
-				assertEquals("BSON object is missing field", "val1", dbObject.get("key1"));
-				assertEquals("BSON object is missing field", "val2", dbObject.get("key2"));
+				Document document = response.getDocument();
+				assertEquals("BSON object is missing field", "val1", document.get("key1"));
+				assertEquals("BSON object is missing field", "val2", document.get("key2"));
 
 				assertEquals("Expected 3 associated documents", 3, response.getAssociatedDocumentCount());
 				assertTrue("Associated Document should be meta only", !response.getAssociatedDocument(0).hasDocument());
@@ -468,9 +466,9 @@ public class SingleNodeTest extends ServerTestBase {
 			{
 				FetchResult response = lumongoWorkPool.fetch(new FetchDocumentAndAssociated(uniqueId, MY_TEST_INDEX));
 				assertTrue("Fetch failed for <" + uniqueId + ">", response.hasResultDocument());
-				DBObject dbObject = response.getDocument();
-				assertEquals("BSON object is missing field", "val1", dbObject.get("key1"));
-				// assertEquals(dbObject.get("key2"), "val2", "BSON object is missing field");
+				Document document = response.getDocument();
+				assertEquals("BSON object is missing field", "val1", document.get("key1"));
+				// assertEquals(document.get("key2"), "val2", "BSON object is missing field");
 
 				assertEquals("Expected 3 associated documents", 3, response.getAssociatedDocumentCount());
 				assertTrue("Associated document does not exist", response.getAssociatedDocument(0).hasDocument());
@@ -553,14 +551,14 @@ public class SingleNodeTest extends ServerTestBase {
 
 		{
 			String uniqueId = "myid123";
-			DBObject object = new BasicDBObject();
-			object.put("uid", uniqueId);
-			object.put("issn", "4444-1111");
-			object.put("title", "A really special title to search");
+			Document document = new Document();
+			document.put("uid", uniqueId);
+			document.put("issn", "4444-1111");
+			document.put("title", "A really special title to search");
 
 			Store s = new Store(uniqueId, MY_TEST_INDEX);
 
-			s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
+			s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(document));
 
 			lumongoWorkPool.store(s);
 		}

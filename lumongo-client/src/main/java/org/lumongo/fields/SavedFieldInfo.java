@@ -1,6 +1,6 @@
 package org.lumongo.fields;
 
-import com.mongodb.DBObject;
+import org.bson.Document;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ public class SavedFieldInfo<T> {
 		return o;
 	}
 
-	public void populate(T newInstance, DBObject savedDBObject) throws Exception {
+	public void populate(T newInstance, Document savedDBObject) throws Exception {
 
 		Object value = savedDBObject.get(fieldName);
 
