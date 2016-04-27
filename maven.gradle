@@ -11,7 +11,7 @@ if (hasProperty('sonatypeUsername')) {
 
 	artifacts {
 		archives jar
-		archives sourcesJar
+		archives sourceJar
 		archives javadocJar
 	}
 	
