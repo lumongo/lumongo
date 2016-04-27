@@ -97,6 +97,7 @@ public class LumongoAnalyzerFactory {
 					else {
 						throw new RuntimeException("Unknown filter type <" + filter + ">");
 					}
+					lastTok = tok;
 				}
 
 				return new TokenStreamComponents(src, tok);
