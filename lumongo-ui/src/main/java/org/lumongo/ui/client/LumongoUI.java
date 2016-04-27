@@ -13,6 +13,7 @@ import com.vaadin.polymer.paper.widget.PaperItem;
 import com.vaadin.polymer.paper.widget.PaperMaterial;
 import com.vaadin.polymer.paper.widget.PaperMenu;
 import com.vaadin.polymer.paper.widget.PaperToolbar;
+import org.lumongo.ui.client.bundle.MainResources;
 
 import java.util.Arrays;
 
@@ -22,6 +23,8 @@ import java.util.Arrays;
 public class LumongoUI implements EntryPoint {
 	@Override
 	public void onModuleLoad() {
+
+		MainResources.INSTANCE.mainGSS().ensureInjected();
 
 		Polymer.importHref(Arrays.asList("iron-icons/iron-icons.html", "iron-flex-layout/classes/iron-flex-layout.html"), o -> {
 			loadPage();
@@ -96,17 +99,20 @@ public class LumongoUI implements EntryPoint {
 		drawerHeaderPanel.add(toolbar);
 
 		HTMLPanel content = new HTMLPanel("");
-
+		content.addStyleName(MainResources.INSTANCE.mainGSS().card());
 		PaperMaterial card1 = new PaperMaterial();
 		card1.setElevation(2);
 		PaperItem item1 = new PaperItem("Item 1");
 		card1.add(item1);
+
+		item1.setHeight("200px");
 		content.add(card1);
 
 
 		PaperMaterial card2 = new PaperMaterial();
 		card2.setElevation(2);
 		PaperItem item2= new PaperItem("Item 2");
+		item2.setHeight("200px");
 		card2.add(item2);
 		content.add(card2);
 

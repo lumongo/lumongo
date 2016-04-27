@@ -57,7 +57,7 @@ import org.apache.lucene.util.LongValues;
  * 
  * <p><b>NOTE:</b>: tie-break is by unicode sort order
  *
- * @lucene.experimental */
+ * lucene.experimental */
 public class LumongoSortedSetDocValuesFacetCounts extends Facets {
 
   final SortedSetDocValuesReaderState state;
