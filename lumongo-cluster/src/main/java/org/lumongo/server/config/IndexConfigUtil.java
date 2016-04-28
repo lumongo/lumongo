@@ -118,7 +118,10 @@ public class IndexConfigUtil {
 
 					IndexAs.Builder indexAs = IndexAs.newBuilder();
 					indexAs.setIndexFieldName(indexAsObj.getString(INDEXED_FIELD_NAME));
-					indexAs.setAnalyzerName(indexAsObj.getString(ANALYZER_NAME));
+					String analyzerName = indexAsObj.getString(ANALYZER_NAME);
+					if (analyzerName != null) {
+						indexAs.setAnalyzerName(analyzerName);
+					}
 					fieldConfig.addIndexAs(indexAs);
 				}
 			}
