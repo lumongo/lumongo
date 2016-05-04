@@ -839,6 +839,19 @@ public class LumongoSegment {
 					}
 				});
 			}
+			else if (FieldConfig.FieldType.BOOL.equals(fieldType)) {
+				LumongoUtil.handleLists(o, obj -> {
+					if (obj instanceof Boolean) {
+						String text = obj.toString();
+						SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(text));
+						d.add(docValue);
+					}
+					else {
+						throw new RuntimeException(
+								"Expecting date for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">, found <" + o.getClass() + ">");
+					}
+				});
+			}
 			else if (FieldConfig.FieldType.STRING.equals(fieldType)) {
 				LumongoUtil.handleLists(o, obj -> {
 					String text = o.toString();
