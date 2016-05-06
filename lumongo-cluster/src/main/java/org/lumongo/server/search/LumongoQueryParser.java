@@ -145,6 +145,8 @@ public class LumongoQueryParser extends QueryParser {
 		String field = term.field();
 		String text = term.text();
 
+		System.out.println(field + ":---:" + text);
+
 		Lumongo.FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(field);
 		if (IndexConfigUtil.isNumericOrDateFieldType(fieldType)) {
 			if (Doubles.tryParse(text) != null) {
@@ -180,11 +182,4 @@ public class LumongoQueryParser extends QueryParser {
 		return super.getFieldQuery(field, queryText, slop);
 	}
 
-	@Override
-	protected Query getPrefixQuery(String field, String termStr) throws ParseException {
-		if (termStr.equals("*")) {
-			return new FieldValueQuery(field);
-		}
-		return super.getPrefixQuery(field, termStr);
-	}
 }
