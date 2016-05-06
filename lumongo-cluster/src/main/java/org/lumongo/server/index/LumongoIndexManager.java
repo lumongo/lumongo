@@ -84,6 +84,10 @@ public class LumongoIndexManager {
 
 	}
 
+	public ClusterConfig getClusterConfig() {
+		return clusterConfig;
+	}
+
 	public void init(HazelcastManager hazelcastManager) throws UnknownHostException, MongoException {
 		globalLock.writeLock().lock();
 		try {
