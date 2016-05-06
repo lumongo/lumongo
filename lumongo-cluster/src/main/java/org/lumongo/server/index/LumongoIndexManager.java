@@ -1,5 +1,6 @@
 package org.lumongo.server.index;
 
+import com.google.protobuf.util.JsonFormat;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.mongodb.MongoClient;
@@ -695,7 +696,7 @@ public class LumongoIndexManager {
 		try {
 			//log.info("Running query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + ">");
 
-			log.info("Running query: <" + request + "> on indexes <" + request.getIndexList() + ">");
+			log.info("Running query: <" + JsonFormat.printer().print(request) + "> on indexes <" + request.getIndexList() + ">");
 
 			final Map<String, QueryWithFilters> queryMap = getQueryMap(request);
 
