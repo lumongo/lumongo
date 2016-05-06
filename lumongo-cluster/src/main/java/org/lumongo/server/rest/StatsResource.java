@@ -18,6 +18,8 @@ import javax.ws.rs.core.Response;
 @Path(LumongoConstants.STATS_URL)
 public class StatsResource {
 
+	private static final int MB = 1024 * 1024;
+
 	private LumongoIndexManager indexManager;
 
 	public StatsResource(LumongoIndexManager indexManager) {
@@ -36,6 +38,12 @@ public class StatsResource {
 			document.put("maxIndexBlockCount", indexManager.getClusterConfig().getMaxIndexBlocks());
 			document.put("currentIndexBlockCount", MongoFile.getCacheSize());
 
+			Runtime runtime = Runtime.getRuntime();
+
+			document.put("jvmUsedMemoryMB", (runtime.totalMemory() - runtime.freeMemory()) / MB);
+			document.put("jvmFreeMemoryMB",  runtime.freeMemory() / MB);
+			document.put("jvmTotalMemoryMB", runtime.totalMemory() / MB);
+			document.put("jvmMaxMemoryMB", runtime.maxMemory() / MB);
 
 			String docString = document.toString();
 
