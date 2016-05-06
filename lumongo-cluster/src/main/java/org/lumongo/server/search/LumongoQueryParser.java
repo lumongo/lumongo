@@ -11,6 +11,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.joda.time.DateTime;
@@ -183,7 +184,7 @@ public class LumongoQueryParser extends QueryParser {
 
 	@Override
 	protected Query getWildcardQuery(String field, String termStr) throws ParseException {
-		if (termStr.equals("*")) {
+		if (termStr.equals("*") && !field.equals("*")) {
 			return new TermQuery(new Term(LumongoConstants.FIELDS_LIST_FIELD, field));
 		}
 		return super.getWildcardQuery(field, termStr);
