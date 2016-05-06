@@ -696,7 +696,7 @@ public class LumongoIndexManager {
 		try {
 			//log.info("Running query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + ">");
 
-			log.info("Running query: <" + JsonFormat.printer().print(request) + "> on indexes <" + request.getIndexList() + ">");
+			log.info("Running query: <" + JsonFormat.printer().print(request) + ">");
 
 			final Map<String, QueryWithFilters> queryMap = getQueryMap(request);
 
