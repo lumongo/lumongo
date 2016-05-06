@@ -726,7 +726,9 @@ public class LumongoSegment {
 
 					for (IndexAs indexAs : fc.getIndexAsList()) {
 
+
 						String indexedFieldName = indexAs.getIndexFieldName();
+						d.add(new StringField(LumongoConstants.FIELDS_LIST_FIELD, indexedFieldName, Store.NO));
 
 						if (FieldConfig.FieldType.NUMERIC_INT.equals(fieldType)) {
 							IntFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);

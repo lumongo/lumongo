@@ -7,15 +7,16 @@ import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.FloatPoint;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.LongPoint;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.ConstantScoreQuery;
-import org.apache.lucene.search.FieldValueQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
@@ -145,8 +146,6 @@ public class LumongoQueryParser extends QueryParser {
 		String field = term.field();
 		String text = term.text();
 
-		System.out.println(field + ":---:" + text);
-
 		Lumongo.FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(field);
 		if (IndexConfigUtil.isNumericOrDateFieldType(fieldType)) {
 			if (Doubles.tryParse(text) != null) {
@@ -182,4 +181,11 @@ public class LumongoQueryParser extends QueryParser {
 		return super.getFieldQuery(field, queryText, slop);
 	}
 
+	@Override
+	protected Query getWildcardQuery(String field, String termStr) throws ParseException {
+		if (termStr.equals("*")) {
+			return new TermQuery(new Term(LumongoConstants.FIELDS_LIST_FIELD, field));
+		}
+		return super.getWildcardQuery(field, termStr);
+	}
 }

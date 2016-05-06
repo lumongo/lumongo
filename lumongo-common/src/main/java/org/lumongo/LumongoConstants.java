@@ -53,5 +53,6 @@ public class LumongoConstants {
 	public static final String STORED_META_FIELD = "_lmsmf_";
 	public static final String STORED_DOC_FIELD = "_lmsdf_";
 	public static final String ID_FIELD = "_lmidf_";
+	public static final String FIELDS_LIST_FIELD = "_lmflf_";
 
 }

@@ -1083,6 +1083,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 			fields.remove(LumongoConstants.STORED_DOC_FIELD);
 			fields.remove(LumongoConstants.STORED_META_FIELD);
 			fields.remove(LumongoConstants.ID_FIELD);
+			fields.remove(LumongoConstants.FIELDS_LIST_FIELD);
 
 			List<String> toRemove = new ArrayList<>();
 			for (String field : fields) {
