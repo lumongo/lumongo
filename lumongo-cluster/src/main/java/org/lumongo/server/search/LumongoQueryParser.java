@@ -10,6 +10,8 @@ import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.ConstantScoreQuery;
+import org.apache.lucene.search.FieldValueQuery;
 import org.apache.lucene.search.Query;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
@@ -176,5 +178,13 @@ public class LumongoQueryParser extends QueryParser {
 			}
 		}
 		return super.getFieldQuery(field, queryText, slop);
+	}
+
+	@Override
+	protected Query getPrefixQuery(String field, String termStr) throws ParseException {
+		if (termStr.equals("*")) {
+			return new FieldValueQuery(field);
+		}
+		return super.getPrefixQuery(field, termStr);
 	}
 }
