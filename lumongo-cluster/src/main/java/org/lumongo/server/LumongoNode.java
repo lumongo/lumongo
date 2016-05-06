@@ -1,5 +1,7 @@
 package org.lumongo.server;
 
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import org.apache.log4j.Logger;
 import org.lumongo.server.config.ClusterConfig;
@@ -38,15 +40,20 @@ public class LumongoNode {
 
 	public LumongoNode(MongoConfig mongoConfig, String localServer, int instance) throws Exception {
 
-		LocalNodeConfig localNodeConfig = ClusterHelper.getNodeConfig(mongoConfig, localServer, instance);
+		log.info("Using mongo <" + mongoConfig.getMongoHost() + ":" + mongoConfig.getMongoPort() + ">");
+		MongoClient mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
 
-		ClusterConfig clusterConfig = ClusterHelper.getClusterConfig(mongoConfig);
+		ClusterHelper clusterHelper = new ClusterHelper(mongo, mongoConfig.getDatabaseName());
+
+		LocalNodeConfig localNodeConfig = clusterHelper.getNodeConfig(localServer, instance);
+
+		ClusterConfig clusterConfig = clusterHelper.getClusterConfig();
 
 		log.info("Loaded cluster config: <" + clusterConfig + ">");
 
 		MongoDirectory.setMaxIndexBlocks(clusterConfig.getMaxIndexBlocks());
 
-		this.indexManager = new LumongoIndexManager(mongoConfig, clusterConfig);
+		this.indexManager = new LumongoIndexManager(mongo, mongoConfig, clusterConfig);
 
 		this.externalServiceHandler = new ExternalServiceHandler(clusterConfig, localNodeConfig, indexManager);
 		this.internalServiceHandler = new InternalServiceHandler(clusterConfig, localNodeConfig, indexManager);
@@ -58,7 +65,7 @@ public class LumongoNode {
 			this.restServiceManager = null;
 		}
 
-		Nodes nodes = ClusterHelper.getNodes(mongoConfig);
+		Nodes nodes = clusterHelper.getNodes();
 		this.hazelcastManager = HazelcastManager
 						.createHazelcastManager(localNodeConfig, indexManager, nodes.getHazelcastNodes(), mongoConfig.getDatabaseName());
 

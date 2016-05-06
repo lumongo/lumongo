@@ -60,6 +60,8 @@ public class ClusterAdmin {
 
 			MongoConfig mongoConfig = MongoConfig.getNodeConfig(mongoConfigFile);
 
+			ClusterHelper clusterHelper = new ClusterHelper(mongoConfig);
+
 			LocalNodeConfig localNodeConfig = null;
 			if (nodeConfigFile != null) {
 				localNodeConfig = LocalNodeConfig.getNodeConfig(nodeConfigFile);
@@ -75,7 +77,7 @@ public class ClusterAdmin {
 				if (clusterConfig == null) {
 					throw new RequiredOptionException(AdminConstants.CLUSTER_CONFIG, command.toString());
 				}
-				ClusterHelper.saveClusterConfig(mongoConfig, clusterConfig);
+				clusterHelper.saveClusterConfig(clusterConfig);
 				System.out.println("Created cluster");
 			}
 			else if (Command.updateCluster.equals(command)) {
@@ -83,16 +85,16 @@ public class ClusterAdmin {
 				if (clusterConfig == null) {
 					throw new RequiredOptionException(AdminConstants.CLUSTER_CONFIG, command.toString());
 				}
-				ClusterHelper.saveClusterConfig(mongoConfig, clusterConfig);
+				clusterHelper.saveClusterConfig(clusterConfig);
 			}
 			else if (Command.removeCluster.equals(command)) {
 				System.out.println("Removing cluster from database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost()
 								+ ">");
-				ClusterHelper.removeClusterConfig(mongoConfig);
+				clusterHelper.removeClusterConfig();
 			}
 			else if (Command.showCluster.equals(command)) {
 				try {
-					System.out.println(ClusterHelper.getClusterConfig(mongoConfig));
+					System.out.println(clusterHelper.getClusterConfig());
 				}
 				catch (Exception e) {
 					System.out.println(e.getMessage());
@@ -111,7 +113,7 @@ public class ClusterAdmin {
 				else {
 					System.out.println("Registering node with server address <" + serverAddress + ">");
 
-					ClusterHelper.registerNode(mongoConfig, localNodeConfig, serverAddress);
+					clusterHelper.registerNode(localNodeConfig, serverAddress);
 				}
 			}
 			else if (Command.removeNode.equals(command)) {
@@ -125,10 +127,10 @@ public class ClusterAdmin {
 
 				System.out.println("Removing node with server address <" + serverAddress + "> and hazelcastPort <" + hazelcastPort + ">");
 
-				ClusterHelper.removeNode(mongoConfig, serverAddress, hazelcastPort);
+				clusterHelper.removeNode(serverAddress, hazelcastPort);
 			}
 			else if (Command.listNodes.equals(command)) {
-				System.out.println(ClusterHelper.getNodes(mongoConfig));
+				System.out.println(clusterHelper.getNodes());
 			}
 			else {
 				System.err.println(command + " not supported");

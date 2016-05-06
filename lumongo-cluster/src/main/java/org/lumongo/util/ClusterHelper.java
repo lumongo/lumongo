@@ -16,7 +16,7 @@ import org.lumongo.server.config.Nodes;
 import java.net.UnknownHostException;
 
 public class ClusterHelper {
-	
+
 	public static final String CLUSTER_CONFIG = "cluster_config_";
 	public static final String CLUSTER_MEMBERSHIP = "cluster_membership_";
 	public static final String _ID = "_id";
@@ -24,190 +24,156 @@ public class ClusterHelper {
 	public static final String CLUSTER = "cluster";
 	public static final String INSTANCE = "instance";
 	public static final String SERVER_ADDRESS = "serverAddress";
-	
+
+	private final MongoClient mongo;
+	private final String database;
+
 	//TODO dont reconnect to mongo constantly in this class
-	
-	public static void saveClusterConfig(MongoConfig mongoConfig, ClusterConfig clusterConfig) throws Exception {
-		MongoClient mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
-		
-		try {
-			
-			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
-			
-			MongoCollection<Document> configCollection = db.getCollection(CLUSTER_CONFIG);
 
-			Document query = new Document();
-			query.put(_ID, CLUSTER);
-
-			Document config = new Document();
-			config.put(_ID, CLUSTER);
-			config.put(DATA, clusterConfig.toDocument());
-
-			configCollection.replaceOne(query, config, new UpdateOptions().upsert(true));
-		}
-		finally {
-			mongo.close();
-		}
-		
+	public ClusterHelper(MongoClient mongo, String database) {
+		this.mongo = mongo;
+		this.database = database;
 	}
-	
-	public static void removeClusterConfig(MongoConfig mongoConfig) throws UnknownHostException, MongoException {
-		
-		MongoClient mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
-		
-		try {
-			
-			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
-			
-			MongoCollection<Document> configCollection = db.getCollection(CLUSTER_CONFIG);
-			
-			Document search = new Document();
-			search.put(_ID, CLUSTER);
-			
-			configCollection.deleteOne(search);
-		}
-		finally {
-			mongo.close();
-		}
+
+	public ClusterHelper(MongoConfig mongoConfig) {
+		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
+		this.database = mongoConfig.getDatabaseName();
 	}
-	
-	public static ClusterConfig getClusterConfig(MongoConfig mongoConfig) throws Exception {
-		MongoClient mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
-		
-		try {
-			
-			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
-			
-			MongoCollection<Document> configCollection = db.getCollection(CLUSTER_CONFIG);
-			
-			Document search = new Document();
-			search.put(_ID, CLUSTER);
-			
-			Document result = configCollection.find(search).first();
-			
-			if (result == null) {
-				throw new Exception("Create the cluster first using cluster admin tool");
-			}
-			else {
-				Document object = (Document) result.get(DATA);
-				return ClusterConfig.fromDBObject(object);
-			}
-		}
-		finally {
-			mongo.close();
-		}
-		
+
+	public void registerNode(LocalNodeConfig localNodeConfig, String serverAddress) throws Exception {
+
+		MongoDatabase db = mongo.getDatabase(database);
+
+		MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
+
+		Document index = new Document();
+		index.put(SERVER_ADDRESS, 1);
+		index.put(INSTANCE, 1);
+
+		System.out.println(localNodeConfig.getHazelcastPort());
+
+		IndexOptions options = new IndexOptions().unique(true);
+		membershipCollection.createIndex(index, options);
+
+		Document search = new Document();
+		search.put(SERVER_ADDRESS, serverAddress);
+		search.put(INSTANCE, localNodeConfig.getHazelcastPort());
+
+		Document object = new Document();
+		object.put(SERVER_ADDRESS, serverAddress);
+		object.put(INSTANCE, localNodeConfig.getHazelcastPort());
+		object.put(DATA, localNodeConfig.toDocument());
+
+		membershipCollection.replaceOne(search, object, new UpdateOptions().upsert(true));
+
 	}
-	
-	public static void registerNode(MongoConfig mongoConfig, LocalNodeConfig localNodeConfig, String serverAddress) throws Exception {
-		MongoClient mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
-		
-		try {
-			
-			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 
-			MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
+	public void removeNode(String serverAddress, int hazelcastPort) throws Exception {
 
-			Document index = new Document();
-			index.put(SERVER_ADDRESS, 1);
-			index.put(INSTANCE, 1);
+		MongoDatabase db = mongo.getDatabase(database);
 
-			IndexOptions options = new IndexOptions().unique(true);
-			membershipCollection.createIndex(index, options);
+		MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
 
-			Document search = new Document();
-			search.put(SERVER_ADDRESS, serverAddress);
-			search.put(INSTANCE, localNodeConfig.getHazelcastPort());
+		Document search = new Document();
+		search.put(SERVER_ADDRESS, serverAddress);
+		search.put(INSTANCE, hazelcastPort);
 
-			Document object = new Document();
-			object.put(SERVER_ADDRESS, serverAddress);
-			object.put(INSTANCE, localNodeConfig.getHazelcastPort());
-			object.put(DATA, localNodeConfig.toDocument());
+		membershipCollection.deleteMany(search);
 
-			membershipCollection.replaceOne(search, object, new UpdateOptions().upsert(true));
-		}
-		finally {
-			mongo.close();
-		}
-		
 	}
-	
-	public static void removeNode(MongoConfig mongoConfig, String serverAddress, int hazelcastPort) throws Exception {
-		MongoClient mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
-		
-		try {
-			
-			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
-			
-			MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
-			
-			Document search = new Document();
-			search.put(SERVER_ADDRESS, serverAddress);
-			search.put(INSTANCE, hazelcastPort);
-			
-			membershipCollection.deleteMany(search);
-			
+
+	public LocalNodeConfig getNodeConfig(String serverAddress, int instance) throws Exception {
+
+		MongoDatabase db = mongo.getDatabase(database);
+
+		MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
+
+		Document search = new Document();
+		search.put(SERVER_ADDRESS, serverAddress);
+		search.put(INSTANCE, instance);
+
+		Document result = membershipCollection.find(search).first();
+
+		if (result == null) {
+			throw new Exception("No node found with address <" + serverAddress + "> and hazelcast port <" + instance
+					+ ">.  Please register the node with cluster admin tool");
 		}
-		finally {
-			mongo.close();
-		}
-		
+
+		Document dataObject = (Document) result.get(DATA);
+
+		return LocalNodeConfig.fromDocument(dataObject);
+
 	}
-	
-	public static LocalNodeConfig getNodeConfig(MongoConfig mongoConfig, String serverAddress, int instance) throws Exception {
-		MongoClient mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
-		
-		try {
-			
-			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
-			
-			MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
-			
-			Document search = new Document();
-			search.put(SERVER_ADDRESS, serverAddress);
-			search.put(INSTANCE, instance);
-			
-			Document result = membershipCollection.find(search).first();
-			
-			if (result == null) {
-				throw new Exception("No node found with address <" + serverAddress + "> and hazelcast port <" + instance
-								+ ">.  Please register the node with cluster admin tool");
-			}
-			
-			Document dataObject = (Document) result.get(DATA);
-			
-			return LocalNodeConfig.fromDocument(dataObject);
-			
+
+	public Nodes getNodes() {
+
+		MongoDatabase db = mongo.getDatabase(database);
+
+		MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
+
+		FindIterable<Document> results = membershipCollection.find();
+
+		Nodes nodes = new Nodes();
+
+		for (Document object : results) {
+			LocalNodeConfig lnc = LocalNodeConfig.fromDocument((Document) object.get(DATA));
+
+			String serverAddress = (String) object.get(SERVER_ADDRESS);
+			nodes.add(serverAddress, lnc);
 		}
-		finally {
-			mongo.close();
-		}
+
+		return nodes;
+
 	}
-	
-	public static Nodes getNodes(MongoConfig mongoConfig) throws Exception {
-		MongoClient mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
-		
-		try {
-			
-			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
-			
-			MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
-			
-			FindIterable<Document> results = membershipCollection.find();
-			
-			Nodes nodes = new Nodes();
-			
-			for (Document object : results) {
-				LocalNodeConfig lnc = LocalNodeConfig.fromDocument((Document) object.get(DATA));
-				
-				String serverAddress = (String) object.get(SERVER_ADDRESS);
-				nodes.add(serverAddress, lnc);
-			}
-			
-			return nodes;
+
+	public ClusterConfig getClusterConfig() throws Exception {
+
+		MongoDatabase db = mongo.getDatabase(database);
+
+		MongoCollection<Document> configCollection = db.getCollection(CLUSTER_CONFIG);
+
+		Document search = new Document();
+		search.put(_ID, CLUSTER);
+
+		Document result = configCollection.find(search).first();
+
+		if (result == null) {
+			throw new Exception("Create the cluster first using cluster admin tool");
 		}
-		finally {
-			mongo.close();
+		else {
+			Document object = (Document) result.get(DATA);
+			return ClusterConfig.fromDBObject(object);
 		}
+
+	}
+
+	public void removeClusterConfig() throws UnknownHostException, MongoException {
+
+		MongoDatabase db = mongo.getDatabase(database);
+
+		MongoCollection<Document> configCollection = db.getCollection(CLUSTER_CONFIG);
+
+		Document search = new Document();
+		search.put(_ID, CLUSTER);
+
+		configCollection.deleteOne(search);
+
+	}
+
+	public void saveClusterConfig(ClusterConfig clusterConfig) throws Exception {
+
+		MongoDatabase db = mongo.getDatabase(database);
+
+		MongoCollection<Document> configCollection = db.getCollection(CLUSTER_CONFIG);
+
+		Document query = new Document();
+		query.put(_ID, CLUSTER);
+
+		Document config = new Document();
+		config.put(_ID, CLUSTER);
+		config.put(DATA, clusterConfig.toDocument());
+
+		configCollection.replaceOne(query, config, new UpdateOptions().upsert(true));
+
 	}
 }
