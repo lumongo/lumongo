@@ -44,6 +44,7 @@ public class LumongoConstants {
 	public static final String MIN_TERM_FREQ = "minTermFreq";
 	public static final String START_TERM = "startTerm";
 	public static final String END_TERM = "endTerm";
+	public static final String DEFAULT_OP= "defaultOp";
 
 	
 	//General
