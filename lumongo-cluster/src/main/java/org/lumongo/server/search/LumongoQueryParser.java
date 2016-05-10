@@ -11,12 +11,8 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.config.IndexConfig;
@@ -24,12 +20,12 @@ import org.lumongo.server.config.IndexConfigUtil;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 public class LumongoQueryParser extends QueryParser {
-
-	private static final DateTimeFormatter dateTimeFormatter = ISODateTimeFormat.dateTimeNoMillis();
-
-	private static final DateTimeFormatter dateFormatter = ISODateTimeFormat.date();
 
 	private IndexConfig indexConfig;
 
@@ -39,6 +35,17 @@ public class LumongoQueryParser extends QueryParser {
 		super(indexConfig.getIndexSettings().getDefaultSearchField(), analyzer);
 		this.indexConfig = indexConfig;
 		setAllowLeadingWildcard(true);
+	}
+
+	private static Long getDateAsLong(String dateString) {
+		long epochMilli;
+		if (dateString.contains(":")) {
+			epochMilli = Instant.parse(dateString).toEpochMilli();
+		}
+		else {
+			epochMilli = LocalDateTime.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE).toInstant(ZoneOffset.UTC).toEpochMilli();
+		}
+		return epochMilli;
 	}
 
 	public void setField(String field) {
@@ -129,17 +136,6 @@ public class LumongoQueryParser extends QueryParser {
 			return LongPoint.newRangeQuery(fieldName, min, max);
 		}
 		throw new RuntimeException("Not a valid numeric field <" + fieldName + ">");
-	}
-
-	private Long getDateAsLong(String dateString) {
-		DateTime dateTime;
-		if (dateString.contains(":")) {
-			dateTime = dateTimeFormatter.parseDateTime(dateString);
-		}
-		else {
-			dateTime = dateFormatter.parseDateTime(dateString);
-		}
-		return dateTime.toDate().getTime();
 	}
 
 	@Override
