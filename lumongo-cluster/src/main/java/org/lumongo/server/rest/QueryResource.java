@@ -39,6 +39,7 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields, @QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
 			@QueryParam(LumongoConstants.FIELDS) List<String> fields, @QueryParam(LumongoConstants.FETCH) Boolean fetch,
 			@QueryParam(LumongoConstants.ROWS) int rows, @QueryParam(LumongoConstants.FACET) List<String> facet,
+			@QueryParam(LumongoConstants.DRILL_DOWN) List<String> drillDowns,
 			@QueryParam(LumongoConstants.DEFAULT_OP) String defaultOperator,
 			@QueryParam(LumongoConstants.SORT) List<String> sort, @QueryParam(LumongoConstants.PRETTY) boolean pretty,
 			@QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError, @QueryParam(LumongoConstants.MIN_MATCH) Integer mm) {
@@ -64,6 +65,8 @@ public class QueryResource {
 				qrBuilder.addFilterQuery(filterQuery);
 			}
 		}
+
+
 
 		if (defaultOperator != null) {
 			if (defaultOperator.equalsIgnoreCase("AND")) {
@@ -121,6 +124,16 @@ public class QueryResource {
 			}
 			frBuilder.addCountRequest(facetBuilder);
 		}
+		if (drillDowns != null) {
+			for (String drillDown : drillDowns) {
+				if (drillDown.contains(":")) {
+					String value = drillDown.substring(drillDown.indexOf(":") + 1);
+					String field = drillDown.substring(0, drillDown.indexOf(":"));
+					frBuilder.addDrillDown(LMFacet.newBuilder().setLabel(field).setPath(value));
+				}
+			}
+		}
+
 		qrBuilder.setFacetRequest(frBuilder);
 
 		Lumongo.SortRequest.Builder sortRequest = Lumongo.SortRequest.newBuilder();
