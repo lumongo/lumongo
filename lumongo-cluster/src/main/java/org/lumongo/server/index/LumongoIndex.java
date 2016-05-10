@@ -781,7 +781,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 						return qp.parse(query);
 					}
 					else {
-						throw new Exception("Query field(s) required if default search field is not set");
+						qp.setField(null);
+						return qp.parse(query);
 					}
 				}
 				else {

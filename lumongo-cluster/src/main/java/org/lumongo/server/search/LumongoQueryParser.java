@@ -21,7 +21,7 @@ import org.lumongo.server.config.IndexConfigUtil;
 import java.io.IOException;
 import java.io.StringReader;
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
@@ -43,15 +43,13 @@ public class LumongoQueryParser extends QueryParser {
 			epochMilli = Instant.parse(dateString).toEpochMilli();
 		}
 		else {
-			epochMilli = LocalDateTime.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE).toInstant(ZoneOffset.UTC).toEpochMilli();
+			LocalDate parse = LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE);
+			epochMilli = parse.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
 		}
 		return epochMilli;
 	}
 
 	public void setField(String field) {
-		if (field == null) {
-			throw new IllegalArgumentException("Field can not be null");
-		}
 		this.field = field;
 	}
 
@@ -145,7 +143,10 @@ public class LumongoQueryParser extends QueryParser {
 
 		Lumongo.FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(field);
 		if (IndexConfigUtil.isNumericOrDateFieldType(fieldType)) {
-			if (Doubles.tryParse(text) != null) {
+			if (IndexConfigUtil.isDateFieldType(fieldType)) {
+				return getNumericOrDateRange(field, text, text, true, true);
+			}
+			else if (Doubles.tryParse(text) != null) {
 				return getNumericOrDateRange(field, text, text, true, true);
 			}
 			return null;
