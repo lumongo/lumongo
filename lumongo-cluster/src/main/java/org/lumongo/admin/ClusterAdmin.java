@@ -6,7 +6,6 @@ import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
-import org.lumongo.admin.help.RequiredOptionException;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
@@ -19,29 +18,20 @@ import java.util.Arrays;
 
 public class ClusterAdmin {
 
-
-	public enum Command {
-		createCluster,
-		updateCluster,
-		removeCluster,
-		showCluster,
-		registerNode,
-		removeNode,
-		listNodes,
-	}
-
 	public static void main(String[] args) throws Exception {
 		LogUtil.loadLogConfig();
 
 		OptionParser parser = new OptionParser();
 		OptionSpec<File> mongoConfigArg = parser.accepts(AdminConstants.MONGO_CONFIG).withRequiredArg().ofType(File.class).describedAs("Mongo properties file");
 		OptionSpec<File> nodeConfigArg = parser.accepts(AdminConstants.NODE_CONFIG).withRequiredArg().ofType(File.class).describedAs("Node properties file");
-		OptionSpec<File> clusterConfigArg = parser.accepts(AdminConstants.CLUSTER_CONFIG).withRequiredArg().ofType(File.class).describedAs("Cluster properties file");
-		OptionSpec<String> serverAddressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg().describedAs("Specific server address manually for node commands");
+		OptionSpec<File> clusterConfigArg = parser.accepts(AdminConstants.CLUSTER_CONFIG).withRequiredArg().ofType(File.class)
+				.describedAs("Cluster properties file");
+		OptionSpec<String> serverAddressArg = parser.accepts(AdminConstants.ADDRESS).withRequiredArg()
+				.describedAs("Specific server address manually for node commands");
 		OptionSpec<Integer> hazelcastPortArg = parser.accepts(AdminConstants.HAZELCAST_PORT).withRequiredArg().ofType(Integer.class)
-						.describedAs("Hazelcast port if multiple instances on one server for node commands");
+				.describedAs("Hazelcast port if multiple instances on one server for node commands");
 		OptionSpec<Command> commandArg = parser.accepts(AdminConstants.COMMAND).withRequiredArg().ofType(Command.class).required()
-						.describedAs("Command to run " + Arrays.toString(Command.values()));
+				.describedAs("Command to run " + Arrays.toString(Command.values()));
 
 		try {
 			OptionSet options = parser.parse(args);
@@ -55,7 +45,7 @@ public class ClusterAdmin {
 			Command command = options.valueOf(commandArg);
 
 			if (mongoConfigFile == null) {
-				throw new RequiredOptionException(AdminConstants.MONGO_CONFIG, command.toString());
+				throw new IllegalArgumentException(AdminConstants.MONGO_CONFIG + " is required for " + command.toString());
 			}
 
 			MongoConfig mongoConfig = MongoConfig.getNodeConfig(mongoConfigFile);
@@ -75,7 +65,7 @@ public class ClusterAdmin {
 			if (Command.createCluster.equals(command)) {
 				System.out.println("Creating cluster in database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost() + ">");
 				if (clusterConfig == null) {
-					throw new RequiredOptionException(AdminConstants.CLUSTER_CONFIG, command.toString());
+					throw new IllegalArgumentException(AdminConstants.CLUSTER_CONFIG + " is required for " + command.toString());
 				}
 				clusterHelper.saveClusterConfig(clusterConfig);
 				System.out.println("Created cluster");
@@ -83,13 +73,13 @@ public class ClusterAdmin {
 			else if (Command.updateCluster.equals(command)) {
 				System.out.println("Updating cluster in database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost() + ">");
 				if (clusterConfig == null) {
-					throw new RequiredOptionException(AdminConstants.CLUSTER_CONFIG, command.toString());
+					throw new IllegalArgumentException(AdminConstants.CLUSTER_CONFIG + " is required for " + command.toString());
 				}
 				clusterHelper.saveClusterConfig(clusterConfig);
 			}
 			else if (Command.removeCluster.equals(command)) {
-				System.out.println("Removing cluster from database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost()
-								+ ">");
+				System.out
+						.println("Removing cluster from database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost() + ">");
 				clusterHelper.removeClusterConfig();
 			}
 			else if (Command.showCluster.equals(command)) {
@@ -102,7 +92,7 @@ public class ClusterAdmin {
 			}
 			else if (Command.registerNode.equals(command)) {
 				if (localNodeConfig == null) {
-					throw new RequiredOptionException(AdminConstants.NODE_CONFIG, command.toString());
+					throw new IllegalArgumentException(AdminConstants.NODE_CONFIG + " is required for " + command.toString());
 				}
 				if (serverAddress == null) {
 					serverAddress = ServerNameHelper.getLocalServer();
@@ -137,12 +127,22 @@ public class ClusterAdmin {
 			}
 
 		}
-		catch (OptionException e) {
+		catch (OptionException | IllegalArgumentException e) {
 			System.err.println("ERROR: " + e.getMessage());
 			parser.formatHelpWith(new LumongoHelpFormatter());
 			parser.printHelpOn(System.err);
 			System.exit(2);
 		}
 
+	}
+
+	public enum Command {
+		createCluster,
+		updateCluster,
+		removeCluster,
+		showCluster,
+		registerNode,
+		removeNode,
+		listNodes,
 	}
 }
