@@ -13,6 +13,7 @@ package org.lumongo.storage.lucene;
  * specific language governing permissions and limitations under the License.
  */
 
+import org.apache.lucene.index.IndexFileNames;
 import org.apache.lucene.store.BaseDirectory;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -25,8 +26,12 @@ import org.apache.lucene.store.SingleInstanceLockFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class DistributedDirectory extends BaseDirectory {
+
+	/** Used to generate temp file names in {@link #createTempOutput}. */
+	private final AtomicLong nextTempFileCounter = new AtomicLong();
 
 	protected NosqlDirectory nosqlDirectory;
 
@@ -50,8 +55,15 @@ public class DistributedDirectory extends BaseDirectory {
 	}
 
 	@Override
-	public IndexOutput createTempOutput(String s, String s1, IOContext ioContext) throws IOException {
-		throw new IOException("Not supported");
+	public IndexOutput createTempOutput(String prefix, String suffix, IOContext context) throws IOException {
+
+		ensureOpen();
+
+		String name = IndexFileNames.segmentFileName(prefix, suffix + "_" + Long.toString(nextTempFileCounter.getAndIncrement(), Character.MAX_RADIX), "tmp");
+
+		NosqlFile nosqlFile = nosqlDirectory.getFileHandle(name, true);
+		return new DistributedIndexOutput(nosqlFile);
+
 	}
 
 	@Override
