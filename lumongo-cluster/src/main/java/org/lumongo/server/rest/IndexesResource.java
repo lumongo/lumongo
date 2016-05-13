@@ -1,8 +1,7 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.index.LumongoIndexManager;
@@ -14,7 +13,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.List;
 
 @Path(LumongoConstants.INDEXES_URL)
 public class IndexesResource {
@@ -32,9 +30,9 @@ public class IndexesResource {
 		try {
 			Lumongo.GetIndexesResponse getIndexesResponse = indexManager.getIndexes(Lumongo.GetIndexesRequest.newBuilder().build());
 
-			DBObject document = new BasicDBObject();
-			document.put("indexes", getIndexesResponse.getIndexNameList());
-			String docString = document.toString();
+			Document mongoDocument = new org.bson.Document();
+			mongoDocument.put("indexes", getIndexesResponse.getIndexNameList());
+			String docString = mongoDocument.toString();
 
 			if (pretty) {
 				docString = JsonWriter.formatJson(docString);

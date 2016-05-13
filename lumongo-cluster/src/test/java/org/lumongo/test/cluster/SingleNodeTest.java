@@ -1,8 +1,6 @@
 package org.lumongo.test.cluster;
 
 import org.bson.Document;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.lumongo.DefaultAnalyzers;
 import org.lumongo.client.command.CursorHelper;
 import org.lumongo.client.command.DeleteAllAssociated;
@@ -108,15 +106,15 @@ public class SingleNodeTest extends ServerTestBase {
 					if (tenth) { // 1/10 of input
 
 						Date d = Date.from(LocalDate.of(2014, Month.OCTOBER, 4).atStartOfDay(ZoneId.of("UTC")).toInstant());
-						object.put("date", d);
+						document.put("date", d);
 					}
 					else if (half) { // 2/5 of input
 						Date d = Date.from(LocalDate.of(2013, Month.SEPTEMBER, 4).atStartOfDay(ZoneId.of("UTC")).toInstant());
-						object.put("date", d);
+						document.put("date", d);
 					}
 					else { // 1/2 of input
 						Date d = Date.from(LocalDate.of(2013, 8, 4).atStartOfDay(ZoneId.of("UTC")).toInstant());
-						object.put("date", d);
+						document.put("date", d);
 					}
 
 					Store s = new Store(uniqueId, FACET_TEST_INDEX);

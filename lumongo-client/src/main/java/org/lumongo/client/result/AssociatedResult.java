@@ -1,9 +1,5 @@
 package org.lumongo.client.result;
 
-import com.google.protobuf.ByteString;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import org.bson.BSON;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 
@@ -45,16 +41,6 @@ public class AssociatedResult {
 		if (hasDocument()) {
 			String contents = associatedDocument.getDocument().toStringUtf8();
 			return contents;
-		}
-		return null;
-	}
-
-	public DBObject getDocumentAsBson() {
-		if (hasDocument()) {
-			ByteString bs = associatedDocument.getDocument();
-			DBObject document = new BasicDBObject();
-			document.putAll(BSON.decode(bs.toByteArray()));
-			return document;
 		}
 		return null;
 	}

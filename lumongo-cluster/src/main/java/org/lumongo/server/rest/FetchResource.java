@@ -2,12 +2,11 @@ package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
 import com.google.protobuf.ByteString;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import org.bson.BSON;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.index.LumongoIndexManager;
+import org.lumongo.util.LumongoUtil;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -44,8 +43,8 @@ public class FetchResource {
 				Lumongo.ResultDocument resultDocument = fetchResponse.getResultDocument();
 				ByteString bs = resultDocument.getDocument();
 
-				DBObject document = new BasicDBObject();
-				document.putAll(BSON.decode(bs.toByteArray()));
+				Document document = new Document();
+				document.putAll(LumongoUtil.byteArrayToMongoDocument(bs.toByteArray()));
 				String docString = document.toString();
 
 				if (pretty) {

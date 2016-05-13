@@ -1,18 +1,17 @@
 package org.lumongo.storage.rawfiles;
 
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public interface DocumentStorage {
-	void storeSourceDocument(String uniqueId, long timeStamp, BasicBSONObject document, List<Metadata> metaDataList) throws Exception;
+	void storeSourceDocument(String uniqueId, long timeStamp, Document document, List<Metadata> metaDataList) throws Exception;
 	
 	void storeAssociatedDocument(AssociatedDocument docs) throws Exception;
 	

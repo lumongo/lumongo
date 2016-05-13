@@ -2,7 +2,6 @@ package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.index.LumongoIndexManager;
@@ -33,7 +32,7 @@ public class MembersResource {
 		try {
 			Lumongo.GetMembersResponse getMembersResponse = indexManager.getMembers(Lumongo.GetMembersRequest.newBuilder().build());
 
-			DBObject document = new BasicDBObject();
+			org.bson.Document mongoDocument = new org.bson.Document();
 
 			List<BasicDBObject> memberObjList = new ArrayList<>();
 			for (Lumongo.LMMember lmMember : getMembersResponse.getMemberList()) {
@@ -45,8 +44,8 @@ public class MembersResource {
 				memberObjList.add(memberObj);
 			}
 
-			document.put("members", memberObjList);
-			String docString = document.toString();
+			mongoDocument.put("members", memberObjList);
+			String docString = mongoDocument.toString();
 
 			if (pretty) {
 				docString = JsonWriter.formatJson(docString);

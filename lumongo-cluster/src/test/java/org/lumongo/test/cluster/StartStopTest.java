@@ -1,7 +1,6 @@
 package org.lumongo.test.cluster;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.lumongo.DefaultAnalyzers;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.command.Store;
@@ -76,33 +75,33 @@ public class StartStopTest extends ServerTestBase {
 
 					String uniqueId = uniqueIdPrefix + id;
 
-					DBObject object = new BasicDBObject();
-					object.put("issn", issn);
-					object.put("title", "Facet Userguide");
+					Document mongoDocument = new Document();
+					mongoDocument.put("issn", issn);
+					mongoDocument.put("title", "Facet Userguide");
 
 					if (half) { // 1/2 of input
-						object.put("country", "US");
+						mongoDocument.put("country", "US");
 					}
 					else { // 1/2 of input
-						object.put("country", "France");
+						mongoDocument.put("country", "France");
 					}
 
 					if (tenth) { // 1/10 of input
 
 						Date d = Date.from(LocalDate.of(2014, Month.OCTOBER, 4).atStartOfDay(ZoneId.of("UTC")).toInstant());
-						object.put("date", d);
+						mongoDocument.put("date", d);
 					}
 					else if (half) { // 2/5 of input
 						Date d = Date.from(LocalDate.of(2013, Month.SEPTEMBER, 4).atStartOfDay(ZoneId.of("UTC")).toInstant());
-						object.put("date", d);
+						mongoDocument.put("date", d);
 					}
 					else { // 1/2 of input
 						Date d = Date.from(LocalDate.of(2013, 8, 4).atStartOfDay(ZoneId.of("UTC")).toInstant());
-						object.put("date", d);
+						mongoDocument.put("date", d);
 					}
 
 					Store s = new Store(uniqueId, FACET_TEST_INDEX);
-					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(object));
+					s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(mongoDocument));
 
 					lumongoWorkPool.store(s);
 				}

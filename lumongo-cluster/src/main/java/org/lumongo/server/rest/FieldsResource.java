@@ -1,8 +1,7 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.index.LumongoIndexManager;
@@ -38,10 +37,10 @@ public class FieldsResource {
 			try {
 				fieldNamesResponse = indexManager.getFieldNames(fieldNamesRequest);
 
-				DBObject document = new BasicDBObject();
-				document.put("index", indexName);
-				document.put("fields", fieldNamesResponse.getFieldNameList());
-				String docString = document.toString();
+				Document mongoDocument = new Document();
+				mongoDocument.put("index", indexName);
+				mongoDocument.put("fields", fieldNamesResponse.getFieldNameList());
+				String docString = mongoDocument.toString();
 
 				if (pretty) {
 					docString = JsonWriter.formatJson(docString);

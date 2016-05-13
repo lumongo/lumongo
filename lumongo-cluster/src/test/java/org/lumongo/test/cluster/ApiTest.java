@@ -3,8 +3,6 @@ package org.lumongo.test.cluster;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import org.bson.Document;
 import org.lumongo.DefaultAnalyzers;
 import org.lumongo.client.command.*;
@@ -114,15 +112,15 @@ public class ApiTest {
 	}
 	
 	public void storeDocumentBson() throws Exception {
-		
-		DBObject dbObject = new BasicDBObject();
-		dbObject.put("title", "Magic Java Beans");
-		dbObject.put("issn", "4321-4321");
+
+		Document mongoDocument = new Document();
+		mongoDocument.put("title", "Magic Java Beans");
+		mongoDocument.put("issn", "4321-4321");
 		
 		Store s = new Store("myid222", MY_INDEX_NAME);
 		
 		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
-		resultDocumentBuilder.setDocument(dbObject);
+		resultDocumentBuilder.setDocument(mongoDocument);
 		s.setResultDocument(resultDocumentBuilder);
 		
 		lumongoWorkPool.store(s);
@@ -131,7 +129,7 @@ public class ApiTest {
 		Store s1 = new Store("myid2222", MY_INDEX_NAME);
 		
 		ResultDocBuilder resultDocumentBuilder1 = new ResultDocBuilder();
-		resultDocumentBuilder1.setDocument(dbObject);
+		resultDocumentBuilder1.setDocument(mongoDocument);
 		resultDocumentBuilder1.addMetaData("testFieldExtraction", "val1");
 		resultDocumentBuilder1.addMetaData("test2", "val2");
 		

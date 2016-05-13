@@ -1,12 +1,10 @@
 package org.lumongo.doc;
 
 import com.google.protobuf.ByteString;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import org.bson.BSON;
 import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
+import org.lumongo.util.LumongoUtil;
 
 import java.util.HashMap;
 
@@ -34,14 +32,7 @@ public class ResultDocBuilder {
 	}
 
 	public ResultDocBuilder setDocument(Document document) {
-		DBObject dbObject = new BasicDBObject();
-		dbObject.putAll(document);
-		setDocument(dbObject);
-		return this;
-	}
-
-	public ResultDocBuilder setDocument(DBObject document) {
-		resultDocumentBuilder.setDocument(ByteString.copyFrom(BSON.encode(document)));
+		resultDocumentBuilder.setDocument(ByteString.copyFrom(LumongoUtil.mongoDocumentToByteArray(document)));
 		return this;
 	}
 

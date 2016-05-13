@@ -3,7 +3,6 @@ package org.lumongo.storage.rawfiles;
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import com.mongodb.Block;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -13,10 +12,8 @@ import com.mongodb.client.gridfs.GridFSFindIterable;
 import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.gridfs.GridFSDBFile;
 import org.apache.log4j.Logger;
 import org.bson.BSON;
-import org.bson.BasicBSONObject;
 import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
@@ -97,26 +94,26 @@ public class MongoDocumentStorage implements DocumentStorage {
 	}
 
 	@Override
-	public void storeSourceDocument(String uniqueId, long timeStamp, BasicBSONObject document, List<Metadata> metaDataList) throws Exception {
+	public void storeSourceDocument(String uniqueId, long timeStamp, Document document, List<Metadata> metaDataList) throws Exception {
 		MongoDatabase db = mongoClient.getDatabase(database);
 		MongoCollection<Document> coll = db.getCollection(rawCollectionName);
-		Document object = new Document();
-		object.putAll(document);
+		Document mongoDocument = new Document();
+		mongoDocument.putAll(document);
 
 		if (!metaDataList.isEmpty()) {
-			DBObject metadata = new BasicDBObject();
+			Document metadataMongoDoc = new Document();
 			for (Metadata meta : metaDataList) {
-				metadata.put(meta.getKey(), meta.getValue());
+				metadataMongoDoc.put(meta.getKey(), meta.getValue());
 			}
-			object.put(METADATA, metadata);
+			mongoDocument.put(METADATA, metadataMongoDoc);
 		}
 
-		object.put(TIMESTAMP, timeStamp);
-		object.put(MongoConstants.StandardFields._ID, uniqueId);
+		mongoDocument.put(TIMESTAMP, timeStamp);
+		mongoDocument.put(MongoConstants.StandardFields._ID, uniqueId);
 
 		Document query = new Document(MongoConstants.StandardFields._ID, uniqueId);
 
-		coll.replaceOne(query, object, new UpdateOptions().upsert(true));
+		coll.replaceOne(query, mongoDocument, new UpdateOptions().upsert(true));
 	}
 
 	@Override
@@ -137,7 +134,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 				dBuilder.setTimestamp(timestamp);
 
 				if (result.containsKey(METADATA)) {
-					DBObject metadata = (DBObject) result.remove(METADATA);
+					Document metadata = (Document) result.remove(METADATA);
 					for (String key : metadata.keySet()) {
 						dBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue((String) metadata.get(key)));
 					}

@@ -1,7 +1,6 @@
 package org.lumongo.test.cluster;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lumongo.server.index.LumongoSegment;
@@ -15,39 +14,39 @@ public class IndexerTest {
 	@Test
 	public void testFieldExtraction() throws Exception {
 
-		DBObject testObject = new BasicDBObject();
-		testObject.put("field1", "someVal");
-		testObject.put("myfield", 40);
+		Document testMongoDocument = new Document();
+		testMongoDocument.put("field1", "someVal");
+		testMongoDocument.put("myfield", 40);
 
-		DBObject embeddedObject1 = new BasicDBObject();
-		embeddedObject1.put("subfield1", "val2");
+		Document embeddedDocumentOne = new Document();
+		embeddedDocumentOne.put("subfield1", "val2");
 
-		DBObject embeddedObject2 = new BasicDBObject();
-		embeddedObject2.put("otherfield", "1");
-		embeddedObject1.put("subfield2", embeddedObject2);
+		Document embeddedDocumentTwo = new Document();
+		embeddedDocumentTwo.put("otherfield", "1");
+		embeddedDocumentOne.put("subfield2", embeddedDocumentTwo);
 
-		testObject.put("field2", embeddedObject1);
+		testMongoDocument.put("field2", embeddedDocumentOne);
 
-		List<DBObject> objs = new ArrayList<>();
-		DBObject embeddedObject3 = new BasicDBObject();
-		embeddedObject3.put("key1", "val1");
-		embeddedObject3.put("key2", "val2");
-		DBObject embeddedObject4 = new BasicDBObject();
-		embeddedObject4.put("key1", "someval");
-		objs.add(embeddedObject3);
-		objs.add(embeddedObject4);
-		testObject.put("thisfield", objs);
+		List<Document> docs = new ArrayList<>();
+		Document embeddedDocumentThree = new Document();
+		embeddedDocumentThree.put("key1", "val1");
+		embeddedDocumentThree.put("key2", "val2");
+		Document embeddedDocumentFour = new Document();
+		embeddedDocumentFour.put("key1", "someval");
+		docs.add(embeddedDocumentThree);
+		docs.add(embeddedDocumentFour);
+		testMongoDocument.put("thisfield", docs);
 
-		Assert.assertEquals(Arrays.asList("val1", "someval"), LumongoSegment.getValueFromDocument(testObject, "thisfield.key1"));
-		Assert.assertEquals(Arrays.asList("val2"), LumongoSegment.getValueFromDocument(testObject, "thisfield.key2"));
+		Assert.assertEquals(Arrays.asList("val1", "someval"), LumongoSegment.getValueFromMongoDocument(testMongoDocument, "thisfield.key1"));
+		Assert.assertEquals(Arrays.asList("val2"), LumongoSegment.getValueFromMongoDocument(testMongoDocument, "thisfield.key2"));
 
-		Assert.assertEquals("1", LumongoSegment.getValueFromDocument(testObject, "field2.subfield2.otherfield"));
-		Assert.assertEquals(null, LumongoSegment.getValueFromDocument(testObject, "field2.subfield2.otherfield1"));
-		Assert.assertEquals(null, LumongoSegment.getValueFromDocument(testObject, "field2.subfield1.otherfield"));
-		Assert.assertEquals(null, LumongoSegment.getValueFromDocument(testObject, "thing"));
-		Assert.assertEquals("someVal", LumongoSegment.getValueFromDocument(testObject, "field1"));
-		Assert.assertEquals("val2", LumongoSegment.getValueFromDocument(testObject, "field2.subfield1"));
-		Assert.assertEquals(40, LumongoSegment.getValueFromDocument(testObject, "myfield"));
+		Assert.assertEquals("1", LumongoSegment.getValueFromMongoDocument(testMongoDocument, "field2.subfield2.otherfield"));
+		Assert.assertEquals(null, LumongoSegment.getValueFromMongoDocument(testMongoDocument, "field2.subfield2.otherfield1"));
+		Assert.assertEquals(null, LumongoSegment.getValueFromMongoDocument(testMongoDocument, "field2.subfield1.otherfield"));
+		Assert.assertEquals(null, LumongoSegment.getValueFromMongoDocument(testMongoDocument, "thing"));
+		Assert.assertEquals("someVal", LumongoSegment.getValueFromMongoDocument(testMongoDocument, "field1"));
+		Assert.assertEquals("val2", LumongoSegment.getValueFromMongoDocument(testMongoDocument, "field2.subfield1"));
+		Assert.assertEquals(40, LumongoSegment.getValueFromMongoDocument(testMongoDocument, "myfield"));
 
 	}
 }

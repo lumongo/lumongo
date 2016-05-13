@@ -1,10 +1,10 @@
 package org.lumongo.doc;
 
 import com.google.protobuf.ByteString;
-import com.mongodb.DBObject;
-import org.bson.BSON;
+import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.Metadata;
+import org.lumongo.util.LumongoUtil;
 
 public class AssociatedBuilder {
 
@@ -48,8 +48,8 @@ public class AssociatedBuilder {
 		return this;
 	}
 
-	public AssociatedBuilder setDocument(DBObject document) {
-		adBuilder.setDocument(ByteString.copyFrom(BSON.encode(document)));
+	public AssociatedBuilder setDocument(Document document) {
+		adBuilder.setDocument(ByteString.copyFrom(LumongoUtil.mongoDocumentToByteArray(document)));
 		return this;
 	}
 

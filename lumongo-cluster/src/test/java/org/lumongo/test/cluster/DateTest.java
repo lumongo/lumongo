@@ -1,7 +1,5 @@
 package org.lumongo.test.cluster;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import org.lumongo.DefaultAnalyzers;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Query;
@@ -45,14 +43,14 @@ public class DateTest {
 
 			CreateOrUpdateIndex createOrUpdateIndex = new CreateOrUpdateIndex(SingleNodeTest.MY_TEST_INDEX, 2, indexConfig);
 			@SuppressWarnings("unused") CreateOrUpdateIndexResult result = lumongoWorkPool.createOrUpdateIndex(createOrUpdateIndex);
-			DBObject dbObject = new BasicDBObject();
+			org.bson.Document mongoDocument = new org.bson.Document();
 
-			dbObject.put("title", "this is a fancy title");
+			mongoDocument.put("title", "this is a fancy title");
 
-			dbObject.put("date", new Date());
+			mongoDocument.put("date", new Date());
 
 			Store s = new Store("id1", SingleNodeTest.MY_TEST_INDEX);
-			s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(dbObject));
+			s.setResultDocument(ResultDocBuilder.newBuilder().setDocument(mongoDocument));
 			lumongoWorkPool.store(s);
 
 			Query query = new Query(SingleNodeTest.MY_TEST_INDEX, "*:*", 10);
