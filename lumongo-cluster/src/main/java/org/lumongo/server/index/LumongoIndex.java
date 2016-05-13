@@ -765,12 +765,47 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	public Query getQuery(String query, List<String> queryFields, int minimumShouldMatchNumber, Operator defaultOperator) throws Exception {
+	/** From org.apache.solr.search.QueryUtils **/
+	public static boolean isNegative(Query q) {
+		if (!(q instanceof BooleanQuery)) return false;
+		BooleanQuery bq = (BooleanQuery)q;
+		Collection<BooleanClause> clauses = bq.clauses();
+		if (clauses.size()==0) return false;
+		for (BooleanClause clause : clauses) {
+			if (!clause.isProhibited()) return false;
+		}
+		return true;
+	}
+
+	/** From org.apache.solr.search.QueryUtils **/
+	/** Fixes a negative query by adding a MatchAllDocs query clause.
+	 * The query passed in *must* be a negative query.
+	 */
+	public static Query fixNegativeQuery(Query q) {
+		float boost = 1f;
+		if (q instanceof BoostQuery) {
+			BoostQuery bq = (BoostQuery) q;
+			boost = bq.getBoost();
+			q = bq.getQuery();
+		}
+		BooleanQuery bq = (BooleanQuery) q;
+		BooleanQuery.Builder newBqB = new BooleanQuery.Builder();
+		newBqB.setDisableCoord(bq.isCoordDisabled());
+		newBqB.setMinimumNumberShouldMatch(bq.getMinimumNumberShouldMatch());
+		for (BooleanClause clause : bq) {
+			newBqB.add(clause);
+		}
+		newBqB.add(new MatchAllDocsQuery(), BooleanClause.Occur.MUST);
+		BooleanQuery newBq = newBqB.build();
+		return new BoostQuery(newBq, boost);
+	}
+
+	public Query getQuery(String queryText, List<String> queryFields, int minimumShouldMatchNumber, Operator defaultOperator) throws Exception {
 		indexLock.readLock().lock();
 		try {
 
 			LumongoQueryParser qp = null;
-			if (query == null || query.isEmpty()) {
+			if (queryText == null || queryText.isEmpty()) {
 				return new MatchAllDocsQuery();
 			}
 			try {
@@ -778,15 +813,21 @@ public class LumongoIndex implements IndexSegmentInterface {
 				qp.setMinimumNumberShouldMatch(minimumShouldMatchNumber);
 				qp.setDefaultOperator(defaultOperator);
 
+
+
 				if (queryFields.isEmpty()) {
 					if (indexConfig.getIndexSettings().hasDefaultSearchField()) {
 						qp.setField(indexConfig.getIndexSettings().getDefaultSearchField());
-						return qp.parse(query);
 					}
 					else {
 						qp.setField(null);
-						return qp.parse(query);
 					}
+					Query query = qp.parse(queryText);
+					boolean negative = isNegative(query);
+					if (negative) {
+						query = fixNegativeQuery(query);
+					}
+					return query;
 				}
 				else {
 					BooleanQuery.Builder bQuery = new BooleanQuery.Builder();
@@ -797,18 +838,27 @@ public class LumongoIndex implements IndexSegmentInterface {
 								boost = Float.parseFloat(queryField.substring(queryField.indexOf("^") + 1));
 							}
 							catch (Exception e) {
-								throw new IllegalArgumentException("Invalid query field boost <" + queryField + ">");
+								throw new IllegalArgumentException("Invalid queryText field boost <" + queryField + ">");
 							}
 							queryField = queryField.substring(0, queryField.indexOf("^"));
 						}
 						qp.setField(queryField);
-						Query q = qp.parse(query);
-						if (boost != null) {
-							q = new BoostQuery(q, boost);
+						Query query = qp.parse(queryText);
+						boolean negative = isNegative(query);
+						if (negative) {
+							query = fixNegativeQuery(query);
 						}
-						if ((q != null) && // q never null, just being defensive
-								(!(q instanceof BooleanQuery) || (((BooleanQuery) q).clauses().size() > 0))) {
-							bQuery.add(q, BooleanClause.Occur.SHOULD);
+						if (boost != null) {
+							query= new BoostQuery(query, boost);
+						}
+						if ((query != null) && // q never null, just being defensive
+								(!(query instanceof BooleanQuery) || (((BooleanQuery) query).clauses().size() > 0))) {
+							if (negative) {
+								bQuery.add(query, BooleanClause.Occur.MUST);
+							}
+							else {
+								bQuery.add(query, BooleanClause.Occur.SHOULD);
+							}
 						}
 					}
 					return bQuery.build();
