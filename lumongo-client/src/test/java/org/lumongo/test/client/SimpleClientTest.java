@@ -1,6 +1,6 @@
 package org.lumongo.test.client;
 
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -63,9 +63,9 @@ public class SimpleClientTest {
 		phoneNumber.otherStuff = "This is not saved";
 		to.phoneNumber = phoneNumber;
 
-		DBObject obj = mapper.toDbObject(to);
+		Document obj = mapper.toDocument(to);
 
-		Person to2 = mapper.fromDBObject(obj);
+		Person to2 = mapper.fromDocument(obj);
 
 	}
 }

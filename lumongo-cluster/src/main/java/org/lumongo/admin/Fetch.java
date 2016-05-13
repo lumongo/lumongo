@@ -1,11 +1,11 @@
 package org.lumongo.admin;
 
 import com.google.protobuf.ServiceException;
-import com.mongodb.DBObject;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.command.FetchDocument;
@@ -64,7 +64,7 @@ public class Fetch {
 
 				FetchResult fr = lumongoWorkPool.execute(fetch);
 				if (fr.hasResultDocument()) {
-					DBObject dbObject = fr.getDocument();
+					Document dbObject = fr.getDocument();
 					System.out.println(dbObject.toString());
 				}
 				else {

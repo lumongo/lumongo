@@ -23,9 +23,10 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.NRTCachingDirectory;
-import org.bson.BSON;
-import org.bson.BasicBSONObject;
+import org.bson.BsonBinaryReader;
 import org.bson.Document;
+import org.bson.codecs.DecoderContext;
+import org.bson.codecs.DocumentCodec;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
@@ -51,6 +52,7 @@ import org.lumongo.util.SegmentUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -695,14 +697,15 @@ public class LumongoIndex implements IndexSegmentInterface {
 				documentLock.writeLock().lock();
 
 				if (storeRequest.hasResultDocument()) {
-					BasicBSONObject document = (BasicBSONObject) BSON.decode(storeRequest.getResultDocument().getDocument().toByteArray());
+					BsonBinaryReader bsonReader = new BsonBinaryReader(ByteBuffer.wrap(storeRequest.getResultDocument().getDocument().toByteArray()));
+					Document mongoDocument = new DocumentCodec().decode(bsonReader, DecoderContext.builder().build());
 
 					LumongoSegment s = findSegmentFromUniqueId(uniqueId);
-					s.index(uniqueId, timestamp, document, storeRequest.getResultDocument().getMetadataList());
+					s.index(uniqueId, timestamp, mongoDocument, storeRequest.getResultDocument().getMetadataList());
 
 					if (indexConfig.getIndexSettings().getStoreDocumentInMongo()) {
 						documentStorage
-								.storeSourceDocument(storeRequest.getUniqueId(), timestamp, document, storeRequest.getResultDocument().getMetadataList());
+								.storeSourceDocument(storeRequest.getUniqueId(), timestamp, mongoDocument, storeRequest.getResultDocument().getMetadataList());
 					}
 				}
 

@@ -3,7 +3,6 @@ package org.lumongo.server.index;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.document.Document;
@@ -40,7 +39,6 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.bson.BSON;
 import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
@@ -137,18 +135,18 @@ public class LumongoSegment {
 
 	}
 
-	public static Object getValueFromDocument(BSONObject document, String storedFieldName) {
+	public static Object getValueFromMongoDocument(org.bson.Document mongoDocument, String storedFieldName) {
 
 		Object o;
 		if (storedFieldName.contains(".")) {
-			o = document;
+			o = mongoDocument;
 			String[] fields = storedFieldName.split("\\.");
 			for (String field : fields) {
 				if (o instanceof List) {
 					List<?> list = (List<?>) o;
 					List<Object> values = new ArrayList<>();
-					list.stream().filter(item -> item instanceof BSONObject).forEach(item -> {
-						BSONObject dbObj = (BSONObject) item;
+					list.stream().filter(item -> item instanceof org.bson.Document).forEach(item -> {
+						org.bson.Document dbObj = (org.bson.Document) item;
 						Object object = dbObj.get(field);
 						if (object != null) {
 							values.add(object);
@@ -156,9 +154,9 @@ public class LumongoSegment {
 					});
 					o = values;
 				}
-				else if (o instanceof BSONObject) {
-					BSONObject dbObj = (BSONObject) o;
-					o = dbObj.get(field);
+				else if (o instanceof org.bson.Document) {
+					org.bson.Document mongoDoc = (org.bson.Document) o;
+					o = mongoDoc.get(field);
 				}
 				else {
 					o = null;
@@ -167,7 +165,7 @@ public class LumongoSegment {
 			}
 		}
 		else {
-			o = document.get(storedFieldName);
+			o = mongoDocument.get(storedFieldName);
 		}
 
 		return o;
@@ -494,11 +492,11 @@ public class LumongoSegment {
 
 				if (FetchType.FULL.equals(resultFetchType) || FetchType.META.equals(resultFetchType)) {
 					BytesRef metaRef = d.getBinaryValue(LumongoConstants.STORED_META_FIELD);
-					DBObject metaObj = new BasicDBObject();
-					metaObj.putAll(BSON.decode(metaRef.bytes));
+					org.bson.Document metaMongoDoc = new org.bson.Document();
+					metaMongoDoc.putAll(LumongoUtil.byteArrayToMongoDocument(metaRef.bytes));
 
-					for (String key : metaObj.keySet()) {
-						rdBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue(((String) metaObj.get(key))));
+					for (String key : metaMongoDoc.keySet()) {
+						rdBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue(((String) metaMongoDoc.get(key))));
 					}
 				}
 
@@ -703,11 +701,11 @@ public class LumongoSegment {
 		directory.close();
 	}
 
-	public void index(String uniqueId, long timestamp, BasicBSONObject document, List<Metadata> metadataList) throws Exception {
+	public void index(String uniqueId, long timestamp, org.bson.Document mongoDocument, List<Metadata> metadataList) throws Exception {
 
 		reopenIndexWritersIfNecessary();
 
-		Document d = new Document();
+		Document luceneDocument = new Document();
 
 		for (String storedFieldName : indexConfig.getIndexedStoredFieldNames()) {
 
@@ -717,38 +715,38 @@ public class LumongoSegment {
 
 				FieldConfig.FieldType fieldType = fc.getFieldType();
 
-				Object o = getValueFromDocument(document, storedFieldName);
+				Object o = getValueFromMongoDocument(mongoDocument, storedFieldName);
 
 				if (o != null) {
-					handleFacetsForStoredField(d, fc, o);
+					handleFacetsForStoredField(luceneDocument, fc, o);
 
-					handleSortForStoredField(d, storedFieldName, fc, o);
+					handleSortForStoredField(luceneDocument, storedFieldName, fc, o);
 
 					for (IndexAs indexAs : fc.getIndexAsList()) {
 
 						String indexedFieldName = indexAs.getIndexFieldName();
-						d.add(new StringField(LumongoConstants.FIELDS_LIST_FIELD, indexedFieldName, Store.NO));
+						luceneDocument.add(new StringField(LumongoConstants.FIELDS_LIST_FIELD, indexedFieldName, Store.NO));
 
 						if (FieldConfig.FieldType.NUMERIC_INT.equals(fieldType)) {
-							IntFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
+							IntFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
 						}
 						else if (FieldConfig.FieldType.NUMERIC_LONG.equals(fieldType)) {
-							LongFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
+							LongFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
 						}
 						else if (FieldConfig.FieldType.NUMERIC_FLOAT.equals(fieldType)) {
-							FloatFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
+							FloatFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
 						}
 						else if (FieldConfig.FieldType.NUMERIC_DOUBLE.equals(fieldType)) {
-							DoubleFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
+							DoubleFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
 						}
 						else if (FieldConfig.FieldType.DATE.equals(fieldType)) {
-							DateFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
+							DateFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
 						}
 						else if (FieldConfig.FieldType.BOOL.equals(fieldType)) {
-							BooleanFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
+							BooleanFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
 						}
 						else if (FieldConfig.FieldType.STRING.equals(fieldType)) {
-							StringFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
+							StringFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
 						}
 						else {
 							throw new RuntimeException("Unsupported field type <" + fieldType + ">");
@@ -759,28 +757,26 @@ public class LumongoSegment {
 
 		}
 
-		d.add(new StringField(LumongoConstants.ID_FIELD, uniqueId, Store.YES));
+		luceneDocument.add(new StringField(LumongoConstants.ID_FIELD, uniqueId, Store.YES));
 
-		d.add(new LegacyLongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
+		luceneDocument.add(new LegacyLongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
 
 		if (indexConfig.getIndexSettings().getStoreDocumentInIndex()) {
-			byte[] documentBytes = BSON.encode(document);
-			d.add(new StoredField(LumongoConstants.STORED_DOC_FIELD, new BytesRef(documentBytes)));
+			luceneDocument.add(new StoredField(LumongoConstants.STORED_DOC_FIELD, new BytesRef(LumongoUtil.mongoDocumentToByteArray(mongoDocument))));
 
-			DBObject metadataObject = new BasicDBObject();
+			org.bson.Document metadataMongoDoc = new org.bson.Document();
 
 			for (Metadata metadata : metadataList) {
-				metadataObject.put(metadata.getKey(), metadata.getValue());
+				metadataMongoDoc.put(metadata.getKey(), metadata.getValue());
 			}
 
-			byte[] metadataBytes = BSON.encode(metadataObject);
-			d.add(new StoredField(LumongoConstants.STORED_META_FIELD, new BytesRef(metadataBytes)));
+			luceneDocument.add(new StoredField(LumongoConstants.STORED_META_FIELD, new BytesRef(LumongoUtil.mongoDocumentToByteArray(metadataMongoDoc))));
 
 		}
 
 		Term term = new Term(LumongoConstants.ID_FIELD, uniqueId);
 
-		indexWriter.updateDocument(term, d);
+		indexWriter.updateDocument(term, luceneDocument);
 
 		possibleCommit();
 	}

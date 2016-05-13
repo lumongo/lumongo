@@ -1,8 +1,7 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.storage.lucene.MongoFile;
@@ -32,20 +31,20 @@ public class StatsResource {
 
 		try {
 
-			DBObject document = new BasicDBObject();
+			Document mongoDocument = new Document();
 
-			document.put("blockSize", indexManager.getClusterConfig().getIndexBlockSize());
-			document.put("maxIndexBlockCount", indexManager.getClusterConfig().getMaxIndexBlocks());
-			document.put("currentIndexBlockCount", MongoFile.getCacheSize());
+			mongoDocument.put("blockSize", indexManager.getClusterConfig().getIndexBlockSize());
+			mongoDocument.put("maxIndexBlockCount", indexManager.getClusterConfig().getMaxIndexBlocks());
+			mongoDocument.put("currentIndexBlockCount", MongoFile.getCacheSize());
 
 			Runtime runtime = Runtime.getRuntime();
 
-			document.put("jvmUsedMemoryMB", (runtime.totalMemory() - runtime.freeMemory()) / MB);
-			document.put("jvmFreeMemoryMB",  runtime.freeMemory() / MB);
-			document.put("jvmTotalMemoryMB", runtime.totalMemory() / MB);
-			document.put("jvmMaxMemoryMB", runtime.maxMemory() / MB);
+			mongoDocument.put("jvmUsedMemoryMB", (runtime.totalMemory() - runtime.freeMemory()) / MB);
+			mongoDocument.put("jvmFreeMemoryMB", runtime.freeMemory() / MB);
+			mongoDocument.put("jvmTotalMemoryMB", runtime.totalMemory() / MB);
+			mongoDocument.put("jvmMaxMemoryMB", runtime.maxMemory() / MB);
 
-			String docString = document.toString();
+			String docString = mongoDocument.toString();
 
 			if (pretty) {
 				docString = JsonWriter.formatJson(docString);

@@ -1,6 +1,6 @@
 package org.lumongo.fields;
 
-import com.mongodb.DBObject;
+import org.bson.Document;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
@@ -178,25 +178,25 @@ public class Mapper<T> {
 	}
 
 	public T fromScoredResult(Lumongo.ScoredResult scoredResult) throws Exception {
-		return fromDBObject(ResultHelper.getDBObjectFromScoredResult(scoredResult));
+		return fromDocument(ResultHelper.getDBObjectFromScoredResult(scoredResult));
 	}
 
 	public ResultDocBuilder toResultDocumentBuilder(T object) throws Exception {
 		String uniqueId = uniqueIdField.build(object);
-		DBObject document = toDbObject(object);
+		Document document = toDocument(object);
 		ResultDocBuilder resultDocumentBuilder = new ResultDocBuilder();
 		resultDocumentBuilder.setDocument(document).setUniqueId(uniqueId);
 		return resultDocumentBuilder;
 	}
 
-	public DBObject toDbObject(T object) throws Exception {
-		return savedFieldsMapper.toDbObject(object);
+	public Document toDocument(T object) throws Exception {
+		return savedFieldsMapper.toDocument(object);
 	}
 
-	public T fromDBObject(DBObject savedDBObject) throws Exception {
-		if (savedDBObject != null) {
-			T newInstance = savedFieldsMapper.fromDBObject(savedDBObject);
-			uniqueIdField.populate(newInstance, savedDBObject);
+	public T fromDocument(Document savedDocument) throws Exception {
+		if (savedDocument != null) {
+			T newInstance = savedFieldsMapper.fromDBObject(savedDocument);
+			uniqueIdField.populate(newInstance, savedDocument);
 			return newInstance;
 		}
 		return null;

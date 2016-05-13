@@ -1,5 +1,14 @@
 package org.lumongo.util;
 
+import org.bson.BsonBinaryReader;
+import org.bson.BsonBinaryWriter;
+import org.bson.Document;
+import org.bson.codecs.DecoderContext;
+import org.bson.codecs.DocumentCodec;
+import org.bson.codecs.EncoderContext;
+import org.bson.io.BasicOutputBuffer;
+
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.function.Consumer;
 
@@ -23,5 +32,17 @@ public class LumongoUtil {
 				action.accept(o);
 			}
 		}
+	}
+
+	public static byte[] mongoDocumentToByteArray(Document mongoDocument) {
+		BasicOutputBuffer outputBuffer = new BasicOutputBuffer();
+		BsonBinaryWriter writer = new BsonBinaryWriter(outputBuffer);
+		new DocumentCodec().encode(writer, mongoDocument, EncoderContext.builder().isEncodingCollectibleDocument(true).build());
+		return outputBuffer.toByteArray();
+	}
+
+	public static Document byteArrayToMongoDocument(byte[] byteArray) {
+		BsonBinaryReader bsonReader = new BsonBinaryReader(ByteBuffer.wrap(byteArray));
+		return new DocumentCodec().decode(bsonReader, DecoderContext.builder().build());
 	}
 }

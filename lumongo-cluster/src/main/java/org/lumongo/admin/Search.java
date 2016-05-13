@@ -1,19 +1,15 @@
 package org.lumongo.admin;
 
 import com.google.protobuf.ServiceException;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-import org.bson.BSON;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.config.LumongoPoolConfig;
-import org.lumongo.client.pool.LumongoBaseWorkPool;
-import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo;
@@ -22,6 +18,7 @@ import org.lumongo.cluster.message.Lumongo.FacetGroup;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.util.LogUtil;
+import org.lumongo.util.LumongoUtil;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -208,9 +205,9 @@ public class Search {
 					if (sr.hasResultDocument()) {
 						Lumongo.ResultDocument resultDocument = sr.getResultDocument();
 						if (resultDocument.hasDocument()) {
-							DBObject document = new BasicDBObject();
-							document.putAll(BSON.decode(resultDocument.getDocument().toByteArray()));
-							System.out.println(document);
+							Document mongoDocument = new Document();
+							mongoDocument.putAll(LumongoUtil.byteArrayToMongoDocument(resultDocument.getDocument().toByteArray()));
+							System.out.println(mongoDocument);
 						}
 					}
 				}

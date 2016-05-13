@@ -1,7 +1,5 @@
 package org.lumongo.example.commoncrawl;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import org.apache.log4j.Logger;
 import org.jets3t.service.S3ServiceException;
 import org.jets3t.service.ServiceException;
@@ -21,8 +19,6 @@ import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
-import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.FieldConfig.FieldType;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.FieldConfigBuilder;
@@ -182,8 +178,8 @@ public class IndexCommonCrawl {
 							}
 							
 							if (url != null) {
-								
-								DBObject document = new BasicDBObject();
+
+								org.bson.Document document = new org.bson.Document();
 								document.put(CONTENTS, bytes);
 								document.put(TEXT_CONTENTS, pageText);
 								document.put(TITLE, title);
