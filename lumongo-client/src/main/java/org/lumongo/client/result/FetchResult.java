@@ -1,17 +1,13 @@
 package org.lumongo.client.result;
 
-import com.google.protobuf.ByteString;
-import org.bson.BsonBinaryReader;
 import org.bson.Document;
-import org.bson.codecs.DecoderContext;
-import org.bson.codecs.DocumentCodec;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.fields.Mapper;
+import org.lumongo.util.LumongoUtil;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,11 +67,7 @@ public class FetchResult extends Result {
 	public Document getDocument() {
 		if (fetchResponse.hasResultDocument()) {
 			ResultDocument rd = fetchResponse.getResultDocument();
-
-			ByteString bs = rd.getDocument();
-			BsonBinaryReader bsonReader = new BsonBinaryReader(ByteBuffer.wrap(bs.toByteArray()));
-			return new DocumentCodec().decode(bsonReader, DecoderContext.builder().build());
-
+			return LumongoUtil.byteArrayToMongoDocument(rd.getDocument().toByteArray());
 		}
 		return null;
 	}
