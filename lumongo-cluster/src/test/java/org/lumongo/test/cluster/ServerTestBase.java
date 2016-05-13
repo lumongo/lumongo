@@ -68,12 +68,13 @@ public class ServerTestBase {
 		MongoConfig mongoConfig = getTestMongoConfig();
 		
 		ClusterConfig clusterConfig = getTestClusterConfig();
-		ClusterHelper.saveClusterConfig(mongoConfig, clusterConfig);
+		ClusterHelper clusterHelper = new ClusterHelper(mongoConfig);
+		clusterHelper.saveClusterConfig(clusterConfig);
 		
 		String localServer = ServerNameHelper.getLocalServer();
 
 		for (int i = 0; i < instanceCount; i++) {
-			LumongoNode ln = createLuceneNode(mongoConfig, localServer, i);
+			LumongoNode ln = createLuceneNode(clusterHelper, mongoConfig, localServer, i);
 			ln.start();
 			luceneNodes.add(ln);
 		}
@@ -82,9 +83,9 @@ public class ServerTestBase {
 		
 	}
 	
-	public LumongoNode createLuceneNode(MongoConfig mongoConfig, String localServer, int instance) throws Exception {
+	public LumongoNode createLuceneNode(ClusterHelper clusterHelper, MongoConfig mongoConfig, String localServer, int instance) throws Exception {
 		LocalNodeConfig localNodeConfig = getTestLocalNodeConfig(instance);
-		ClusterHelper.registerNode(mongoConfig, localNodeConfig, localServer);
+		clusterHelper.registerNode(localNodeConfig, localServer);
 		return new LumongoNode(mongoConfig, localServer, localNodeConfig.getHazelcastPort());
 	}
 	

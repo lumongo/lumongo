@@ -7,25 +7,25 @@ import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.FloatPoint;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.LongPoint;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
+import org.apache.lucene.search.TermQuery;
+import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 public class LumongoQueryParser extends QueryParser {
-
-	private static final DateTimeFormatter dateTimeFormatter = ISODateTimeFormat.dateTimeNoMillis();
-
-	private static final DateTimeFormatter dateFormatter = ISODateTimeFormat.date();
 
 	private IndexConfig indexConfig;
 
@@ -37,10 +37,19 @@ public class LumongoQueryParser extends QueryParser {
 		setAllowLeadingWildcard(true);
 	}
 
-	public void setField(String field) {
-		if (field == null) {
-			throw new IllegalArgumentException("Field can not be null");
+	private static Long getDateAsLong(String dateString) {
+		long epochMilli;
+		if (dateString.contains(":")) {
+			epochMilli = Instant.parse(dateString).toEpochMilli();
 		}
+		else {
+			LocalDate parse = LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE);
+			epochMilli = parse.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+		}
+		return epochMilli;
+	}
+
+	public void setField(String field) {
 		this.field = field;
 	}
 
@@ -127,17 +136,6 @@ public class LumongoQueryParser extends QueryParser {
 		throw new RuntimeException("Not a valid numeric field <" + fieldName + ">");
 	}
 
-	private Long getDateAsLong(String dateString) {
-		DateTime dateTime;
-		if (dateString.contains(":")) {
-			dateTime = dateTimeFormatter.parseDateTime(dateString);
-		}
-		else {
-			dateTime = dateFormatter.parseDateTime(dateString);
-		}
-		return dateTime.toDate().getTime();
-	}
-
 	@Override
 	protected Query newTermQuery(org.apache.lucene.index.Term term) {
 		String field = term.field();
@@ -145,7 +143,10 @@ public class LumongoQueryParser extends QueryParser {
 
 		Lumongo.FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(field);
 		if (IndexConfigUtil.isNumericOrDateFieldType(fieldType)) {
-			if (Doubles.tryParse(text) != null) {
+			if (IndexConfigUtil.isDateFieldType(fieldType)) {
+				return getNumericOrDateRange(field, text, text, true, true);
+			}
+			else if (Doubles.tryParse(text) != null) {
 				return getNumericOrDateRange(field, text, text, true, true);
 			}
 			return null;
@@ -176,5 +177,13 @@ public class LumongoQueryParser extends QueryParser {
 			}
 		}
 		return super.getFieldQuery(field, queryText, slop);
+	}
+
+	@Override
+	protected Query getWildcardQuery(String field, String termStr) throws ParseException {
+		if (termStr.equals("*") && !field.equals("*")) {
+			return new TermQuery(new Term(LumongoConstants.FIELDS_LIST_FIELD, field));
+		}
+		return super.getWildcardQuery(field, termStr);
 	}
 }

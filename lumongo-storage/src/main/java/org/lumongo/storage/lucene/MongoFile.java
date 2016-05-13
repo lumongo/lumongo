@@ -84,6 +84,10 @@ public class MongoFile implements NosqlFile {
 		createCache();
 	}
 
+	public static long getCacheSize() {
+		return cache.size();
+	}
+
 	public static void setMaxIndexBlocks(int blocks) {
 		Cache<Long, MongoBlock> oldCache = cache;
 		cache = CacheBuilder.newBuilder().concurrencyLevel(32).maximumSize(blocks).removalListener(removalListener).build();

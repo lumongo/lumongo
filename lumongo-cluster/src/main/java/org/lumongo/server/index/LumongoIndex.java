@@ -781,7 +781,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 						return qp.parse(query);
 					}
 					else {
-						throw new Exception("Query field(s) required if default search field is not set");
+						qp.setField(null);
+						return qp.parse(query);
 					}
 				}
 				else {
@@ -1083,6 +1084,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 			fields.remove(LumongoConstants.STORED_DOC_FIELD);
 			fields.remove(LumongoConstants.STORED_META_FIELD);
 			fields.remove(LumongoConstants.ID_FIELD);
+			fields.remove(LumongoConstants.FIELDS_LIST_FIELD);
 
 			List<String> toRemove = new ArrayList<>();
 			for (String field : fields) {

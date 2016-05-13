@@ -6,7 +6,6 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.lumongo.admin.help.LumongoHelpFormatter;
-import org.lumongo.admin.help.RequiredOptionException;
 import org.lumongo.client.command.ClearIndex;
 import org.lumongo.client.command.DeleteIndex;
 import org.lumongo.client.command.GetFields;
@@ -15,8 +14,6 @@ import org.lumongo.client.command.GetMembers;
 import org.lumongo.client.command.GetNumberOfDocs;
 import org.lumongo.client.command.OptimizeIndex;
 import org.lumongo.client.config.LumongoPoolConfig;
-import org.lumongo.client.pool.LumongoBaseWorkPool;
-import org.lumongo.client.pool.LumongoPool;
 import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.ClearIndexResult;
 import org.lumongo.client.result.DeleteIndexResult;
@@ -62,7 +59,7 @@ public class IndexAdmin {
 
 			if (Command.getCount.equals(command)) {
 				if (index == null) {
-					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
+					throw new IllegalArgumentException(AdminConstants.INDEX + " is required for " + command.toString());
 				}
 
 				GetNumberOfDocsResult response = lumongoWorkPool.execute(new GetNumberOfDocs(index));
@@ -74,7 +71,7 @@ public class IndexAdmin {
 			}
 			else if (Command.getFields.equals(command)) {
 				if (index == null) {
-					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
+					throw new IllegalArgumentException(AdminConstants.INDEX + " is required for " + command.toString());
 				}
 
 				GetFieldsResult response = lumongoWorkPool.execute(new GetFields(index));
@@ -82,7 +79,7 @@ public class IndexAdmin {
 			}
 			else if (Command.optimize.equals(command)) {
 				if (index == null) {
-					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
+					throw new IllegalArgumentException(AdminConstants.INDEX + " is required for " + command.toString());
 				}
 
 				System.out.println("Optimizing Index:\n" + index);
@@ -91,7 +88,7 @@ public class IndexAdmin {
 			}
 			else if (Command.clear.equals(command)) {
 				if (index == null) {
-					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
+					throw new IllegalArgumentException(AdminConstants.INDEX + " is required for " + command.toString());
 				}
 				System.out.println("Clearing Index:\n" + index);
 				@SuppressWarnings("unused") ClearIndexResult response = lumongoWorkPool.execute(new ClearIndex(index));
@@ -113,7 +110,7 @@ public class IndexAdmin {
 			}
 			else if (Command.deleteIndex.equals(command)) {
 				if (index == null) {
-					throw new RequiredOptionException(AdminConstants.INDEX, command.toString());
+					throw new IllegalArgumentException(AdminConstants.INDEX + " is required for " + command.toString());
 				}
 
 				System.out.println("Deleting index <" + index + ">");
@@ -127,7 +124,7 @@ public class IndexAdmin {
 			}
 
 		}
-		catch (OptionException e) {
+		catch (OptionException | IllegalArgumentException e) {
 			System.err.println("ERROR: " + e.getMessage());
 			parser.formatHelpWith(new LumongoHelpFormatter());
 			parser.printHelpOn(System.err);

@@ -1,5 +1,6 @@
 package org.lumongo.server.index;
 
+import com.google.protobuf.util.JsonFormat;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.mongodb.MongoClient;
@@ -60,6 +61,7 @@ public class LumongoIndexManager {
 	private final InternalClient internalClient;
 
 	private final ExecutorService pool;
+	private final ClusterHelper clusterHelper;
 
 	private HazelcastManager hazelcastManager;
 
@@ -68,20 +70,25 @@ public class LumongoIndexManager {
 
 	private MongoClient mongo;
 
-	public LumongoIndexManager(MongoConfig mongoConfig, ClusterConfig clusterConfig) throws UnknownHostException {
+	public LumongoIndexManager(MongoClient mongo,  MongoConfig mongoConfig, ClusterConfig clusterConfig) throws UnknownHostException {
 		this.globalLock = new ReentrantReadWriteLock(true);
 
 		this.mongoConfig = mongoConfig;
 		this.clusterConfig = clusterConfig;
 
 		this.indexMap = new ConcurrentHashMap<>();
-		this.internalClient = new InternalClient(mongoConfig, clusterConfig);
 
-		log.info("Using mongo <" + mongoConfig.getMongoHost() + ":" + mongoConfig.getMongoPort() + ">");
-		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
+		this.mongo = mongo;
+		this.clusterHelper = new ClusterHelper(mongo, mongoConfig.getDatabaseName());
+		this.internalClient = new InternalClient(clusterHelper, clusterConfig);
 
 		this.pool = Executors.newCachedThreadPool(new LumongoThreadFactory("manager"));
 
+	}
+
+
+	public ClusterConfig getClusterConfig() {
+		return clusterConfig;
 	}
 
 	public void init(HazelcastManager hazelcastManager) throws UnknownHostException, MongoException {
@@ -115,7 +122,7 @@ public class LumongoIndexManager {
 		try {
 			if (master) {
 				// make sure we can resolve it before transferring segments
-				Nodes nodes = ClusterHelper.getNodes(mongoConfig);
+				Nodes nodes = clusterHelper.getNodes();
 				@SuppressWarnings("unused") LocalNodeConfig localNodeConfig = nodes.find(memberAdded);
 
 				handleServerAdded(currentMembers, memberAdded);
@@ -689,7 +696,7 @@ public class LumongoIndexManager {
 		try {
 			//log.info("Running query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + ">");
 
-			log.info("Running query: <" + request + "> on indexes <" + request.getIndexList() + ">");
+			log.info("Running query: <" + JsonFormat.printer().print(request) + ">");
 
 			final Map<String, QueryWithFilters> queryMap = getQueryMap(request);
 
@@ -1131,7 +1138,7 @@ public class LumongoIndexManager {
 			Set<Member> members = hazelcastManager.getMembers();
 			GetMembersResponse.Builder responseBuilder = GetMembersResponse.newBuilder();
 
-			Nodes nodes = ClusterHelper.getNodes(mongoConfig);
+			Nodes nodes = clusterHelper.getNodes();
 
 			HashMap<Member, LMMember> memberMap = new HashMap<>();
 

@@ -37,13 +37,13 @@ public class InternalClient {
 	private ConcurrentHashMap<Member, ReadWriteLock> internalConnectionLockMap;
 	
 	private ClusterConfig clusterConfig;
-	private MongoConfig mongoConfig;
+	private ClusterHelper clusterHelper;
 	
-	public InternalClient(MongoConfig mongoConfig, ClusterConfig clusterConfig) {
+	public InternalClient(ClusterHelper clusterHelper, ClusterConfig clusterConfig) {
 		this.clusterConfig = clusterConfig;
-		this.mongoConfig = mongoConfig;
-		this.internalConnectionPoolMap = new ConcurrentHashMap<Member, InternalRpcConnectionPool>();
-		this.internalConnectionLockMap = new ConcurrentHashMap<Member, ReadWriteLock>();
+		this.clusterHelper = clusterHelper;
+		this.internalConnectionPoolMap = new ConcurrentHashMap<>();
+		this.internalConnectionLockMap = new ConcurrentHashMap<>();
 		
 	}
 	
@@ -66,7 +66,7 @@ public class InternalClient {
 		try {
 			
 			if (!internalConnectionPoolMap.containsKey(m)) {
-				Nodes nodes = ClusterHelper.getNodes(mongoConfig);
+				Nodes nodes = clusterHelper.getNodes();
 				
 				LocalNodeConfig localNodeConfig = nodes.find(m);
 				

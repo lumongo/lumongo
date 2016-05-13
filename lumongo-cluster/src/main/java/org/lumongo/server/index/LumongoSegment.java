@@ -41,10 +41,6 @@ import org.apache.lucene.util.NumericUtils;
 import org.bson.BSON;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
@@ -68,6 +64,9 @@ import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.util.LumongoUtil;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,7 +82,8 @@ import java.util.regex.Pattern;
 
 public class LumongoSegment {
 
-	private final static DateTimeFormatter FORMATTER_YYYY_MM_DD = DateTimeFormat.forPattern("yyyyMMdd").withZoneUTC();
+	private final static DateTimeFormatter FORMATTER_YYYYMMDD = DateTimeFormatter.BASIC_ISO_DATE;
+	private final static DateTimeFormatter FORMATTER_YYYY_MM_DD = DateTimeFormatter.ISO_DATE;
 
 	private final static Logger log = Logger.getLogger(LumongoSegment.class);
 	private static Pattern sortedDocValuesMessage = Pattern.compile(
@@ -727,6 +727,7 @@ public class LumongoSegment {
 					for (IndexAs indexAs : fc.getIndexAsList()) {
 
 						String indexedFieldName = indexAs.getIndexFieldName();
+						d.add(new StringField(LumongoConstants.FIELDS_LIST_FIELD, indexedFieldName, Store.NO));
 
 						if (FieldConfig.FieldType.NUMERIC_INT.equals(fieldType)) {
 							IntFieldIndexer.INSTANCE.index(d, storedFieldName, o, indexedFieldName);
@@ -839,6 +840,20 @@ public class LumongoSegment {
 					}
 				});
 			}
+			else if (FieldConfig.FieldType.BOOL.equals(fieldType)) {
+				LumongoUtil.handleLists(o, obj -> {
+					if (obj instanceof Boolean) {
+						String text = obj.toString();
+						SortedSetDocValuesField docValue = new SortedSetDocValuesField(sortFieldName, new BytesRef(text));
+						d.add(docValue);
+					}
+					else {
+						throw new RuntimeException(
+								"Expecting date for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">, found <" + o.getClass()
+										+ ">");
+					}
+				});
+			}
 			else if (FieldConfig.FieldType.STRING.equals(fieldType)) {
 				LumongoUtil.handleLists(o, obj -> {
 					String text = o.toString();
@@ -884,14 +899,14 @@ public class LumongoSegment {
 				FacetAs.DateHandling dateHandling = fa.getDateHandling();
 				LumongoUtil.handleLists(o, obj -> {
 					if (obj instanceof Date) {
-						DateTime dt = new DateTime(obj).withZone(DateTimeZone.UTC);
+						LocalDate localDate = ((Date) (obj)).toInstant().atZone(ZoneId.of("UTC")).toLocalDate();
 
 						if (FacetAs.DateHandling.DATE_YYYYMMDD.equals(dateHandling)) {
-							String date = FORMATTER_YYYY_MM_DD.print(dt);
+							String date = FORMATTER_YYYYMMDD.format(localDate);
 							addFacet(doc, facetFieldName, date);
 						}
 						else if (FacetAs.DateHandling.DATE_YYYY_MM_DD.equals(dateHandling)) {
-							String date = String.format("%04d-%02d-%02d", dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth());
+							String date = FORMATTER_YYYY_MM_DD.format(localDate);
 							addFacet(doc, facetFieldName, date);
 						}
 						else {

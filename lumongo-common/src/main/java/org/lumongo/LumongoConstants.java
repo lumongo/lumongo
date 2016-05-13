@@ -23,6 +23,7 @@ public class LumongoConstants {
 	public static final String TERMS_URL = "terms";
 	public static final String INDEXES_URL = "indexes";
 	public static final String MEMBERS_URL = "members";
+	public static final String STATS_URL = "stats";
 
 	public static final String QUERY = "q";
 	public static final String QUERY_FIELD = "qf";
@@ -43,6 +44,8 @@ public class LumongoConstants {
 	public static final String MIN_TERM_FREQ = "minTermFreq";
 	public static final String START_TERM = "startTerm";
 	public static final String END_TERM = "endTerm";
+	public static final String DEFAULT_OP= "defaultOp";
+	public static final String DRILL_DOWN= "drillDown";
 
 	
 	//General
@@ -52,5 +55,6 @@ public class LumongoConstants {
 	public static final String STORED_META_FIELD = "_lmsmf_";
 	public static final String STORED_DOC_FIELD = "_lmsdf_";
 	public static final String ID_FIELD = "_lmidf_";
+	public static final String FIELDS_LIST_FIELD = "_lmflf_";
 
 }
