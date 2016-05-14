@@ -37,7 +37,7 @@ import org.lumongo.server.exceptions.InvalidIndexConfig;
 import org.lumongo.server.exceptions.SegmentDoesNotExist;
 import org.lumongo.server.hazelcast.HazelcastManager;
 import org.lumongo.server.hazelcast.UpdateSegmentsTask;
-import org.lumongo.server.search.LumongoQueryParser;
+import org.lumongo.server.search.LumongoMultiFieldQueryParser;
 import org.lumongo.server.search.QueryCacheKey;
 import org.lumongo.server.search.QueryWithFilters;
 import org.lumongo.storage.constants.MongoConstants;
@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,7 +88,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 	private final ClusterConfig clusterConfig;
 
 	private final MongoClient mongo;
-	private final GenericObjectPool<LumongoQueryParser> parsers;
+	private final GenericObjectPool<LumongoMultiFieldQueryParser> parsers;
 	private final ConcurrentHashMap<Integer, LumongoSegment> segmentMap;
 	private final ConcurrentHashMap<Integer, ILock> hazelLockMap;
 	private final ReadWriteLock indexLock;
@@ -106,8 +107,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 	private LockHandler documentLockHandler;
 	private FacetsConfig facetsConfig;
 
-	private LumongoIndex(HazelcastManager hazelcastManger, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig)
-			throws UnknownHostException, MongoException {
+	private LumongoIndex(HazelcastManager hazelcastManger, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig) throws Exception {
 
 		this.documentLockHandler = new LockHandler();
 
@@ -130,11 +130,11 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 		this.segmentPool = Executors.newCachedThreadPool(new LumongoThreadFactory(indexName + "-segments"));
 
-		this.parsers = new GenericObjectPool<>(new BasePoolableObjectFactory<LumongoQueryParser>() {
+		this.parsers = new GenericObjectPool<>(new BasePoolableObjectFactory<LumongoMultiFieldQueryParser>() {
 
 			@Override
-			public LumongoQueryParser makeObject() throws Exception {
-				return new LumongoQueryParser(lumongoAnalyzerFactory.getPerFieldAnalyzer(), LumongoIndex.this.indexConfig);
+			public LumongoMultiFieldQueryParser makeObject() throws Exception {
+				return new LumongoMultiFieldQueryParser(lumongoAnalyzerFactory.getPerFieldAnalyzer(), LumongoIndex.this.indexConfig);
 			}
 
 		});
@@ -174,7 +174,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 	}
 
 	public static LumongoIndex loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, MongoClient mongo, ClusterConfig clusterConfig,
-			String indexName) throws InvalidIndexConfig, UnknownHostException, MongoException {
+			String indexName) throws Exception {
 		IndexConfig indexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
 		log.info("Loading index <" + indexName + ">");
 
@@ -183,12 +183,49 @@ public class LumongoIndex implements IndexSegmentInterface {
 	}
 
 	public static LumongoIndex createIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig)
-			throws UnknownHostException, MongoException {
+			throws Exception {
 		log.info("Creating index <" + indexConfig.getIndexName() + ">: " + indexConfig);
 		LumongoIndex i = new LumongoIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
 		i.storeIndexSettings();
 		return i;
 
+	}
+
+	/** From org.apache.solr.search.QueryUtils **/
+	public static boolean isNegative(Query q) {
+		if (!(q instanceof BooleanQuery))
+			return false;
+		BooleanQuery bq = (BooleanQuery) q;
+		Collection<BooleanClause> clauses = bq.clauses();
+		if (clauses.size() == 0)
+			return false;
+		for (BooleanClause clause : clauses) {
+			if (!clause.isProhibited())
+				return false;
+		}
+		return true;
+	}
+
+	/** Fixes a negative query by adding a MatchAllDocs query clause.
+	 * The query passed in *must* be a negative query.
+	 */
+	public static Query fixNegativeQuery(Query q) {
+		float boost = 1f;
+		if (q instanceof BoostQuery) {
+			BoostQuery bq = (BoostQuery) q;
+			boost = bq.getBoost();
+			q = bq.getQuery();
+		}
+		BooleanQuery bq = (BooleanQuery) q;
+		BooleanQuery.Builder newBqB = new BooleanQuery.Builder();
+		newBqB.setDisableCoord(bq.isCoordDisabled());
+		newBqB.setMinimumNumberShouldMatch(bq.getMinimumNumberShouldMatch());
+		for (BooleanClause clause : bq) {
+			newBqB.add(clause);
+		}
+		newBqB.add(new MatchAllDocsQuery(), BooleanClause.Occur.MUST);
+		BooleanQuery newBq = newBqB.build();
+		return new BoostQuery(newBq, boost);
 	}
 
 	public void updateIndexSettings(IndexSettings request) {
@@ -728,6 +765,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
+	/** From org.apache.solr.search.QueryUtils **/
+
 	public void deleteDocument(DeleteRequest deleteRequest) throws Exception {
 
 		indexLock.readLock().lock();
@@ -765,46 +804,11 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	/** From org.apache.solr.search.QueryUtils **/
-	public static boolean isNegative(Query q) {
-		if (!(q instanceof BooleanQuery)) return false;
-		BooleanQuery bq = (BooleanQuery)q;
-		Collection<BooleanClause> clauses = bq.clauses();
-		if (clauses.size()==0) return false;
-		for (BooleanClause clause : clauses) {
-			if (!clause.isProhibited()) return false;
-		}
-		return true;
-	}
-
-	/** From org.apache.solr.search.QueryUtils **/
-	/** Fixes a negative query by adding a MatchAllDocs query clause.
-	 * The query passed in *must* be a negative query.
-	 */
-	public static Query fixNegativeQuery(Query q) {
-		float boost = 1f;
-		if (q instanceof BoostQuery) {
-			BoostQuery bq = (BoostQuery) q;
-			boost = bq.getBoost();
-			q = bq.getQuery();
-		}
-		BooleanQuery bq = (BooleanQuery) q;
-		BooleanQuery.Builder newBqB = new BooleanQuery.Builder();
-		newBqB.setDisableCoord(bq.isCoordDisabled());
-		newBqB.setMinimumNumberShouldMatch(bq.getMinimumNumberShouldMatch());
-		for (BooleanClause clause : bq) {
-			newBqB.add(clause);
-		}
-		newBqB.add(new MatchAllDocsQuery(), BooleanClause.Occur.MUST);
-		BooleanQuery newBq = newBqB.build();
-		return new BoostQuery(newBq, boost);
-	}
-
 	public Query getQuery(String queryText, List<String> queryFields, int minimumShouldMatchNumber, Operator defaultOperator) throws Exception {
 		indexLock.readLock().lock();
 		try {
 
-			LumongoQueryParser qp = null;
+			LumongoMultiFieldQueryParser qp = null;
 			if (queryText == null || queryText.isEmpty()) {
 				return new MatchAllDocsQuery();
 			}
@@ -813,56 +817,41 @@ public class LumongoIndex implements IndexSegmentInterface {
 				qp.setMinimumNumberShouldMatch(minimumShouldMatchNumber);
 				qp.setDefaultOperator(defaultOperator);
 
-
-
 				if (queryFields.isEmpty()) {
 					if (indexConfig.getIndexSettings().hasDefaultSearchField()) {
-						qp.setField(indexConfig.getIndexSettings().getDefaultSearchField());
+						qp.setDefaultField(indexConfig.getIndexSettings().getDefaultSearchField());
 					}
 					else {
-						qp.setField(null);
+						qp.setDefaultField(null);
 					}
-					Query query = qp.parse(queryText);
-					boolean negative = isNegative(query);
-					if (negative) {
-						query = fixNegativeQuery(query);
-					}
-					return query;
 				}
 				else {
-					BooleanQuery.Builder bQuery = new BooleanQuery.Builder();
+					Set<String> fields = new LinkedHashSet<>();
+
+					HashMap<String, Float> boostMap = new HashMap<>();
 					for (String queryField : queryFields) {
-						Float boost = null;
+
 						if (queryField.contains("^")) {
 							try {
-								boost = Float.parseFloat(queryField.substring(queryField.indexOf("^") + 1));
+								float boost = Float.parseFloat(queryField.substring(queryField.indexOf("^") + 1));
+								queryField = queryField.substring(0, queryField.indexOf("^"));
+								boostMap.put(queryField, boost);
 							}
 							catch (Exception e) {
 								throw new IllegalArgumentException("Invalid queryText field boost <" + queryField + ">");
 							}
-							queryField = queryField.substring(0, queryField.indexOf("^"));
 						}
-						qp.setField(queryField);
-						Query query = qp.parse(queryText);
-						boolean negative = isNegative(query);
-						if (negative) {
-							query = fixNegativeQuery(query);
-						}
-						if (boost != null) {
-							query= new BoostQuery(query, boost);
-						}
-						if ((query != null) && // q never null, just being defensive
-								(!(query instanceof BooleanQuery) || (((BooleanQuery) query).clauses().size() > 0))) {
-							if (negative) {
-								bQuery.add(query, BooleanClause.Occur.MUST);
-							}
-							else {
-								bQuery.add(query, BooleanClause.Occur.SHOULD);
-							}
-						}
+						fields.add(queryField);
+
 					}
-					return bQuery.build();
+					qp.setDefaultFields(fields, boostMap);
 				}
+				Query query = qp.parse(queryText);
+				boolean negative = isNegative(query);
+				if (negative) {
+					query = fixNegativeQuery(query);
+				}
+				return query;
 
 			}
 			finally {

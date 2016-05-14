@@ -49,7 +49,7 @@ public class LumongoQueryParser extends QueryParser {
 		return epochMilli;
 	}
 
-	public void setField(String field) {
+	public void setDefaultField(String field) {
 		this.field = field;
 	}
 
