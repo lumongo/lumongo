@@ -28,6 +28,7 @@ import org.bson.Document;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.lumongo.LumongoConstants;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
@@ -804,9 +805,28 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	public Query getQuery(String queryText, List<String> queryFields, int minimumShouldMatchNumber, Operator defaultOperator) throws Exception {
+	public Query getQuery(Lumongo.Query lumongoQuery) throws Exception {
 		indexLock.readLock().lock();
+
+		Lumongo.Query.Operator defaultOperator = lumongoQuery.getDefaultOperator();
+		String queryText = lumongoQuery.getQuery();
+		Integer minimumShouldMatchNumber = lumongoQuery.getMinimumNumberShouldMatch();
+		List<String> queryFields = lumongoQuery.getQueryFieldList();
+
 		try {
+
+			Operator operator = null;
+			if (defaultOperator.equals(Lumongo.Query.Operator.OR)) {
+				operator = Operator.OR;
+			}
+			else if (defaultOperator.equals(Lumongo.Query.Operator.AND)) {
+				operator = Operator.AND;
+			}
+			else {
+				//this should never happen
+				log.error("Unknown operator type: <" + defaultOperator + ">");
+			}
+
 
 			LumongoMultiFieldQueryParser qp = null;
 			if (queryText == null || queryText.isEmpty()) {
@@ -815,7 +835,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 			try {
 				qp = parsers.borrowObject();
 				qp.setMinimumNumberShouldMatch(minimumShouldMatchNumber);
-				qp.setDefaultOperator(defaultOperator);
+				qp.setDefaultOperator(operator);
 
 				if (queryFields.isEmpty()) {
 					if (indexConfig.getIndexSettings().hasDefaultSearchField()) {

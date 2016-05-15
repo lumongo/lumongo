@@ -411,28 +411,32 @@ message IndexSegmentResponse {
 }
 
 
+
 message QueryRequest {
+	repeated string index = 1;
+	optional Query query = 2;
+	required uint32 amount = 3;
+	repeated Query filterQuery = 4;
+	optional FacetRequest facetRequest = 5;
+	optional SortRequest sortRequest = 6;
+	optional uint32 start = 7;
+	optional LastResult lastResult = 8;
+	optional FetchType resultFetchType = 9 [default = NONE];
+	repeated string documentFields = 10;
+	repeated string documentMaskedFields = 11;
+	optional bool fetchFull = 12 [default = false];
+}
+
+message Query {
 	enum Operator {
 		AND = 1;
 		OR = 2;
 	}
 
-	repeated string index = 1;
-	optional string query = 2;
-	required uint32 amount = 3;
-	optional LastResult lastResult = 4;
-	optional bool fetchFull = 5 [default = false];
-	optional FacetRequest facetRequest = 7;
-	optional SortRequest sortRequest = 8;
-	repeated string queryField = 9;
-	repeated string filterQuery = 10;
-	repeated string fields = 11;
-	optional FetchType resultFetchType = 12 [default = NONE];
-	optional uint32 minimumNumberShouldMatch = 13 [default = 0];
-	optional Operator defaultOperator = 14 [default = OR];
-	repeated string documentFields = 15;
-	repeated string documentMaskedFields = 16;
-	optional uint32 start = 17;
+	required string query = 1;
+	optional Operator defaultOperator = 2 [default = OR];
+	repeated string queryField = 3;
+	optional uint32 minimumNumberShouldMatch = 4 [default = 0];
 }
 
 message QueryResponse {

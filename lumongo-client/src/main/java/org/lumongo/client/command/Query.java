@@ -12,8 +12,8 @@ import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.LMFacet;
+import org.lumongo.cluster.message.Lumongo.Query.Operator;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
-import org.lumongo.cluster.message.Lumongo.QueryRequest.Operator;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
 
@@ -32,7 +32,7 @@ import java.util.Set;
  *
  */
 public class Query extends SimpleCommand<QueryRequest, QueryResult> {
-	
+
 	private String query;
 	private int amount;
 	private int start;
@@ -42,41 +42,40 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private List<LMFacet> drillDowns = Collections.emptyList();
 	private List<FieldSort> fieldSorts = Collections.emptyList();
 	private Set<String> queryFields = Collections.emptySet();
-	private List<String> filterQueries = Collections.emptyList();
+	private List<Lumongo.Query> filterQueries = Collections.emptyList();
 	private Integer minimumNumberShouldMatch;
 	private Operator defaultOperator;
 	private Lumongo.FetchType resultFetchType;
 	private Set<String> documentFields = Collections.emptySet();
 	private Set<String> documentMaskedFields = Collections.emptySet();
 
-
 	public Query(String index, String query, int amount) {
 		this(new String[] { index }, query, amount);
 	}
-	
+
 	public Query(String[] indexes, String query, int amount) {
 		this(new ArrayList<>(Arrays.asList(indexes)), query, amount);
 	}
-	
+
 	public Query(Collection<String> indexes, String query, int amount) {
 		this.indexes = indexes;
 		this.query = query;
 		this.amount = amount;
 	}
-	
+
 	public String getQuery() {
 		return query;
 	}
-	
+
 	public Query setQuery(String query) {
 		this.query = query;
 		return this;
 	}
-	
+
 	public int getAmount() {
 		return amount;
 	}
-	
+
 	public Query setAmount(int amount) {
 		this.amount = amount;
 		return this;
@@ -93,104 +92,132 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	public Integer getMinimumNumberShouldMatch() {
 		return minimumNumberShouldMatch;
 	}
-	
+
 	public void setMinimumNumberShouldMatch(Integer minimumNumberShouldMatch) {
 		this.minimumNumberShouldMatch = minimumNumberShouldMatch;
 	}
-	
-	public Query setIndexes(Collection<String> indexes) {
-		this.indexes = indexes;
-		return this;
-	}
-	
+
 	public Collection<String> getIndexes() {
 		return indexes;
 	}
 
+	public Query setIndexes(Collection<String> indexes) {
+		this.indexes = indexes;
+		return this;
+	}
 
 	public Query setLastResult(QueryResult lastQueryResult) {
 		this.lastResult = lastQueryResult.getLastResult();
 		return this;
 	}
 
+	public Lumongo.LastResult getLastResult() {
+		return lastResult;
+	}
+
 	public Query setLastResult(Lumongo.LastResult lastResult) {
 		this.lastResult = lastResult;
 		return this;
 	}
-	
-	public Lumongo.LastResult getLastResult() {
-		return lastResult;
-	}
-	
+
 	public Query addDrillDown(String label, String path) {
 		if (drillDowns.isEmpty()) {
 			this.drillDowns = new ArrayList<>();
 		}
-		
+
 		drillDowns.add(LMFacet.newBuilder().setLabel(label).setPath(path).build());
 		return this;
 	}
-	
+
 	public List<LMFacet> getDrillDowns() {
 		return drillDowns;
 	}
-	
+
 	public Set<String> getQueryFields() {
 		return queryFields;
 	}
-	
+
 	public void setQueryFields(Collection<String> queryFields) {
 		this.queryFields = new HashSet<String>(queryFields);
 	}
-	
+
 	public void setQueryFields(String... queryFields) {
 		this.queryFields = new HashSet<>(Arrays.asList(queryFields));
-		
+
 	}
-	
+
 	public Query addQueryField(String queryField) {
 		if (queryFields.isEmpty()) {
 			this.queryFields = new HashSet<>();
 		}
-		
+
 		queryFields.add(queryField);
 		return this;
 	}
-	
+
 	public Query addQueryField(String... queryFields) {
 		if (this.queryFields.isEmpty()) {
 			this.queryFields = new HashSet<>();
 		}
-		
+
 		for (String queryField : queryFields) {
 			this.queryFields.add(queryField);
 		}
 		return this;
 	}
-	
-	public List<String> getFilterQueries() {
+
+	public List<Lumongo.Query> getFilterQueries() {
 		return filterQueries;
 	}
-	
-	public void setFilterQueries(List<String> filterQueries) {
+
+	public void setFilterQueries(List<Lumongo.Query> filterQueries) {
 		this.filterQueries = filterQueries;
 	}
-	
-	public Query addFilterQuery(String filterQuery) {
+
+	public Query addFilterQuery(String query) {
+		return addFilterQuery(query, null, null, null);
+	}
+
+	public Query addFilterQuery(String query, Collection<String> queryFields) {
+		return addFilterQuery(query, queryFields, null, null);
+	}
+
+	public Query addFilterQuery(String query, Collection<String> queryFields, Operator defaultOperator) {
+		return addFilterQuery(query, queryFields, defaultOperator, null);
+	}
+
+	public Query addFilterQuery(String query, Collection<String> queryFields, Integer minimumNumberShouldMatch) {
+		return addFilterQuery(query, queryFields, null, minimumNumberShouldMatch);
+	}
+
+	public Query addFilterQuery(String query, Collection<String> queryFields, Operator defaultOperator, Integer minimumNumberShouldMatch) {
 		if (filterQueries.isEmpty()) {
 			this.filterQueries = new ArrayList<>();
 		}
-		
-		filterQueries.add(filterQuery);
+
+		Lumongo.Query.Builder builder = Lumongo.Query.newBuilder();
+		if (query != null && !query.isEmpty()) {
+			builder.setQuery(query);
+		}
+		if (minimumNumberShouldMatch != null) {
+			builder.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
+		}
+		if (defaultOperator != null) {
+			builder.setDefaultOperator(defaultOperator);
+		}
+		if (queryFields != null && !queryFields.isEmpty()) {
+			builder.addAllQueryField(queryFields);
+		}
+		filterQueries.add(builder.build());
 		return this;
 	}
 
 	public Query addCountRequest(String label) {
-		return(addCountRequest(label, 10));
+		return (addCountRequest(label, 10));
 	}
 
 	public Query addCountRequest(String label, int maxFacets) {
-		return(addCountRequest(label, maxFacets, maxFacets * 8));
+		return (addCountRequest(label, maxFacets, maxFacets * 8));
 	}
 
 	public Query addCountRequest(String label, int maxFacets, int segmentFacets) {
@@ -207,7 +234,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	public List<CountRequest> getCountRequests() {
 		return countRequests;
 	}
-	
+
 	public Query addFieldSort(String sort) {
 		if (fieldSorts.isEmpty()) {
 			this.fieldSorts = new ArrayList<>();
@@ -215,7 +242,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		fieldSorts.add(FieldSort.newBuilder().setSortField(sort).setDirection(Direction.ASCENDING).build());
 		return this;
 	}
-	
+
 	public Query addFieldSort(String sort, Direction direction) {
 		if (fieldSorts.isEmpty()) {
 			this.fieldSorts = new ArrayList<>();
@@ -223,11 +250,11 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		fieldSorts.add(FieldSort.newBuilder().setSortField(sort).setDirection(direction).build());
 		return this;
 	}
-	
+
 	public Operator getDefaultOperator() {
 		return defaultOperator;
 	}
-	
+
 	public Query setDefaultOperator(Operator defaultOperator) {
 		this.defaultOperator = defaultOperator;
 		return this;
@@ -272,44 +299,44 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
 		requestBuilder.setAmount(amount);
 		requestBuilder.setStart(start);
-		
-		if (minimumNumberShouldMatch != null) {
-			requestBuilder.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
-		}
-		
-		if (query != null) {
-			requestBuilder.setQuery(query);
+
+		if (query != null && !query.isEmpty()) {
+			Lumongo.Query.Builder queryBuilder = Lumongo.Query.newBuilder();
+			queryBuilder.setQuery(query);
+			if (minimumNumberShouldMatch != null) {
+				queryBuilder.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
+			}
+			if (!queryFields.isEmpty()) {
+				queryBuilder.addAllQueryField(queryFields);
+			}
+			if (defaultOperator != null) {
+				queryBuilder.setDefaultOperator(defaultOperator);
+			}
+
+			requestBuilder.setQuery(queryBuilder);
 		}
 
 		if (lastResult != null) {
 			requestBuilder.setLastResult(lastResult);
 		}
-		
+
 		for (String index : indexes) {
 			requestBuilder.addIndex(index);
 		}
-		
+
 		if (!drillDowns.isEmpty() || !countRequests.isEmpty()) {
 			FacetRequest.Builder facetRequestBuilder = FacetRequest.newBuilder();
 
 			facetRequestBuilder.addAllDrillDown(drillDowns);
-			
+
 			facetRequestBuilder.addAllCountRequest(countRequests);
-			
+
 			requestBuilder.setFacetRequest(facetRequestBuilder.build());
-			
+
 		}
-		
-		if (!queryFields.isEmpty()) {
-			requestBuilder.addAllQueryField(queryFields);
-		}
-		
+
 		if (!filterQueries.isEmpty()) {
 			requestBuilder.addAllFilterQuery(filterQueries);
-		}
-		
-		if (defaultOperator != null) {
-			requestBuilder.setDefaultOperator(defaultOperator);
 		}
 
 		if (resultFetchType != null) {
@@ -318,25 +345,25 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 		requestBuilder.addAllDocumentFields(documentFields);
 		requestBuilder.addAllDocumentMaskedFields(documentMaskedFields);
-		
+
 		SortRequest.Builder sortRequestBuilder = SortRequest.newBuilder();
 		sortRequestBuilder.addAllFieldSort(fieldSorts);
 		requestBuilder.setSortRequest(sortRequestBuilder.build());
-		
+
 		return requestBuilder.build();
 	}
-	
+
 	@Override
 	public QueryResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		
+
 		ExternalService.BlockingInterface service = lumongoConnection.getService();
-		
+
 		RpcController controller = lumongoConnection.getController();
-		
+
 		QueryResponse queryResponse = service.query(controller, getRequest());
-		
+
 		return new QueryResult(queryResponse);
-		
+
 	}
 
 	@Override

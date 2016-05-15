@@ -14,6 +14,7 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
@@ -626,21 +627,7 @@ public class LumongoIndexManager {
 					throw new IndexDoesNotExist(indexName);
 				}
 
-				int minimumShouldMatch = queryRequest.getMinimumNumberShouldMatch();
-
-				Operator operator = null;
-				if (queryRequest.getDefaultOperator().equals(QueryRequest.Operator.OR)) {
-					operator = Operator.OR;
-				}
-				else if (queryRequest.getDefaultOperator().equals(QueryRequest.Operator.AND)) {
-					operator = Operator.AND;
-				}
-				else {
-					//this should never happen
-					log.error("Unknown operator type: <" + queryRequest.getDefaultOperator() + ">");
-				}
-
-				Query query = i.getQuery(queryRequest.getQuery(), queryRequest.getQueryFieldList(), minimumShouldMatch, operator);
+				Query query = i.getQuery(queryRequest.getQuery());
 
 				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 
@@ -676,8 +663,8 @@ public class LumongoIndexManager {
 					}
 				}
 
-				for (String filter : queryRequest.getFilterQueryList()) {
-					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.emptyList(), 0, operator));
+				for (Lumongo.Query filterQuery : queryRequest.getFilterQueryList()) {
+					queryWithFilters.addFilterQuery(i.getQuery(filterQuery));
 				}
 
 				queryMap.put(indexName, queryWithFilters);

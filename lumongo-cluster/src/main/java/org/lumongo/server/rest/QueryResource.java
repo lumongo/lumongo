@@ -45,40 +45,43 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError, @QueryParam(LumongoConstants.MIN_MATCH) Integer mm) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
-		if (query != null) {
-			qrBuilder.setQuery(query);
+		if (query != null && !query.isEmpty()) {
+			Lumongo.Query.Builder queryBuilder = Lumongo.Query.newBuilder();
+			queryBuilder.setQuery(query);
+			if (mm != null) {
+				queryBuilder.setMinimumNumberShouldMatch(mm);
+			}
+			if (!queryFields.isEmpty()) {
+				queryBuilder.addAllQueryField(queryFields);
+			}
+			if (defaultOperator != null) {
+				if (defaultOperator.equalsIgnoreCase("AND")) {
+					queryBuilder.setDefaultOperator(Lumongo.Query.Operator.AND);
+				}
+				else if (defaultOperator.equalsIgnoreCase("OR")) {
+					queryBuilder.setDefaultOperator(Lumongo.Query.Operator.OR);
+				}
+				else {
+					Response.status(LumongoConstants.INTERNAL_ERROR).entity("Invalid default operator <" + defaultOperator + ">").build();
+				}
+			}
+
+			qrBuilder.setQuery(queryBuilder);
 		}
 		qrBuilder.setAmount(rows);
 
-		if (mm != null) {
-			qrBuilder.setMinimumNumberShouldMatch(mm);
-		}
 
-		if (queryFields != null) {
-			for (String queryField : queryFields) {
-				qrBuilder.addQueryField(queryField);
-			}
-		}
 
 		if (filterQueries != null) {
 			for (String filterQuery : filterQueries) {
-				qrBuilder.addFilterQuery(filterQuery);
+				Lumongo.Query filterQueryBuilder = Lumongo.Query.newBuilder().setQuery(filterQuery).build();
+				qrBuilder.addFilterQuery(filterQueryBuilder);
 			}
 		}
 
 
 
-		if (defaultOperator != null) {
-			if (defaultOperator.equalsIgnoreCase("AND")) {
-				qrBuilder.setDefaultOperator(QueryRequest.Operator.AND);
-			}
-			else if (defaultOperator.equalsIgnoreCase("OR")) {
-				qrBuilder.setDefaultOperator(QueryRequest.Operator.OR);
-			}
-			else {
-				Response.status(LumongoConstants.INTERNAL_ERROR).entity("Invalid default operator <" + defaultOperator + ">").build();
-			}
-		}
+
 
 
 

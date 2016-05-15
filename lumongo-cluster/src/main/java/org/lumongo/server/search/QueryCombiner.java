@@ -53,7 +53,7 @@ public class QueryCombiner {
 
 	private SortRequest sortRequest;
 
-	private String query;
+	private Lumongo.Query query;
 
 	public QueryCombiner(Map<String, LumongoIndex> usedIndexMap, QueryRequest request, List<InternalQueryResponse> responses) {
 		this.usedIndexMap = usedIndexMap;
