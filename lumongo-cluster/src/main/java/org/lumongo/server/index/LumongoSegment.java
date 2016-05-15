@@ -252,7 +252,7 @@ public class LumongoSegment {
 				BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 
 				for (Query filterQuery : queryWithFilters.getFilterQueries()) {
-					booleanQuery.add(filterQuery, BooleanClause.Occur.MUST);
+					booleanQuery.add(filterQuery, BooleanClause.Occur.FILTER);
 				}
 
 				booleanQuery.add(q, BooleanClause.Occur.MUST);
