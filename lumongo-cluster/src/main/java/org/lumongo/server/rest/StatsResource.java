@@ -44,7 +44,7 @@ public class StatsResource {
 			mongoDocument.put("jvmTotalMemoryMB", runtime.totalMemory() / MB);
 			mongoDocument.put("jvmMaxMemoryMB", runtime.maxMemory() / MB);
 
-			String docString = mongoDocument.toString();
+			String docString = mongoDocument.toJson();
 
 			if (pretty) {
 				docString = JsonWriter.formatJson(docString);
