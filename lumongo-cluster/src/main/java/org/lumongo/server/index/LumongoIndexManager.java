@@ -185,7 +185,7 @@ public class LumongoIndexManager {
 	public IndexCreateResponse createIndex(IndexCreateRequest request) throws Exception {
 		globalLock.writeLock().lock();
 		try {
-			log.info("Creating index: <" + request.getIndexName() + ">");
+			log.info("Creating index: <" + request.getIndexName() + ">: "  + JsonFormat.printer().print(request));
 
 			IndexConfig indexConfig = new IndexConfig(request);
 

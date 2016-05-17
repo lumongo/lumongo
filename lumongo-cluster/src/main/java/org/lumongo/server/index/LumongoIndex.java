@@ -185,7 +185,6 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 	public static LumongoIndex createIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, ClusterConfig clusterConfig, IndexConfig indexConfig)
 			throws Exception {
-		log.info("Creating index <" + indexConfig.getIndexName() + ">: " + indexConfig);
 		LumongoIndex i = new LumongoIndex(hazelcastManager, mongoConfig, clusterConfig, indexConfig);
 		i.storeIndexSettings();
 		return i;
