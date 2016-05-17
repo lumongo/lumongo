@@ -351,11 +351,25 @@ public class LumongoSegment {
 					}
 
 					int numOfFacets = 0;
-					if (countRequest.getSegmentFacets() != 0) {
+
+
+					if (countRequest.hasSegmentFacets()) {
 						if (countRequest.getSegmentFacets() < countRequest.getMaxFacets()) {
 							throw new IllegalArgumentException("Segment facets must be greater than or equal to max facets");
 						}
-						numOfFacets = countRequest.getSegmentFacets() + 1;
+					}
+
+					if (indexConfig.getNumberOfSegments() > 1) {
+						if (countRequest.getSegmentFacets() != 0) {
+							numOfFacets = countRequest.getSegmentFacets();
+						}
+						else {
+							numOfFacets = countRequest.getMaxFacets() * 8;
+						}
+
+					}
+					else {
+						numOfFacets = countRequest.getMaxFacets();
 					}
 
 					FacetResult facetResult = null;
@@ -1083,5 +1097,7 @@ public class LumongoSegment {
 		return SegmentCountResponse.newBuilder().setNumberOfDocs(count).setSegmentNumber(segmentNumber).build();
 
 	}
+
+
 
 }

@@ -220,14 +220,19 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return (addCountRequest(label, maxFacets, maxFacets * 8));
 	}
 
-	public Query addCountRequest(String label, int maxFacets, int segmentFacets) {
+	public Query addCountRequest(String label, Integer maxFacets, Integer segmentFacets) {
 
-		LMFacet facet = LMFacet.newBuilder().setLabel(label).build();
-		CountRequest countRequest = CountRequest.newBuilder().setFacetField(facet).setMaxFacets(maxFacets).setSegmentFacets(segmentFacets).build();
+		CountRequest.Builder countRequest = CountRequest.newBuilder().setFacetField(LMFacet.newBuilder().setLabel(label).build());
+		if (maxFacets != null) {
+			countRequest.setMaxFacets(maxFacets);
+		}
+		if (segmentFacets != null) {
+			countRequest.setSegmentFacets(segmentFacets);
+		}
 		if (countRequests.isEmpty()) {
 			this.countRequests = new ArrayList<>();
 		}
-		countRequests.add(countRequest);
+		countRequests.add(countRequest.build());
 		return this;
 	}
 
