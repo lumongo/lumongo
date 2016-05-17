@@ -350,15 +350,17 @@ public class LumongoSegment {
 						throw new Exception(label + " is not defined as a facetable field");
 					}
 
-					int numOfFacets = 0;
-
 
 					if (countRequest.hasSegmentFacets()) {
+						if (indexConfig.getNumberOfSegments() == 1) {
+							log.info("Segment facets is ignored with segments of 1 for facet <" + label + "> on index <" + indexName + ">");
+						}
 						if (countRequest.getSegmentFacets() < countRequest.getMaxFacets()) {
 							throw new IllegalArgumentException("Segment facets must be greater than or equal to max facets");
 						}
 					}
 
+					int numOfFacets;
 					if (indexConfig.getNumberOfSegments() > 1) {
 						if (countRequest.getSegmentFacets() != 0) {
 							numOfFacets = countRequest.getSegmentFacets();
