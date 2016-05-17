@@ -888,9 +888,11 @@ public class LumongoIndex implements IndexSegmentInterface {
 		indexLock.readLock().lock();
 		try {
 			int amount = queryRequest.getAmount() + queryRequest.getStart();
-			if (!queryRequest.getFetchFull() && (amount > 0)) {
-				amount = (int) (((amount / numberOfSegments) + indexConfig.getIndexSettings().getMinSegmentRequest()) * indexConfig.getIndexSettings()
-						.getRequestFactor());
+
+			if (indexConfig.getNumberOfSegments() != 1) {
+				if (!queryRequest.getFetchFull() && (amount > 0)) {
+					amount = (int) (((amount / numberOfSegments) + indexConfig.getIndexSettings().getMinSegmentRequest()) * indexConfig.getIndexSettings().getRequestFactor());
+				}
 			}
 
 			final int requestedAmount = amount;
