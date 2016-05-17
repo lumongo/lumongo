@@ -213,11 +213,11 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	}
 
 	public Query addCountRequest(String label) {
-		return (addCountRequest(label, 10));
+		return (addCountRequest(label, null));
 	}
 
-	public Query addCountRequest(String label, int maxFacets) {
-		return (addCountRequest(label, maxFacets, maxFacets * 8));
+	public Query addCountRequest(String label, Integer maxFacets) {
+		return (addCountRequest(label, maxFacets, null));
 	}
 
 	public Query addCountRequest(String label, Integer maxFacets, Integer segmentFacets) {
