@@ -1,5 +1,6 @@
 package org.lumongo.server.index;
 
+import com.google.protobuf.util.JsonFormat;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.Member;
@@ -231,7 +232,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 	public void updateIndexSettings(IndexSettings request) {
 		indexLock.writeLock().lock();
 		try {
-			log.info("Updating index settings for <" + indexName + ">: " + request);
+
 			indexConfig.configure(request);
 			storeIndexSettings();
 		}

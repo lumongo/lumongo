@@ -185,7 +185,7 @@ public class LumongoIndexManager {
 	public IndexCreateResponse createIndex(IndexCreateRequest request) throws Exception {
 		globalLock.writeLock().lock();
 		try {
-			log.info("Creating index: <" + request.getIndexName() + ">: "  + JsonFormat.printer().print(request));
+			log.info("Creating index: <" + request.getIndexName() + ">:\n"  + JsonFormat.printer().print(request));
 
 			IndexConfig indexConfig = new IndexConfig(request);
 
@@ -388,11 +388,12 @@ public class LumongoIndexManager {
 	public IndexSettingsResponse updateIndex(String indexName, IndexSettings request) throws InvalidIndexConfig, MongoException, IOException {
 		globalLock.readLock().lock();
 		try {
-
+			log.info("Updating index settings for <" + indexName + ">:\n" + JsonFormat.printer().print(request));
 			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
 				throw new IndexDoesNotExist(indexName);
 			}
+
 
 			i.updateIndexSettings(request);
 
