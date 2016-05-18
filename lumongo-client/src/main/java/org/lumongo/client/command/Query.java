@@ -197,16 +197,16 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 		Lumongo.Query.Builder builder = Lumongo.Query.newBuilder();
 		if (query != null && !query.isEmpty()) {
-			builder.setQuery(query);
+			builder.setQ(query);
 		}
 		if (minimumNumberShouldMatch != null) {
-			builder.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
+			builder.setMm(minimumNumberShouldMatch);
 		}
 		if (defaultOperator != null) {
-			builder.setDefaultOperator(defaultOperator);
+			builder.setDefaultOp(defaultOperator);
 		}
 		if (queryFields != null && !queryFields.isEmpty()) {
-			builder.addAllQueryField(queryFields);
+			builder.addAllQf(queryFields);
 		}
 		filterQueries.add(builder.build());
 		return this;
@@ -307,15 +307,15 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 		if (query != null && !query.isEmpty()) {
 			Lumongo.Query.Builder queryBuilder = Lumongo.Query.newBuilder();
-			queryBuilder.setQuery(query);
+			queryBuilder.setQ(query);
 			if (minimumNumberShouldMatch != null) {
-				queryBuilder.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
+				queryBuilder.setMm(minimumNumberShouldMatch);
 			}
 			if (!queryFields.isEmpty()) {
-				queryBuilder.addAllQueryField(queryFields);
+				queryBuilder.addAllQf(queryFields);
 			}
 			if (defaultOperator != null) {
-				queryBuilder.setDefaultOperator(defaultOperator);
+				queryBuilder.setDefaultOp(defaultOperator);
 			}
 
 			requestBuilder.setQuery(queryBuilder);

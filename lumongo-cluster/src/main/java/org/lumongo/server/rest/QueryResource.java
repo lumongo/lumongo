@@ -2,6 +2,8 @@ package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 import com.mongodb.BasicDBObject;
 import org.apache.log4j.Logger;
 import org.bson.BSON;
@@ -37,6 +39,7 @@ public class QueryResource {
 	@Produces({ MediaType.APPLICATION_JSON + ";charset=utf-8" })
 	public Response get(@QueryParam(LumongoConstants.INDEX) List<String> indexName, @QueryParam(LumongoConstants.QUERY) String query,
 			@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields, @QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
+			@QueryParam(LumongoConstants.FILTER_QUERY_JSON) List<String> filterJsonQueries,
 			@QueryParam(LumongoConstants.FIELDS) List<String> fields, @QueryParam(LumongoConstants.FETCH) Boolean fetch,
 			@QueryParam(LumongoConstants.ROWS) int rows, @QueryParam(LumongoConstants.FACET) List<String> facet,
 			@QueryParam(LumongoConstants.DRILL_DOWN) List<String> drillDowns,
@@ -47,19 +50,19 @@ public class QueryResource {
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		if (query != null && !query.isEmpty()) {
 			Lumongo.Query.Builder queryBuilder = Lumongo.Query.newBuilder();
-			queryBuilder.setQuery(query);
+			queryBuilder.setQ(query);
 			if (mm != null) {
-				queryBuilder.setMinimumNumberShouldMatch(mm);
+				queryBuilder.setMm(mm);
 			}
 			if (!queryFields.isEmpty()) {
-				queryBuilder.addAllQueryField(queryFields);
+				queryBuilder.addAllQf(queryFields);
 			}
 			if (defaultOperator != null) {
 				if (defaultOperator.equalsIgnoreCase("AND")) {
-					queryBuilder.setDefaultOperator(Lumongo.Query.Operator.AND);
+					queryBuilder.setDefaultOp(Lumongo.Query.Operator.AND);
 				}
 				else if (defaultOperator.equalsIgnoreCase("OR")) {
-					queryBuilder.setDefaultOperator(Lumongo.Query.Operator.OR);
+					queryBuilder.setDefaultOp(Lumongo.Query.Operator.OR);
 				}
 				else {
 					Response.status(LumongoConstants.INTERNAL_ERROR).entity("Invalid default operator <" + defaultOperator + ">").build();
@@ -74,8 +77,21 @@ public class QueryResource {
 
 		if (filterQueries != null) {
 			for (String filterQuery : filterQueries) {
-				Lumongo.Query filterQueryBuilder = Lumongo.Query.newBuilder().setQuery(filterQuery).build();
+				Lumongo.Query filterQueryBuilder = Lumongo.Query.newBuilder().setQ(filterQuery).build();
 				qrBuilder.addFilterQuery(filterQueryBuilder);
+			}
+		}
+
+		if (filterJsonQueries != null) {
+			for (String filterJsonQuery : filterJsonQueries) {
+				try {
+					Lumongo.Query.Builder filterQueryBuilder = Lumongo.Query.newBuilder();
+					JsonFormat.parser().merge(filterJsonQuery, filterQueryBuilder);
+					qrBuilder.addFilterQuery(filterQueryBuilder);
+				}
+				catch (InvalidProtocolBufferException e) {
+					return Response.status(LumongoConstants.INTERNAL_ERROR).entity(e.getClass().getSimpleName() + ":" + e.getMessage()).build();
+				}
 			}
 		}
 

@@ -5,6 +5,7 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
+import org.apache.lucene.search.DisjunctionMaxQuery;
 import org.apache.lucene.search.MultiPhraseQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
@@ -200,6 +201,7 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 		for (Query sub : queries) {
 			query.add(sub, BooleanClause.Occur.SHOULD);
 		}
+
 		return query.build();
 	}
 

@@ -808,10 +808,10 @@ public class LumongoIndex implements IndexSegmentInterface {
 	public Query getQuery(Lumongo.Query lumongoQuery) throws Exception {
 		indexLock.readLock().lock();
 
-		Lumongo.Query.Operator defaultOperator = lumongoQuery.getDefaultOperator();
-		String queryText = lumongoQuery.getQuery();
-		Integer minimumShouldMatchNumber = lumongoQuery.getMinimumNumberShouldMatch();
-		List<String> queryFields = lumongoQuery.getQueryFieldList();
+		Lumongo.Query.Operator defaultOperator = lumongoQuery.getDefaultOp();
+		String queryText = lumongoQuery.getQ();
+		Integer minimumShouldMatchNumber = lumongoQuery.getMm();
+		List<String> queryFields = lumongoQuery.getQfList();
 
 		try {
 
