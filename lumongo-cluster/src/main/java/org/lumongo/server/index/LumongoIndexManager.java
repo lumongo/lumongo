@@ -272,7 +272,12 @@ public class LumongoIndexManager {
 
 			LumongoIndex i = indexMap.get(indexName);
 			if (i == null) {
-				throw new IndexDoesNotExist(indexName);
+				if (getIndexNames().contains(indexName)) {
+					//TODO delete index from database
+				}
+				else {
+					throw new IndexDoesNotExist(indexName);
+				}
 			}
 
 			Set<Member> currentMembers = hazelcastManager.getMembers();
