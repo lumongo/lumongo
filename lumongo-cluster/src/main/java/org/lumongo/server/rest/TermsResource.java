@@ -80,7 +80,7 @@ public class TermsResource {
 
 
 				document.put("terms", termsDocs);
-				String docString = document.toString();
+				String docString = document.toJson();
 
 				if (pretty) {
 					docString = JsonWriter.formatJson(docString);

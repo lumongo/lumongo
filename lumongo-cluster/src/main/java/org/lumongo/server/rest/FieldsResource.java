@@ -40,7 +40,7 @@ public class FieldsResource {
 				Document mongoDocument = new Document();
 				mongoDocument.put("index", indexName);
 				mongoDocument.put("fields", fieldNamesResponse.getFieldNameList());
-				String docString = mongoDocument.toString();
+				String docString = mongoDocument.toJson();
 
 				if (pretty) {
 					docString = JsonWriter.formatJson(docString);

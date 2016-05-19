@@ -45,7 +45,7 @@ public class MembersResource {
 			}
 
 			mongoDocument.put("members", memberObjList);
-			String docString = mongoDocument.toString();
+			String docString = mongoDocument.toJson();
 
 			if (pretty) {
 				docString = JsonWriter.formatJson(docString);

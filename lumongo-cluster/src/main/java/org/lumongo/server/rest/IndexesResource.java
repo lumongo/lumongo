@@ -32,7 +32,7 @@ public class IndexesResource {
 
 			Document mongoDocument = new org.bson.Document();
 			mongoDocument.put("indexes", getIndexesResponse.getIndexNameList());
-			String docString = mongoDocument.toString();
+			String docString = mongoDocument.toJson();
 
 			if (pretty) {
 				docString = JsonWriter.formatJson(docString);

@@ -45,7 +45,7 @@ public class FetchResource {
 
 				Document document = new Document();
 				document.putAll(LumongoUtil.byteArrayToMongoDocument(bs.toByteArray()));
-				String docString = document.toString();
+				String docString = document.toJson();
 
 				if (pretty) {
 					docString = JsonWriter.formatJson(docString);
