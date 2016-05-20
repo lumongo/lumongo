@@ -1,9 +1,12 @@
 package org.lumongo.client.config;
 
+import org.lumongo.cluster.message.Lumongo.AnalyzerSettings;
+import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Similarity;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.fields.FieldConfigBuilder;
 
+import java.util.List;
 import java.util.TreeMap;
 
 public class IndexConfig {
@@ -23,6 +26,7 @@ public class IndexConfig {
 	private Boolean storeDocumentInIndex;
 
 	private TreeMap<String, FieldConfig> fieldMap;
+	private TreeMap<String, AnalyzerSettings> analyzerSettingsMap;
 
 	public IndexConfig() {
 		this(null);
@@ -31,6 +35,7 @@ public class IndexConfig {
 	public IndexConfig(String defaultSearchField) {
 		this.defaultSearchField = defaultSearchField;
 		this.fieldMap = new TreeMap<>();
+		this.analyzerSettingsMap = new TreeMap<>();
 	}
 
 	public String getDefaultSearchField() {
@@ -142,6 +147,30 @@ public class IndexConfig {
 		return this.fieldMap.get(fieldName);
 	}
 
+	public void addAnalyzerSetting(String name, AnalyzerSettings.Tokenizer tokenizer, Iterable<AnalyzerSettings.Filter> filterList, Similarity similarity, AnalyzerSettings.QueryHandling queryHandling) {
+
+		AnalyzerSettings.Builder analyzerSettings = AnalyzerSettings.newBuilder();
+		analyzerSettings.setName(name);
+		if (tokenizer != null) {
+			analyzerSettings.setTokenizer(tokenizer);
+		}
+		if (filterList != null) {
+			analyzerSettings.addAllFilter(filterList);
+		}
+		if (similarity != null) {
+			analyzerSettings.setSimilarity(similarity);
+		}
+		if (queryHandling != null) {
+			analyzerSettings.setQueryHandling(queryHandling);
+		}
+
+		addAnalyzerSetting(analyzerSettings.build());
+	}
+
+	public void addAnalyzerSetting(AnalyzerSettings analyzerSettings) {
+		analyzerSettingsMap.put(analyzerSettings.getName(), analyzerSettings);
+	}
+
 	public TreeMap<String, FieldConfig> getFieldConfigMap() {
 		return fieldMap;
 	}
@@ -205,6 +234,10 @@ public class IndexConfig {
 		for (String fieldName : fieldMap.keySet()) {
 			FieldConfig fieldConfig = fieldMap.get(fieldName);
 			isb.addFieldConfig(fieldConfig);
+		}
+
+		for (String analyzerName : analyzerSettingsMap.keySet()) {
+			isb.addAnalyzerSettings(analyzerSettingsMap.get(analyzerName));
 		}
 
 		return isb.build();
