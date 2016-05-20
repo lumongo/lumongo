@@ -13,6 +13,7 @@ public class AdminConstants {
 	public static final String ID = "id";
 	public static final String FILE_NAME = "fileName";
 	public static final String FILE_TO_STORE = "fileToStore";
+	public static final String COMPRESSED = "compressed";
 	public static final String OUTPUT_FILE = "outputFile";
 	public static final String PORT = "port";
 	public static final String INDEX = "index";

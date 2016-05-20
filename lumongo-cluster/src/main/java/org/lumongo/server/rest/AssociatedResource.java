@@ -65,12 +65,17 @@ public class AssociatedResource {
 
 	@POST
 	@Produces({ MediaType.TEXT_XML })
-	public Response post(@QueryParam(LumongoConstants.ID) final String uniqueId, @QueryParam(LumongoConstants.FILE_NAME) final String fileName,
-					@QueryParam(LumongoConstants.INDEX) final String indexName, final InputStream is) {
+	public Response post(@QueryParam(LumongoConstants.ID) String uniqueId, @QueryParam(LumongoConstants.FILE_NAME) String fileName,
+					@QueryParam(LumongoConstants.INDEX) String indexName, @QueryParam(LumongoConstants.COMPRESSED) Boolean compressed, InputStream is) {
 		if (uniqueId != null && fileName != null && indexName != null) {
 
 			try {
-				indexManager.storeAssociatedDocument(indexName, uniqueId, fileName, is, false, null);
+
+				if (compressed == null) {
+					compressed = false;
+				}
+
+				indexManager.storeAssociatedDocument(indexName, uniqueId, fileName, is, compressed, null);
 
 				return Response.status(LumongoConstants.SUCCESS)
 								.entity("Stored associated document with uniqueId <" + uniqueId + "> and fileName <" + fileName + ">").build();

@@ -26,6 +26,9 @@ public class StoreAssociated {
 		OptionSpec<File> fileToStoreArg = parser.accepts(AdminConstants.FILE_TO_STORE).withRequiredArg().ofType(File.class).required()
 						.describedAs("Associated File to Store");
 
+		OptionSpec<Boolean> compressedArg = parser.accepts(AdminConstants.COMPRESSED).withRequiredArg().ofType(Boolean.class)
+				.describedAs("Compress before storage");
+
 		try {
 			OptionSet options = parser.parse(args);
 
@@ -35,9 +38,10 @@ public class StoreAssociated {
 			String indexName = options.valueOf(indexArg);
 			String fileName = options.valueOf(fileNameArg);
 			File fileToStore = options.valueOf(fileToStoreArg);
+			Boolean compressed = options.valueOf(compressedArg);
 
 			LumongoRestClient client = new LumongoRestClient(address, restPort);
-			client.storeAssociated(id, indexName, fileName, fileToStore);
+			client.storeAssociated(id, indexName, fileName, fileToStore, compressed);
 
 		}
 		catch (OptionException e) {

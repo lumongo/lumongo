@@ -15,6 +15,7 @@ public class StoreLargeAssociated extends RestCommand<StoreLargeAssociatedResult
 	private String indexName;
 	private File fileToStore;
 	private InputStream source;
+	private Boolean compressed;
 
 	public StoreLargeAssociated(String uniqueId, String indexName, String fileName, File fileToStore) {
 		this.uniqueId = uniqueId;
@@ -28,6 +29,15 @@ public class StoreLargeAssociated extends RestCommand<StoreLargeAssociatedResult
 		this.fileName = fileName;
 		this.indexName = indexName;
 		this.source = source;
+	}
+
+	public Boolean getCompressed() {
+		return compressed;
+	}
+
+	public StoreLargeAssociated setCompressed(Boolean compressed) {
+		this.compressed = compressed;
+		return this;
 	}
 
 	@Override
@@ -53,5 +63,6 @@ public class StoreLargeAssociated extends RestCommand<StoreLargeAssociatedResult
 		}
 		return new StoreLargeAssociatedResult();
 	}
+
 
 }

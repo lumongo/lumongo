@@ -216,9 +216,6 @@ public class MongoDocumentStorage implements DocumentStorage {
 	public void storeAssociatedDocument(AssociatedDocument doc) throws Exception {
 
 		byte[] bytes = doc.getDocument().toByteArray();
-		if (doc.getCompressed()) {
-			bytes = CommonCompression.compressZlib(bytes, CompressionLevel.FASTEST);
-		}
 
 		ByteArrayInputStream byteInputStream = new ByteArrayInputStream(bytes);
 

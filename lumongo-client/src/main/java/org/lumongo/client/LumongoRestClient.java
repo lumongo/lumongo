@@ -36,7 +36,7 @@ public class LumongoRestClient {
 		HttpURLConnection conn = null;
 
 		try {
-			HashMap<String, String> parameters = new HashMap<String, String>();
+			HashMap<String, String> parameters = new HashMap<>();
 			parameters.put(LumongoConstants.ID, uniqueId);
 			parameters.put(LumongoConstants.FILE_NAME, fileName);
 			parameters.put(LumongoConstants.INDEX, indexName);
@@ -54,11 +54,20 @@ public class LumongoRestClient {
 		}
 	}
 
+
 	public void storeAssociated(String uniqueId, String indexName, String fileName, File fileToStore) throws IOException {
-		storeAssociated(uniqueId, indexName, fileName, new FileInputStream(fileToStore));
+		storeAssociated(uniqueId, indexName, fileName, fileToStore, null);
+	}
+
+	public void storeAssociated(String uniqueId, String indexName, String fileName, File fileToStore, Boolean compressed) throws IOException {
+		storeAssociated(uniqueId, indexName, fileName, new FileInputStream(fileToStore), compressed);
 	}
 
 	public void storeAssociated(String uniqueId, String indexName, String fileName, InputStream source) throws IOException {
+		storeAssociated(uniqueId, indexName, fileName, source, null);
+	}
+
+	public void storeAssociated(String uniqueId, String indexName, String fileName, InputStream source, Boolean compressed) throws IOException {
 		HttpURLConnection conn = null;
 		OutputStream destination = null;
 		try {
@@ -67,6 +76,9 @@ public class LumongoRestClient {
 			parameters.put(LumongoConstants.ID, uniqueId);
 			parameters.put(LumongoConstants.FILE_NAME, fileName);
 			parameters.put(LumongoConstants.INDEX, indexName);
+			if (compressed != null) {
+				parameters.put(LumongoConstants.COMPRESSED, compressed.toString());
+			}
 
 			String url = HttpHelper.createRequestUrl(server, restPort, LumongoConstants.ASSOCIATED_DOCUMENTS_URL, parameters);
 
