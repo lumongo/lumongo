@@ -274,6 +274,7 @@ public class LumongoIndexManager {
 			if (i == null) {
 				if (getIndexNames().contains(indexName)) {
 					//TODO delete index from database
+					return IndexDeleteResponse.newBuilder().build();
 				}
 				else {
 					throw new IndexDoesNotExist(indexName);

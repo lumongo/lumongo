@@ -3,6 +3,7 @@ package org.lumongo.server.rest;
 import com.cedarsoftware.util.io.JsonWriter;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import com.mongodb.util.JSONSerializers;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
@@ -65,13 +66,13 @@ public class TermsResource {
 			try {
 				Lumongo.GetTermsResponse terms = indexManager.getTerms(termsBuilder.build());
 
-				BasicDBObject document = new BasicDBObject();
+				Document document = new Document();
 				document.put("index", indexName);
 				document.put("field", field);
 
-				List<BasicDBObject> termsDocs = new ArrayList<>();
+				List<Document> termsDocs = new ArrayList<>();
 				for (Lumongo.Term term : terms.getTermList()) {
-					BasicDBObject termDoc = new BasicDBObject();
+					Document termDoc = new Document();
 					termDoc.put("term", term.getValue());
 					termDoc.put("docFreq", term.getDocFreq());
 					termDoc.put("termFreq", term.getTermFreq());
@@ -80,7 +81,7 @@ public class TermsResource {
 
 
 				document.put("terms", termsDocs);
-				String docString = document.toJson();
+				String docString = JSONSerializers.getStrict().serialize(document);
 
 				if (pretty) {
 					docString = JsonWriter.formatJson(docString);

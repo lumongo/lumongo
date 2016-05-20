@@ -1,12 +1,11 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
-import com.mongodb.BasicDBObject;
+import com.mongodb.util.JSONSerializers;
 import org.apache.log4j.Logger;
-import org.bson.BSON;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
@@ -15,6 +14,7 @@ import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.server.index.LumongoIndexManager;
+import org.lumongo.util.LumongoUtil;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -39,13 +39,12 @@ public class QueryResource {
 	@Produces({ MediaType.APPLICATION_JSON + ";charset=utf-8" })
 	public Response get(@QueryParam(LumongoConstants.INDEX) List<String> indexName, @QueryParam(LumongoConstants.QUERY) String query,
 			@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields, @QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
-			@QueryParam(LumongoConstants.FILTER_QUERY_JSON) List<String> filterJsonQueries,
-			@QueryParam(LumongoConstants.FIELDS) List<String> fields, @QueryParam(LumongoConstants.FETCH) Boolean fetch,
-			@QueryParam(LumongoConstants.ROWS) int rows, @QueryParam(LumongoConstants.FACET) List<String> facet,
-			@QueryParam(LumongoConstants.DRILL_DOWN) List<String> drillDowns,
-			@QueryParam(LumongoConstants.DEFAULT_OP) String defaultOperator,
-			@QueryParam(LumongoConstants.SORT) List<String> sort, @QueryParam(LumongoConstants.PRETTY) boolean pretty,
-			@QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError, @QueryParam(LumongoConstants.MIN_MATCH) Integer mm) {
+			@QueryParam(LumongoConstants.FILTER_QUERY_JSON) List<String> filterJsonQueries, @QueryParam(LumongoConstants.FIELDS) List<String> fields,
+			@QueryParam(LumongoConstants.FETCH) Boolean fetch, @QueryParam(LumongoConstants.ROWS) int rows,
+			@QueryParam(LumongoConstants.FACET) List<String> facet, @QueryParam(LumongoConstants.DRILL_DOWN) List<String> drillDowns,
+			@QueryParam(LumongoConstants.DEFAULT_OP) String defaultOperator, @QueryParam(LumongoConstants.SORT) List<String> sort,
+			@QueryParam(LumongoConstants.PRETTY) boolean pretty, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError,
+			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		if (query != null && !query.isEmpty()) {
@@ -73,8 +72,6 @@ public class QueryResource {
 		}
 		qrBuilder.setAmount(rows);
 
-
-
 		if (filterQueries != null) {
 			for (String filterQuery : filterQueries) {
 				Lumongo.Query filterQueryBuilder = Lumongo.Query.newBuilder().setQ(filterQuery).build();
@@ -94,12 +91,6 @@ public class QueryResource {
 				}
 			}
 		}
-
-
-
-
-
-
 
 		if (fields != null) {
 			for (String field : fields) {
@@ -226,12 +217,10 @@ public class QueryResource {
 
 				if (sr.hasResultDocument()) {
 					responseBuilder.append(",");
-					Lumongo.ResultDocument document = sr.getResultDocument();
-					ByteString bs = document.getDocument();
-					BasicDBObject dbObject = new BasicDBObject();
-					dbObject.putAll(BSON.decode(bs.toByteArray()));
+
+					Document document = LumongoUtil.resultDocumentToMongoDocument(sr.getResultDocument());
 					responseBuilder.append("\"document\": ");
-					responseBuilder.append(dbObject.toString());
+					responseBuilder.append(JSONSerializers.getStrict().serialize(document));
 
 				}
 

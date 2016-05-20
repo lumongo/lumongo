@@ -1,6 +1,7 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
+import com.mongodb.util.JSONSerializers;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.server.index.LumongoIndexManager;
@@ -44,7 +45,7 @@ public class StatsResource {
 			mongoDocument.put("jvmTotalMemoryMB", runtime.totalMemory() / MB);
 			mongoDocument.put("jvmMaxMemoryMB", runtime.maxMemory() / MB);
 
-			String docString = mongoDocument.toJson();
+			String docString = JSONSerializers.getStrict().serialize(mongoDocument);
 
 			if (pretty) {
 				docString = JsonWriter.formatJson(docString);

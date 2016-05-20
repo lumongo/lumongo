@@ -1,6 +1,7 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
+import com.mongodb.util.JSONSerializers;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
@@ -32,7 +33,7 @@ public class IndexesResource {
 
 			Document mongoDocument = new org.bson.Document();
 			mongoDocument.put("indexes", getIndexesResponse.getIndexNameList());
-			String docString = mongoDocument.toJson();
+			String docString = JSONSerializers.getStrict().serialize(mongoDocument);
 
 			if (pretty) {
 				docString = JsonWriter.formatJson(docString);

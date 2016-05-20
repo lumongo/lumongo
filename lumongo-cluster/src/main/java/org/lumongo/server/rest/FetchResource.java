@@ -2,6 +2,7 @@ package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
 import com.google.protobuf.ByteString;
+import com.mongodb.util.JSONSerializers;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
@@ -40,12 +41,8 @@ public class FetchResource {
 			fetchResponse = indexManager.fetch(fetchRequest.build());
 
 			if (fetchResponse.hasResultDocument()) {
-				Lumongo.ResultDocument resultDocument = fetchResponse.getResultDocument();
-				ByteString bs = resultDocument.getDocument();
-
-				Document document = new Document();
-				document.putAll(LumongoUtil.byteArrayToMongoDocument(bs.toByteArray()));
-				String docString = document.toJson();
+				Document document = LumongoUtil.resultDocumentToMongoDocument(fetchResponse.getResultDocument());
+				String docString = JSONSerializers.getStrict().serialize(document);
 
 				if (pretty) {
 					docString = JsonWriter.formatJson(docString);

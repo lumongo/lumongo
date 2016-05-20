@@ -2,6 +2,8 @@ package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
 import com.mongodb.BasicDBObject;
+import com.mongodb.util.JSONSerializers;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.index.LumongoIndexManager;
@@ -34,9 +36,9 @@ public class MembersResource {
 
 			org.bson.Document mongoDocument = new org.bson.Document();
 
-			List<BasicDBObject> memberObjList = new ArrayList<>();
+			List<Document> memberObjList = new ArrayList<>();
 			for (Lumongo.LMMember lmMember : getMembersResponse.getMemberList()) {
-				BasicDBObject memberObj = new BasicDBObject();
+				Document memberObj = new Document();
 				memberObj.put("serverAddress", lmMember.getServerAddress());
 				memberObj.put("hazelcastPort", lmMember.getHazelcastPort());
 				memberObj.put("internalPort", lmMember.getInternalPort());
@@ -45,7 +47,7 @@ public class MembersResource {
 			}
 
 			mongoDocument.put("members", memberObjList);
-			String docString = mongoDocument.toJson();
+			String docString = JSONSerializers.getStrict().serialize(mongoDocument);
 
 			if (pretty) {
 				docString = JsonWriter.formatJson(docString);

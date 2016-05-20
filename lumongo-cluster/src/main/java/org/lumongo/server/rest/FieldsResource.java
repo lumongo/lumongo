@@ -1,6 +1,7 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
+import com.mongodb.util.JSONSerializers;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
@@ -40,7 +41,7 @@ public class FieldsResource {
 				Document mongoDocument = new Document();
 				mongoDocument.put("index", indexName);
 				mongoDocument.put("fields", fieldNamesResponse.getFieldNameList());
-				String docString = mongoDocument.toJson();
+				String docString = JSONSerializers.getStrict().serialize(mongoDocument);
 
 				if (pretty) {
 					docString = JsonWriter.formatJson(docString);
