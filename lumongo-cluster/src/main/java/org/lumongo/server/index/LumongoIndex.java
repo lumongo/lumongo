@@ -838,12 +838,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				qp.setDefaultOperator(operator);
 
 				if (queryFields.isEmpty()) {
-					if (indexConfig.getIndexSettings().hasDefaultSearchField()) {
-						qp.setDefaultField(indexConfig.getIndexSettings().getDefaultSearchField());
-					}
-					else {
-						qp.setDefaultField(null);
-					}
+					qp.setDefaultField(indexConfig.getIndexSettings().getDefaultSearchField());
 				}
 				else {
 					Set<String> fields = new LinkedHashSet<>();

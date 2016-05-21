@@ -148,7 +148,7 @@ message IndexSettingsRequest {
 }
 
 message IndexSettings {
-	optional string defaultSearchField = 1;
+	optional string defaultSearchField = 1 [default = ""];
 	repeated AnalyzerSettings analyzerSettings = 2;
 	repeated FieldConfig fieldConfig = 3;
 	optional bool storeDocumentInIndex = 4 [default = true];
