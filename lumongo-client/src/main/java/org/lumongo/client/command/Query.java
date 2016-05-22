@@ -48,6 +48,8 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private Lumongo.FetchType resultFetchType;
 	private Set<String> documentFields = Collections.emptySet();
 	private Set<String> documentMaskedFields = Collections.emptySet();
+	private Boolean dismax;
+	private Float dismaxTie;
 
 	public Query(String index, String query, int amount) {
 		this(new String[] { index }, query, amount);
@@ -61,6 +63,24 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		this.indexes = indexes;
 		this.query = query;
 		this.amount = amount;
+	}
+
+	public Float getDismaxTie() {
+		return dismaxTie;
+	}
+
+	public Query setDismaxTie(Float dismaxTie) {
+		this.dismaxTie = dismaxTie;
+		return this;
+	}
+
+	public Boolean getDismax() {
+		return dismax;
+	}
+
+	public Query setDismax(Boolean dismax) {
+		this.dismax = dismax;
+		return this;
 	}
 
 	public String getQuery() {
@@ -85,8 +105,9 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return start;
 	}
 
-	public void setStart(int start) {
+	public Query setStart(int start) {
 		this.start = start;
+		return this;
 	}
 
 	public Integer getMinimumNumberShouldMatch() {
@@ -137,12 +158,14 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return queryFields;
 	}
 
-	public void setQueryFields(Collection<String> queryFields) {
+	public Query setQueryFields(Collection<String> queryFields) {
 		this.queryFields = new HashSet<String>(queryFields);
+		return this;
 	}
 
-	public void setQueryFields(String... queryFields) {
+	public Query setQueryFields(String... queryFields) {
 		this.queryFields = new HashSet<>(Arrays.asList(queryFields));
+		return this;
 
 	}
 
@@ -316,6 +339,13 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 			}
 			if (defaultOperator != null) {
 				queryBuilder.setDefaultOp(defaultOperator);
+			}
+
+			if (dismax != null) {
+				queryBuilder.setDismax(dismax);
+				if (dismaxTie != null) {
+					queryBuilder.setDismaxTie(dismaxTie);
+				}
 			}
 
 			requestBuilder.setQuery(queryBuilder);

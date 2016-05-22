@@ -48,6 +48,8 @@ public class LumongoConstants {
 	public static final String END_TERM = "endTerm";
 	public static final String DEFAULT_OP= "defaultOp";
 	public static final String DRILL_DOWN= "drillDown";
+	public static final String DISMAX= "dismax";
+	public static final String DISMAX_TIE = "dismaxTie";
 
 	
 	//General

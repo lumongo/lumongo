@@ -437,6 +437,9 @@ message Query {
 	optional Operator defaultOp = 2 [default = OR];
 	repeated string qf = 3;
 	optional uint32 mm = 4 [default = 0];
+	optional bool dismax = 5 [default = false];
+	optional float dismaxTie = 6 [default = 0];
+
 }
 
 message QueryResponse {

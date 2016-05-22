@@ -837,6 +837,14 @@ public class LumongoIndex implements IndexSegmentInterface {
 				qp.setMinimumNumberShouldMatch(minimumShouldMatchNumber);
 				qp.setDefaultOperator(operator);
 
+
+				if (lumongoQuery.getDismax()) {
+					qp.enableDismax(lumongoQuery.getDismaxTie());
+				}
+				else {
+					qp.disableDismax();
+				}
+
 				if (queryFields.isEmpty()) {
 					qp.setDefaultField(indexConfig.getIndexSettings().getDefaultSearchField());
 				}

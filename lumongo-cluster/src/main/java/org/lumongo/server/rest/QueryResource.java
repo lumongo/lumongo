@@ -44,6 +44,7 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.FACET) List<String> facet, @QueryParam(LumongoConstants.DRILL_DOWN) List<String> drillDowns,
 			@QueryParam(LumongoConstants.DEFAULT_OP) String defaultOperator, @QueryParam(LumongoConstants.SORT) List<String> sort,
 			@QueryParam(LumongoConstants.PRETTY) boolean pretty, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError,
+			@QueryParam(LumongoConstants.DISMAX) Boolean dismax, @QueryParam(LumongoConstants.DISMAX_TIE) Float dismaxTie,
 			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
@@ -52,6 +53,12 @@ public class QueryResource {
 			queryBuilder.setQ(query);
 			if (mm != null) {
 				queryBuilder.setMm(mm);
+			}
+			if (dismax != null) {
+				queryBuilder.setDismax(dismax);
+				if (dismaxTie != null) {
+					queryBuilder.setDismaxTie(dismaxTie);
+				}
 			}
 			if (!queryFields.isEmpty()) {
 				queryBuilder.addAllQf(queryFields);

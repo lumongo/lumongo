@@ -25,9 +25,20 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 
 	protected Collection<String> fields;
 	protected Map<String,Float> boosts;
+	private float dismaxTie = 0;
+	private boolean dismax = false;
 
 	public LumongoMultiFieldQueryParser(Analyzer analyzer, IndexConfig indexConfig) {
 		super(analyzer, indexConfig);
+	}
+
+	public void enableDismax(float dismaxTie) {
+		this.dismaxTie = dismaxTie;
+		this.dismax = true;
+	}
+
+	public void disableDismax() {
+		this.dismax = false;
 	}
 
 	public void setDefaultFields(Collection<String> fields) {
@@ -195,14 +206,20 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 		if (queries.isEmpty()) {
 			return null; // all clause words were filtered away by the analyzer.
 		}
-		//mdavis - don't use super method because of min match
-		BooleanQuery.Builder query = new BooleanQuery.Builder();
-		query.setDisableCoord(true);
-		for (Query sub : queries) {
-			query.add(sub, BooleanClause.Occur.SHOULD);
-		}
 
-		return query.build();
+		if (dismax) {
+			return new DisjunctionMaxQuery(queries, dismaxTie);
+		}
+		else {
+			//mdavis - don't use super method because of min match
+			BooleanQuery.Builder query = new BooleanQuery.Builder();
+			query.setDisableCoord(true);
+			for (Query sub : queries) {
+				query.add(sub, BooleanClause.Occur.SHOULD);
+			}
+
+			return query.build();
+		}
 	}
 
 }
