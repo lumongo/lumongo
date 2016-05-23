@@ -28,6 +28,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -88,7 +90,6 @@ public class MongoDocumentStorage implements DocumentStorage {
 	}
 
 	private GridFSBucket createGridFSConnection() {
-		//Grid FS does not use the new api yet as of java driver 3.0-beta-2
 		MongoDatabase db = mongoClient.getDatabase(database);
 		return GridFSBuckets.create(db, ASSOCIATED_FILES);
 	}
@@ -315,6 +316,35 @@ public class MongoDocumentStorage implements DocumentStorage {
 		}
 		aBuilder.setIndexName(indexName);
 		return aBuilder.build();
+	}
+
+
+	public void getAssociatedDocuments(OutputStream outputstream) throws Exception {
+		Charset charset = Charset.forName("UTF-8");
+
+		GridFSBucket gridFS = createGridFSConnection();
+		GridFSFindIterable gridFSFiles = gridFS.find();
+		outputstream.write('[');
+
+		boolean first = true;
+		for (GridFSFile gridFSFile : gridFSFiles) {
+			if (first) {
+				first = false;
+			}
+			else {
+				outputstream.write(',');
+			}
+
+			String uniqueId = gridFSFile.getMetadata().getString(DOCUMENT_UNIQUE_ID_KEY);
+			String uniquieIdKeyValue = "{ uniqueId: " + uniqueId + ", ";
+			outputstream.write(uniquieIdKeyValue.getBytes(charset));
+
+			String filename = gridFSFile.getFilename();
+			String filenameKeyValue = "filename: " + filename + " }";
+			outputstream.write(filenameKeyValue.getBytes(charset));
+
+		}
+		outputstream.write(']');
 	}
 
 	@Override

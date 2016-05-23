@@ -486,7 +486,7 @@ enum FetchType {
 message FetchRequest {
 	required string uniqueId = 1;
 	required string indexName = 2;
-	optional string fileName = 3;
+	optional string filename = 3;
 	optional FetchType resultFetchType = 4 [default = FULL];
 	optional FetchType associatedFetchType = 5 [default = META];
 	repeated string documentFields = 6;

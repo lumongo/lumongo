@@ -9,7 +9,6 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import org.apache.log4j.Logger;
 import org.apache.lucene.facet.FacetsConfig;
-import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
@@ -71,7 +70,7 @@ public class LumongoIndexManager {
 
 	private MongoClient mongo;
 
-	public LumongoIndexManager(MongoClient mongo,  MongoConfig mongoConfig, ClusterConfig clusterConfig) throws UnknownHostException {
+	public LumongoIndexManager(MongoClient mongo, MongoConfig mongoConfig, ClusterConfig clusterConfig) throws UnknownHostException {
 		this.globalLock = new ReentrantReadWriteLock(true);
 
 		this.mongoConfig = mongoConfig;
@@ -86,7 +85,6 @@ public class LumongoIndexManager {
 		this.pool = Executors.newCachedThreadPool(new LumongoThreadFactory("manager"));
 
 	}
-
 
 	public ClusterConfig getClusterConfig() {
 		return clusterConfig;
@@ -185,7 +183,7 @@ public class LumongoIndexManager {
 	public IndexCreateResponse createIndex(IndexCreateRequest request) throws Exception {
 		globalLock.writeLock().lock();
 		try {
-			log.info("Creating index: <" + request.getIndexName() + ">:\n"  + JsonFormat.printer().print(request));
+			log.info("Creating index: <" + request.getIndexName() + ">:\n" + JsonFormat.printer().print(request));
 
 			IndexConfig indexConfig = new IndexConfig(request);
 
@@ -400,7 +398,6 @@ public class LumongoIndexManager {
 				throw new IndexDoesNotExist(indexName);
 			}
 
-
 			i.updateIndexSettings(request);
 
 			Set<Member> currentMembers = hazelcastManager.getMembers();
@@ -496,8 +493,8 @@ public class LumongoIndexManager {
 
 			FetchType associatedFetchType = fetchRequest.getAssociatedFetchType();
 			if (!FetchType.NONE.equals(associatedFetchType)) {
-				if (fetchRequest.hasFileName()) {
-					AssociatedDocument ad = i.getAssociatedDocument(uniqueId, fetchRequest.getFileName(), associatedFetchType);
+				if (fetchRequest.hasFilename()) {
+					AssociatedDocument ad = i.getAssociatedDocument(uniqueId, fetchRequest.getFilename(), associatedFetchType);
 					if (ad != null) {
 						frBuilder.addAssociatedDocument(ad);
 					}

@@ -6,7 +6,7 @@ public class FetchAssociated extends Fetch {
 	
 	public FetchAssociated(String uniqueId, String indexName, String fileName) {
 		super(uniqueId, indexName);
-		setFileName(fileName);
+		setFilename(fileName);
 		setResultFetchType(FetchType.NONE);
 		setAssociatedFetchType(FetchType.FULL);
 	}

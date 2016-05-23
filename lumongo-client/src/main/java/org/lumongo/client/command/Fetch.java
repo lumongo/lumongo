@@ -19,7 +19,7 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements R
 
 	private String uniqueId;
 	private String indexName;
-	private String fileName;
+	private String filename;
 	private FetchType resultFetchType;
 	private FetchType associatedFetchType;
 
@@ -42,13 +42,13 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements R
 		return indexName;
 	}
 
-	public Fetch setFileName(String fileName) {
-		this.fileName = fileName;
+	public Fetch setFilename(String filename) {
+		this.filename = filename;
 		return this;
 	}
 
 	public String getFileFame() {
-		return fileName;
+		return filename;
 	}
 
 	public FetchType getResultFetchType() {
@@ -111,8 +111,8 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements R
 		if (indexName != null) {
 			fetchRequestBuilder.setIndexName(indexName);
 		}
-		if (fileName != null) {
-			fetchRequestBuilder.setFileName(fileName);
+		if (filename != null) {
+			fetchRequestBuilder.setFilename(filename);
 		}
 		if (resultFetchType != null) {
 			fetchRequestBuilder.setResultFetchType(resultFetchType);
