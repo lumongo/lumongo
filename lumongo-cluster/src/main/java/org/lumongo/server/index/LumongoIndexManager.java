@@ -34,6 +34,7 @@ import org.lumongo.util.LumongoThreadFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -1105,6 +1106,23 @@ public class LumongoIndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
+
+	public void getAllAssociatedDocuments(String indexName, OutputStream outputStream) throws IOException {
+		globalLock.readLock().lock();
+		try {
+			LumongoIndex i = indexMap.get(indexName);
+			if (i == null) {
+				throw new IndexDoesNotExist(indexName);
+			}
+
+			i.getAllAssociatedDocuments(outputStream);
+
+		}
+		finally {
+			globalLock.readLock().unlock();
+		}
+	}
+
 
 	//rest
 	public InputStream getAssociatedDocumentStream(String indexName, String uniqueId, String fileName) throws IOException {

@@ -318,8 +318,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		return aBuilder.build();
 	}
 
-
-	public void getAssociatedDocuments(OutputStream outputstream) throws Exception {
+	public void getAssociatedDocuments(OutputStream outputstream) throws IOException {
 		Charset charset = Charset.forName("UTF-8");
 
 		GridFSBucket gridFS = createGridFSConnection();

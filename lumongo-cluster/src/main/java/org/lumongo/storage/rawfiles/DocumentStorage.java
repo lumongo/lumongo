@@ -6,7 +6,9 @@ import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.Metadata;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +20,9 @@ public interface DocumentStorage {
 	List<AssociatedDocument> getAssociatedDocuments(String uniqueId, FetchType fetchType) throws Exception;
 	
 	AssociatedDocument getAssociatedDocument(String uniqueId, String filename, FetchType fetchType) throws Exception;
-	
+
+	void getAssociatedDocuments(OutputStream outputstream) throws IOException;
+
 	void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long timestamp, Map<String, String> metadataMap)
 					throws Exception;
 	

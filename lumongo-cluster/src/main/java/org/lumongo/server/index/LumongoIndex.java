@@ -53,6 +53,7 @@ import org.lumongo.util.SegmentUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -1261,6 +1262,16 @@ public class LumongoIndex implements IndexSegmentInterface {
 		indexLock.readLock().lock();
 		try {
 			return documentStorage.getAssociatedDocumentStream(uniqueId, fileName);
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
+	public void getAllAssociatedDocuments(OutputStream outputStream) throws IOException {
+		indexLock.readLock().lock();
+		try {
+			documentStorage.getAssociatedDocuments(outputStream);
 		}
 		finally {
 			indexLock.readLock().unlock();

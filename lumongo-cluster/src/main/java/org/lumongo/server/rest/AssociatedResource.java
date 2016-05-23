@@ -24,7 +24,6 @@ public class AssociatedResource {
 
 	private final static Logger log = Logger.getLogger(AssociatedResource.class);
 
-
 	private LumongoIndexManager indexManager;
 
 	public AssociatedResource(LumongoIndexManager indexManager) {
@@ -34,7 +33,7 @@ public class AssociatedResource {
 	@GET
 	@Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
 	public Response get(@Context Response response, @QueryParam(LumongoConstants.ID) final String uniqueId,
-					@QueryParam(LumongoConstants.FILE_NAME) final String fileName, @QueryParam(LumongoConstants.INDEX) final String indexName) {
+			@QueryParam(LumongoConstants.FILE_NAME) final String fileName, @QueryParam(LumongoConstants.INDEX) final String indexName) {
 
 		StreamingOutput stream = new StreamingOutput() {
 
@@ -48,12 +47,12 @@ public class AssociatedResource {
 					}
 					else {
 						throw new WebApplicationException("Cannot find associated document with uniqueId <" + uniqueId + "> with fileName <" + fileName + ">",
-										LumongoConstants.NOT_FOUND);
+								LumongoConstants.NOT_FOUND);
 					}
 				}
 				else {
 					throw new WebApplicationException(LumongoConstants.ID + " and " + LumongoConstants.FILE_NAME + " are required",
-									LumongoConstants.BAD_REQUEST);
+							LumongoConstants.BAD_REQUEST);
 				}
 			}
 
@@ -66,7 +65,7 @@ public class AssociatedResource {
 	@POST
 	@Produces({ MediaType.TEXT_XML })
 	public Response post(@QueryParam(LumongoConstants.ID) String uniqueId, @QueryParam(LumongoConstants.FILE_NAME) String fileName,
-					@QueryParam(LumongoConstants.INDEX) String indexName, @QueryParam(LumongoConstants.COMPRESSED) Boolean compressed, InputStream is) {
+			@QueryParam(LumongoConstants.INDEX) String indexName, @QueryParam(LumongoConstants.COMPRESSED) Boolean compressed, InputStream is) {
 		if (uniqueId != null && fileName != null && indexName != null) {
 
 			try {
@@ -78,7 +77,7 @@ public class AssociatedResource {
 				indexManager.storeAssociatedDocument(indexName, uniqueId, fileName, is, compressed, null);
 
 				return Response.status(LumongoConstants.SUCCESS)
-								.entity("Stored associated document with uniqueId <" + uniqueId + "> and fileName <" + fileName + ">").build();
+						.entity("Stored associated document with uniqueId <" + uniqueId + "> and fileName <" + fileName + ">").build();
 			}
 			catch (Exception e) {
 				log.error(e.getClass().getSimpleName() + ": ", e);
@@ -86,9 +85,27 @@ public class AssociatedResource {
 			}
 		}
 		else {
-			throw new WebApplicationException(LumongoConstants.ID + " and " + LumongoConstants.FILE_NAME + " are required",
-							LumongoConstants.BAD_REQUEST);
+			throw new WebApplicationException(LumongoConstants.ID + " and " + LumongoConstants.FILE_NAME + " are required", LumongoConstants.BAD_REQUEST);
 		}
+
+	}
+
+	@GET
+	@Path("/all")
+	@Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+	public Response get(@QueryParam(LumongoConstants.INDEX) final String indexName) {
+
+		StreamingOutput stream = new StreamingOutput() {
+
+			@Override
+			public void write(OutputStream output) throws IOException, WebApplicationException {
+
+				indexManager.getAllAssociatedDocuments(indexName, output);
+			}
+
+		};
+
+		return Response.ok(stream).build();
 
 	}
 }
