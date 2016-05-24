@@ -102,32 +102,36 @@ public class LumongoPoolConfig {
 		return compressedConnection;
 	}
 
-	public void setCompressedConnection(boolean compressedConnection) {
+	public LumongoPoolConfig setCompressedConnection(boolean compressedConnection) {
 		this.compressedConnection = compressedConnection;
+		return this;
 	}
 
 	public boolean isRoutingEnabled() {
 		return routingEnabled;
 	}
 
-	public void setRoutingEnabled(boolean routingEnabled) {
+	public LumongoPoolConfig setRoutingEnabled(boolean routingEnabled) {
 		this.routingEnabled = routingEnabled;
+		return this;
 	}
 
 	public boolean isMemberUpdateEnabled() {
 		return memberUpdateEnabled;
 	}
 
-	public void setMemberUpdateEnabled(boolean memberUpdateEnabled) {
+	public LumongoPoolConfig setMemberUpdateEnabled(boolean memberUpdateEnabled) {
 		this.memberUpdateEnabled = memberUpdateEnabled;
+		return this;
 	}
 
 	public int getMemberUpdateInterval() {
 		return memberUpdateInterval;
 	}
 
-	public void setMemberUpdateInterval(int memberUpdateInterval) {
+	public LumongoPoolConfig setMemberUpdateInterval(int memberUpdateInterval) {
 		this.memberUpdateInterval = memberUpdateInterval;
+		return this;
 	}
 
 }
