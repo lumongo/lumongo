@@ -17,6 +17,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 
 @Path(LumongoConstants.MEMBERS_URL)
 public class MembersResource {
@@ -43,10 +44,28 @@ public class MembersResource {
 				memberObj.put("hazelcastPort", lmMember.getHazelcastPort());
 				memberObj.put("internalPort", lmMember.getInternalPort());
 				memberObj.put("externalPort", lmMember.getExternalPort());
+
+				Document indexMappingObj = new Document();
+				for (Lumongo.IndexMapping indexMapping : getMembersResponse.getIndexMappingList()) {
+
+					TreeSet<Integer> segments = new TreeSet<>();
+					for (Lumongo.SegmentMapping segmentMapping : indexMapping.getSegmentMappingList()) {
+						if (segmentMapping.getMember().equals(lmMember)) {
+							segments.add(segmentMapping.getSegmentNumber());
+						}
+					}
+
+					indexMappingObj.put(indexMapping.getIndexName(), segments);
+				}
+				memberObj.put("indexMapping", indexMappingObj);
+
+
 				memberObjList.add(memberObj);
+
 			}
 
 			mongoDocument.put("members", memberObjList);
+
 			String docString = JSONSerializers.getStrict().serialize(mongoDocument);
 
 			if (pretty) {
