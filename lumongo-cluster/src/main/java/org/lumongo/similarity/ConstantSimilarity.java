@@ -3,6 +3,7 @@ package org.lumongo.similarity;
 import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.search.similarities.TFIDFSimilarity;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.SmallFloat;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -55,7 +56,7 @@ public class ConstantSimilarity extends TFIDFSimilarity {
 
 	@Override
 	public long encodeNormValue(float f) {
-		return 1;
+		return SmallFloat.floatToByte315(f);
 	}
 
 	@Override
