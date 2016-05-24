@@ -323,7 +323,8 @@ public class MongoDocumentStorage implements DocumentStorage {
 
 		GridFSBucket gridFS = createGridFSConnection();
 		GridFSFindIterable gridFSFiles = gridFS.find();
-		outputstream.write('[');
+		outputstream.write("{\n".getBytes(charset));
+		outputstream.write(" \"associatedDocs\": [\n".getBytes(charset));
 
 		boolean first = true;
 		for (GridFSFile gridFSFile : gridFSFiles) {
@@ -331,11 +332,11 @@ public class MongoDocumentStorage implements DocumentStorage {
 				first = false;
 			}
 			else {
-				outputstream.write(',');
+				outputstream.write(",\n".getBytes(charset));
 			}
 
 			String uniqueId = gridFSFile.getMetadata().getString(DOCUMENT_UNIQUE_ID_KEY);
-			String uniquieIdKeyValue = "{ \"uniqueId\": \"" + uniqueId + "\", ";
+			String uniquieIdKeyValue = "  { \"uniqueId\": \"" + uniqueId + "\", ";
 			outputstream.write(uniquieIdKeyValue.getBytes(charset));
 
 			String filename = gridFSFile.getFilename();
@@ -343,7 +344,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 			outputstream.write(filenameKeyValue.getBytes(charset));
 
 		}
-		outputstream.write(']');
+		outputstream.write("\n ]\n}".getBytes(charset));
 	}
 
 	@Override

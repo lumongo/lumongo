@@ -31,7 +31,7 @@ public class LumongoConstants {
 	public static final String FILTER_QUERY_JSON = "fqJson";
 	public static final String ROWS = "rows";
 	public static final String ID = "id";
-	public static final String FILE_NAME = "fileName";
+	public static final String FILE_NAME = "filename";
 	public static final String COMPRESSED = "compressed";
 	public static final String INDEX = "index";
 	public static final String FACET = "facet";

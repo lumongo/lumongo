@@ -31,7 +31,7 @@ public class AssociatedResource {
 	}
 
 	@GET
-	@Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_OCTET_STREAM })
 	public Response get(@Context Response response, @QueryParam(LumongoConstants.ID) final String uniqueId,
 			@QueryParam(LumongoConstants.FILE_NAME) final String fileName, @QueryParam(LumongoConstants.INDEX) final String indexName) {
 
@@ -92,7 +92,7 @@ public class AssociatedResource {
 
 	@GET
 	@Path("/all")
-	@Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON })
 	public Response get(@QueryParam(LumongoConstants.INDEX) final String indexName) {
 
 		StreamingOutput stream = new StreamingOutput() {
