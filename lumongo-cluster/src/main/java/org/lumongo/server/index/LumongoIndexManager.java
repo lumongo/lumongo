@@ -685,10 +685,12 @@ public class LumongoIndexManager {
 	public QueryResponse query(final QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
 		long start = System.currentTimeMillis();
+		String queryJson = "";
 		try {
 			//log.info("Running query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + ">");
 
-			log.info("Running query: <" + JsonFormat.printer().print(request) + ">");
+			queryJson = JsonFormat.printer().print(request);
+			log.info("Running query: <" + queryJson + ">");
 
 			final Map<String, QueryWithFilters> queryMap = getQueryMap(request);
 
@@ -737,7 +739,7 @@ public class LumongoIndexManager {
 		}
 		finally {
 			long end = System.currentTimeMillis();
-			log.info("Finished query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + "> in " + (end - start) + "ms");
+			log.info("Finished query: <" + queryJson + "> in " + (end - start) + "ms");
 
 			globalLock.readLock().unlock();
 		}
