@@ -24,6 +24,7 @@ import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.NRTCachingDirectory;
+import org.apache.lucene.util.BytesRef;
 import org.bson.BsonBinaryReader;
 import org.bson.Document;
 import org.bson.codecs.DecoderContext;
@@ -948,7 +949,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 										}
 									}
 									else { //string
-										sortTerms[sortTermsIndex] = sortValue.getStringValue();
+										sortTerms[sortTermsIndex] = new BytesRef(sortValue.getStringValue());
 									}
 								}
 								else {
