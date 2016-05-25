@@ -44,7 +44,6 @@ public class IndexConfigUtil {
 	private static final String SORT_STRING_HANDLING = "stringHandling";
 	private static final String SORT_FIELD_NAME = "sortFieldName";
 
-	private static final String NAME = "name";
 	private static final String TOKENIZER = "tokenizer";
 	private static final String SIMILARITY = "similarity";
 	private static final String FILTERS = "filters";
@@ -164,8 +163,6 @@ public class IndexConfigUtil {
 
 	private static AnalyzerSettings.Builder getAnalyzerSettings(Document analyzerSettingsDoc) {
 		AnalyzerSettings.Builder analyzerSettings = AnalyzerSettings.newBuilder();
-
-		analyzerSettings.setName(analyzerSettingsDoc.getString(NAME));
 
 		String similarity = analyzerSettingsDoc.getString(SIMILARITY);
 		if (similarity != null) {
