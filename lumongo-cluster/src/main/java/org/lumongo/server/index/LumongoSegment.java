@@ -262,6 +262,7 @@ public class LumongoSegment {
 
 			IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
+			//similarity is only set query time, indexing time all these similarities are the same
 			indexSearcher.setSimilarity(new PerFieldSimilarityWrapper() {
 				@Override
 				public Similarity get(String name) {
