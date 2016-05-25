@@ -97,7 +97,7 @@ public class IndexConfigUtil {
 
 		Document analyzerSettings = settings.get(ANALYZER_SETTINGS, Document.class);
 		for (String key : analyzerSettings.keySet()) {
-			AnalyzerSettings as = getAnalyzerSettings(analyzerSettings.get(key, Document.class));
+			AnalyzerSettings as = getAnalyzerSettings(analyzerSettings.get(key, Document.class)).setName(key).build();
 			indexSettings.addAnalyzerSettings(as);
 		}
 
@@ -162,7 +162,7 @@ public class IndexConfigUtil {
 		return new IndexConfig(indexName, numberOfSegments, indexSettings.build());
 	}
 
-	private static AnalyzerSettings getAnalyzerSettings(Document analyzerSettingsDoc) {
+	private static AnalyzerSettings.Builder getAnalyzerSettings(Document analyzerSettingsDoc) {
 		AnalyzerSettings.Builder analyzerSettings = AnalyzerSettings.newBuilder();
 
 		analyzerSettings.setName(analyzerSettingsDoc.getString(NAME));
@@ -187,7 +187,7 @@ public class IndexConfigUtil {
 				analyzerSettings.addFilter(AnalyzerSettings.Filter.valueOf(filter));
 			}
 		}
-		return analyzerSettings.build();
+		return analyzerSettings;
 	}
 
 	public static Document toDocument(IndexConfig indexConfig) {
