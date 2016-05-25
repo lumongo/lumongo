@@ -2,6 +2,7 @@ package org.lumongo.client.command;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
+import org.bson.Document;
 import org.lumongo.client.command.base.RoutableCommand;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
@@ -49,7 +50,11 @@ public class Store extends SimpleCommand<StoreRequest, StoreResult> implements R
 	public ResultDocument getResultDocument() {
 		return resultDocument;
 	}
-	
+
+	public Store setResultDocument(Document document) {
+		return setResultDocument(ResultDocBuilder.newBuilder().setDocument(document));
+	}
+
 	public Store setResultDocument(ResultDocBuilder resultDocumentBuilder) {
 		resultDocumentBuilder.setUniqueId(uniqueId);
 		resultDocumentBuilder.setIndexName(indexName);
