@@ -243,6 +243,7 @@ message AnalyzerSettings {
 		TFIDF_CLASSIC = 1;
 		BM25 = 2;
 		CONSTANT = 3;
+		TF = 4;
 	}
 
 	required string name = 1;

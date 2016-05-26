@@ -59,6 +59,7 @@ import org.lumongo.server.search.QueryResultCache;
 import org.lumongo.server.search.QueryWithFilters;
 import org.lumongo.server.search.facet.LumongoSortedSetDocValuesFacetCounts;
 import org.lumongo.similarity.ConstantSimilarity;
+import org.lumongo.similarity.TFSimilarity;
 import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.util.LumongoUtil;
 
@@ -279,6 +280,9 @@ public class LumongoSegment {
 					}
 					else if (AnalyzerSettings.Similarity.CONSTANT.equals(similarity)) {
 						return new ConstantSimilarity();
+					}
+					else if (AnalyzerSettings.Similarity.TF.equals(similarity)) {
+						return new TFSimilarity();
 					}
 					else {
 						throw new RuntimeException("Unknown similarity type <" + similarity + ">");
