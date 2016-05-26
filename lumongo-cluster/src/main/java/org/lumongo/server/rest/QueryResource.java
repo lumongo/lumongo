@@ -8,8 +8,10 @@ import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Similarity;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
+import org.lumongo.cluster.message.Lumongo.FieldSimilarity;
 import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
@@ -45,7 +47,7 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.DEFAULT_OP) String defaultOperator, @QueryParam(LumongoConstants.SORT) List<String> sort,
 			@QueryParam(LumongoConstants.PRETTY) boolean pretty, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError,
 			@QueryParam(LumongoConstants.DISMAX) Boolean dismax, @QueryParam(LumongoConstants.DISMAX_TIE) Float dismaxTie,
-			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm) {
+			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm, @QueryParam(LumongoConstants.SIMILARITY) List<String> similarity) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		if (query != null && !query.isEmpty()) {
@@ -76,6 +78,40 @@ public class QueryResource {
 			}
 
 			qrBuilder.setQuery(queryBuilder);
+
+			if (similarity != null) {
+				for (String sim : similarity) {
+					if (sim.contains(":")) {
+						int i = sim.indexOf(":");
+						String field = sim.substring(0, i);
+						String simType = sim.substring(i + 1);
+
+						FieldSimilarity.Builder fieldSimilarity = FieldSimilarity.newBuilder();
+						fieldSimilarity.setField(field);
+
+						if (simType.equalsIgnoreCase("bm25")) {
+							fieldSimilarity.setSimilarity(Similarity.BM25);
+						}
+						else if (simType.equalsIgnoreCase("constant")) {
+							fieldSimilarity.setSimilarity(Similarity.CONSTANT);
+						}
+						else if (simType.equalsIgnoreCase("tf")) {
+							fieldSimilarity.setSimilarity(Similarity.TF);
+						}
+						else if (simType.equalsIgnoreCase("tfidf")) {
+							fieldSimilarity.setSimilarity(Similarity.TFIDF);
+						}
+						else {
+							Response.status(LumongoConstants.INTERNAL_ERROR).entity("Unknown similarity type <" + simType + ">").build();
+						}
+
+						qrBuilder.addFieldSimilarity(fieldSimilarity);
+					}
+					else {
+						Response.status(LumongoConstants.INTERNAL_ERROR).entity("Similarity <" + sim + "> should be in the form field:simType").build();
+					}
+				}
+			}
 		}
 		qrBuilder.setAmount(rows);
 

@@ -240,7 +240,7 @@ message AnalyzerSettings {
 
 
 	enum Similarity {
-		TFIDF_CLASSIC = 1;
+		TFIDF = 1;
 		BM25 = 2;
 		CONSTANT = 3;
 		TF = 4;

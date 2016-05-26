@@ -281,7 +281,7 @@ public class LumongoSegment {
 						similarity = fieldSimilarityOverride;
 					}
 
-					if (AnalyzerSettings.Similarity.TFIDF_CLASSIC.equals(similarity)) {
+					if (AnalyzerSettings.Similarity.TFIDF.equals(similarity)) {
 						return new ClassicSimilarity();
 					}
 					else if (AnalyzerSettings.Similarity.BM25.equals(similarity)) {

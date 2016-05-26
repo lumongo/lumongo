@@ -50,7 +50,7 @@ public class LumongoConstants {
 	public static final String DRILL_DOWN= "drillDown";
 	public static final String DISMAX= "dismax";
 	public static final String DISMAX_TIE = "dismaxTie";
-
+	public static final String SIMILARITY = "sim";
 	
 	//General
 	public static final String UTF8 = "UTF-8";

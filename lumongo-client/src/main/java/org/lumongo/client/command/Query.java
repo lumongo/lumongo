@@ -48,6 +48,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private Lumongo.FetchType resultFetchType;
 	private Set<String> documentFields = Collections.emptySet();
 	private Set<String> documentMaskedFields = Collections.emptySet();
+	private List<Lumongo.FieldSimilarity> fieldSimilarities = Collections.emptyList();
 	private Boolean dismax;
 	private Float dismaxTie;
 
@@ -167,6 +168,23 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		this.queryFields = new HashSet<>(Arrays.asList(queryFields));
 		return this;
 
+	}
+
+	public Query addFieldSimilarity(String field, Lumongo.AnalyzerSettings.Similarity similarity) {
+
+		Lumongo.FieldSimilarity fieldSimilarity = Lumongo.FieldSimilarity.newBuilder().setField(field).setSimilarity(similarity).build();
+
+		return addFieldSimilarity(fieldSimilarity);
+	}
+
+	private Query addFieldSimilarity(Lumongo.FieldSimilarity fieldSimilarity) {
+		if (fieldSimilarities.isEmpty()) {
+			fieldSimilarities = new ArrayList<>();
+		}
+
+		fieldSimilarities.add(fieldSimilarity);
+
+		return this;
 	}
 
 	public Query addQueryField(String queryField) {
@@ -353,6 +371,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 		if (lastResult != null) {
 			requestBuilder.setLastResult(lastResult);
+		}
+
+		if (!fieldSimilarities.isEmpty()) {
+			requestBuilder.addAllFieldSimilarity(fieldSimilarities);
 		}
 
 		for (String index : indexes) {
