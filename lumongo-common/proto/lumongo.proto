@@ -426,6 +426,12 @@ message QueryRequest {
 	repeated string documentFields = 10;
 	repeated string documentMaskedFields = 11;
 	optional bool fetchFull = 12 [default = false];
+	repeated FieldSimilarity fieldSimilarity = 13;
+}
+
+message FieldSimilarity {
+	required string field = 1;
+	required AnalyzerSettings.Similarity similarity = 2;
 }
 
 message Query {
@@ -440,6 +446,7 @@ message Query {
 	optional uint32 mm = 4 [default = 0];
 	optional bool dismax = 5 [default = false];
 	optional float dismaxTie = 6 [default = 0];
+
 
 }
 

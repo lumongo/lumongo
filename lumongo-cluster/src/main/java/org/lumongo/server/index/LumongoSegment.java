@@ -267,11 +267,20 @@ public class LumongoSegment {
 			indexSearcher.setSimilarity(new PerFieldSimilarityWrapper() {
 				@Override
 				public Similarity get(String name) {
+
+
 					AnalyzerSettings analyzerSettings = indexConfig.getAnalyzerSettingsForIndexField(name);
 					AnalyzerSettings.Similarity similarity = AnalyzerSettings.Similarity.BM25;
 					if (analyzerSettings != null) {
 						similarity = analyzerSettings.getSimilarity();
 					}
+
+
+					AnalyzerSettings.Similarity fieldSimilarityOverride = queryWithFilters.getFieldSimilarityOverride(name);
+					if (fieldSimilarityOverride != null) {
+						similarity = fieldSimilarityOverride;
+					}
+
 					if (AnalyzerSettings.Similarity.TFIDF_CLASSIC.equals(similarity)) {
 						return new ClassicSimilarity();
 					}

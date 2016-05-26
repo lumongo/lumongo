@@ -636,6 +636,12 @@ public class LumongoIndexManager {
 
 				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 
+				for (FieldSimilarity fieldSimilarity : queryRequest.getFieldSimilarityList()) {
+					queryWithFilters.addSimilarityOverride(fieldSimilarity);
+				}
+
+
+
 				if (queryRequest.hasFacetRequest()) {
 					FacetRequest facetRequest = queryRequest.getFacetRequest();
 
