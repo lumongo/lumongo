@@ -154,7 +154,12 @@ public class LumongoSegment {
 							values.add(object);
 						}
 					});
-					o = values;
+					if (!values.isEmpty()) {
+						o = values;
+					}
+					else {
+						o = null;
+					}
 				}
 				else if (o instanceof org.bson.Document) {
 					org.bson.Document mongoDoc = (org.bson.Document) o;
