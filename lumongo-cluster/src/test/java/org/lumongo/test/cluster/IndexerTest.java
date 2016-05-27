@@ -4,6 +4,7 @@ import org.bson.Document;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lumongo.server.index.LumongoSegment;
+import org.lumongo.util.ResultHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,16 +38,16 @@ public class IndexerTest {
 		docs.add(embeddedDocumentFour);
 		testMongoDocument.put("thisfield", docs);
 
-		Assert.assertEquals(Arrays.asList("val1", "someval"), LumongoSegment.getValueFromMongoDocument(testMongoDocument, "thisfield.key1"));
-		Assert.assertEquals(Arrays.asList("val2"), LumongoSegment.getValueFromMongoDocument(testMongoDocument, "thisfield.key2"));
+		Assert.assertEquals(Arrays.asList("val1", "someval"), ResultHelper.getValueFromMongoDocument(testMongoDocument, "thisfield.key1"));
+		Assert.assertEquals(Arrays.asList("val2"), ResultHelper.getValueFromMongoDocument(testMongoDocument, "thisfield.key2"));
 
-		Assert.assertEquals("1", LumongoSegment.getValueFromMongoDocument(testMongoDocument, "field2.subfield2.otherfield"));
-		Assert.assertEquals(null, LumongoSegment.getValueFromMongoDocument(testMongoDocument, "field2.subfield2.otherfield1"));
-		Assert.assertEquals(null, LumongoSegment.getValueFromMongoDocument(testMongoDocument, "field2.subfield1.otherfield"));
-		Assert.assertEquals(null, LumongoSegment.getValueFromMongoDocument(testMongoDocument, "thing"));
-		Assert.assertEquals("someVal", LumongoSegment.getValueFromMongoDocument(testMongoDocument, "field1"));
-		Assert.assertEquals("val2", LumongoSegment.getValueFromMongoDocument(testMongoDocument, "field2.subfield1"));
-		Assert.assertEquals(40, LumongoSegment.getValueFromMongoDocument(testMongoDocument, "myfield"));
+		Assert.assertEquals("1", ResultHelper.getValueFromMongoDocument(testMongoDocument, "field2.subfield2.otherfield"));
+		Assert.assertEquals(null, ResultHelper.getValueFromMongoDocument(testMongoDocument, "field2.subfield2.otherfield1"));
+		Assert.assertEquals(null, ResultHelper.getValueFromMongoDocument(testMongoDocument, "field2.subfield1.otherfield"));
+		Assert.assertEquals(null, ResultHelper.getValueFromMongoDocument(testMongoDocument, "thing"));
+		Assert.assertEquals("someVal", ResultHelper.getValueFromMongoDocument(testMongoDocument, "field1"));
+		Assert.assertEquals("val2", ResultHelper.getValueFromMongoDocument(testMongoDocument, "field2.subfield1"));
+		Assert.assertEquals(40, ResultHelper.getValueFromMongoDocument(testMongoDocument, "myfield"));
 
 	}
 }

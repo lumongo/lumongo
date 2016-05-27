@@ -44,6 +44,7 @@ import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
+import org.lumongo.util.ResultHelper;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
 import org.lumongo.server.index.field.BooleanFieldIndexer;
@@ -137,46 +138,7 @@ public class LumongoSegment {
 
 	}
 
-	public static Object getValueFromMongoDocument(org.bson.Document mongoDocument, String storedFieldName) {
 
-		Object o;
-		if (storedFieldName.contains(".")) {
-			o = mongoDocument;
-			String[] fields = storedFieldName.split("\\.");
-			for (String field : fields) {
-				if (o instanceof List) {
-					List<?> list = (List<?>) o;
-					List<Object> values = new ArrayList<>();
-					list.stream().filter(item -> item instanceof org.bson.Document).forEach(item -> {
-						org.bson.Document dbObj = (org.bson.Document) item;
-						Object object = dbObj.get(field);
-						if (object != null) {
-							values.add(object);
-						}
-					});
-					if (!values.isEmpty()) {
-						o = values;
-					}
-					else {
-						o = null;
-					}
-				}
-				else if (o instanceof org.bson.Document) {
-					org.bson.Document mongoDoc = (org.bson.Document) o;
-					o = mongoDoc.get(field);
-				}
-				else {
-					o = null;
-					break;
-				}
-			}
-		}
-		else {
-			o = mongoDocument.get(storedFieldName);
-		}
-
-		return o;
-	}
 
 	private static String getFoldedString(String text) {
 		char[] textChar = text.toCharArray();
@@ -751,7 +713,7 @@ public class LumongoSegment {
 
 				FieldConfig.FieldType fieldType = fc.getFieldType();
 
-				Object o = getValueFromMongoDocument(mongoDocument, storedFieldName);
+				Object o = ResultHelper.getValueFromMongoDocument(mongoDocument, storedFieldName);
 
 				if (o != null) {
 					handleFacetsForStoredField(luceneDocument, fc, o);

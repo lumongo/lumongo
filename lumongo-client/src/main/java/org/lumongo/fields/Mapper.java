@@ -8,7 +8,7 @@ import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.doc.ResultDocBuilder;
-import org.lumongo.doc.ResultHelper;
+import org.lumongo.util.ResultHelper;
 import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Embedded;
@@ -178,7 +178,7 @@ public class Mapper<T> {
 	}
 
 	public T fromScoredResult(Lumongo.ScoredResult scoredResult) throws Exception {
-		return fromDocument(ResultHelper.getDBObjectFromScoredResult(scoredResult));
+		return fromDocument(ResultHelper.getDocumentFromScoredResult(scoredResult));
 	}
 
 	public ResultDocBuilder toResultDocumentBuilder(T object) throws Exception {
