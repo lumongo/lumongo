@@ -14,6 +14,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class LumongoRestClient {
 	private String server;
@@ -71,7 +72,7 @@ public class LumongoRestClient {
 		storeAssociated(uniqueId, indexName, fileName, null, source, compressed);
 	}
 
-	public void storeAssociated(String uniqueId, String indexName, String fileName, HashMap<String, String> meta, InputStream source, Boolean compressed)
+	public void storeAssociated(String uniqueId, String indexName, String fileName, Map<String, String> meta, InputStream source, Boolean compressed)
 			throws IOException {
 		HttpURLConnection conn = null;
 		OutputStream destination = null;

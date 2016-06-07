@@ -6,7 +6,9 @@ import org.lumongo.client.command.base.RoutableCommand;
 import org.lumongo.client.result.StoreLargeAssociatedResult;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Map;
 
 public class StoreLargeAssociated extends RestCommand<StoreLargeAssociatedResult> implements RoutableCommand {
 
@@ -16,6 +18,7 @@ public class StoreLargeAssociated extends RestCommand<StoreLargeAssociatedResult
 	private File fileToStore;
 	private InputStream source;
 	private Boolean compressed;
+	private Map<String, String> meta;
 
 	public StoreLargeAssociated(String uniqueId, String indexName, String fileName, File fileToStore) {
 		this.uniqueId = uniqueId;
@@ -29,6 +32,15 @@ public class StoreLargeAssociated extends RestCommand<StoreLargeAssociatedResult
 		this.fileName = fileName;
 		this.indexName = indexName;
 		this.source = source;
+	}
+
+	public Map<String, String> getMeta() {
+		return meta;
+	}
+
+	public StoreLargeAssociated setMeta(Map<String, String> meta) {
+		this.meta = meta;
+		return this;
 	}
 
 	public Boolean getCompressed() {
@@ -52,11 +64,13 @@ public class StoreLargeAssociated extends RestCommand<StoreLargeAssociatedResult
 
 	@Override
 	public StoreLargeAssociatedResult execute(LumongoRestClient lumongoRestClient) throws Exception {
+		InputStream input = source;
 		if (fileToStore != null) {
-			lumongoRestClient.storeAssociated(uniqueId, indexName, fileName, fileToStore);
+			input = new FileInputStream(fileToStore);
 		}
-		else if (source != null) {
-			lumongoRestClient.storeAssociated(uniqueId, indexName, fileName, source);
+
+		if (input != null) {
+			lumongoRestClient.storeAssociated(uniqueId, indexName, fileName, meta, input, compressed);
 		}
 		else {
 			throw new Exception("File or input stream must be set");
