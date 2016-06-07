@@ -9,7 +9,11 @@ import org.lumongo.admin.help.LumongoHelpFormatter;
 import org.lumongo.client.LumongoRestClient;
 import org.lumongo.util.LogUtil;
 
+import javax.ws.rs.WebApplicationException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.util.HashMap;
+import java.util.List;
 
 public class StoreAssociated {
 
@@ -25,6 +29,7 @@ public class StoreAssociated {
 		OptionSpec<String> fileNameArg = parser.accepts(AdminConstants.FILE_NAME).withRequiredArg().required().describedAs("Associated File Name");
 		OptionSpec<File> fileToStoreArg = parser.accepts(AdminConstants.FILE_TO_STORE).withRequiredArg().ofType(File.class).required()
 						.describedAs("Associated File to Store");
+		OptionSpec<String> metaArg = parser.accepts(AdminConstants.META, "Meta data in form key=value").withRequiredArg();
 
 		OptionSpec<Boolean> compressedArg = parser.accepts(AdminConstants.COMPRESSED).withRequiredArg().ofType(Boolean.class)
 				.describedAs("Compress before storage");
@@ -39,9 +44,24 @@ public class StoreAssociated {
 			String fileName = options.valueOf(fileNameArg);
 			File fileToStore = options.valueOf(fileToStoreArg);
 			Boolean compressed = options.valueOf(compressedArg);
+			List<String> meta = options.valuesOf(metaArg);
+			HashMap<String, String> metaMap = new HashMap<>();
+			for (String m : meta) {
+				int colonIndex = m.indexOf(":");
+				if (colonIndex != -1) {
+					String key = m.substring(0, colonIndex);
+					String value = m.substring(colonIndex + 1);
+					metaMap.put(key,value);
+				}
+				else {
+					System.err.println("ERROR: Meta must be in the form key:value");
+					System.exit(1);
+				}
+			}
+
 
 			LumongoRestClient client = new LumongoRestClient(address, restPort);
-			client.storeAssociated(id, indexName, fileName, fileToStore, compressed);
+			client.storeAssociated(id, indexName, fileName, metaMap, new FileInputStream(fileToStore), compressed);
 
 		}
 		catch (OptionException e) {

@@ -18,6 +18,8 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.List;
 
 @Path(LumongoConstants.ASSOCIATED_DOCUMENTS_URL)
 public class AssociatedResource {
@@ -34,6 +36,8 @@ public class AssociatedResource {
 	@Produces({ MediaType.APPLICATION_OCTET_STREAM })
 	public Response get(@Context Response response, @QueryParam(LumongoConstants.ID) final String uniqueId,
 			@QueryParam(LumongoConstants.FILE_NAME) final String fileName, @QueryParam(LumongoConstants.INDEX) final String indexName) {
+
+
 
 		StreamingOutput stream = new StreamingOutput() {
 
@@ -65,8 +69,23 @@ public class AssociatedResource {
 	@POST
 	@Produces({ MediaType.TEXT_XML })
 	public Response post(@QueryParam(LumongoConstants.ID) String uniqueId, @QueryParam(LumongoConstants.FILE_NAME) String fileName,
-			@QueryParam(LumongoConstants.INDEX) String indexName, @QueryParam(LumongoConstants.COMPRESSED) Boolean compressed, InputStream is) {
+			@QueryParam(LumongoConstants.INDEX) String indexName, @QueryParam(LumongoConstants.COMPRESSED) Boolean compressed, @QueryParam(LumongoConstants.META) List<String> meta, InputStream is) {
 		if (uniqueId != null && fileName != null && indexName != null) {
+
+			HashMap<String, String> metaMap = new HashMap<>();
+			if (meta != null) {
+				for (String m : meta) {
+					int colonIndex = m.indexOf(":");
+					if (colonIndex != -1) {
+						String key = m.substring(0, colonIndex);
+						String value = m.substring(colonIndex + 1).trim();
+						metaMap.put(key,value);
+					}
+					else {
+						throw new WebApplicationException("Meta must be in the form key:value");
+					}
+				}
+			}
 
 			try {
 
@@ -74,7 +93,7 @@ public class AssociatedResource {
 					compressed = false;
 				}
 
-				indexManager.storeAssociatedDocument(indexName, uniqueId, fileName, is, compressed, null);
+				indexManager.storeAssociatedDocument(indexName, uniqueId, fileName, is, compressed, metaMap);
 
 				return Response.status(LumongoConstants.SUCCESS)
 						.entity("Stored associated document with uniqueId <" + uniqueId + "> and fileName <" + fileName + ">").build();

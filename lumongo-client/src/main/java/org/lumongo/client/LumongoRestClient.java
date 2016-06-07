@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class LumongoRestClient {
@@ -36,7 +37,7 @@ public class LumongoRestClient {
 		HttpURLConnection conn = null;
 
 		try {
-			HashMap<String, String> parameters = new HashMap<>();
+			HashMap<String, Object> parameters = new HashMap<>();
 			parameters.put(LumongoConstants.ID, uniqueId);
 			parameters.put(LumongoConstants.FILE_NAME, fileName);
 			parameters.put(LumongoConstants.INDEX, indexName);
@@ -54,7 +55,6 @@ public class LumongoRestClient {
 		}
 	}
 
-
 	public void storeAssociated(String uniqueId, String indexName, String fileName, File fileToStore) throws IOException {
 		storeAssociated(uniqueId, indexName, fileName, fileToStore, null);
 	}
@@ -68,14 +68,28 @@ public class LumongoRestClient {
 	}
 
 	public void storeAssociated(String uniqueId, String indexName, String fileName, InputStream source, Boolean compressed) throws IOException {
+		storeAssociated(uniqueId, indexName, fileName, null, source, compressed);
+	}
+
+	public void storeAssociated(String uniqueId, String indexName, String fileName, HashMap<String, String> meta, InputStream source, Boolean compressed)
+			throws IOException {
 		HttpURLConnection conn = null;
 		OutputStream destination = null;
 		try {
 
-			HashMap<String, String> parameters = new HashMap<>();
+			HashMap<String, Object> parameters = new HashMap<>();
 			parameters.put(LumongoConstants.ID, uniqueId);
 			parameters.put(LumongoConstants.FILE_NAME, fileName);
 			parameters.put(LumongoConstants.INDEX, indexName);
+			if (meta != null) {
+				ArrayList<Object> list = new ArrayList<>();
+				parameters.put(LumongoConstants.META, list);
+				for (String key : meta.keySet()) {
+					String value = meta.get(key);
+					list.add(key + ":" + value);
+				}
+			}
+
 			if (compressed != null) {
 				parameters.put(LumongoConstants.COMPRESSED, compressed.toString());
 			}

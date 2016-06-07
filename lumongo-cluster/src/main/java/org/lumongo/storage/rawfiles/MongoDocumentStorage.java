@@ -335,13 +335,29 @@ public class MongoDocumentStorage implements DocumentStorage {
 				outputstream.write(",\n".getBytes(charset));
 			}
 
-			String uniqueId = gridFSFile.getMetadata().getString(DOCUMENT_UNIQUE_ID_KEY);
+			Document metadata = gridFSFile.getMetadata();
+
+			String uniqueId = metadata.getString(DOCUMENT_UNIQUE_ID_KEY);
 			String uniquieIdKeyValue = "  { \"uniqueId\": \"" + uniqueId + "\", ";
 			outputstream.write(uniquieIdKeyValue.getBytes(charset));
 
 			String filename = gridFSFile.getFilename();
-			String filenameKeyValue = "\"filename\": \"" + filename + "\" }";
+			String filenameKeyValue = "\"filename\": \"" + filename + "\"";
 			outputstream.write(filenameKeyValue.getBytes(charset));
+
+
+			metadata.remove(TIMESTAMP);
+			metadata.remove(COMPRESSED_FLAG);
+			metadata.remove(DOCUMENT_UNIQUE_ID_KEY);
+			metadata.remove(FILE_UNIQUE_ID_KEY);
+
+			if (!metadata.isEmpty()) {
+				String metaJson = metadata.toJson();
+				String metaString = ", \"meta\": " + metaJson;
+				outputstream.write(metaString.getBytes(charset));
+			}
+
+			outputstream.write(" }".getBytes(charset));
 
 		}
 		outputstream.write("\n ]\n}".getBytes(charset));

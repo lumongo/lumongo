@@ -1,6 +1,5 @@
 package org.lumongo.server;
 
-import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import org.apache.log4j.Logger;
@@ -67,7 +66,7 @@ public class LumongoNode {
 
 		Nodes nodes = clusterHelper.getNodes();
 		this.hazelcastManager = HazelcastManager
-						.createHazelcastManager(localNodeConfig, indexManager, nodes.getHazelcastNodes(), mongoConfig.getDatabaseName());
+				.createHazelcastManager(localNodeConfig, indexManager, nodes.getHazelcastNodes(), mongoConfig.getDatabaseName());
 
 	}
 
@@ -100,7 +99,6 @@ public class LumongoNode {
 		indexManager.shutdown();
 
 		hazelcastManager.shutdown();
-
 
 	}
 }

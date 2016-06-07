@@ -40,4 +40,6 @@ public class AdminConstants {
 	public static final String MIN_TO_MATCH = "minToMatch";
 	public static final String RETURN = "return";
 	public static final String MASK = "mask";
+	public static final String META = "meta";
+
 }

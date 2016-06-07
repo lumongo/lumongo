@@ -33,6 +33,7 @@ public class LumongoConstants {
 	public static final String ID = "id";
 	public static final String FILE_NAME = "fileName";
 	public static final String COMPRESSED = "compressed";
+	public static final String META = "meta";
 	public static final String INDEX = "index";
 	public static final String FACET = "facet";
 	public static final String SORT = "sort";
