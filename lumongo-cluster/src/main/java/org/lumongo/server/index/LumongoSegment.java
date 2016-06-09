@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -978,66 +979,95 @@ public class LumongoSegment {
 
 		String fieldName = request.getFieldName();
 
-		Set<String> includeTerms = new HashSet<>(request.getIncludeTermsList());
-
-		BytesRef startTermBytes;
-		BytesRef endTermBytes = null;
-
-		if (request.hasStartTerm()) {
-			startTermBytes = new BytesRef(request.getStartTerm());
-		}
-		else {
-			startTermBytes = new BytesRef("");
-		}
-
-		if (request.hasEndTerm()) {
-			endTermBytes = new BytesRef(request.getEndTerm());
-		}
-
-		Pattern termFilter = null;
-		if (request.hasTermFilter()) {
-			termFilter = Pattern.compile(request.getTermFilter());
-		}
-
-		Pattern termMatch = null;
-		if (request.hasTermMatch()) {
-			termMatch = Pattern.compile(request.getTermMatch());
-		}
-
 		SortedMap<String, Lumongo.Term.Builder> termsMap = new TreeMap<>();
 
-		for (LeafReaderContext subReaderContext : directoryReader.leaves()) {
-			Fields fields = subReaderContext.reader().fields();
-			if (fields != null) {
+		if (request.getIncludeTermsCount() > 0) {
 
-				Terms terms = fields.terms(fieldName);
-				if (terms != null) {
+			Set<String> includeTerms = new TreeSet<>(request.getIncludeTermsList());
+			List<BytesRef> termBytesList = new ArrayList<>();
+			for (String term : includeTerms) {
+				BytesRef termBytes = new BytesRef(term);
+				termBytesList.add(termBytes);
+			}
 
-					TermsEnum termsEnum = terms.iterator();
-					SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
 
-					BytesRef text;
-					if (!seekStatus.equals(SeekStatus.END)) {
-						text = termsEnum.term();
+			for (LeafReaderContext subReaderContext : directoryReader.leaves()) {
+				Fields fields = subReaderContext.reader().fields();
+				if (fields != null) {
 
-						if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
-							handleTerm(termsMap, termsEnum, text, termFilter, termMatch, includeTerms);
+					Terms terms = fields.terms(fieldName);
+					if (terms != null) {
 
-							while ((text = termsEnum.next()) != null) {
+						TermsEnum termsEnum = terms.iterator();
+						for (BytesRef termBytes : termBytesList) {
+							if (termsEnum.seekExact(termBytes)) {
+								BytesRef text = termsEnum.term();
+								handleTerm(termsMap, termsEnum, text, null, null);
+							}
 
-								if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
-									handleTerm(termsMap, termsEnum, text, termFilter, termMatch, includeTerms);
-								}
-								else {
-									break;
+						}
+					}
+				}
+			}
+		}
+		else {
+
+			BytesRef startTermBytes;
+			BytesRef endTermBytes = null;
+
+			if (request.hasStartTerm()) {
+				startTermBytes = new BytesRef(request.getStartTerm());
+			}
+			else {
+				startTermBytes = new BytesRef("");
+			}
+
+			if (request.hasEndTerm()) {
+				endTermBytes = new BytesRef(request.getEndTerm());
+			}
+
+			Pattern termFilter = null;
+			if (request.hasTermFilter()) {
+				termFilter = Pattern.compile(request.getTermFilter());
+			}
+
+			Pattern termMatch = null;
+			if (request.hasTermMatch()) {
+				termMatch = Pattern.compile(request.getTermMatch());
+			}
+
+			for (LeafReaderContext subReaderContext : directoryReader.leaves()) {
+				Fields fields = subReaderContext.reader().fields();
+				if (fields != null) {
+
+					Terms terms = fields.terms(fieldName);
+					if (terms != null) {
+
+						TermsEnum termsEnum = terms.iterator();
+						SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
+
+						if (!seekStatus.equals(SeekStatus.END)) {
+							BytesRef text = termsEnum.term();
+
+							if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
+								handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+
+								while ((text = termsEnum.next()) != null) {
+
+									if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
+										handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+									}
+									else {
+										break;
+									}
 								}
 							}
 						}
+
 					}
-
 				}
-			}
 
+			}
 		}
 
 		for (Lumongo.Term.Builder termBuilder : termsMap.values()) {
@@ -1048,8 +1078,7 @@ public class LumongoSegment {
 
 	}
 
-	private void handleTerm(SortedMap<String, Lumongo.Term.Builder> termsMap, TermsEnum termsEnum, BytesRef text, Pattern termFilter, Pattern termMatch,
-			Set<String> includeTerms)
+	private void handleTerm(SortedMap<String, Lumongo.Term.Builder> termsMap, TermsEnum termsEnum, BytesRef text, Pattern termFilter, Pattern termMatch)
 			throws IOException {
 
 		String textStr = text.utf8ToString();
@@ -1065,12 +1094,6 @@ public class LumongoSegment {
 				if (!termMatch.matcher(textStr).matches()) {
 					return;
 				}
-			}
-		}
-
-		if (!includeTerms.isEmpty()) {
-			if (!includeTerms.contains(textStr)) {
-				return;
 			}
 		}
 
