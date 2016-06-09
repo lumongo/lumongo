@@ -55,7 +55,7 @@ public class LumongoConstants {
 
 	public static final String TERM_FILTER = "termFilter";
 	public static final String TERM_MATCH = "termMatch";
-	public static final String INCLUDE_TERMS = "includeTerms";
+	public static final String INCLUDE_TERM = "includeTerm";
 	
 	//General
 	public static final String UTF8 = "UTF-8";

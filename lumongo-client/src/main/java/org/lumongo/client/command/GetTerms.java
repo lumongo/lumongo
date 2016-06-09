@@ -147,7 +147,7 @@ public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 			getTermsRequestBuilder.setTermMatch(termMatch);
 		}
 		if (includeTerms != null) {
-			getTermsRequestBuilder.addAllIncludeTerms(includeTerms);
+			getTermsRequestBuilder.addAllIncludeTerm(includeTerms);
 		}
 		return getTermsRequestBuilder.build();
 	}

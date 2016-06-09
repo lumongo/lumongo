@@ -981,9 +981,9 @@ public class LumongoSegment {
 
 		SortedMap<String, Lumongo.Term.Builder> termsMap = new TreeMap<>();
 
-		if (request.getIncludeTermsCount() > 0) {
+		if (request.getIncludeTermCount() > 0) {
 
-			Set<String> includeTerms = new TreeSet<>(request.getIncludeTermsList());
+			Set<String> includeTerms = new TreeSet<>(request.getIncludeTermList());
 			List<BytesRef> termBytesList = new ArrayList<>();
 			for (String term : includeTerms) {
 				BytesRef termBytes = new BytesRef(term);

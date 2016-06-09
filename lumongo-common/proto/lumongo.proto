@@ -73,7 +73,7 @@ message GetTermsRequest {
 	optional uint32 minTermFreq = 7 [default = 1];
 	optional string termFilter = 8;
 	optional string termMatch = 9;
-	repeated string includeTerms = 10;
+	repeated string includeTerm = 10;
 }
 
 message GetTermsResponse {

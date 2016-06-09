@@ -1,8 +1,6 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import com.mongodb.util.JSONSerializers;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
@@ -37,7 +35,7 @@ public class TermsResource {
 			@QueryParam(LumongoConstants.MIN_TERM_FREQ) final Integer minTermFreq,
 			@QueryParam(LumongoConstants.START_TERM) final String startTerm,
 			@QueryParam(LumongoConstants.END_TERM) final String endTerm, @QueryParam(LumongoConstants.TERM_FILTER) final String termFilter,
-			@QueryParam(LumongoConstants.TERM_MATCH) final String termMatch, @QueryParam(LumongoConstants.INCLUDE_TERMS) final List<String> includeTerms,
+			@QueryParam(LumongoConstants.TERM_MATCH) final String termMatch, @QueryParam(LumongoConstants.INCLUDE_TERM) final List<String> includeTerm,
 			@QueryParam(LumongoConstants.PRETTY) boolean pretty) {
 
 		if (indexName != null && field != null) {
@@ -70,8 +68,8 @@ public class TermsResource {
 				termsBuilder.setTermMatch(termMatch);
 			}
 
-			if (includeTerms != null) {
-				termsBuilder.addAllIncludeTerms(includeTerms);
+			if (includeTerm != null) {
+				termsBuilder.addAllIncludeTerm(includeTerm);
 			}
 
 			try {
