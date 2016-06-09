@@ -978,6 +978,8 @@ public class LumongoSegment {
 
 		String fieldName = request.getFieldName();
 
+		Set<String> includeTerms = new HashSet<>(request.getIncludeTermsList());
+
 		BytesRef startTermBytes;
 		BytesRef endTermBytes = null;
 
@@ -1019,12 +1021,12 @@ public class LumongoSegment {
 						text = termsEnum.term();
 
 						if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
-							handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+							handleTerm(termsMap, termsEnum, text, termFilter, termMatch, includeTerms);
 
 							while ((text = termsEnum.next()) != null) {
 
 								if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
-									handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+									handleTerm(termsMap, termsEnum, text, termFilter, termMatch, includeTerms);
 								}
 								else {
 									break;
@@ -1046,7 +1048,8 @@ public class LumongoSegment {
 
 	}
 
-	private void handleTerm(SortedMap<String, Lumongo.Term.Builder> termsMap, TermsEnum termsEnum, BytesRef text, Pattern termFilter, Pattern termMatch)
+	private void handleTerm(SortedMap<String, Lumongo.Term.Builder> termsMap, TermsEnum termsEnum, BytesRef text, Pattern termFilter, Pattern termMatch,
+			Set<String> includeTerms)
 			throws IOException {
 
 		String textStr = text.utf8ToString();
@@ -1062,6 +1065,12 @@ public class LumongoSegment {
 				if (!termMatch.matcher(textStr).matches()) {
 					return;
 				}
+			}
+		}
+
+		if (!includeTerms.isEmpty()) {
+			if (!includeTerms.contains(textStr)) {
+				return;
 			}
 		}
 

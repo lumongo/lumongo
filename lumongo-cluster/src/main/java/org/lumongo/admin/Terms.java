@@ -14,6 +14,7 @@ import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.util.LogUtil;
 
 import java.io.IOException;
+import java.util.List;
 
 public class Terms {
 
@@ -34,6 +35,8 @@ public class Terms {
 		OptionSpec<String> endTermArg = parser.accepts(AdminConstants.END_TERM).withRequiredArg().describedAs("Term to end on (exclusive)");
 		OptionSpec<String> termFilterArg = parser.accepts(AdminConstants.TERM_FILTER).withRequiredArg().describedAs("Filter terms that match this regex");
 		OptionSpec<String> termMatchArg = parser.accepts(AdminConstants.TERM_MATCH).withRequiredArg().describedAs("Return terms that match this regex");
+
+		OptionSpec<String> includeTermsArg = parser.accepts(AdminConstants.INCLUDE_TERMS).withRequiredArg().describedAs("Return only term(s) specified");
 		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT).withRequiredArg().describedAs("Number of terms to return (default 0/all terms)").ofType(Integer.class);
 
 		int exitCode = 0;
@@ -53,13 +56,15 @@ public class Terms {
 			String endTerm = options.valueOf(endTermArg);
 			String termFilter = options.valueOf(termFilterArg);
 			String termMatch = options.valueOf(termMatchArg);
+			List<String> includeTerms = options.valuesOf(includeTermsArg);
 
 			LumongoPoolConfig lumongoPoolConfig = new LumongoPoolConfig();
 			lumongoPoolConfig.addMember(address, port);
 			lumongoWorkPool = new LumongoWorkPool(lumongoPoolConfig);
 
-			GetTermsResult response = lumongoWorkPool
-					.execute(new GetTerms(index, field).setStartTerm(startTerm).setEndTerm(endTerm).setAmount(amount).setMinDocFreq(minDocFreq).setMinTermFreq(minTermFreq).setTermFilter(termFilter).setTermMatch(termMatch));
+			GetTermsResult response = lumongoWorkPool.execute(
+					new GetTerms(index, field).setStartTerm(startTerm).setEndTerm(endTerm).setAmount(amount).setMinDocFreq(minDocFreq)
+							.setMinTermFreq(minTermFreq).setTermFilter(termFilter).setTermMatch(termMatch).setIncludeTerms(includeTerms));
 
 			System.out.print("Term");
 			System.out.print("\t");

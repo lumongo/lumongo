@@ -36,7 +36,8 @@ public class TermsResource {
 			@QueryParam(LumongoConstants.MIN_DOC_FREQ) final Integer minDocFreq,
 			@QueryParam(LumongoConstants.MIN_TERM_FREQ) final Integer minTermFreq,
 			@QueryParam(LumongoConstants.START_TERM) final String startTerm,
-			@QueryParam(LumongoConstants.END_TERM) final String endTerm,
+			@QueryParam(LumongoConstants.END_TERM) final String endTerm, @QueryParam(LumongoConstants.TERM_FILTER) final String termFilter,
+			@QueryParam(LumongoConstants.TERM_MATCH) final String termMatch, @QueryParam(LumongoConstants.INCLUDE_TERMS) final List<String> includeTerms,
 			@QueryParam(LumongoConstants.PRETTY) boolean pretty) {
 
 		if (indexName != null && field != null) {
@@ -62,6 +63,16 @@ public class TermsResource {
 				termsBuilder.setEndTerm(endTerm);
 			}
 
+			if (termFilter != null) {
+				termsBuilder.setTermFilter(termFilter);
+			}
+			if (termMatch != null) {
+				termsBuilder.setTermMatch(termMatch);
+			}
+
+			if (includeTerms != null) {
+				termsBuilder.addAllIncludeTerms(includeTerms);
+			}
 
 			try {
 				Lumongo.GetTermsResponse terms = indexManager.getTerms(termsBuilder.build());

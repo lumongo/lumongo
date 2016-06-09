@@ -9,6 +9,8 @@ import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 
+import java.util.List;
+
 public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 	
 	private String indexName;
@@ -21,6 +23,7 @@ public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 	private String termFilter;
 	private String termMatch;
 	private Integer amount;
+	private List<String> includeTerms;
 
 	public GetTerms(String indexName, String fieldName) {
 		this.indexName = indexName;
@@ -108,6 +111,17 @@ public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 		return this;
 	}
 
+	public List<String> getIncludeTerms() {
+		return includeTerms;
+	}
+
+	public GetTerms setIncludeTerms(List<String> includeTerms) {
+		this.includeTerms = includeTerms;
+		return this;
+	}
+
+
+
 	@Override
 	public GetTermsRequest getRequest() {
 		GetTermsRequest.Builder getTermsRequestBuilder = GetTermsRequest.newBuilder().setIndexName(indexName).setFieldName(fieldName);
@@ -132,6 +146,9 @@ public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 		if (termMatch != null) {
 			getTermsRequestBuilder.setTermMatch(termMatch);
 		}
+		if (includeTerms != null) {
+			getTermsRequestBuilder.addAllIncludeTerms(includeTerms);
+		}
 		return getTermsRequestBuilder.build();
 	}
 	
@@ -147,5 +164,5 @@ public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 		long durationInMs = end - start;
 		return new GetTermsResult(getTermsResponse, durationInMs);
 	}
-	
+
 }
