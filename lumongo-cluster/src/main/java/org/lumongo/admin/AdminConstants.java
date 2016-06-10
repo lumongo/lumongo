@@ -41,7 +41,7 @@ public class AdminConstants {
 	public static final String RETURN = "return";
 	public static final String MASK = "mask";
 	public static final String META = "meta";
-	public static final String INCLUDE_TERMS = "includeTerms";
+	public static final String INCLUDE_TERM = "includeTerm";
 
 }
 

@@ -36,7 +36,7 @@ public class Terms {
 		OptionSpec<String> termFilterArg = parser.accepts(AdminConstants.TERM_FILTER).withRequiredArg().describedAs("Filter terms that match this regex");
 		OptionSpec<String> termMatchArg = parser.accepts(AdminConstants.TERM_MATCH).withRequiredArg().describedAs("Return terms that match this regex");
 
-		OptionSpec<String> includeTermsArg = parser.accepts(AdminConstants.INCLUDE_TERMS).withRequiredArg().describedAs("Return only term(s) specified");
+		OptionSpec<String> includeTermsArg = parser.accepts(AdminConstants.INCLUDE_TERM).withRequiredArg().describedAs("Return only term(s) specified");
 		OptionSpec<Integer> amountArg = parser.accepts(AdminConstants.AMOUNT).withRequiredArg().describedAs("Number of terms to return (default 0/all terms)").ofType(Integer.class);
 
 		int exitCode = 0;
