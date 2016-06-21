@@ -231,7 +231,7 @@ public class QueryResource {
 
 	}
 
-	private String getStandardResponse(QueryResponse qr) {
+	private String getStandardResponse(QueryResponse qr) throws InvalidProtocolBufferException {
 		StringBuilder responseBuilder = new StringBuilder();
 		responseBuilder.append("{");
 		responseBuilder.append("\"totalHits\": ");
@@ -295,6 +295,9 @@ public class QueryResource {
 				responseBuilder.append(",");
 				responseBuilder.append("\"values\": [");
 
+
+				JsonFormat.Printer printer = JsonFormat.printer();
+
 				boolean firstInner = true;
 				for (Lumongo.FacetCount facetCount : facetGroup.getFacetCountList()) {
 					if (firstInner) {
@@ -304,18 +307,8 @@ public class QueryResource {
 						responseBuilder.append(",");
 					}
 
-					responseBuilder.append("{");
-					responseBuilder.append("\"label\": \"");
-					responseBuilder.append(facetCount.getFacet());
-					responseBuilder.append("\",");
-					responseBuilder.append("\"count\": ");
-					responseBuilder.append(facetCount.getCount());
-					if (facetCount.hasMaxError()) {
-						responseBuilder.append(",");
-						responseBuilder.append("\"maxError\": ");
-						responseBuilder.append(facetCount.getMaxError());
-					}
-					responseBuilder.append("}");
+
+					responseBuilder.append(printer.print(facetCount));
 				}
 				responseBuilder.append("]");
 
