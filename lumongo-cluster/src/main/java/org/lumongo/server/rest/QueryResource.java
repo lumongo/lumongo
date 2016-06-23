@@ -17,6 +17,7 @@ import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.util.LumongoUtil;
+import org.lumongo.util.ResultHelper;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -261,7 +262,7 @@ public class QueryResource {
 				if (sr.hasResultDocument()) {
 					responseBuilder.append(",");
 
-					Document document = LumongoUtil.resultDocumentToMongoDocument(sr.getResultDocument());
+					Document document = ResultHelper.getDocumentFromResultDocument(sr.getResultDocument());
 					responseBuilder.append("\"document\": ");
 					responseBuilder.append(JSONSerializers.getStrict().serialize(document));
 

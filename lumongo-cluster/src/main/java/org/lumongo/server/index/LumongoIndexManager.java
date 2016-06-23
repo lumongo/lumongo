@@ -486,7 +486,7 @@ public class LumongoIndexManager {
 				}
 
 				ResultDocument resultDoc = i.getSourceDocument(uniqueId, timestamp, resultFetchType, fetchRequest.getDocumentFieldsList(),
-						fetchRequest.getDocumentMaskedFieldsList());
+						fetchRequest.getDocumentMaskedFieldsList(), Collections.emptyList());
 				if (null != resultDoc) {
 					frBuilder.setResultDocument(resultDoc);
 				}

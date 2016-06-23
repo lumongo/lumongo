@@ -17,6 +17,7 @@ import java.util.List;
 
 public class QueryTest {
 	public static void main(String[] args) throws Exception {
+
 		LogUtil.loadLogConfig();
 
 		LumongoWorkPool lumongoWorkPool = new LumongoWorkPool(new LumongoPoolConfig().addMember("localhost"));

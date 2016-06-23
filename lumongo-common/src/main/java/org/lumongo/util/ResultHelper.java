@@ -15,6 +15,13 @@ public class ResultHelper {
 	public static Document getDocumentFromScoredResult(Lumongo.ScoredResult scoredResult) {
 		if (scoredResult.hasResultDocument()) {
 			Lumongo.ResultDocument rd = scoredResult.getResultDocument();
+			return getDocumentFromResultDocument(rd);
+		}
+		return null;
+	}
+
+	public static Document getDocumentFromResultDocument(Lumongo.ResultDocument rd) {
+		if (rd.hasDocument()) {
 			return LumongoUtil.byteArrayToMongoDocument(rd.getDocument().toByteArray());
 		}
 		return null;

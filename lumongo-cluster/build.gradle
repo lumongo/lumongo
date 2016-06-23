@@ -10,6 +10,8 @@ dependencies {
     compile "org.apache.lucene:lucene-facet:$luceneVersion"
     compile "org.apache.lucene:lucene-queryparser:$luceneVersion"
     compile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
+    compile "org.apache.lucene:lucene-highlighter:$luceneVersion"
+
     compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.22.2'
     compile 'com.cedarsoftware:json-io:2.6.0'
 

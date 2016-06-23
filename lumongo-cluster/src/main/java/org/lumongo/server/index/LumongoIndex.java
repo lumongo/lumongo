@@ -975,7 +975,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				Future<SegmentResponse> response = segmentPool.submit(() -> segment
 						.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
 								queryRequest.getSortRequest(), new QueryCacheKey(queryRequest), queryRequest.getResultFetchType(),
-								queryRequest.getDocumentFieldsList(), queryRequest.getDocumentMaskedFieldsList()));
+								queryRequest.getDocumentFieldsList(), queryRequest.getDocumentMaskedFieldsList(), queryRequest.getHighlightList()));
 
 				responses.add(response);
 
@@ -1279,7 +1279,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
+	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<Highlight> highlightList)
 			throws Exception {
 		indexLock.readLock().lock();
 		try {

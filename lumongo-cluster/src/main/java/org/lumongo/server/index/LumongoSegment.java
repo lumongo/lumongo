@@ -4,7 +4,10 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.protobuf.ByteString;
 import com.mongodb.BasicDBObject;
 import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LegacyLongField;
@@ -31,6 +34,13 @@ import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.index.TermsEnum.SeekStatus;
 import org.apache.lucene.search.*;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.highlight.Fragmenter;
+import org.apache.lucene.search.highlight.Highlighter;
+import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.apache.lucene.search.highlight.QueryScorer;
+import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
+import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
+import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.search.similarities.PerFieldSimilarityWrapper;
@@ -44,6 +54,7 @@ import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
+import org.lumongo.server.highlighter.LumongoHighlighter;
 import org.lumongo.util.ResultHelper;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
@@ -199,7 +210,7 @@ public class LumongoSegment {
 	}
 
 	public SegmentResponse querySegment(QueryWithFilters queryWithFilters, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest,
-			QueryCacheKey queryCacheKey, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception {
+			QueryCacheKey queryCacheKey, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<Highlight> highlightList) throws Exception {
 		try {
 			reopenIndexWritersIfNecessary();
 
@@ -228,6 +239,19 @@ public class LumongoSegment {
 
 				q = booleanQuery.build();
 			}
+
+
+			List<LumongoHighlighter> highlighterList = new ArrayList<>();
+
+			for (Highlight highlight : highlightList) {
+				QueryScorer queryScorer = new QueryScorer(q, highlight.getField());
+				Fragmenter fragmenter = new SimpleSpanFragmenter(queryScorer);
+				SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter(highlight.getPreTag(), highlight.getPostTag());
+				LumongoHighlighter highlighter = new LumongoHighlighter(simpleHTMLFormatter, queryScorer, highlight);
+				highlighter.setTextFragmenter(fragmenter);
+				highlighterList.add(highlighter);
+			}
+
 
 			IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
@@ -399,13 +423,15 @@ public class LumongoSegment {
 
 			for (int i = 0; i < numResults; i++) {
 				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i, resultFetchType, fieldsToReturn,
-						fieldsToMask);
+						fieldsToMask, highlighterList);
+
+
 				builder.addScoredResult(srBuilder.build());
 			}
 
 			if (moreAvailable) {
 				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, numResults, resultFetchType, fieldsToReturn,
-						fieldsToMask);
+						fieldsToMask, highlighterList);
 				builder.setNext(srBuilder);
 			}
 
@@ -462,7 +488,7 @@ public class LumongoSegment {
 	}
 
 	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i,
-			FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask) throws Exception {
+			FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<LumongoHighlighter> highlighterList) throws Exception {
 		int docId = results[i].doc;
 
 		Set<String> fieldsToFetch = fetchSet;
@@ -508,6 +534,34 @@ public class LumongoSegment {
 					if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
 						resultDocument = filterDocument(rdBuilder.build(), fieldsToReturn, fieldsToMask);
 					}
+
+
+					if (!highlighterList.isEmpty()) {
+						org.bson.Document doc = ResultHelper.getDocumentFromResultDocument(resultDocument);
+						if (doc != null) {
+							for (LumongoHighlighter highlighter : highlighterList) {
+								String storedFieldName = indexConfig.getStoredFieldName(highlighter.getHighlight().getField());
+								LumongoUtil.handleLists(doc.get(storedFieldName), (value) -> {
+									String content = value.toString();
+									TokenStream tokenStream = analyzer.tokenStream(highlighter.getHighlight().getField(), content);
+
+									try {
+										String fragment = highlighter.getBestFragment(tokenStream, content);
+										if (fragment != null) {
+
+										}
+									}
+									catch (Exception e) {
+										throw new RuntimeException(e);
+									}
+
+								});
+								//srBuilder.addHighlihtResult();
+							}
+						}
+					}
+
+
 
 				}
 
@@ -602,7 +656,7 @@ public class LumongoSegment {
 
 			QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 
-			SegmentResponse segmentResponse = this.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType, fieldsToReturn, fieldsToMask);
+			SegmentResponse segmentResponse = this.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType, fieldsToReturn, fieldsToMask, Collections.emptyList());
 
 			List<ScoredResult> scoredResultList = segmentResponse.getScoredResultList();
 			if (!scoredResultList.isEmpty()) {
@@ -623,12 +677,10 @@ public class LumongoSegment {
 		if (rd != null) {
 
 			if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
+				org.bson.Document resultObj = ResultHelper.getDocumentFromResultDocument(rd);
+
 				ResultDocument.Builder resultDocBuilder = rd.toBuilder();
 
-				ByteString objBytes = resultDocBuilder.getDocument();
-				BSONObject bsonObject = BSON.decode(objBytes.toByteArray());
-				BasicDBObject resultObj = new BasicDBObject();
-				resultObj.putAll(bsonObject);
 
 				if (!fieldsToReturn.isEmpty()) {
 					for (String key : new ArrayList<>(resultObj.keySet())) {
@@ -643,7 +695,7 @@ public class LumongoSegment {
 					}
 				}
 
-				ByteString document = ByteString.copyFrom(BSON.encode(resultObj));
+				ByteString document = ByteString.copyFrom(LumongoUtil.mongoDocumentToByteArray(resultObj));
 				resultDocBuilder.setDocument(document);
 
 				return resultDocBuilder.build();
@@ -655,6 +707,8 @@ public class LumongoSegment {
 
 		return null;
 	}
+
+
 
 	private void possibleCommit() throws IOException {
 		lastChange = System.currentTimeMillis();

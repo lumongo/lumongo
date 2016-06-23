@@ -8,6 +8,7 @@ import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.util.LumongoUtil;
+import org.lumongo.util.ResultHelper;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -41,7 +42,7 @@ public class FetchResource {
 			fetchResponse = indexManager.fetch(fetchRequest.build());
 
 			if (fetchResponse.hasResultDocument()) {
-				Document document = LumongoUtil.resultDocumentToMongoDocument(fetchResponse.getResultDocument());
+				Document document = ResultHelper.getDocumentFromResultDocument(fetchResponse.getResultDocument());
 				String docString = JSONSerializers.getStrict().serialize(document);
 
 				if (pretty) {

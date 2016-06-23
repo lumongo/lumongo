@@ -42,9 +42,7 @@ public class LumongoUtil {
 		return outputBuffer.toByteArray();
 	}
 
-	public static Document resultDocumentToMongoDocument(Lumongo.ResultDocument resultDocument) {
-		return byteArrayToMongoDocument(resultDocument.getDocument().toByteArray());
-	}
+
 
 	public static Document byteArrayToMongoDocument(byte[] byteArray) {
 		BsonBinaryReader bsonReader = new BsonBinaryReader(ByteBuffer.wrap(byteArray));

@@ -24,6 +24,7 @@ public class IndexConfig {
 	private ConcurrentHashMap<String, FieldConfig.FieldType> indexFieldType;
 	private ConcurrentHashMap<String, FieldConfig.FieldType> sortFieldType;
 	private ConcurrentHashMap<String, Lumongo.AnalyzerSettings> analyzerMap;
+	private ConcurrentHashMap<String, String> indexToStoredMap;
 
 	public IndexConfig(IndexCreateRequest request) {
 		this(request.getIndexName(), request.getNumberOfSegments(), request.getIndexSettings());
@@ -61,10 +62,12 @@ public class IndexConfig {
 		}
 
 		this.indexAsMap = new ConcurrentHashMap<>();
+		this.indexToStoredMap = new ConcurrentHashMap<>();
 		for (String storedFieldName : fieldConfigMap.keySet()) {
 			FieldConfig fc = fieldConfigMap.get(storedFieldName);
 			for (IndexAs indexAs : fc.getIndexAsList()) {
 				indexAsMap.put(indexAs.getIndexFieldName(), indexAs);
+				indexToStoredMap.put(indexAs.getIndexFieldName(), storedFieldName);
 			}
 		}
 
@@ -114,6 +117,9 @@ public class IndexConfig {
 
 	public FieldConfig getFieldConfig(String storedFieldName) {
 		return fieldConfigMap.get(storedFieldName);
+	}
+	public String getStoredFieldName(String indexFieldName) {
+		return indexToStoredMap.get(indexFieldName);
 	}
 
 	public Set<String> getIndexedStoredFieldNames() {
