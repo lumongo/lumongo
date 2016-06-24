@@ -2,12 +2,10 @@ package org.lumongo.server.index;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.protobuf.ByteString;
-import com.mongodb.BasicDBObject;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LegacyLongField;
@@ -35,13 +33,10 @@ import org.apache.lucene.index.TermsEnum.SeekStatus;
 import org.apache.lucene.search.*;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.highlight.Fragmenter;
-import org.apache.lucene.search.highlight.Highlighter;
-import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
 import org.apache.lucene.search.highlight.TextFragment;
-import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.search.similarities.PerFieldSimilarityWrapper;
@@ -49,16 +44,13 @@ import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
-import org.bson.BSON;
-import org.bson.BSONObject;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
-import org.lumongo.server.highlighter.LumongoHighlighter;
-import org.lumongo.util.ResultHelper;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
+import org.lumongo.server.highlighter.LumongoHighlighter;
 import org.lumongo.server.index.field.BooleanFieldIndexer;
 import org.lumongo.server.index.field.DateFieldIndexer;
 import org.lumongo.server.index.field.DoubleFieldIndexer;
@@ -75,6 +67,7 @@ import org.lumongo.similarity.ConstantSimilarity;
 import org.lumongo.similarity.TFSimilarity;
 import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.util.LumongoUtil;
+import org.lumongo.util.ResultHelper;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -152,8 +145,6 @@ public class LumongoSegment {
 
 	}
 
-
-
 	private static String getFoldedString(String text) {
 		char[] textChar = text.toCharArray();
 		char[] output = new char[textChar.length * 4];
@@ -213,7 +204,8 @@ public class LumongoSegment {
 	}
 
 	public SegmentResponse querySegment(QueryWithFilters queryWithFilters, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest,
-			QueryCacheKey queryCacheKey, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<Highlight> highlightList) throws Exception {
+			QueryCacheKey queryCacheKey, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<Highlight> highlightList)
+			throws Exception {
 		try {
 			reopenIndexWritersIfNecessary();
 
@@ -243,7 +235,6 @@ public class LumongoSegment {
 				q = booleanQuery.build();
 			}
 
-
 			List<LumongoHighlighter> highlighterList = new ArrayList<>();
 
 			for (Highlight highlight : highlightList) {
@@ -256,7 +247,6 @@ public class LumongoSegment {
 				highlighterList.add(highlighter);
 			}
 
-
 			IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
 			//similarity is only set query time, indexing time all these similarities are the same
@@ -264,13 +254,11 @@ public class LumongoSegment {
 				@Override
 				public Similarity get(String name) {
 
-
 					AnalyzerSettings analyzerSettings = indexConfig.getAnalyzerSettingsForIndexField(name);
 					AnalyzerSettings.Similarity similarity = AnalyzerSettings.Similarity.BM25;
 					if (analyzerSettings != null) {
 						similarity = analyzerSettings.getSimilarity();
 					}
-
 
 					AnalyzerSettings.Similarity fieldSimilarityOverride = queryWithFilters.getFieldSimilarityOverride(name);
 					if (fieldSimilarityOverride != null) {
@@ -360,7 +348,6 @@ public class LumongoSegment {
 						throw new Exception(label + " is not defined as a facetable field");
 					}
 
-
 					if (countRequest.hasSegmentFacets()) {
 						if (indexConfig.getNumberOfSegments() == 1) {
 							log.info("Segment facets is ignored with segments of 1 for facet <" + label + "> on index <" + indexName + ">");
@@ -426,9 +413,8 @@ public class LumongoSegment {
 			int numResults = Math.min(results.length, amount);
 
 			for (int i = 0; i < numResults; i++) {
-				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i, resultFetchType, fieldsToReturn,
-						fieldsToMask, highlighterList);
-
+				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i, resultFetchType, fieldsToReturn, fieldsToMask,
+						highlighterList);
 
 				builder.addScoredResult(srBuilder.build());
 			}
@@ -531,8 +517,6 @@ public class LumongoSegment {
 
 				ResultDocument resultDocument = null;
 
-
-
 				if (FetchType.FULL.equals(resultFetchType)) {
 					BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
 					rdBuilder.setDocument(ByteString.copyFrom(docRef.bytes));
@@ -540,7 +524,6 @@ public class LumongoSegment {
 					if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
 						resultDocument = filterDocument(rdBuilder.build(), fieldsToReturn, fieldsToMask);
 					}
-
 
 					if (!highlighterList.isEmpty()) {
 						org.bson.Document doc = ResultHelper.getDocumentFromResultDocument(rdBuilder);
@@ -553,12 +536,15 @@ public class LumongoSegment {
 									HighlightResult.Builder highLightResult = HighlightResult.newBuilder();
 									highLightResult.setField(storedFieldName);
 
-									LumongoUtil.handleLists(doc.get(storedFieldName), (value) -> {
+									Object storeFieldValues = ResultHelper.getValueFromMongoDocument(doc, storedFieldName);
+
+									LumongoUtil.handleLists(storeFieldValues, (value) -> {
 										String content = value.toString();
 										TokenStream tokenStream = perFieldAnalyzer.tokenStream(highlight.getField(), content);
 
 										try {
-											TextFragment[] bestTextFragments = highlighter.getBestTextFragments(tokenStream, content, false, highlight.getNumberOfFragments());
+											TextFragment[] bestTextFragments = highlighter
+													.getBestTextFragments(tokenStream, content, false, highlight.getNumberOfFragments());
 											for (TextFragment bestTextFragment : bestTextFragments) {
 												if (bestTextFragment != null && bestTextFragment.getScore() > 0) {
 													highLightResult.addFragments(bestTextFragment.toString());
@@ -577,8 +563,6 @@ public class LumongoSegment {
 							}
 						}
 					}
-
-
 
 				}
 				else {
@@ -679,7 +663,8 @@ public class LumongoSegment {
 
 			QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 
-			SegmentResponse segmentResponse = this.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType, fieldsToReturn, fieldsToMask, Collections.emptyList());
+			SegmentResponse segmentResponse = this
+					.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType, fieldsToReturn, fieldsToMask, Collections.emptyList());
 
 			List<ScoredResult> scoredResultList = segmentResponse.getScoredResultList();
 			if (!scoredResultList.isEmpty()) {
@@ -703,7 +688,6 @@ public class LumongoSegment {
 				org.bson.Document resultObj = ResultHelper.getDocumentFromResultDocument(rd);
 
 				ResultDocument.Builder resultDocBuilder = rd.toBuilder();
-
 
 				if (!fieldsToReturn.isEmpty()) {
 					for (String key : new ArrayList<>(resultObj.keySet())) {
@@ -730,8 +714,6 @@ public class LumongoSegment {
 
 		return null;
 	}
-
-
 
 	private void possibleCommit() throws IOException {
 		lastChange = System.currentTimeMillis();
@@ -1067,7 +1049,6 @@ public class LumongoSegment {
 				termBytesList.add(termBytes);
 			}
 
-
 			for (LeafReaderContext subReaderContext : directoryReader.leaves()) {
 				Fields fields = subReaderContext.reader().fields();
 				if (fields != null) {
@@ -1189,7 +1170,5 @@ public class LumongoSegment {
 		return SegmentCountResponse.newBuilder().setNumberOfDocs(count).setSegmentNumber(segmentNumber).build();
 
 	}
-
-
 
 }
