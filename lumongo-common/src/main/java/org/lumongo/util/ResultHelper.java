@@ -20,7 +20,7 @@ public class ResultHelper {
 		return null;
 	}
 
-	public static Document getDocumentFromResultDocument(Lumongo.ResultDocument rd) {
+	public static Document getDocumentFromResultDocument(Lumongo.ResultDocumentOrBuilder rd) {
 		if (rd.hasDocument()) {
 			return LumongoUtil.byteArrayToMongoDocument(rd.getDocument().toByteArray());
 		}

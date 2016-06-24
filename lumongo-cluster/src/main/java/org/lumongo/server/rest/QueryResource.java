@@ -48,7 +48,8 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.DEFAULT_OP) String defaultOperator, @QueryParam(LumongoConstants.SORT) List<String> sort,
 			@QueryParam(LumongoConstants.PRETTY) boolean pretty, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError,
 			@QueryParam(LumongoConstants.DISMAX) Boolean dismax, @QueryParam(LumongoConstants.DISMAX_TIE) Float dismaxTie,
-			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm, @QueryParam(LumongoConstants.SIMILARITY) List<String> similarity) {
+			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm, @QueryParam(LumongoConstants.SIMILARITY) List<String> similarity, @QueryParam(LumongoConstants.HIGHLIGHT) List<String> highlightList,
+			@QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		if (query != null && !query.isEmpty()) {
@@ -135,6 +136,27 @@ public class QueryResource {
 				}
 			}
 		}
+
+		if (highlightList != null) {
+			for (String hl : highlightList) {
+				Lumongo.Highlight hlBuilder = Lumongo.Highlight.newBuilder().setField(hl).build();
+				qrBuilder.addHighlight(hlBuilder);
+			}
+		}
+
+		if (highlightJsonList != null) {
+			for (String hlJson : highlightJsonList) {
+				try {
+					Lumongo.Highlight.Builder hlBuilder = Lumongo.Highlight.newBuilder();
+					JsonFormat.parser().merge(hlJson, hlBuilder);
+					qrBuilder.addHighlight(hlBuilder);
+				}
+				catch (InvalidProtocolBufferException e) {
+					return Response.status(LumongoConstants.INTERNAL_ERROR).entity(e.getClass().getSimpleName() + ":" + e.getMessage()).build();
+				}
+			}
+		}
+
 
 		if (fields != null) {
 			for (String field : fields) {
@@ -239,6 +261,9 @@ public class QueryResource {
 		responseBuilder.append(qr.getTotalHits());
 
 		if (!qr.getResultsList().isEmpty()) {
+
+			JsonFormat.Printer printer = JsonFormat.printer();
+
 			responseBuilder.append(",");
 			responseBuilder.append("\"results\": [");
 			boolean first = true;
@@ -265,6 +290,24 @@ public class QueryResource {
 					Document document = ResultHelper.getDocumentFromResultDocument(sr.getResultDocument());
 					responseBuilder.append("\"document\": ");
 					responseBuilder.append(JSONSerializers.getStrict().serialize(document));
+
+				}
+
+				if (sr.getHighlihtResultCount() > 0) {
+					responseBuilder.append(",");
+
+					responseBuilder.append("\"highlights\": [");
+					boolean firstHighlightResult = true;
+					for (Lumongo.HighlightResult hr : sr.getHighlihtResultList()) {
+						if (firstHighlightResult) {
+							firstHighlightResult = false;
+						}
+						else {
+							responseBuilder.append(",");
+						}
+						responseBuilder.append(printer.print(hr));
+					}
+					responseBuilder.append("]");
 
 				}
 

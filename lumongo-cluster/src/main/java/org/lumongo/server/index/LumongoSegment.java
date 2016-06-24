@@ -40,6 +40,7 @@ import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
+import org.apache.lucene.search.highlight.TextFragment;
 import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
@@ -119,6 +120,7 @@ public class LumongoSegment {
 
 	private FacetsConfig facetsConfig;
 	private int segmentQueryCacheMaxAmount;
+	private Analyzer perFieldAnalyzer;
 
 	public LumongoSegment(int segmentNumber, IndexSegmentInterface indexSegmentInterface, IndexConfig indexConfig, FacetsConfig facetsConfig,
 			DocumentStorage documentStorage) throws Exception {
@@ -177,6 +179,7 @@ public class LumongoSegment {
 			indexWriter.close();
 		}
 		this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
+		this.perFieldAnalyzer = this.indexSegmentInterface.getPerFieldAnalyzer();
 		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getIndexSettings().getApplyUncommittedDeletes(), false);
 	}
 
@@ -245,6 +248,7 @@ public class LumongoSegment {
 
 			for (Highlight highlight : highlightList) {
 				QueryScorer queryScorer = new QueryScorer(q, highlight.getField());
+				queryScorer.setExpandMultiTermQuery(true);
 				Fragmenter fragmenter = new SimpleSpanFragmenter(queryScorer);
 				SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter(highlight.getPreTag(), highlight.getPostTag());
 				LumongoHighlighter highlighter = new LumongoHighlighter(simpleHTMLFormatter, queryScorer, highlight);
@@ -527,6 +531,8 @@ public class LumongoSegment {
 
 				ResultDocument resultDocument = null;
 
+
+
 				if (FetchType.FULL.equals(resultFetchType)) {
 					BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
 					rdBuilder.setDocument(ByteString.copyFrom(docRef.bytes));
@@ -537,32 +543,49 @@ public class LumongoSegment {
 
 
 					if (!highlighterList.isEmpty()) {
-						org.bson.Document doc = ResultHelper.getDocumentFromResultDocument(resultDocument);
+						org.bson.Document doc = ResultHelper.getDocumentFromResultDocument(rdBuilder);
 						if (doc != null) {
 							for (LumongoHighlighter highlighter : highlighterList) {
-								String storedFieldName = indexConfig.getStoredFieldName(highlighter.getHighlight().getField());
-								LumongoUtil.handleLists(doc.get(storedFieldName), (value) -> {
-									String content = value.toString();
-									TokenStream tokenStream = analyzer.tokenStream(highlighter.getHighlight().getField(), content);
+								Highlight highlight = highlighter.getHighlight();
+								String storedFieldName = indexConfig.getStoredFieldName(highlight.getField());
 
-									try {
-										String fragment = highlighter.getBestFragment(tokenStream, content);
-										if (fragment != null) {
+								if (storedFieldName != null) {
+									HighlightResult.Builder highLightResult = HighlightResult.newBuilder();
+									highLightResult.setField(storedFieldName);
 
+									LumongoUtil.handleLists(doc.get(storedFieldName), (value) -> {
+										String content = value.toString();
+										TokenStream tokenStream = perFieldAnalyzer.tokenStream(highlight.getField(), content);
+
+										try {
+											TextFragment[] bestTextFragments = highlighter.getBestTextFragments(tokenStream, content, false, highlight.getNumberOfFragments());
+											for (TextFragment bestTextFragment : bestTextFragments) {
+												if (bestTextFragment != null && bestTextFragment.getScore() > 0) {
+													highLightResult.addFragments(bestTextFragment.toString());
+												}
+											}
 										}
-									}
-									catch (Exception e) {
-										throw new RuntimeException(e);
-									}
+										catch (Exception e) {
+											throw new RuntimeException(e);
+										}
 
-								});
-								//srBuilder.addHighlihtResult();
+									});
+
+									srBuilder.addHighlihtResult(highLightResult);
+								}
+
 							}
 						}
 					}
 
 
 
+				}
+				else {
+					if (!highlighterList.isEmpty()) {
+						throw new Exception("Highlights require a full fetch of the document");
+
+					}
 				}
 
 				if (resultDocument == null) {

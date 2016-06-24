@@ -43,6 +43,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private List<FieldSort> fieldSorts = Collections.emptyList();
 	private Set<String> queryFields = Collections.emptySet();
 	private List<Lumongo.Query> filterQueries = Collections.emptyList();
+	private List<Lumongo.Highlight> highlights = Collections.emptyList();
 	private Integer minimumNumberShouldMatch;
 	private Operator defaultOperator;
 	private Lumongo.FetchType resultFetchType;
@@ -253,6 +254,37 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return this;
 	}
 
+	public Query addHighlight(String field) {
+		return addHighlight(field, null, null, null);
+	}
+
+	public Query addHighlight(String field, Integer numberOfFragments) {
+		return addHighlight(field, null, null, numberOfFragments);
+	}
+
+	public Query addHighlight(String field, String preTag, String postTag, Integer numberOfFragments) {
+		if (highlights.isEmpty()) {
+			this.highlights = new ArrayList<>();
+		}
+
+		Lumongo.Highlight.Builder highlight = Lumongo.Highlight.newBuilder();
+		if (field != null && !field.isEmpty()) {
+			highlight.setField(field);
+		}
+		if (preTag != null) {
+			highlight.setPreTag(preTag);
+		}
+		if (postTag != null) {
+			highlight.setPostTag(postTag);
+		}
+		if (numberOfFragments != null) {
+			highlight.setNumberOfFragments(numberOfFragments);
+		}
+
+		highlights.add(highlight.build());
+		return this;
+	}
+
 	public Query addCountRequest(String label) {
 		return (addCountRequest(label, null));
 	}
@@ -394,6 +426,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 		if (!filterQueries.isEmpty()) {
 			requestBuilder.addAllFilterQuery(filterQueries);
+		}
+
+		if (!highlights.isEmpty()) {
+			requestBuilder.addAllHighlight(highlights);
 		}
 
 		if (resultFetchType != null) {

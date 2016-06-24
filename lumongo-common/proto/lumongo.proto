@@ -333,7 +333,7 @@ message ScoredResult {
 
 message HighlightResult {
 	required string field = 1;
-	required string fragments = 2;
+	repeated string fragments = 2;
 }
 
 message SortValues {
@@ -442,6 +442,7 @@ message Highlight {
 	required string field = 1;
 	optional string preTag = 2 [default = "<em>"];
 	optional string postTag = 3 [default = "</em>"];
+	optional uint32 numberOfFragments = 4 [default = 1];
 }
 
 message FieldSimilarity {

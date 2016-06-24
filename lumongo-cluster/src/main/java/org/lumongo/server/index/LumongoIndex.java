@@ -13,6 +13,7 @@ import com.mongodb.client.model.UpdateOptions;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -138,7 +139,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			@Override
 			public LumongoMultiFieldQueryParser makeObject() throws Exception {
-				return new LumongoMultiFieldQueryParser(lumongoAnalyzerFactory.getPerFieldAnalyzer(), LumongoIndex.this.indexConfig);
+				return new LumongoMultiFieldQueryParser(getPerFieldAnalyzer(), LumongoIndex.this.indexConfig);
 			}
 
 		});
@@ -417,7 +418,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				clusterConfig.getIndexBlockSize());
 		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 
-		IndexWriterConfig config = new IndexWriterConfig(lumongoAnalyzerFactory.getPerFieldAnalyzer());
+		IndexWriterConfig config = new IndexWriterConfig(getPerFieldAnalyzer());
 
 		//use flush interval to flush
 		config.setMaxBufferedDocs(Integer.MAX_VALUE);
@@ -426,6 +427,10 @@ public class LumongoIndex implements IndexSegmentInterface {
 		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 8, 48);
 
 		return new IndexWriter(nrtCachingDirectory, config);
+	}
+
+	public Analyzer getPerFieldAnalyzer() throws Exception {
+		return lumongoAnalyzerFactory.getPerFieldAnalyzer();
 	}
 
 	private String getIndexSegmentCollectionName(int segmentNumber) {
@@ -1047,7 +1052,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 			parsers.clear();
 
 			//force analyzer to be fetched first so it doesn't fail only on one segment below
-			lumongoAnalyzerFactory.getPerFieldAnalyzer();
+			getPerFieldAnalyzer();
+
 			for (LumongoSegment s : segmentMap.values()) {
 				try {
 					s.updateIndexSettings(indexSettings, facetsConfig);
