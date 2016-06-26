@@ -146,8 +146,10 @@ public class ExternalServiceHandler extends ExternalService {
 			log.error("Failed to store: <" + request.getUniqueId() + "> in index <" + request.getIndexName() + ">: " + e.getClass().getSimpleName() + ": ", e);
 			if (request.hasResultDocument()) {
 				try {
-					BasicBSONObject document = (BasicBSONObject) BSON.decode(request.getResultDocument().getDocument().toByteArray());
-					log.error(document.toString());
+					if (request.getResultDocument().hasDocument()) {
+						BasicBSONObject document = (BasicBSONObject) BSON.decode(request.getResultDocument().getDocument().toByteArray());
+						log.error(document.toString());
+					}
 				}
 				catch (Exception e2) {
 

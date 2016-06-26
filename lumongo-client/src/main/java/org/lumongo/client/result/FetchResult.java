@@ -67,7 +67,9 @@ public class FetchResult extends Result {
 	public Document getDocument() {
 		if (fetchResponse.hasResultDocument()) {
 			ResultDocument rd = fetchResponse.getResultDocument();
-			return LumongoUtil.byteArrayToMongoDocument(rd.getDocument().toByteArray());
+			if (rd.hasDocument()) {
+				return LumongoUtil.byteArrayToMongoDocument(rd.getDocument().toByteArray());
+			}
 		}
 		return null;
 	}

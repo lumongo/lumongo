@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LegacyLongField;
@@ -204,8 +205,8 @@ public class LumongoSegment {
 	}
 
 	public SegmentResponse querySegment(QueryWithFilters queryWithFilters, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest,
-			QueryCacheKey queryCacheKey, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<Highlight> highlightList)
-			throws Exception {
+			QueryCacheKey queryCacheKey, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask,
+			List<HighlightRequest> highlightList, List<AnalysisRequest> analysisRequestList) throws Exception {
 		try {
 			reopenIndexWritersIfNecessary();
 
@@ -234,8 +235,6 @@ public class LumongoSegment {
 
 				q = booleanQuery.build();
 			}
-
-			List<LumongoHighlighter> highlighterList = getHighlighterList(q, highlightList);
 
 			IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
@@ -276,16 +275,18 @@ public class LumongoSegment {
 
 			int numResults = Math.min(results.length, amount);
 
+			List<LumongoHighlighter> highlighterList = getHighlighterList(q, highlightList);
+
 			for (int i = 0; i < numResults; i++) {
 				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i, resultFetchType, fieldsToReturn, fieldsToMask,
-						highlighterList);
+						highlighterList, analysisRequestList);
 
 				segmentReponseBuilder.addScoredResult(srBuilder.build());
 			}
 
 			if (moreAvailable) {
 				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, numResults, resultFetchType, fieldsToReturn,
-						fieldsToMask, highlighterList);
+						fieldsToMask, highlighterList, analysisRequestList);
 				segmentReponseBuilder.setNext(srBuilder);
 			}
 
@@ -309,10 +310,10 @@ public class LumongoSegment {
 		}
 	}
 
-	private List<LumongoHighlighter> getHighlighterList(Query q, List<Highlight> highlightList) {
+	private List<LumongoHighlighter> getHighlighterList(Query q, List<HighlightRequest> highlightRequests) {
 		List<LumongoHighlighter> highlighterList = new ArrayList<>();
 
-		for (Highlight highlight : highlightList) {
+		for (HighlightRequest highlight : highlightRequests) {
 			QueryScorer queryScorer = new QueryScorer(q, highlight.getField());
 			queryScorer.setExpandMultiTermQuery(true);
 			Fragmenter fragmenter = new SimpleSpanFragmenter(queryScorer);
@@ -494,7 +495,8 @@ public class LumongoSegment {
 	}
 
 	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i,
-			FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<LumongoHighlighter> highlighterList) throws Exception {
+			FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<LumongoHighlighter> highlighterList,
+			List<AnalysisRequest> analysisRequestList) throws Exception {
 		int docId = results[i].doc;
 
 		Set<String> fieldsToFetch = fetchSet;
@@ -515,8 +517,12 @@ public class LumongoSegment {
 		ScoredResult.Builder srBuilder = ScoredResult.newBuilder();
 		String uniqueId = d.get(LumongoConstants.ID_FIELD);
 
+		if (!highlighterList.isEmpty() && !FetchType.FULL.equals(resultFetchType)) {
+			throw new Exception("Highlights require a full fetch of the document");
+		}
+
 		if (!FetchType.NONE.equals(resultFetchType)) {
-			handleStoredDoc(resultFetchType, fieldsToReturn, fieldsToMask, highlighterList, d, srBuilder, uniqueId);
+			handleStoredDoc(srBuilder, uniqueId, d, resultFetchType, fieldsToReturn, fieldsToMask, highlighterList, analysisRequestList);
 		}
 
 		srBuilder.setScore(results[i].score);
@@ -536,18 +542,14 @@ public class LumongoSegment {
 		return srBuilder;
 	}
 
-	private void handleStoredDoc(FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<LumongoHighlighter> highlighterList,
-			Document d, ScoredResult.Builder srBuilder, String uniqueId) throws Exception {
+	private void handleStoredDoc(ScoredResult.Builder srBuilder, String uniqueId, Document d, FetchType resultFetchType, List<String> fieldsToReturn,
+			List<String> fieldsToMask, List<LumongoHighlighter> highlighterList, List<AnalysisRequest> analyzeRequestList) throws Exception {
 
 		ResultDocument.Builder rdBuilder = ResultDocument.newBuilder();
 		rdBuilder.setUniqueId(uniqueId);
 		rdBuilder.setIndexName(indexName);
 
 		ResultDocument resultDocument = null;
-
-		if (!highlighterList.isEmpty() && !FetchType.FULL.equals(resultFetchType)) {
-			throw new Exception("Highlights require a full fetch of the document");
-		}
 
 		if (indexConfig.getIndexSettings().getStoreDocumentInIndex()) {
 
@@ -577,11 +579,19 @@ public class LumongoSegment {
 			resultDocument = rdBuilder.build();
 		}
 
-		if (!highlighterList.isEmpty()) {
-			handleHighlight(highlighterList, srBuilder, resultDocument);
-		}
+		if (!highlighterList.isEmpty() || !analyzeRequestList.isEmpty() || !fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
+			org.bson.Document mongoDoc = ResultHelper.getDocumentFromResultDocument(resultDocument);
+			if (mongoDoc != null) {
+				if (!highlighterList.isEmpty()) {
+					handleHighlight(highlighterList, srBuilder, mongoDoc);
+				}
+				if (!analyzeRequestList.isEmpty()) {
+					handleAnalyze(analyzeRequestList, srBuilder, mongoDoc);
+				}
 
-		resultDocument = filterDocument(resultDocument, fieldsToReturn, fieldsToMask);
+				resultDocument = filterDocument(resultDocument, fieldsToReturn, fieldsToMask, mongoDoc);
+			}
+		}
 
 		srBuilder.setResultDocument(resultDocument);
 	}
@@ -632,41 +642,74 @@ public class LumongoSegment {
 		srBuilder.setSortValues(sortValues);
 	}
 
-	private void handleHighlight(List<LumongoHighlighter> highlighterList, ScoredResult.Builder srBuilder, ResultDocumentOrBuilder resultDocument) {
-		org.bson.Document doc = ResultHelper.getDocumentFromResultDocument(resultDocument);
-		if (doc != null) {
-			for (LumongoHighlighter highlighter : highlighterList) {
-				Highlight highlight = highlighter.getHighlight();
-				String storedFieldName = indexConfig.getStoredFieldName(highlight.getField());
+	private void handleHighlight(List<LumongoHighlighter> highlighterList, ScoredResult.Builder srBuilder, org.bson.Document doc) {
 
-				if (storedFieldName != null) {
-					HighlightResult.Builder highLightResult = HighlightResult.newBuilder();
-					highLightResult.setField(storedFieldName);
+		for (LumongoHighlighter highlighter : highlighterList) {
+			HighlightRequest highlightRequest = highlighter.getHighlight();
+			String indexField = highlightRequest.getField();
+			String storedFieldName = indexConfig.getStoredFieldName(indexField);
 
-					Object storeFieldValues = ResultHelper.getValueFromMongoDocument(doc, storedFieldName);
+			if (storedFieldName != null) {
+				HighlightResult.Builder highLightResult = HighlightResult.newBuilder();
+				highLightResult.setField(storedFieldName);
 
-					LumongoUtil.handleLists(storeFieldValues, (value) -> {
-						String content = value.toString();
-						TokenStream tokenStream = perFieldAnalyzer.tokenStream(highlight.getField(), content);
+				Object storeFieldValues = ResultHelper.getValueFromMongoDocument(doc, storedFieldName);
 
-						try {
-							TextFragment[] bestTextFragments = highlighter.getBestTextFragments(tokenStream, content, false, highlight.getNumberOfFragments());
-							for (TextFragment bestTextFragment : bestTextFragments) {
-								if (bestTextFragment != null && bestTextFragment.getScore() > 0) {
-									highLightResult.addFragments(bestTextFragment.toString());
-								}
+				LumongoUtil.handleLists(storeFieldValues, (value) -> {
+					String content = value.toString();
+					TokenStream tokenStream = perFieldAnalyzer.tokenStream(indexField, content);
+
+					try {
+						TextFragment[] bestTextFragments = highlighter
+								.getBestTextFragments(tokenStream, content, false, highlightRequest.getNumberOfFragments());
+						for (TextFragment bestTextFragment : bestTextFragments) {
+							if (bestTextFragment != null && bestTextFragment.getScore() > 0) {
+								highLightResult.addFragments(bestTextFragment.toString());
 							}
 						}
-						catch (Exception e) {
-							throw new RuntimeException(e);
-						}
+					}
+					catch (Exception e) {
+						throw new RuntimeException(e);
+					}
 
-					});
+				});
 
-					srBuilder.addHighlihtResult(highLightResult);
-				}
-
+				srBuilder.addHighlightResult(highLightResult);
 			}
+
+		}
+
+	}
+
+	private void handleAnalyze(List<AnalysisRequest> analysisRequestList, ScoredResult.Builder srBuilder, org.bson.Document doc) {
+		for (AnalysisRequest analysisRequest : analysisRequestList) {
+
+			String indexField = analysisRequest.getField();
+			String storedFieldName = indexConfig.getStoredFieldName(indexField);
+
+			if (storedFieldName != null) {
+				AnalysisResult.Builder analysisResult = AnalysisResult.newBuilder();
+				analysisResult.setField(storedFieldName);
+
+				Object storeFieldValues = ResultHelper.getValueFromMongoDocument(doc, storedFieldName);
+
+				LumongoUtil.handleLists(storeFieldValues, (value) -> {
+					String content = value.toString();
+					try (TokenStream tokenStream = perFieldAnalyzer.tokenStream(indexField, content)) {
+						tokenStream.reset();
+						while (tokenStream.incrementToken()) {
+							analysisResult.addTokens(tokenStream.getAttribute(CharTermAttribute.class).toString());
+						}
+					}
+					catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+
+				});
+
+				srBuilder.addAnalysisResult(analysisResult);
+			}
+
 		}
 	}
 
@@ -685,13 +728,13 @@ public class LumongoSegment {
 			QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 
 			SegmentResponse segmentResponse = this
-					.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType, fieldsToReturn, fieldsToMask, Collections.emptyList());
+					.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType, fieldsToReturn, fieldsToMask, Collections.emptyList(),
+							Collections.emptyList());
 
 			List<ScoredResult> scoredResultList = segmentResponse.getScoredResultList();
 			if (!scoredResultList.isEmpty()) {
 				ScoredResult scoredResult = scoredResultList.iterator().next();
 				if (scoredResult.hasResultDocument()) {
-
 					rd = scoredResult.getResultDocument();
 				}
 			}
@@ -699,40 +742,43 @@ public class LumongoSegment {
 		}
 
 		if (rd != null) {
-			return filterDocument(rd, fieldsToReturn, fieldsToMask);
+			if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
+				org.bson.Document mongoDocument = ResultHelper.getDocumentFromResultDocument(rd);
+				if (mongoDocument != null) {
+					rd = filterDocument(rd, fieldsToReturn, fieldsToMask, mongoDocument);
+				}
+			}
+			return rd;
 		}
-		return null;
+
+		ResultDocument.Builder rdBuilder = ResultDocument.newBuilder();
+		rdBuilder.setUniqueId(uniqueId);
+		rdBuilder.setIndexName(indexName);
+		return rdBuilder.build();
 
 	}
 
-	private ResultDocument filterDocument(ResultDocument rd, List<String> fieldsToReturn, List<String> fieldsToMask) {
+	private ResultDocument filterDocument(ResultDocument rd, List<String> fieldsToReturn, List<String> fieldsToMask, org.bson.Document mongoDocument) {
 
-		if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
-			org.bson.Document resultObj = ResultHelper.getDocumentFromResultDocument(rd);
+		ResultDocument.Builder resultDocBuilder = rd.toBuilder();
 
-			ResultDocument.Builder resultDocBuilder = rd.toBuilder();
-
-			if (!fieldsToReturn.isEmpty()) {
-				for (String key : new ArrayList<>(resultObj.keySet())) {
-					if (!fieldsToReturn.contains(key)) {
-						resultObj.remove(key);
-					}
+		if (!fieldsToReturn.isEmpty()) {
+			for (String key : new ArrayList<>(mongoDocument.keySet())) {
+				if (!fieldsToReturn.contains(key)) {
+					mongoDocument.remove(key);
 				}
 			}
-			if (!fieldsToMask.isEmpty()) {
-				for (String field : fieldsToMask) {
-					resultObj.remove(field);
-				}
+		}
+		if (!fieldsToMask.isEmpty()) {
+			for (String field : fieldsToMask) {
+				mongoDocument.remove(field);
 			}
-
-			ByteString document = ByteString.copyFrom(LumongoUtil.mongoDocumentToByteArray(resultObj));
-			resultDocBuilder.setDocument(document);
-
-			return resultDocBuilder.build();
 		}
-		else {
-			return rd;
-		}
+
+		ByteString document = ByteString.copyFrom(LumongoUtil.mongoDocumentToByteArray(mongoDocument));
+		resultDocBuilder.setDocument(document);
+
+		return resultDocBuilder.build();
 
 	}
 

@@ -49,7 +49,7 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.PRETTY) boolean pretty, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError,
 			@QueryParam(LumongoConstants.DISMAX) Boolean dismax, @QueryParam(LumongoConstants.DISMAX_TIE) Float dismaxTie,
 			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm, @QueryParam(LumongoConstants.SIMILARITY) List<String> similarity, @QueryParam(LumongoConstants.HIGHLIGHT) List<String> highlightList,
-			@QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList) {
+			@QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList, @QueryParam(LumongoConstants.ANALYZE) List<String> analyzeList) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		if (query != null && !query.isEmpty()) {
@@ -139,21 +139,28 @@ public class QueryResource {
 
 		if (highlightList != null) {
 			for (String hl : highlightList) {
-				Lumongo.Highlight hlBuilder = Lumongo.Highlight.newBuilder().setField(hl).build();
-				qrBuilder.addHighlight(hlBuilder);
+				Lumongo.HighlightRequest highlightRequest = Lumongo.HighlightRequest.newBuilder().setField(hl).build();
+				qrBuilder.addHighlightRequest(highlightRequest);
 			}
 		}
 
 		if (highlightJsonList != null) {
 			for (String hlJson : highlightJsonList) {
 				try {
-					Lumongo.Highlight.Builder hlBuilder = Lumongo.Highlight.newBuilder();
+					Lumongo.HighlightRequest.Builder hlBuilder = Lumongo.HighlightRequest.newBuilder();
 					JsonFormat.parser().merge(hlJson, hlBuilder);
-					qrBuilder.addHighlight(hlBuilder);
+					qrBuilder.addHighlightRequest(hlBuilder);
 				}
 				catch (InvalidProtocolBufferException e) {
 					return Response.status(LumongoConstants.INTERNAL_ERROR).entity(e.getClass().getSimpleName() + ":" + e.getMessage()).build();
 				}
+			}
+		}
+
+		if (analyzeList != null) {
+			for (String al : analyzeList) {
+				Lumongo.AnalysisRequest analyzeRequest = Lumongo.AnalysisRequest.newBuilder().setField(al).build();
+				qrBuilder.addAnalysisRequest(analyzeRequest);
 			}
 		}
 
@@ -293,12 +300,12 @@ public class QueryResource {
 
 				}
 
-				if (sr.getHighlihtResultCount() > 0) {
+				if (sr.getHighlightResultCount() > 0) {
 					responseBuilder.append(",");
 
 					responseBuilder.append("\"highlights\": [");
 					boolean firstHighlightResult = true;
-					for (Lumongo.HighlightResult hr : sr.getHighlihtResultList()) {
+					for (Lumongo.HighlightResult hr : sr.getHighlightResultList()) {
 						if (firstHighlightResult) {
 							firstHighlightResult = false;
 						}
@@ -306,6 +313,24 @@ public class QueryResource {
 							responseBuilder.append(",");
 						}
 						responseBuilder.append(printer.print(hr));
+					}
+					responseBuilder.append("]");
+
+				}
+
+				if (sr.getAnalysisResultCount() > 0) {
+					responseBuilder.append(",");
+
+					responseBuilder.append("\"analysis\": [");
+					boolean firstAnalysisResult = true;
+					for (Lumongo.AnalysisResult ar : sr.getAnalysisResultList()) {
+						if (firstAnalysisResult) {
+							firstAnalysisResult = false;
+						}
+						else {
+							responseBuilder.append(",");
+						}
+						responseBuilder.append(printer.print(ar));
 					}
 					responseBuilder.append("]");
 

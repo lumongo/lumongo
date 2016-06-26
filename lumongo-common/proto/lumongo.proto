@@ -328,12 +328,18 @@ message ScoredResult {
 	optional SortValues sortValues = 7; //
 	optional int64 timestamp = 8;
 	optional ResultDocument resultDocument = 9;
-	repeated HighlightResult highlihtResult = 10;
+	repeated HighlightResult highlightResult = 10;
+	repeated AnalysisResult analysisResult = 11;
 }
 
 message HighlightResult {
 	required string field = 1;
 	repeated string fragments = 2;
+}
+
+message AnalysisResult {
+	required string field = 1;
+	repeated string tokens = 2;
 }
 
 message SortValues {
@@ -434,15 +440,20 @@ message QueryRequest {
 	repeated string documentMaskedFields = 11;
 	optional bool fetchFull = 12 [default = false];
 	repeated FieldSimilarity fieldSimilarity = 13;
-	repeated Highlight highlight = 14;
+	repeated HighlightRequest highlightRequest = 14;
+	repeated AnalysisRequest analysisRequest = 15;
 }
 
 
-message Highlight {
+message HighlightRequest {
 	required string field = 1;
 	optional string preTag = 2 [default = "<em>"];
 	optional string postTag = 3 [default = "</em>"];
 	optional uint32 numberOfFragments = 4 [default = 1];
+}
+
+message AnalysisRequest {
+	required string field = 1;
 }
 
 message FieldSimilarity {

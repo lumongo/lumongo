@@ -1,12 +1,10 @@
 package org.lumongo.server.index;
 
-import com.google.protobuf.util.JsonFormat;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.Member;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
-import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
@@ -26,10 +24,7 @@ import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.NRTCachingDirectory;
 import org.apache.lucene.util.BytesRef;
-import org.bson.BsonBinaryReader;
 import org.bson.Document;
-import org.bson.codecs.DecoderContext;
-import org.bson.codecs.DocumentCodec;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
@@ -51,13 +46,12 @@ import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.storage.rawfiles.MongoDocumentStorage;
 import org.lumongo.util.LockHandler;
 import org.lumongo.util.LumongoThreadFactory;
+import org.lumongo.util.LumongoUtil;
 import org.lumongo.util.SegmentUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -741,15 +735,20 @@ public class LumongoIndex implements IndexSegmentInterface {
 				documentLock.writeLock().lock();
 
 				if (storeRequest.hasResultDocument()) {
-					BsonBinaryReader bsonReader = new BsonBinaryReader(ByteBuffer.wrap(storeRequest.getResultDocument().getDocument().toByteArray()));
-					Document mongoDocument = new DocumentCodec().decode(bsonReader, DecoderContext.builder().build());
+					ResultDocument resultDocument = storeRequest.getResultDocument();
+					Document document;
+					if (resultDocument.hasDocument()) {
+						document = LumongoUtil.byteArrayToMongoDocument(resultDocument.getDocument().toByteArray());
+					}
+					else {
+						document = new Document();
+					}
 
 					LumongoSegment s = findSegmentFromUniqueId(uniqueId);
-					s.index(uniqueId, timestamp, mongoDocument, storeRequest.getResultDocument().getMetadataList());
+					s.index(uniqueId, timestamp, document, resultDocument.getMetadataList());
 
 					if (indexConfig.getIndexSettings().getStoreDocumentInMongo()) {
-						documentStorage
-								.storeSourceDocument(storeRequest.getUniqueId(), timestamp, mongoDocument, storeRequest.getResultDocument().getMetadataList());
+						documentStorage.storeSourceDocument(storeRequest.getUniqueId(), timestamp, document, resultDocument.getMetadataList());
 					}
 				}
 
@@ -833,7 +832,6 @@ public class LumongoIndex implements IndexSegmentInterface {
 				log.error("Unknown operator type: <" + defaultOperator + ">");
 			}
 
-
 			LumongoMultiFieldQueryParser qp = null;
 			if (queryText == null || queryText.isEmpty()) {
 				return new MatchAllDocsQuery();
@@ -842,7 +840,6 @@ public class LumongoIndex implements IndexSegmentInterface {
 				qp = parsers.borrowObject();
 				qp.setMinimumNumberShouldMatch(minimumShouldMatchNumber);
 				qp.setDefaultOperator(operator);
-
 
 				if (lumongoQuery.getDismax()) {
 					qp.enableDismax(lumongoQuery.getDismaxTie());
@@ -900,7 +897,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			if (indexConfig.getNumberOfSegments() != 1) {
 				if (!queryRequest.getFetchFull() && (amount > 0)) {
-					amount = (int) (((amount / numberOfSegments) + indexConfig.getIndexSettings().getMinSegmentRequest()) * indexConfig.getIndexSettings().getRequestFactor());
+					amount = (int) (((amount / numberOfSegments) + indexConfig.getIndexSettings().getMinSegmentRequest()) * indexConfig.getIndexSettings()
+							.getRequestFactor());
 				}
 			}
 
@@ -979,7 +977,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 				Future<SegmentResponse> response = segmentPool.submit(() -> segment
 						.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
 								queryRequest.getSortRequest(), new QueryCacheKey(queryRequest), queryRequest.getResultFetchType(),
-								queryRequest.getDocumentFieldsList(), queryRequest.getDocumentMaskedFieldsList(), queryRequest.getHighlightList()));
+								queryRequest.getDocumentFieldsList(), queryRequest.getDocumentMaskedFieldsList(), queryRequest.getHighlightRequestList(),
+								queryRequest.getAnalysisRequestList()));
 
 				responses.add(response);
 
@@ -1284,8 +1283,8 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<Highlight> highlightList)
-			throws Exception {
+	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask,
+			List<HighlightRequest> highlightRequests) throws Exception {
 		indexLock.readLock().lock();
 		try {
 			LumongoSegment s = findSegmentFromUniqueId(uniqueId);

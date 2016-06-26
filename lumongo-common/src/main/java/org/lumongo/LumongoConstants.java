@@ -67,6 +67,7 @@ public class LumongoConstants {
 	public static final String FIELDS_LIST_FIELD = "_lmflf_";
 
 	public static final String HIGHLIGHT = "hl";
-
 	public static final String HIGHLIGHT_JSON = "hlJson";
+
+	public static final String ANALYZE = "al";
 }

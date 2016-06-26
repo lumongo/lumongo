@@ -10,14 +10,14 @@ import org.lumongo.cluster.message.Lumongo;
  * @author mdavis
  */
 public class LumongoHighlighter extends Highlighter {
-	private final Lumongo.Highlight highlight;
+	private final Lumongo.HighlightRequest highlightRequest;
 
-	public LumongoHighlighter(Formatter formatter, Scorer fragmentScorer, Lumongo.Highlight highlight) {
+	public LumongoHighlighter(Formatter formatter, Scorer fragmentScorer, Lumongo.HighlightRequest highlightRequest) {
 		super(formatter, fragmentScorer);
-		this.highlight = highlight;
+		this.highlightRequest = highlightRequest;
 	}
 
-	public Lumongo.Highlight getHighlight() {
-		return highlight;
+	public Lumongo.HighlightRequest getHighlight() {
+		return highlightRequest;
 	}
 }
