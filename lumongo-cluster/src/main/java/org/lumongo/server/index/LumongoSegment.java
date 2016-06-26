@@ -235,53 +235,12 @@ public class LumongoSegment {
 				q = booleanQuery.build();
 			}
 
-			List<LumongoHighlighter> highlighterList = new ArrayList<>();
-
-			for (Highlight highlight : highlightList) {
-				QueryScorer queryScorer = new QueryScorer(q, highlight.getField());
-				queryScorer.setExpandMultiTermQuery(true);
-				Fragmenter fragmenter = new SimpleSpanFragmenter(queryScorer);
-				SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter(highlight.getPreTag(), highlight.getPostTag());
-				LumongoHighlighter highlighter = new LumongoHighlighter(simpleHTMLFormatter, queryScorer, highlight);
-				highlighter.setTextFragmenter(fragmenter);
-				highlighterList.add(highlighter);
-			}
+			List<LumongoHighlighter> highlighterList = getHighlighterList(q, highlightList);
 
 			IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
 			//similarity is only set query time, indexing time all these similarities are the same
-			indexSearcher.setSimilarity(new PerFieldSimilarityWrapper() {
-				@Override
-				public Similarity get(String name) {
-
-					AnalyzerSettings analyzerSettings = indexConfig.getAnalyzerSettingsForIndexField(name);
-					AnalyzerSettings.Similarity similarity = AnalyzerSettings.Similarity.BM25;
-					if (analyzerSettings != null) {
-						similarity = analyzerSettings.getSimilarity();
-					}
-
-					AnalyzerSettings.Similarity fieldSimilarityOverride = queryWithFilters.getFieldSimilarityOverride(name);
-					if (fieldSimilarityOverride != null) {
-						similarity = fieldSimilarityOverride;
-					}
-
-					if (AnalyzerSettings.Similarity.TFIDF.equals(similarity)) {
-						return new ClassicSimilarity();
-					}
-					else if (AnalyzerSettings.Similarity.BM25.equals(similarity)) {
-						return new BM25Similarity();
-					}
-					else if (AnalyzerSettings.Similarity.CONSTANT.equals(similarity)) {
-						return new ConstantSimilarity();
-					}
-					else if (AnalyzerSettings.Similarity.TF.equals(similarity)) {
-						return new TFSimilarity();
-					}
-					else {
-						throw new RuntimeException("Unknown similarity type <" + similarity + ">");
-					}
-				}
-			});
+			indexSearcher.setSimilarity(getSimilarity(queryWithFilters));
 
 			int hasMoreAmount = amount + 1;
 
@@ -291,111 +250,17 @@ public class LumongoSegment {
 			boolean sorting = (sortRequest != null) && !sortRequest.getFieldSortList().isEmpty();
 			if (sorting) {
 
-				for (FieldSort fs : sortRequest.getFieldSortList()) {
-					boolean reverse = Direction.DESCENDING.equals(fs.getDirection());
-
-					String sortField = fs.getSortField();
-					FieldConfig.FieldType sortFieldType = indexConfig.getFieldTypeForSortField(sortField);
-
-					if (IndexConfigUtil.isNumericOrDateFieldType(sortFieldType)) {
-						SortField.Type type;
-						if (IndexConfigUtil.isNumericIntFieldType(sortFieldType)) {
-							type = SortField.Type.INT;
-						}
-						else if (IndexConfigUtil.isNumericLongFieldType(sortFieldType)) {
-							type = SortField.Type.LONG;
-						}
-						else if (IndexConfigUtil.isNumericFloatFieldType(sortFieldType)) {
-							type = SortField.Type.FLOAT;
-						}
-						else if (IndexConfigUtil.isNumericDoubleFieldType(sortFieldType)) {
-							type = SortField.Type.DOUBLE;
-						}
-						else if (IndexConfigUtil.isDateFieldType(sortFieldType)) {
-							type = SortField.Type.LONG;
-						}
-						else {
-							throw new Exception("Invalid numeric sort type <" + sortFieldType + "> for sort field <" + sortField + ">");
-						}
-						sortFields.add(new SortedNumericSortField(sortField, type, reverse));
-					}
-					else {
-						sortFields.add(new SortedSetSortField(sortField, reverse));
-					}
-
-				}
-				Sort sort = new Sort();
-				sort.setSort(sortFields.toArray(new SortField[sortFields.size()]));
-
-				collector = TopFieldCollector.create(sort, hasMoreAmount, after, true, true, true);
+				collector = getSortingCollector(after, sortRequest, hasMoreAmount, sortFields);
 			}
 			else {
 				collector = TopScoreDocCollector.create(hasMoreAmount, after);
 			}
 
-			SegmentResponse.Builder builder = SegmentResponse.newBuilder();
+			SegmentResponse.Builder segmentReponseBuilder = SegmentResponse.newBuilder();
 
 			if ((facetRequest != null) && !facetRequest.getCountRequestList().isEmpty()) {
 
-				FacetsCollector facetsCollector = new FacetsCollector();
-				indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
-
-				for (CountRequest countRequest : facetRequest.getCountRequestList()) {
-
-					String label = countRequest.getFacetField().getLabel();
-					String indexFieldName = facetsConfig.getDimConfig(label).indexFieldName;
-					if (indexFieldName.equals(FacetsConfig.DEFAULT_INDEX_FIELD_NAME)) {
-						throw new Exception(label + " is not defined as a facetable field");
-					}
-
-					if (countRequest.hasSegmentFacets()) {
-						if (indexConfig.getNumberOfSegments() == 1) {
-							log.info("Segment facets is ignored with segments of 1 for facet <" + label + "> on index <" + indexName + ">");
-						}
-						if (countRequest.getSegmentFacets() < countRequest.getMaxFacets()) {
-							throw new IllegalArgumentException("Segment facets must be greater than or equal to max facets");
-						}
-					}
-
-					int numOfFacets;
-					if (indexConfig.getNumberOfSegments() > 1) {
-						if (countRequest.getSegmentFacets() != 0) {
-							numOfFacets = countRequest.getSegmentFacets();
-						}
-						else {
-							numOfFacets = countRequest.getMaxFacets() * 8;
-						}
-
-					}
-					else {
-						numOfFacets = countRequest.getMaxFacets();
-					}
-
-					FacetResult facetResult = null;
-
-					try {
-
-						SortedSetDocValuesReaderState state = facetStateCache.getFacetState(directoryReader, indexFieldName);
-
-						Facets facets = new LumongoSortedSetDocValuesFacetCounts(state, facetsCollector);
-
-						if (countRequest.getSegmentFacets() == 0) {
-							numOfFacets = state.getSize();
-						}
-
-						facetResult = facets.getTopChildren(numOfFacets, label);
-					}
-					catch (UncheckedExecutionException e) {
-						Throwable cause = e.getCause();
-						if (cause.getMessage().contains(" was not indexed with SortedSetDocValues")) {
-							//this is when no data has been indexing into a facet
-						}
-						else {
-							throw e;
-						}
-					}
-					handleFacetResult(builder, facetResult, countRequest);
-				}
+				searchWithFacets(facetRequest, q, indexSearcher, collector, segmentReponseBuilder);
 
 			}
 			else {
@@ -406,7 +271,7 @@ public class LumongoSegment {
 
 			int totalHits = collector.getTotalHits();
 
-			builder.setTotalHits(totalHits);
+			segmentReponseBuilder.setTotalHits(totalHits);
 
 			boolean moreAvailable = (results.length == hasMoreAmount);
 
@@ -416,19 +281,19 @@ public class LumongoSegment {
 				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i, resultFetchType, fieldsToReturn, fieldsToMask,
 						highlighterList);
 
-				builder.addScoredResult(srBuilder.build());
+				segmentReponseBuilder.addScoredResult(srBuilder.build());
 			}
 
 			if (moreAvailable) {
 				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, numResults, resultFetchType, fieldsToReturn,
 						fieldsToMask, highlighterList);
-				builder.setNext(srBuilder);
+				segmentReponseBuilder.setNext(srBuilder);
 			}
 
-			builder.setIndexName(indexName);
-			builder.setSegmentNumber(segmentNumber);
+			segmentReponseBuilder.setIndexName(indexName);
+			segmentReponseBuilder.setSegmentNumber(segmentNumber);
 
-			SegmentResponse segmentResponse = builder.build();
+			SegmentResponse segmentResponse = segmentReponseBuilder.build();
 			if (useCache) {
 				qrc.storeInCache(queryCacheKey, segmentResponse);
 			}
@@ -443,6 +308,161 @@ public class LumongoSegment {
 
 			throw e;
 		}
+	}
+
+	private List<LumongoHighlighter> getHighlighterList(Query q, List<Highlight> highlightList) {
+		List<LumongoHighlighter> highlighterList = new ArrayList<>();
+
+		for (Highlight highlight : highlightList) {
+			QueryScorer queryScorer = new QueryScorer(q, highlight.getField());
+			queryScorer.setExpandMultiTermQuery(true);
+			Fragmenter fragmenter = new SimpleSpanFragmenter(queryScorer);
+			SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter(highlight.getPreTag(), highlight.getPostTag());
+			LumongoHighlighter highlighter = new LumongoHighlighter(simpleHTMLFormatter, queryScorer, highlight);
+			highlighter.setTextFragmenter(fragmenter);
+			highlighterList.add(highlighter);
+		}
+		return highlighterList;
+	}
+
+	private PerFieldSimilarityWrapper getSimilarity(final QueryWithFilters queryWithFilters) {
+		return new PerFieldSimilarityWrapper() {
+			@Override
+			public Similarity get(String name) {
+
+				AnalyzerSettings analyzerSettings = indexConfig.getAnalyzerSettingsForIndexField(name);
+				AnalyzerSettings.Similarity similarity = AnalyzerSettings.Similarity.BM25;
+				if (analyzerSettings != null) {
+					similarity = analyzerSettings.getSimilarity();
+				}
+
+				AnalyzerSettings.Similarity fieldSimilarityOverride = queryWithFilters.getFieldSimilarityOverride(name);
+				if (fieldSimilarityOverride != null) {
+					similarity = fieldSimilarityOverride;
+				}
+
+				if (AnalyzerSettings.Similarity.TFIDF.equals(similarity)) {
+					return new ClassicSimilarity();
+				}
+				else if (AnalyzerSettings.Similarity.BM25.equals(similarity)) {
+					return new BM25Similarity();
+				}
+				else if (AnalyzerSettings.Similarity.CONSTANT.equals(similarity)) {
+					return new ConstantSimilarity();
+				}
+				else if (AnalyzerSettings.Similarity.TF.equals(similarity)) {
+					return new TFSimilarity();
+				}
+				else {
+					throw new RuntimeException("Unknown similarity type <" + similarity + ">");
+				}
+			}
+		};
+	}
+
+	private void searchWithFacets(FacetRequest facetRequest, Query q, IndexSearcher indexSearcher, TopDocsCollector<?> collector,
+			SegmentResponse.Builder segmentReponseBuilder) throws Exception {
+		FacetsCollector facetsCollector = new FacetsCollector();
+		indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
+
+		for (CountRequest countRequest : facetRequest.getCountRequestList()) {
+
+			String label = countRequest.getFacetField().getLabel();
+			String indexFieldName = facetsConfig.getDimConfig(label).indexFieldName;
+			if (indexFieldName.equals(FacetsConfig.DEFAULT_INDEX_FIELD_NAME)) {
+				throw new Exception(label + " is not defined as a facetable field");
+			}
+
+			if (countRequest.hasSegmentFacets()) {
+				if (indexConfig.getNumberOfSegments() == 1) {
+					log.info("Segment facets is ignored with segments of 1 for facet <" + label + "> on index <" + indexName + ">");
+				}
+				if (countRequest.getSegmentFacets() < countRequest.getMaxFacets()) {
+					throw new IllegalArgumentException("Segment facets must be greater than or equal to max facets");
+				}
+			}
+
+			int numOfFacets;
+			if (indexConfig.getNumberOfSegments() > 1) {
+				if (countRequest.getSegmentFacets() != 0) {
+					numOfFacets = countRequest.getSegmentFacets();
+				}
+				else {
+					numOfFacets = countRequest.getMaxFacets() * 8;
+				}
+
+			}
+			else {
+				numOfFacets = countRequest.getMaxFacets();
+			}
+
+			FacetResult facetResult = null;
+
+			try {
+
+				SortedSetDocValuesReaderState state = facetStateCache.getFacetState(directoryReader, indexFieldName);
+
+				Facets facets = new LumongoSortedSetDocValuesFacetCounts(state, facetsCollector);
+
+				if (countRequest.getSegmentFacets() == 0) {
+					numOfFacets = state.getSize();
+				}
+
+				facetResult = facets.getTopChildren(numOfFacets, label);
+			}
+			catch (UncheckedExecutionException e) {
+				Throwable cause = e.getCause();
+				if (cause.getMessage().contains(" was not indexed with SortedSetDocValues")) {
+					//this is when no data has been indexing into a facet
+				}
+				else {
+					throw e;
+				}
+			}
+			handleFacetResult(segmentReponseBuilder, facetResult, countRequest);
+		}
+	}
+
+	private TopDocsCollector<?> getSortingCollector(FieldDoc after, SortRequest sortRequest, int hasMoreAmount, List<SortField> sortFields) throws Exception {
+		TopDocsCollector<?> collector;
+		for (FieldSort fs : sortRequest.getFieldSortList()) {
+			boolean reverse = Direction.DESCENDING.equals(fs.getDirection());
+
+			String sortField = fs.getSortField();
+			FieldConfig.FieldType sortFieldType = indexConfig.getFieldTypeForSortField(sortField);
+
+			if (IndexConfigUtil.isNumericOrDateFieldType(sortFieldType)) {
+				SortField.Type type;
+				if (IndexConfigUtil.isNumericIntFieldType(sortFieldType)) {
+					type = SortField.Type.INT;
+				}
+				else if (IndexConfigUtil.isNumericLongFieldType(sortFieldType)) {
+					type = SortField.Type.LONG;
+				}
+				else if (IndexConfigUtil.isNumericFloatFieldType(sortFieldType)) {
+					type = SortField.Type.FLOAT;
+				}
+				else if (IndexConfigUtil.isNumericDoubleFieldType(sortFieldType)) {
+					type = SortField.Type.DOUBLE;
+				}
+				else if (IndexConfigUtil.isDateFieldType(sortFieldType)) {
+					type = SortField.Type.LONG;
+				}
+				else {
+					throw new Exception("Invalid numeric sort type <" + sortFieldType + "> for sort field <" + sortField + ">");
+				}
+				sortFields.add(new SortedNumericSortField(sortField, type, reverse));
+			}
+			else {
+				sortFields.add(new SortedSetSortField(sortField, reverse));
+			}
+
+		}
+		Sort sort = new Sort();
+		sort.setSort(sortFields.toArray(new SortField[sortFields.size()]));
+
+		collector = TopFieldCollector.create(sort, hasMoreAmount, after, true, true, true);
+		return collector;
 	}
 
 	private void openReaderIfChanges() throws IOException {
@@ -526,42 +546,7 @@ public class LumongoSegment {
 					}
 
 					if (!highlighterList.isEmpty()) {
-						org.bson.Document doc = ResultHelper.getDocumentFromResultDocument(rdBuilder);
-						if (doc != null) {
-							for (LumongoHighlighter highlighter : highlighterList) {
-								Highlight highlight = highlighter.getHighlight();
-								String storedFieldName = indexConfig.getStoredFieldName(highlight.getField());
-
-								if (storedFieldName != null) {
-									HighlightResult.Builder highLightResult = HighlightResult.newBuilder();
-									highLightResult.setField(storedFieldName);
-
-									Object storeFieldValues = ResultHelper.getValueFromMongoDocument(doc, storedFieldName);
-
-									LumongoUtil.handleLists(storeFieldValues, (value) -> {
-										String content = value.toString();
-										TokenStream tokenStream = perFieldAnalyzer.tokenStream(highlight.getField(), content);
-
-										try {
-											TextFragment[] bestTextFragments = highlighter
-													.getBestTextFragments(tokenStream, content, false, highlight.getNumberOfFragments());
-											for (TextFragment bestTextFragment : bestTextFragments) {
-												if (bestTextFragment != null && bestTextFragment.getScore() > 0) {
-													highLightResult.addFragments(bestTextFragment.toString());
-												}
-											}
-										}
-										catch (Exception e) {
-											throw new RuntimeException(e);
-										}
-
-									});
-
-									srBuilder.addHighlihtResult(highLightResult);
-								}
-
-							}
-						}
+						handleHighlight(highlighterList, srBuilder, rdBuilder);
 					}
 
 				}
@@ -602,51 +587,94 @@ public class LumongoSegment {
 		srBuilder.setResultIndex(i);
 
 		if (sorting) {
-			FieldDoc result = (FieldDoc) results[i];
-
-			SortValues.Builder sortValues = SortValues.newBuilder();
-
-			int c = 0;
-			for (Object o : result.fields) {
-				if (o == null) {
-					sortValues.addSortValue(SortValue.newBuilder().setExists(false));
-					continue;
-				}
-
-				FieldSort fieldSort = sortRequest.getFieldSort(c);
-				String sortField = fieldSort.getSortField();
-
-				FieldConfig.FieldType fieldTypeForSortField = indexConfig.getFieldTypeForSortField(sortField);
-
-				SortValue.Builder sortValueBuilder = SortValue.newBuilder().setExists(true);
-				if (IndexConfigUtil.isNumericOrDateFieldType(fieldTypeForSortField)) {
-					if (IndexConfigUtil.isNumericIntFieldType(fieldTypeForSortField)) {
-						sortValueBuilder.setIntegerValue((Integer) o);
-					}
-					else if (IndexConfigUtil.isNumericLongFieldType(fieldTypeForSortField)) {
-						sortValueBuilder.setLongValue((Long) o);
-					}
-					else if (IndexConfigUtil.isNumericFloatFieldType(fieldTypeForSortField)) {
-						sortValueBuilder.setFloatValue((Float) o);
-					}
-					else if (IndexConfigUtil.isNumericDoubleFieldType(fieldTypeForSortField)) {
-						sortValueBuilder.setDoubleValue((Double) o);
-					}
-					else if (IndexConfigUtil.isDateFieldType(fieldTypeForSortField)) {
-						sortValueBuilder.setDateValue((Long) o);
-					}
-				}
-				else {
-					BytesRef b = (BytesRef) o;
-					sortValueBuilder.setStringValue(b.utf8ToString());
-				}
-				sortValues.addSortValue(sortValueBuilder);
-
-				c++;
-			}
-			srBuilder.setSortValues(sortValues);
+			handleSortValues(sortRequest, results[i], srBuilder);
 		}
 		return srBuilder;
+	}
+
+	private void handleSortValues(SortRequest sortRequest, ScoreDoc scoreDoc, ScoredResult.Builder srBuilder) {
+		FieldDoc result = (FieldDoc) scoreDoc;
+
+		SortValues.Builder sortValues = SortValues.newBuilder();
+
+		int c = 0;
+		for (Object o : result.fields) {
+			if (o == null) {
+				sortValues.addSortValue(SortValue.newBuilder().setExists(false));
+				continue;
+			}
+
+			FieldSort fieldSort = sortRequest.getFieldSort(c);
+			String sortField = fieldSort.getSortField();
+
+			FieldConfig.FieldType fieldTypeForSortField = indexConfig.getFieldTypeForSortField(sortField);
+
+			SortValue.Builder sortValueBuilder = SortValue.newBuilder().setExists(true);
+			if (IndexConfigUtil.isNumericOrDateFieldType(fieldTypeForSortField)) {
+				if (IndexConfigUtil.isNumericIntFieldType(fieldTypeForSortField)) {
+					sortValueBuilder.setIntegerValue((Integer) o);
+				}
+				else if (IndexConfigUtil.isNumericLongFieldType(fieldTypeForSortField)) {
+					sortValueBuilder.setLongValue((Long) o);
+				}
+				else if (IndexConfigUtil.isNumericFloatFieldType(fieldTypeForSortField)) {
+					sortValueBuilder.setFloatValue((Float) o);
+				}
+				else if (IndexConfigUtil.isNumericDoubleFieldType(fieldTypeForSortField)) {
+					sortValueBuilder.setDoubleValue((Double) o);
+				}
+				else if (IndexConfigUtil.isDateFieldType(fieldTypeForSortField)) {
+					sortValueBuilder.setDateValue((Long) o);
+				}
+			}
+			else {
+				BytesRef b = (BytesRef) o;
+				sortValueBuilder.setStringValue(b.utf8ToString());
+			}
+			sortValues.addSortValue(sortValueBuilder);
+
+			c++;
+		}
+		srBuilder.setSortValues(sortValues);
+	}
+
+	private void handleHighlight(List<LumongoHighlighter> highlighterList, ScoredResult.Builder srBuilder, ResultDocument.Builder rdBuilder) {
+		org.bson.Document doc = ResultHelper.getDocumentFromResultDocument(rdBuilder);
+		if (doc != null) {
+			for (LumongoHighlighter highlighter : highlighterList) {
+				Highlight highlight = highlighter.getHighlight();
+				String storedFieldName = indexConfig.getStoredFieldName(highlight.getField());
+
+				if (storedFieldName != null) {
+					HighlightResult.Builder highLightResult = HighlightResult.newBuilder();
+					highLightResult.setField(storedFieldName);
+
+					Object storeFieldValues = ResultHelper.getValueFromMongoDocument(doc, storedFieldName);
+
+					LumongoUtil.handleLists(storeFieldValues, (value) -> {
+						String content = value.toString();
+						TokenStream tokenStream = perFieldAnalyzer.tokenStream(highlight.getField(), content);
+
+						try {
+							TextFragment[] bestTextFragments = highlighter
+									.getBestTextFragments(tokenStream, content, false, highlight.getNumberOfFragments());
+							for (TextFragment bestTextFragment : bestTextFragments) {
+								if (bestTextFragment != null && bestTextFragment.getScore() > 0) {
+									highLightResult.addFragments(bestTextFragment.toString());
+								}
+							}
+						}
+						catch (Exception e) {
+							throw new RuntimeException(e);
+						}
+
+					});
+
+					srBuilder.addHighlihtResult(highLightResult);
+				}
+
+			}
+		}
 	}
 
 	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
