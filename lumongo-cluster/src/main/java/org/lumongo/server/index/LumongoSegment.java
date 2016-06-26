@@ -246,11 +246,10 @@ public class LumongoSegment {
 
 			TopDocsCollector<?> collector;
 
-			List<SortField> sortFields = new ArrayList<>();
 			boolean sorting = (sortRequest != null) && !sortRequest.getFieldSortList().isEmpty();
 			if (sorting) {
 
-				collector = getSortingCollector(after, sortRequest, hasMoreAmount, sortFields);
+				collector = getSortingCollector(sortRequest, hasMoreAmount, after);
 			}
 			else {
 				collector = TopScoreDocCollector.create(hasMoreAmount, after);
@@ -419,11 +418,24 @@ public class LumongoSegment {
 					throw e;
 				}
 			}
-			handleFacetResult(segmentReponseBuilder, facetResult, countRequest);
+			FacetGroup.Builder fg = FacetGroup.newBuilder();
+			fg.setCountRequest(countRequest);
+
+			if (facetResult != null) {
+
+				for (LabelAndValue subResult : facetResult.labelValues) {
+					FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
+					facetCountBuilder.setCount(subResult.value.longValue());
+					facetCountBuilder.setFacet(subResult.label);
+					fg.addFacetCount(facetCountBuilder);
+				}
+			}
+			segmentReponseBuilder.addFacetGroup(fg);
 		}
 	}
 
-	private TopDocsCollector<?> getSortingCollector(FieldDoc after, SortRequest sortRequest, int hasMoreAmount, List<SortField> sortFields) throws Exception {
+	private TopDocsCollector<?> getSortingCollector(SortRequest sortRequest, int hasMoreAmount, FieldDoc after) throws Exception {
+		List<SortField> sortFields = new ArrayList<>();
 		TopDocsCollector<?> collector;
 		for (FieldSort fs : sortRequest.getFieldSortList()) {
 			boolean reverse = Direction.DESCENDING.equals(fs.getDirection());
@@ -481,22 +493,6 @@ public class LumongoSegment {
 		}
 	}
 
-	public void handleFacetResult(SegmentResponse.Builder builder, FacetResult fc, CountRequest countRequest) {
-		FacetGroup.Builder fg = FacetGroup.newBuilder();
-		fg.setCountRequest(countRequest);
-
-		if (fc != null) {
-
-			for (LabelAndValue subResult : fc.labelValues) {
-				FacetCount.Builder facetCountBuilder = FacetCount.newBuilder();
-				facetCountBuilder.setCount(subResult.value.longValue());
-				facetCountBuilder.setFacet(subResult.label);
-				fg.addFacetCount(facetCountBuilder);
-			}
-		}
-		builder.addFacetGroup(fg);
-	}
-
 	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i,
 			FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<LumongoHighlighter> highlighterList) throws Exception {
 		int docId = results[i].doc;
@@ -520,59 +516,7 @@ public class LumongoSegment {
 		String uniqueId = d.get(LumongoConstants.ID_FIELD);
 
 		if (!FetchType.NONE.equals(resultFetchType)) {
-			if (indexConfig.getIndexSettings().getStoreDocumentInIndex()) {
-				ResultDocument.Builder rdBuilder = ResultDocument.newBuilder();
-				rdBuilder.setUniqueId(uniqueId);
-				rdBuilder.setIndexName(indexName);
-
-				if (FetchType.FULL.equals(resultFetchType) || FetchType.META.equals(resultFetchType)) {
-					BytesRef metaRef = d.getBinaryValue(LumongoConstants.STORED_META_FIELD);
-					org.bson.Document metaMongoDoc = new org.bson.Document();
-					metaMongoDoc.putAll(LumongoUtil.byteArrayToMongoDocument(metaRef.bytes));
-
-					for (String key : metaMongoDoc.keySet()) {
-						rdBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue(((String) metaMongoDoc.get(key))));
-					}
-				}
-
-				ResultDocument resultDocument = null;
-
-				if (FetchType.FULL.equals(resultFetchType)) {
-					BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
-					rdBuilder.setDocument(ByteString.copyFrom(docRef.bytes));
-
-					if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
-						resultDocument = filterDocument(rdBuilder.build(), fieldsToReturn, fieldsToMask);
-					}
-
-					if (!highlighterList.isEmpty()) {
-						handleHighlight(highlighterList, srBuilder, rdBuilder);
-					}
-
-				}
-				else {
-					if (!highlighterList.isEmpty()) {
-						throw new Exception("Highlights require a full fetch of the document");
-
-					}
-				}
-
-				if (resultDocument == null) {
-					resultDocument = rdBuilder.build();
-				}
-
-				srBuilder.setResultDocument(resultDocument);
-			}
-			else if (indexConfig.getIndexSettings().getStoreDocumentInMongo()) {
-
-				ResultDocument rd = documentStorage.getSourceDocument(uniqueId, resultFetchType);
-
-				if (rd != null) {
-					rd = filterDocument(rd, fieldsToReturn, fieldsToMask);
-					srBuilder.setResultDocument(rd);
-				}
-
-			}
+			handleStoredDoc(resultFetchType, fieldsToReturn, fieldsToMask, highlighterList, d, srBuilder, uniqueId);
 		}
 
 		srBuilder.setScore(results[i].score);
@@ -590,6 +534,56 @@ public class LumongoSegment {
 			handleSortValues(sortRequest, results[i], srBuilder);
 		}
 		return srBuilder;
+	}
+
+	private void handleStoredDoc(FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<LumongoHighlighter> highlighterList,
+			Document d, ScoredResult.Builder srBuilder, String uniqueId) throws Exception {
+
+		ResultDocument.Builder rdBuilder = ResultDocument.newBuilder();
+		rdBuilder.setUniqueId(uniqueId);
+		rdBuilder.setIndexName(indexName);
+
+		ResultDocument resultDocument = null;
+
+		if (!highlighterList.isEmpty() && !FetchType.FULL.equals(resultFetchType)) {
+			throw new Exception("Highlights require a full fetch of the document");
+		}
+
+		if (indexConfig.getIndexSettings().getStoreDocumentInIndex()) {
+
+			if (FetchType.FULL.equals(resultFetchType) || FetchType.META.equals(resultFetchType)) {
+				BytesRef metaRef = d.getBinaryValue(LumongoConstants.STORED_META_FIELD);
+				org.bson.Document metaMongoDoc = new org.bson.Document();
+				metaMongoDoc.putAll(LumongoUtil.byteArrayToMongoDocument(metaRef.bytes));
+
+				for (String key : metaMongoDoc.keySet()) {
+					rdBuilder.addMetadata(Metadata.newBuilder().setKey(key).setValue(((String) metaMongoDoc.get(key))));
+				}
+			}
+
+			if (FetchType.FULL.equals(resultFetchType)) {
+				BytesRef docRef = d.getBinaryValue(LumongoConstants.STORED_DOC_FIELD);
+				if (docRef != null) {
+					rdBuilder.setDocument(ByteString.copyFrom(docRef.bytes));
+				}
+			}
+
+		}
+		else if (indexConfig.getIndexSettings().getStoreDocumentInMongo()) {
+			resultDocument = documentStorage.getSourceDocument(uniqueId, resultFetchType);
+		}
+
+		if (resultDocument == null) {
+			resultDocument = rdBuilder.build();
+		}
+
+		if (!highlighterList.isEmpty()) {
+			handleHighlight(highlighterList, srBuilder, resultDocument);
+		}
+
+		resultDocument = filterDocument(resultDocument, fieldsToReturn, fieldsToMask);
+
+		srBuilder.setResultDocument(resultDocument);
 	}
 
 	private void handleSortValues(SortRequest sortRequest, ScoreDoc scoreDoc, ScoredResult.Builder srBuilder) {
@@ -638,8 +632,8 @@ public class LumongoSegment {
 		srBuilder.setSortValues(sortValues);
 	}
 
-	private void handleHighlight(List<LumongoHighlighter> highlighterList, ScoredResult.Builder srBuilder, ResultDocument.Builder rdBuilder) {
-		org.bson.Document doc = ResultHelper.getDocumentFromResultDocument(rdBuilder);
+	private void handleHighlight(List<LumongoHighlighter> highlighterList, ScoredResult.Builder srBuilder, ResultDocumentOrBuilder resultDocument) {
+		org.bson.Document doc = ResultHelper.getDocumentFromResultDocument(resultDocument);
 		if (doc != null) {
 			for (LumongoHighlighter highlighter : highlighterList) {
 				Highlight highlight = highlighter.getHighlight();
@@ -656,8 +650,7 @@ public class LumongoSegment {
 						TokenStream tokenStream = perFieldAnalyzer.tokenStream(highlight.getField(), content);
 
 						try {
-							TextFragment[] bestTextFragments = highlighter
-									.getBestTextFragments(tokenStream, content, false, highlight.getNumberOfFragments());
+							TextFragment[] bestTextFragments = highlighter.getBestTextFragments(tokenStream, content, false, highlight.getNumberOfFragments());
 							for (TextFragment bestTextFragment : bestTextFragments) {
 								if (bestTextFragment != null && bestTextFragment.getScore() > 0) {
 									highLightResult.addFragments(bestTextFragment.toString());
@@ -705,42 +698,42 @@ public class LumongoSegment {
 
 		}
 
-		return filterDocument(rd, fieldsToReturn, fieldsToMask);
+		if (rd != null) {
+			return filterDocument(rd, fieldsToReturn, fieldsToMask);
+		}
+		return null;
 
 	}
 
 	private ResultDocument filterDocument(ResultDocument rd, List<String> fieldsToReturn, List<String> fieldsToMask) {
-		if (rd != null) {
 
-			if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
-				org.bson.Document resultObj = ResultHelper.getDocumentFromResultDocument(rd);
+		if (!fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
+			org.bson.Document resultObj = ResultHelper.getDocumentFromResultDocument(rd);
 
-				ResultDocument.Builder resultDocBuilder = rd.toBuilder();
+			ResultDocument.Builder resultDocBuilder = rd.toBuilder();
 
-				if (!fieldsToReturn.isEmpty()) {
-					for (String key : new ArrayList<>(resultObj.keySet())) {
-						if (!fieldsToReturn.contains(key)) {
-							resultObj.remove(key);
-						}
+			if (!fieldsToReturn.isEmpty()) {
+				for (String key : new ArrayList<>(resultObj.keySet())) {
+					if (!fieldsToReturn.contains(key)) {
+						resultObj.remove(key);
 					}
 				}
-				if (!fieldsToMask.isEmpty()) {
-					for (String field : fieldsToMask) {
-						resultObj.remove(field);
-					}
+			}
+			if (!fieldsToMask.isEmpty()) {
+				for (String field : fieldsToMask) {
+					resultObj.remove(field);
 				}
-
-				ByteString document = ByteString.copyFrom(LumongoUtil.mongoDocumentToByteArray(resultObj));
-				resultDocBuilder.setDocument(document);
-
-				return resultDocBuilder.build();
 			}
-			else {
-				return rd;
-			}
+
+			ByteString document = ByteString.copyFrom(LumongoUtil.mongoDocumentToByteArray(resultObj));
+			resultDocBuilder.setDocument(document);
+
+			return resultDocBuilder.build();
+		}
+		else {
+			return rd;
 		}
 
-		return null;
 	}
 
 	private void possibleCommit() throws IOException {
@@ -793,6 +786,33 @@ public class LumongoSegment {
 
 		Document luceneDocument = new Document();
 
+		addStoredFieldsForDocument(mongoDocument, luceneDocument);
+
+		luceneDocument.add(new StringField(LumongoConstants.ID_FIELD, uniqueId, Store.YES));
+
+		luceneDocument.add(new LegacyLongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
+
+		if (indexConfig.getIndexSettings().getStoreDocumentInIndex()) {
+			luceneDocument.add(new StoredField(LumongoConstants.STORED_DOC_FIELD, new BytesRef(LumongoUtil.mongoDocumentToByteArray(mongoDocument))));
+
+			org.bson.Document metadataMongoDoc = new org.bson.Document();
+
+			for (Metadata metadata : metadataList) {
+				metadataMongoDoc.put(metadata.getKey(), metadata.getValue());
+			}
+
+			luceneDocument.add(new StoredField(LumongoConstants.STORED_META_FIELD, new BytesRef(LumongoUtil.mongoDocumentToByteArray(metadataMongoDoc))));
+
+		}
+
+		Term term = new Term(LumongoConstants.ID_FIELD, uniqueId);
+
+		indexWriter.updateDocument(term, luceneDocument);
+
+		possibleCommit();
+	}
+
+	private void addStoredFieldsForDocument(org.bson.Document mongoDocument, Document luceneDocument) throws Exception {
 		for (String storedFieldName : indexConfig.getIndexedStoredFieldNames()) {
 
 			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
@@ -842,29 +862,6 @@ public class LumongoSegment {
 			}
 
 		}
-
-		luceneDocument.add(new StringField(LumongoConstants.ID_FIELD, uniqueId, Store.YES));
-
-		luceneDocument.add(new LegacyLongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
-
-		if (indexConfig.getIndexSettings().getStoreDocumentInIndex()) {
-			luceneDocument.add(new StoredField(LumongoConstants.STORED_DOC_FIELD, new BytesRef(LumongoUtil.mongoDocumentToByteArray(mongoDocument))));
-
-			org.bson.Document metadataMongoDoc = new org.bson.Document();
-
-			for (Metadata metadata : metadataList) {
-				metadataMongoDoc.put(metadata.getKey(), metadata.getValue());
-			}
-
-			luceneDocument.add(new StoredField(LumongoConstants.STORED_META_FIELD, new BytesRef(LumongoUtil.mongoDocumentToByteArray(metadataMongoDoc))));
-
-		}
-
-		Term term = new Term(LumongoConstants.ID_FIELD, uniqueId);
-
-		indexWriter.updateDocument(term, luceneDocument);
-
-		possibleCommit();
 	}
 
 	private void handleSortForStoredField(Document d, String storedFieldName, FieldConfig fc, Object o) {

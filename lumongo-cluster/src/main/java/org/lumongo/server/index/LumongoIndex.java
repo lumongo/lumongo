@@ -102,7 +102,6 @@ public class LumongoIndex implements IndexSegmentInterface {
 	private final String indexName;
 	private final HazelcastManager hazelcastManager;
 	private final DocumentStorage documentStorage;
-	private MongoClient storageMongoClient;
 	private Map<Member, Set<Integer>> memberToSegmentMap;
 	private Map<Integer, Member> segmentToMemberMap;
 	private Timer commitTimer;
@@ -127,7 +126,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
 
-		this.storageMongoClient = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
+		MongoClient storageMongoClient = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
 
 		String rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + STORAGE_DB_SUFFIX;
 
