@@ -55,7 +55,7 @@ public class FetchResult extends Result {
 	public Map<String, String> getMeta() {
 		if (fetchResponse.hasResultDocument()) {
 			ResultDocument rd = fetchResponse.getResultDocument();
-			HashMap<String, String> metadata = new HashMap<String, String>();
+			HashMap<String, String> metadata = new HashMap<>();
 			for (Metadata md : rd.getMetadataList()) {
 				metadata.put(md.getKey(), md.getValue());
 			}
@@ -95,7 +95,7 @@ public class FetchResult extends Result {
 	}
 	
 	public boolean hasResultDocument() {
-		return fetchResponse.hasResultDocument();
+		return fetchResponse.hasResultDocument() && fetchResponse.getResultDocument().hasDocument();
 	}
 	
 	public Long getDocumentTimestamp() {
