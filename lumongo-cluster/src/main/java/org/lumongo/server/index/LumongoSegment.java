@@ -518,7 +518,11 @@ public class LumongoSegment {
 		String uniqueId = d.get(LumongoConstants.ID_FIELD);
 
 		if (!highlighterList.isEmpty() && !FetchType.FULL.equals(resultFetchType)) {
-			throw new Exception("Highlights require a full fetch of the document");
+			throw new Exception("Highlighting requires a full fetch of the document");
+		}
+
+		if (!analysisRequestList.isEmpty() && !FetchType.FULL.equals(resultFetchType)) {
+			throw new Exception("Analysis requires a full fetch of the document");
 		}
 
 		if (!FetchType.NONE.equals(resultFetchType)) {
