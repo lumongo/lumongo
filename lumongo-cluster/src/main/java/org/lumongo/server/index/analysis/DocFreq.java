@@ -20,7 +20,7 @@ public class DocFreq {
 	private final TFIDFSimilarity similarity;
 	private final int numDocs;
 
-	public DocFreq(String indexReader, IndexReader field) {
+	public DocFreq(IndexReader indexReader, String field) {
 		this.indexReader = indexReader;
 		this.field = field;
 		this.docFreqMap = new HashMap<>();
