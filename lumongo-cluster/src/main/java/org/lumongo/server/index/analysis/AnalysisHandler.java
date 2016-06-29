@@ -43,7 +43,7 @@ public class AnalysisHandler {
 		this.enabled = docLevelEnabled || summaryLevelEnabled;
 
 		if (analysisRequest.hasMaxSegmentFreqPercent() || analysisRequest.hasMinSegmentFreqPercent() || TermSort.TFIDF.equals(analysisRequest.getTermSort())) {
-			this.docFreq = new DocFreq(analysisRequest.getField(), indexReader);
+			this.docFreq = new DocFreq(indexReader, analysisRequest.getField());
 			if (analysisRequest.getShowSummaryTerms()) {
 				this.summaryTermFreq = new TermFreq(docFreq);
 			}
