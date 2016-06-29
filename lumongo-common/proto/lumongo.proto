@@ -89,6 +89,7 @@ message Term {
 	required string value = 1;
 	optional uint64 docFreq = 2;
 	optional uint64 termFreq = 3;
+	optional double score = 4;
 }
 
 message GetFieldNamesRequest {
@@ -339,7 +340,9 @@ message HighlightResult {
 
 message AnalysisResult {
 	required string field = 1;
-	repeated string tokens = 2;
+	repeated string token = 2;
+	repeated Term termFreq = 3;
+	repeated Term topTerm = 4;
 }
 
 message SortValues {
@@ -422,9 +425,8 @@ message InternalQueryResponse {
 message IndexSegmentResponse {
 	required string indexName = 1;
 	repeated SegmentResponse segmentReponse = 2;
+	repeated AnalysisResult analysisResult = 3;
 }
-
-
 
 message QueryRequest {
 	repeated string index = 1;

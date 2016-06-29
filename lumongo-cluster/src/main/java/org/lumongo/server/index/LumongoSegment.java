@@ -277,6 +277,12 @@ public class LumongoSegment {
 
 			List<LumongoHighlighter> highlighterList = getHighlighterList(q, highlightList);
 
+
+
+			if (!analysisRequestList.isEmpty()) {
+
+			}
+
 			for (int i = 0; i < numResults; i++) {
 				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i, resultFetchType, fieldsToReturn, fieldsToMask,
 						highlighterList, analysisRequestList);
@@ -697,12 +703,14 @@ public class LumongoSegment {
 
 				Object storeFieldValues = ResultHelper.getValueFromMongoDocument(doc, storedFieldName);
 
+				List<String> tokens = new ArrayList<>();
 				LumongoUtil.handleLists(storeFieldValues, (value) -> {
 					String content = value.toString();
 					try (TokenStream tokenStream = perFieldAnalyzer.tokenStream(indexField, content)) {
 						tokenStream.reset();
 						while (tokenStream.incrementToken()) {
-							analysisResult.addTokens(tokenStream.getAttribute(CharTermAttribute.class).toString());
+							String token = tokenStream.getAttribute(CharTermAttribute.class).toString();
+							tokens.add(token);
 						}
 					}
 					catch (Exception e) {
@@ -711,8 +719,25 @@ public class LumongoSegment {
 
 				});
 
+
+				boolean calcTermFreq = analysisRequest.getShowDocTermFreq() || analysisRequest.getShowDocTopTerms() || analysisRequest.getShowSummaryTermFreq()
+						|| analysisRequest.getShowSummaryTopTerms();
+
+				for (String token : tokens) {
+					analysisResult.addToken(token);
+
+
+					if (calcTermFreq) {
+
+					}
+
+				}
+
+
 				srBuilder.addAnalysisResult(analysisResult);
 			}
+
+
 
 		}
 	}
