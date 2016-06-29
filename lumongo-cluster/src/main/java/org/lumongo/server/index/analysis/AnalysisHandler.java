@@ -28,6 +28,11 @@ public class AnalysisHandler {
 	private final boolean docLevelEnabled;
 	private final boolean summaryLevelEnabled;
 	private final boolean enabled;
+	private final int minWordLength;
+	private final int maxWordLength;
+
+	private Integer minSegmentDocFreqCount;
+	private Integer maxSegmentDocFreqCount;
 
 	private DocFreq docFreq;
 	private TermFreq summaryTermFreq;
@@ -42,12 +47,42 @@ public class AnalysisHandler {
 		this.summaryLevelEnabled = analysisRequest.getShowSummaryTerms();
 		this.enabled = docLevelEnabled || summaryLevelEnabled;
 
-		if (analysisRequest.hasMaxSegmentFreqPercent() || analysisRequest.hasMinSegmentFreqPercent() || TermSort.TFIDF.equals(analysisRequest.getTermSort())) {
+		this.minWordLength = analysisRequest.getMinWordLength();
+		this.maxWordLength = analysisRequest.getMaxWordLength();
+
+		boolean needDocFreq = (analysisRequest.hasMinSegmentFreqPercent() || analysisRequest.hasMinSegmentFreqPercent() || analysisRequest
+				.hasMinSegmentFreqCount() || analysisRequest.hasMaxSegmentFreqCount() || TermSort.TFIDF.equals(analysisRequest.getTermSort()));
+
+		if (needDocFreq) {
 			this.docFreq = new DocFreq(indexReader, analysisRequest.getField());
-			if (analysisRequest.getShowSummaryTerms()) {
-				this.summaryTermFreq = new TermFreq(docFreq);
+			if (analysisRequest.hasMinSegmentFreqPercent()) {
+				this.minSegmentDocFreqCount = docFreq.getNumDocsForPercent(analysisRequest.getMinSegmentFreqPercent());
+			}
+			if (analysisRequest.hasMaxSegmentFreqPercent()) {
+				this.maxSegmentDocFreqCount = docFreq.getNumDocsForPercent(analysisRequest.getMaxSegmentFreqPercent());
 			}
 
+			if (analysisRequest.hasMinSegmentFreqCount()) {
+				this.minSegmentDocFreqCount = analysisRequest.getMinSegmentFreqCount();
+			}
+
+			if (analysisRequest.hasMaxSegmentFreqCount()) {
+				this.maxSegmentDocFreqCount = analysisRequest.getMaxSegmentFreqCount();
+			}
+
+		}
+
+		if (summaryLevelEnabled) {
+			this.summaryTermFreq = new TermFreq(docFreq);
+		}
+	}
+
+	public static void handleDocument(org.bson.Document doc, List<AnalysisHandler> analysisHandlerList, Lumongo.ScoredResult.Builder srBuilder) {
+		for (AnalysisHandler analysisHandler : analysisHandlerList) {
+			Lumongo.AnalysisResult analysisResult = analysisHandler.handleDocument(doc);
+			if (analysisResult != null) {
+				srBuilder.addAnalysisResult(analysisResult);
+			}
 		}
 	}
 
@@ -59,7 +94,11 @@ public class AnalysisHandler {
 			Lumongo.AnalysisResult.Builder analysisResult = Lumongo.AnalysisResult.newBuilder();
 			analysisResult.setField(storedFieldName);
 
-			TermFreq docTermFreq = new TermFreq(docFreq);
+			TermFreq docTermFreq = null;
+			if (docLevelEnabled) {
+				docTermFreq = new TermFreq(docFreq);
+			}
+			final TermFreq docTermFreqFinal = docTermFreq;
 
 			LumongoUtil.handleLists(storeFieldValues, (value) -> {
 				String content = value.toString();
@@ -67,14 +106,42 @@ public class AnalysisHandler {
 					tokenStream.reset();
 					while (tokenStream.incrementToken()) {
 						String token = tokenStream.getAttribute(CharTermAttribute.class).toString();
+
+						if (analysisRequest.getShowDocTokens()) {
+							analysisResult.addToken(token);
+						}
+
+						if (minWordLength > 0) {
+							if (token.length() < minWordLength) {
+								continue;
+							}
+						}
+						if (maxWordLength > 0) {
+							if (token.length() > maxWordLength) {
+								continue;
+							}
+						}
+
+						if (maxSegmentDocFreqCount != null || minSegmentDocFreqCount != null) {
+							int termDocFreq = this.docFreq.getDocFreq(token);
+
+							if (minSegmentDocFreqCount != null) {
+								if (termDocFreq < minSegmentDocFreqCount) {
+									continue;
+								}
+							}
+							if (maxSegmentDocFreqCount != null) {
+								if (termDocFreq > maxSegmentDocFreqCount) {
+									continue;
+								}
+							}
+						}
+
 						if (docLevelEnabled) {
-							docTermFreq.addTerm(token);
+							docTermFreqFinal.addTerm(token);
 						}
 						if (summaryLevelEnabled) {
 							summaryTermFreq.addTerm(token);
-						}
-						if (analysisRequest.getShowDocTokens()) {
-							analysisResult.addToken(token);
 						}
 
 					}
@@ -88,13 +155,9 @@ public class AnalysisHandler {
 			if (docLevelEnabled) {
 				if (analysisRequest.getShowDocTokens()) {
 
-					if (analysisRequest.getTopN() != 0) {
-						List<Lumongo.Term.Builder> termBuilderList = docTermFreq.topN(analysisRequest.getTopN());
-						termBuilderList.forEach(analysisResult::addTerms);
-					}
-					else {
-						//TODO get all terms sorted
-					}
+					List<Lumongo.Term.Builder> termBuilderList = docTermFreq.topN(analysisRequest.getTopN(), analysisRequest.getTermSort());
+					termBuilderList.forEach(analysisResult::addTerms);
+
 				}
 				return analysisResult.build();
 			}

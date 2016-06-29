@@ -43,4 +43,9 @@ public class DocFreq {
 		return similarity.tf(termFreq) * similarity.idf(docFreq, numDocs);
 	}
 
+
+	public int getNumDocsForPercent(float percent) {
+		return Math.round(numDocs * percent);
+	}
+
 }

@@ -12,6 +12,7 @@ import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -422,7 +423,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 		return new IndexWriter(nrtCachingDirectory, config);
 	}
 
-	public Analyzer getPerFieldAnalyzer() throws Exception {
+	public PerFieldAnalyzerWrapper getPerFieldAnalyzer() throws Exception {
 		return lumongoAnalyzerFactory.getPerFieldAnalyzer();
 	}
 

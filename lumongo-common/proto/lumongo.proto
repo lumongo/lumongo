@@ -470,6 +470,8 @@ message AnalysisRequest {
 	optional uint32 maxWordLength = 8 [default = 0];
 	optional float minSegmentFreqPercent = 9;
 	optional float maxSegmentFreqPercent = 10;
+	optional uint32 minSegmentFreqCount = 11;
+	optional uint32 maxSegmentFreqCount = 12;
 }
 
 message FieldSimilarity {

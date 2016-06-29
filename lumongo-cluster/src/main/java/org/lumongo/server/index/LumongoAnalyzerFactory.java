@@ -106,7 +106,7 @@ public class LumongoAnalyzerFactory {
 
 	}
 
-	public Analyzer getPerFieldAnalyzer() throws Exception {
+	public PerFieldAnalyzerWrapper getPerFieldAnalyzer() throws Exception {
 		Map<String, Analyzer> customAnalyzerMap = new HashMap<>();
 		for (IndexAs indexAs : indexConfig.getIndexAsValues()) {
 			String indexFieldName = indexAs.getIndexFieldName();

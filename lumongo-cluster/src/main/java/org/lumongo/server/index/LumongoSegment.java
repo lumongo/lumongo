@@ -3,10 +3,9 @@ package org.lumongo.server.index;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LegacyLongField;
@@ -52,6 +51,7 @@ import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
 import org.lumongo.server.highlighter.LumongoHighlighter;
+import org.lumongo.server.index.analysis.AnalysisHandler;
 import org.lumongo.server.index.field.BooleanFieldIndexer;
 import org.lumongo.server.index.field.DateFieldIndexer;
 import org.lumongo.server.index.field.DoubleFieldIndexer;
@@ -114,7 +114,7 @@ public class LumongoSegment {
 
 	private FacetsConfig facetsConfig;
 	private int segmentQueryCacheMaxAmount;
-	private Analyzer perFieldAnalyzer;
+	private PerFieldAnalyzerWrapper perFieldAnalyzer;
 
 	public LumongoSegment(int segmentNumber, IndexSegmentInterface indexSegmentInterface, IndexConfig indexConfig, FacetsConfig facetsConfig,
 			DocumentStorage documentStorage) throws Exception {
@@ -275,24 +275,20 @@ public class LumongoSegment {
 
 			int numResults = Math.min(results.length, amount);
 
-			List<LumongoHighlighter> highlighterList = getHighlighterList(q, highlightList);
+			List<LumongoHighlighter> highlighterList = getHighlighterList(highlightList, q);
 
-
-
-			if (!analysisRequestList.isEmpty()) {
-
-			}
+			List<AnalysisHandler> analysisHandlerList = getAnalysisHandlerList(analysisRequestList);
 
 			for (int i = 0; i < numResults; i++) {
 				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, i, resultFetchType, fieldsToReturn, fieldsToMask,
-						highlighterList, analysisRequestList);
+						highlighterList, analysisHandlerList);
 
 				segmentReponseBuilder.addScoredResult(srBuilder.build());
 			}
 
 			if (moreAvailable) {
-				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, numResults, resultFetchType, fieldsToReturn,
-						fieldsToMask, highlighterList, analysisRequestList);
+				ScoredResult.Builder srBuilder = handleDocResult(indexSearcher, sortRequest, sorting, results, numResults, FetchType.NONE,
+						Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
 				segmentReponseBuilder.setNext(srBuilder);
 			}
 
@@ -316,7 +312,26 @@ public class LumongoSegment {
 		}
 	}
 
-	private List<LumongoHighlighter> getHighlighterList(Query q, List<HighlightRequest> highlightRequests) {
+	private List<AnalysisHandler> getAnalysisHandlerList(List<AnalysisRequest> analysisRequests) {
+		if (analysisRequests.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		List<AnalysisHandler> analysisHandlerList = new ArrayList<>();
+		for (AnalysisRequest analysisRequest : analysisRequests) {
+			AnalysisHandler analysisHandler = new AnalysisHandler(directoryReader, perFieldAnalyzer, indexConfig, analysisRequest);
+			analysisHandlerList.add(analysisHandler);
+		}
+		return analysisHandlerList;
+
+	}
+
+	private List<LumongoHighlighter> getHighlighterList(List<HighlightRequest> highlightRequests, Query q) {
+
+		if (highlightRequests.isEmpty()) {
+			return Collections.emptyList();
+		}
+
 		List<LumongoHighlighter> highlighterList = new ArrayList<>();
 
 		for (HighlightRequest highlight : highlightRequests) {
@@ -502,7 +517,7 @@ public class LumongoSegment {
 
 	private ScoredResult.Builder handleDocResult(IndexSearcher is, SortRequest sortRequest, boolean sorting, ScoreDoc[] results, int i,
 			FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask, List<LumongoHighlighter> highlighterList,
-			List<AnalysisRequest> analysisRequestList) throws Exception {
+			List<AnalysisHandler> analysisHandlerList) throws Exception {
 		int docId = results[i].doc;
 
 		Set<String> fieldsToFetch = fetchSet;
@@ -527,12 +542,12 @@ public class LumongoSegment {
 			throw new Exception("Highlighting requires a full fetch of the document");
 		}
 
-		if (!analysisRequestList.isEmpty() && !FetchType.FULL.equals(resultFetchType)) {
+		if (!analysisHandlerList.isEmpty() && !FetchType.FULL.equals(resultFetchType)) {
 			throw new Exception("Analysis requires a full fetch of the document");
 		}
 
 		if (!FetchType.NONE.equals(resultFetchType)) {
-			handleStoredDoc(srBuilder, uniqueId, d, resultFetchType, fieldsToReturn, fieldsToMask, highlighterList, analysisRequestList);
+			handleStoredDoc(srBuilder, uniqueId, d, resultFetchType, fieldsToReturn, fieldsToMask, highlighterList, analysisHandlerList);
 		}
 
 		srBuilder.setScore(results[i].score);
@@ -553,7 +568,7 @@ public class LumongoSegment {
 	}
 
 	private void handleStoredDoc(ScoredResult.Builder srBuilder, String uniqueId, Document d, FetchType resultFetchType, List<String> fieldsToReturn,
-			List<String> fieldsToMask, List<LumongoHighlighter> highlighterList, List<AnalysisRequest> analyzeRequestList) throws Exception {
+			List<String> fieldsToMask, List<LumongoHighlighter> highlighterList, List<AnalysisHandler> analysisHandlerList) throws Exception {
 
 		ResultDocument.Builder rdBuilder = ResultDocument.newBuilder();
 		rdBuilder.setUniqueId(uniqueId);
@@ -589,14 +604,14 @@ public class LumongoSegment {
 			resultDocument = rdBuilder.build();
 		}
 
-		if (!highlighterList.isEmpty() || !analyzeRequestList.isEmpty() || !fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
+		if (!highlighterList.isEmpty() || !analysisHandlerList.isEmpty() || !fieldsToMask.isEmpty() || !fieldsToReturn.isEmpty()) {
 			org.bson.Document mongoDoc = ResultHelper.getDocumentFromResultDocument(resultDocument);
 			if (mongoDoc != null) {
 				if (!highlighterList.isEmpty()) {
 					handleHighlight(highlighterList, srBuilder, mongoDoc);
 				}
-				if (!analyzeRequestList.isEmpty()) {
-					handleAnalyze(analyzeRequestList, srBuilder, mongoDoc);
+				if (!analysisHandlerList.isEmpty()) {
+					AnalysisHandler.handleDocument(mongoDoc, analysisHandlerList, srBuilder);
 				}
 
 				resultDocument = filterDocument(resultDocument, fieldsToReturn, fieldsToMask, mongoDoc);
@@ -691,15 +706,7 @@ public class LumongoSegment {
 
 	}
 
-	private void handleAnalyze(List<AnalysisRequest> analysisRequestList, ScoredResult.Builder srBuilder, org.bson.Document doc) {
-		for (AnalysisRequest analysisRequest : analysisRequestList) {
 
-
-
-
-
-		}
-	}
 
 	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
 			throws Exception {

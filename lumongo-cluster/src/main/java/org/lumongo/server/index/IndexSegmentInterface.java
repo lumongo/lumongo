@@ -1,6 +1,7 @@
 package org.lumongo.server.index;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.index.IndexWriter;
 
 /**
@@ -10,5 +11,5 @@ import org.apache.lucene.index.IndexWriter;
 public interface IndexSegmentInterface {
 	IndexWriter getIndexWriter(int segmentNumber) throws Exception;
 
-	Analyzer getPerFieldAnalyzer() throws Exception;
+	PerFieldAnalyzerWrapper getPerFieldAnalyzer() throws Exception;
 }
