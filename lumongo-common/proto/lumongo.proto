@@ -341,8 +341,7 @@ message HighlightResult {
 message AnalysisResult {
 	required string field = 1;
 	repeated string token = 2;
-	repeated Term termFreq = 3;
-	repeated Term topTerm = 4;
+	repeated Term terms = 3;
 }
 
 message SortValues {
@@ -455,18 +454,22 @@ message HighlightRequest {
 }
 
 message AnalysisRequest {
+	enum TermSort {
+		ABC = 1;
+		TFIDF = 2;
+		TF = 3;
+	}
+
 	required string field = 1;
 	optional bool showDocTokens = 2 [default = false];
-	optional bool showDocTermFreq = 3 [default = false];
-	optional bool showDocTopTerms = 4 [default = false];
-	optional bool showSummaryTermFreq = 5 [default = false];
-	optional bool showSummaryTopTerms = 6 [default = false];
-	optional uint32 topN = 7 [default = 10];
-	optional uint32 minWordLength = 8 [default = 0];
-	optional uint32 maxWordLength = 9 [default = 0];
-	optional bool useSegmentIdf = 10 [default = false];
-	optional float minSegmentFreqPercent = 11;
-	optional float maxSegmentFreqPercent = 12;
+	optional bool showDocTerms = 3 [default = false];
+	optional bool showSummaryTerms = 4 [default = false];
+	optional uint32 topN = 5 [default = 10];
+	optional TermSort termSort = 6 [default = TFIDF];
+	optional uint32 minWordLength = 7 [default = 0];
+	optional uint32 maxWordLength = 8 [default = 0];
+	optional float minSegmentFreqPercent = 9 [default = 0.0];
+	optional float maxSegmentFreqPercent = 10 [default = 100.0];
 }
 
 message FieldSimilarity {

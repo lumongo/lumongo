@@ -37,10 +37,6 @@ public class TermFreq {
 		lmTerm.setTermFreq(lmTerm.getTermFreq() + 1);
 	}
 
-	public void makeFinal() {
-
-	}
-
 	public List<Lumongo.Term.Builder> topN(int n) {
 
 		if (terms == null) {
@@ -66,4 +62,6 @@ public class TermFreq {
 		}).greatestOf(terms, n);
 
 	}
+
+
 }
