@@ -1,4 +1,4 @@
-package org.lumongo.server.index;
+package org.lumongo.server.index.analysis;
 
 import com.google.common.collect.Ordering;
 import org.lumongo.cluster.message.Lumongo;

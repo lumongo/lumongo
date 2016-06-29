@@ -468,8 +468,8 @@ message AnalysisRequest {
 	optional TermSort termSort = 6 [default = TFIDF];
 	optional uint32 minWordLength = 7 [default = 0];
 	optional uint32 maxWordLength = 8 [default = 0];
-	optional float minSegmentFreqPercent = 9 [default = 0.0];
-	optional float maxSegmentFreqPercent = 10 [default = 100.0];
+	optional float minSegmentFreqPercent = 9;
+	optional float maxSegmentFreqPercent = 10;
 }
 
 message FieldSimilarity {

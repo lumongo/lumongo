@@ -694,48 +694,7 @@ public class LumongoSegment {
 	private void handleAnalyze(List<AnalysisRequest> analysisRequestList, ScoredResult.Builder srBuilder, org.bson.Document doc) {
 		for (AnalysisRequest analysisRequest : analysisRequestList) {
 
-			String indexField = analysisRequest.getField();
-			String storedFieldName = indexConfig.getStoredFieldName(indexField);
 
-			if (storedFieldName != null) {
-				AnalysisResult.Builder analysisResult = AnalysisResult.newBuilder();
-				analysisResult.setField(storedFieldName);
-
-				Object storeFieldValues = ResultHelper.getValueFromMongoDocument(doc, storedFieldName);
-
-				List<String> tokens = new ArrayList<>();
-				LumongoUtil.handleLists(storeFieldValues, (value) -> {
-					String content = value.toString();
-					try (TokenStream tokenStream = perFieldAnalyzer.tokenStream(indexField, content)) {
-						tokenStream.reset();
-						while (tokenStream.incrementToken()) {
-							String token = tokenStream.getAttribute(CharTermAttribute.class).toString();
-							tokens.add(token);
-						}
-					}
-					catch (Exception e) {
-						throw new RuntimeException(e);
-					}
-
-				});
-
-
-				boolean calcTermFreq = analysisRequest.getShowDocTermFreq() || analysisRequest.getShowDocTopTerms() || analysisRequest.getShowSummaryTermFreq()
-						|| analysisRequest.getShowSummaryTopTerms();
-
-				for (String token : tokens) {
-					analysisResult.addToken(token);
-
-
-					if (calcTermFreq) {
-
-					}
-
-				}
-
-
-				srBuilder.addAnalysisResult(analysisResult);
-			}
 
 
 

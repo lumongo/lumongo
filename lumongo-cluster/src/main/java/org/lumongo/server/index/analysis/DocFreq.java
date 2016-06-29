@@ -1,4 +1,4 @@
-package org.lumongo.server.index;
+package org.lumongo.server.index.analysis;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -20,7 +20,7 @@ public class DocFreq {
 	private final TFIDFSimilarity similarity;
 	private final int numDocs;
 
-	public DocFreq(IndexReader indexReader, String field) {
+	public DocFreq(String indexReader, IndexReader field) {
 		this.indexReader = indexReader;
 		this.field = field;
 		this.docFreqMap = new HashMap<>();
