@@ -425,8 +425,10 @@ public class LumongoSegment {
 
 				Facets facets = new LumongoSortedSetDocValuesFacetCounts(state, facetsCollector);
 
-				if (countRequest.getSegmentFacets() == 0) {
-					numOfFacets = state.getSize();
+				if (indexConfig.getNumberOfSegments() > 1) {
+					if (countRequest.hasSegmentFacets() && countRequest.getSegmentFacets() == 0) {
+						numOfFacets = state.getSize();
+					}
 				}
 
 				facetResult = facets.getTopChildren(numOfFacets, label);
