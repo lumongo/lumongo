@@ -167,4 +167,18 @@ public class AnalysisHandler {
 		return null;
 	}
 
+	public Lumongo.AnalysisResult getSegmentResult() {
+		if (summaryLevelEnabled) {
+			Lumongo.AnalysisResult.Builder analysisResult = Lumongo.AnalysisResult.newBuilder();
+			analysisResult.setField(storedFieldName);
+
+			List<Lumongo.Term.Builder> termBuilderList = summaryTermFreq.topN(analysisRequest.getTopN(), analysisRequest.getTermSort());
+			termBuilderList.forEach(analysisResult::addTerms);
+
+			return analysisResult.build();
+		}
+		return null;
+	}
+
+
 }

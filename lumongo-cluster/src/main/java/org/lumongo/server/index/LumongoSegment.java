@@ -295,6 +295,16 @@ public class LumongoSegment {
 			segmentReponseBuilder.setIndexName(indexName);
 			segmentReponseBuilder.setSegmentNumber(segmentNumber);
 
+
+			if (!analysisHandlerList.isEmpty()) {
+				for (AnalysisHandler analysisHandler : analysisHandlerList) {
+					AnalysisResult segmentAnalysisResult = analysisHandler.getSegmentResult();
+					if (segmentAnalysisResult != null) {
+						segmentReponseBuilder.addAnalysisResult(segmentAnalysisResult);
+					}
+				}
+			}
+
 			SegmentResponse segmentResponse = segmentReponseBuilder.build();
 			if (useCache) {
 				qrc.storeInCache(queryCacheKey, segmentResponse);

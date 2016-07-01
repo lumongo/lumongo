@@ -406,6 +406,7 @@ message SegmentResponse {
 	repeated ScoredResult scoredResult = 4;
 	optional ScoredResult next = 5;
 	repeated FacetGroup facetGroup = 6;
+	repeated AnalysisResult analysisResult = 7;
 }
 
 message LastIndexResult {
@@ -424,7 +425,6 @@ message InternalQueryResponse {
 message IndexSegmentResponse {
 	required string indexName = 1;
 	repeated SegmentResponse segmentReponse = 2;
-	repeated AnalysisResult analysisResult = 3;
 }
 
 message QueryRequest {
