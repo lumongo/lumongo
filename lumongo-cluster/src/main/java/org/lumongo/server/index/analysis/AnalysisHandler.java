@@ -43,31 +43,31 @@ public class AnalysisHandler {
 		this.storedFieldName = indexConfig.getStoredFieldName(indexField);
 		this.perFieldAnalyzer = perFieldAnalyzer;
 
-		this.docLevelEnabled = analysisRequest.getShowDocTerms() || analysisRequest.getShowDocTokens();
-		this.summaryLevelEnabled = analysisRequest.getShowSummaryTerms();
+		this.docLevelEnabled = analysisRequest.getDocTerms() || analysisRequest.getTokens();
+		this.summaryLevelEnabled = analysisRequest.getSummaryTerms();
 		this.enabled = docLevelEnabled || summaryLevelEnabled;
 
-		this.minWordLength = analysisRequest.getMinWordLength();
-		this.maxWordLength = analysisRequest.getMaxWordLength();
+		this.minWordLength = analysisRequest.getMinWordLen();
+		this.maxWordLength = analysisRequest.getMaxWordLen();
 
-		boolean needDocFreq = (analysisRequest.hasMinSegmentFreqPercent() || analysisRequest.hasMinSegmentFreqPercent() || analysisRequest
-				.hasMinSegmentFreqCount() || analysisRequest.hasMaxSegmentFreqCount() || TermSort.TFIDF.equals(analysisRequest.getTermSort()));
+		boolean needDocFreq = (analysisRequest.hasMinSegFreqPerc() || analysisRequest.hasMinSegFreqPerc() || analysisRequest
+				.hasMinSegFreq() || analysisRequest.hasMaxSegFreq() || TermSort.TFIDF.equals(analysisRequest.getTermSort()));
 
 		if (needDocFreq) {
 			this.docFreq = new DocFreq(indexReader, analysisRequest.getField());
-			if (analysisRequest.hasMinSegmentFreqPercent()) {
-				this.minSegmentDocFreqCount = docFreq.getNumDocsForPercent(analysisRequest.getMinSegmentFreqPercent());
+			if (analysisRequest.hasMinSegFreqPerc()) {
+				this.minSegmentDocFreqCount = docFreq.getNumDocsForPercent(analysisRequest.getMinSegFreqPerc());
 			}
-			if (analysisRequest.hasMaxSegmentFreqPercent()) {
-				this.maxSegmentDocFreqCount = docFreq.getNumDocsForPercent(analysisRequest.getMaxSegmentFreqPercent());
-			}
-
-			if (analysisRequest.hasMinSegmentFreqCount()) {
-				this.minSegmentDocFreqCount = analysisRequest.getMinSegmentFreqCount();
+			if (analysisRequest.hasMaxSegFreqPerc()) {
+				this.maxSegmentDocFreqCount = docFreq.getNumDocsForPercent(analysisRequest.getMaxSegFreqPerc());
 			}
 
-			if (analysisRequest.hasMaxSegmentFreqCount()) {
-				this.maxSegmentDocFreqCount = analysisRequest.getMaxSegmentFreqCount();
+			if (analysisRequest.hasMinSegFreq()) {
+				this.minSegmentDocFreqCount = analysisRequest.getMinSegFreq();
+			}
+
+			if (analysisRequest.hasMaxSegFreq()) {
+				this.maxSegmentDocFreqCount = analysisRequest.getMaxSegFreq();
 			}
 
 		}
@@ -107,7 +107,7 @@ public class AnalysisHandler {
 					while (tokenStream.incrementToken()) {
 						String token = tokenStream.getAttribute(CharTermAttribute.class).toString();
 
-						if (analysisRequest.getShowDocTokens()) {
+						if (analysisRequest.getTokens()) {
 							analysisResult.addToken(token);
 						}
 
@@ -153,7 +153,7 @@ public class AnalysisHandler {
 			});
 
 			if (docLevelEnabled) {
-				if (analysisRequest.getShowDocTokens()) {
+				if (analysisRequest.getDocTerms()) {
 
 					List<Lumongo.Term.Builder> termBuilderList = docTermFreq.topN(analysisRequest.getTopN(), analysisRequest.getTermSort());
 					termBuilderList.forEach(analysisResult::addTerms);

@@ -62,7 +62,7 @@ public class TermFreq {
 				return Double.compare(o1.getScore(), o2.getScore());
 			}
 			else if (Lumongo.AnalysisRequest.TermSort.ABC.equals(termSort)) {
-				return o1.getValue().compareTo(o2.getValue());
+				return o2.getValue().compareTo(o1.getValue());
 			}
 			else {
 				return 0;

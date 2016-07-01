@@ -16,7 +16,6 @@ import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.server.index.LumongoIndexManager;
-import org.lumongo.util.LumongoUtil;
 import org.lumongo.util.ResultHelper;
 
 import javax.ws.rs.GET;
@@ -48,8 +47,9 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.DEFAULT_OP) String defaultOperator, @QueryParam(LumongoConstants.SORT) List<String> sort,
 			@QueryParam(LumongoConstants.PRETTY) boolean pretty, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError,
 			@QueryParam(LumongoConstants.DISMAX) Boolean dismax, @QueryParam(LumongoConstants.DISMAX_TIE) Float dismaxTie,
-			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm, @QueryParam(LumongoConstants.SIMILARITY) List<String> similarity, @QueryParam(LumongoConstants.HIGHLIGHT) List<String> highlightList,
-			@QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList, @QueryParam(LumongoConstants.ANALYZE) List<String> analyzeList) {
+			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm, @QueryParam(LumongoConstants.SIMILARITY) List<String> similarity,
+			@QueryParam(LumongoConstants.HIGHLIGHT) List<String> highlightList, @QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList,
+			@QueryParam(LumongoConstants.ANALYZE_JSON) List<String> analyzeJsonList) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		if (query != null && !query.isEmpty()) {
@@ -132,7 +132,8 @@ public class QueryResource {
 					qrBuilder.addFilterQuery(filterQueryBuilder);
 				}
 				catch (InvalidProtocolBufferException e) {
-					return Response.status(LumongoConstants.INTERNAL_ERROR).entity(e.getClass().getSimpleName() + ":" + e.getMessage()).build();
+					return Response.status(LumongoConstants.INTERNAL_ERROR)
+							.entity("Failed to parse filter json: " + e.getClass().getSimpleName() + ":" + e.getMessage()).build();
 				}
 			}
 		}
@@ -152,18 +153,25 @@ public class QueryResource {
 					qrBuilder.addHighlightRequest(hlBuilder);
 				}
 				catch (InvalidProtocolBufferException e) {
-					return Response.status(LumongoConstants.INTERNAL_ERROR).entity(e.getClass().getSimpleName() + ":" + e.getMessage()).build();
+					return Response.status(LumongoConstants.INTERNAL_ERROR)
+							.entity("Failed to parse highlight json: " + e.getClass().getSimpleName() + ":" + e.getMessage()).build();
 				}
 			}
 		}
 
-		if (analyzeList != null) {
-			for (String al : analyzeList) {
-				Lumongo.AnalysisRequest analyzeRequest = Lumongo.AnalysisRequest.newBuilder().setField(al).build();
-				qrBuilder.addAnalysisRequest(analyzeRequest);
+		if (analyzeJsonList != null) {
+			for (String alJson : analyzeJsonList) {
+				try {
+					Lumongo.AnalysisRequest.Builder analyzeRequestBuilder = Lumongo.AnalysisRequest.newBuilder();
+					JsonFormat.parser().merge(alJson, analyzeRequestBuilder);
+					qrBuilder.addAnalysisRequest(analyzeRequestBuilder);
+				}
+				catch (InvalidProtocolBufferException e) {
+					return Response.status(LumongoConstants.INTERNAL_ERROR)
+							.entity("Failed to parse analyzer json: " + e.getClass().getSimpleName() + ":" + e.getMessage()).build();
+				}
 			}
 		}
-
 
 		if (fields != null) {
 			for (String field : fields) {
@@ -364,7 +372,6 @@ public class QueryResource {
 				responseBuilder.append(",");
 				responseBuilder.append("\"values\": [");
 
-
 				JsonFormat.Printer printer = JsonFormat.printer();
 
 				boolean firstInner = true;
@@ -375,7 +382,6 @@ public class QueryResource {
 					else {
 						responseBuilder.append(",");
 					}
-
 
 					responseBuilder.append(printer.print(facetCount));
 				}

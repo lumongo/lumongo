@@ -461,17 +461,17 @@ message AnalysisRequest {
 	}
 
 	required string field = 1;
-	optional bool showDocTokens = 2 [default = false];
-	optional bool showDocTerms = 3 [default = false];
-	optional bool showSummaryTerms = 4 [default = false];
+	optional bool tokens = 2 [default = false];
+	optional bool docTerms = 3 [default = false];
+	optional bool summaryTerms = 4 [default = false];
 	optional uint32 topN = 5 [default = 10];
 	optional TermSort termSort = 6 [default = TFIDF];
-	optional uint32 minWordLength = 7 [default = 0];
-	optional uint32 maxWordLength = 8 [default = 0];
-	optional float minSegmentFreqPercent = 9;
-	optional float maxSegmentFreqPercent = 10;
-	optional uint32 minSegmentFreqCount = 11;
-	optional uint32 maxSegmentFreqCount = 12;
+	optional uint32 minWordLen = 7 [default = 0];
+	optional uint32 maxWordLen = 8 [default = 0];
+	optional float minSegFreqPerc = 9;
+	optional float maxSegFreqPerc = 10;
+	optional uint32 minSegFreq = 11;
+	optional uint32 maxSegFreq = 12;
 }
 
 message FieldSimilarity {
