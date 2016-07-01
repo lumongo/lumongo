@@ -12,8 +12,8 @@ import java.util.concurrent.ExecutionException;
 public class FacetStateCache {
 	private Cache<String, SortedSetDocValuesReaderState> queryResultCache;
 
-	public FacetStateCache(int maxSize, int concurrency) {
-		queryResultCache = CacheBuilder.newBuilder().concurrencyLevel(concurrency).maximumSize(maxSize).build();
+	public FacetStateCache(int concurrency) {
+		queryResultCache = CacheBuilder.newBuilder().concurrencyLevel(concurrency).build();
 	}
 
 	public SortedSetDocValuesReaderState getFacetState(IndexReader directoryReader, String fieldName) throws ExecutionException {

@@ -186,7 +186,7 @@ public class LumongoSegment {
 			this.queryResultCache = null;
 		}
 
-		this.facetStateCache = new FacetStateCache(10, 8);
+		this.facetStateCache = new FacetStateCache(8);
 
 	}
 
