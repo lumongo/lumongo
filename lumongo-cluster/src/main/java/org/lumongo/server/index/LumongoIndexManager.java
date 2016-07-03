@@ -1036,7 +1036,6 @@ public class LumongoIndexManager {
 
 			List<GetTermsResponseInternal> responses = federator.send(request);
 
-			//not threaded but atomic long is convenient
 			TreeMap<String, Term.Builder> terms = new TreeMap<>();
 			for (GetTermsResponseInternal response : responses) {
 				for (GetTermsResponse gtr : response.getGetTermsResponseList()) {

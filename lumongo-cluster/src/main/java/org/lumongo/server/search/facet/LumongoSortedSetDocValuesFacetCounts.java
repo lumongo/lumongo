@@ -80,7 +80,7 @@ public class LumongoSortedSetDocValuesFacetCounts extends Facets {
   @Override
   public FacetResult getTopChildren(int topN, String dim, String... path) throws IOException {
     if (topN <= 0) {
-      throw new IllegalArgumentException("topN must be > 0 (got: " + topN + ")");
+      throw new IllegalArgumentException("getTopTerms must be > 0 (got: " + topN + ")");
     }
     if (path.length > 0) {
       throw new IllegalArgumentException("path should be 0 length");

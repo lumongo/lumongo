@@ -392,6 +392,46 @@ public class QueryResource {
 			responseBuilder.append("]");
 		}
 
+
+		if (!qr.getAnalysisResultList().isEmpty()) {
+			responseBuilder.append(",");
+			responseBuilder.append("\"analysis\": [");
+			boolean first = true;
+			for (Lumongo.AnalysisResult analysisResult : qr.getAnalysisResultList()) {
+				if (first) {
+					first = false;
+				}
+				else {
+					responseBuilder.append(",");
+				}
+				responseBuilder.append("{");
+				responseBuilder.append("\"field\": \"");
+				responseBuilder.append(analysisResult.getAnalysisRequest().getField());
+				responseBuilder.append("\"");
+
+				responseBuilder.append(",");
+				responseBuilder.append("\"terms\": [");
+
+				JsonFormat.Printer printer = JsonFormat.printer();
+
+				boolean firstInner = true;
+				for (Lumongo.TermOrBuilder term : analysisResult.getTermsOrBuilderList()) {
+					if (firstInner) {
+						firstInner = false;
+					}
+					else {
+						responseBuilder.append(",");
+					}
+
+					responseBuilder.append(printer.print(term));
+				}
+				responseBuilder.append("]");
+
+				responseBuilder.append("}");
+			}
+			responseBuilder.append("]");
+		}
+
 		responseBuilder.append("}");
 
 		return responseBuilder.toString();

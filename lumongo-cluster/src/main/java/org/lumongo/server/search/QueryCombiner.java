@@ -3,21 +3,9 @@ package org.lumongo.server.search;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.FixedBitSet;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.CountRequest;
-import org.lumongo.cluster.message.Lumongo.FacetCount;
-import org.lumongo.cluster.message.Lumongo.FacetGroup;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.FieldSort;
-import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
-import org.lumongo.cluster.message.Lumongo.InternalQueryResponse;
-import org.lumongo.cluster.message.Lumongo.LastIndexResult;
-import org.lumongo.cluster.message.Lumongo.LastResult;
-import org.lumongo.cluster.message.Lumongo.QueryRequest;
-import org.lumongo.cluster.message.Lumongo.QueryResponse;
-import org.lumongo.cluster.message.Lumongo.ScoredResult;
-import org.lumongo.cluster.message.Lumongo.SegmentResponse;
-import org.lumongo.cluster.message.Lumongo.SortRequest;
+import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.index.LumongoIndex;
+import org.lumongo.server.index.analysis.TermFreq;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +34,7 @@ public class QueryCombiner {
 	private final int amount;
 	private final int start;
 	private final LastResult lastResult;
+	private final List<AnalysisRequest> analysisRequestList;
 
 	private boolean isShort;
 	private List<ScoredResult> results;
@@ -65,6 +54,7 @@ public class QueryCombiner {
 		this.sortRequest = request.getSortRequest();
 		this.start = request.getStart();
 		this.query = request.getQuery();
+		this.analysisRequestList = request.getAnalysisRequestList();
 
 		this.isShort = false;
 		this.results = Collections.emptyList();
@@ -156,6 +146,8 @@ public class QueryCombiner {
 		Map<CountRequest, FixedBitSet> fullResultsMap = new HashMap<>();
 		Map<CountRequest, long[]> minForSegmentMap = new HashMap<>();
 
+		Map<AnalysisRequest, Map<String, Lumongo.Term.Builder>> analysisRequestToTermMap = new HashMap<>();
+
 		int segIndex = 0;
 
 		for (SegmentResponse sr : segmentResponses) {
@@ -208,7 +200,45 @@ public class QueryCombiner {
 				}
 			}
 
+			for (Lumongo.AnalysisResult analysisResult : sr.getAnalysisResultList()) {
+
+				AnalysisRequest analysisRequest = analysisResult.getAnalysisRequest();
+				if (!analysisRequestToTermMap.containsKey(analysisRequest)) {
+					analysisRequestToTermMap.put(analysisRequest, new HashMap<>());
+				}
+
+				Map<String, Term.Builder> termMap = analysisRequestToTermMap.get(analysisRequest);
+
+				for (Lumongo.Term term : analysisResult.getTermsList()) {
+
+					String key = term.getValue();
+					if (!termMap.containsKey(key)) {
+						termMap.put(key, Lumongo.Term.newBuilder().setValue(key).setDocFreq(0).setTermFreq(0));
+					}
+					Lumongo.Term.Builder termsBuilder = termMap.get(key);
+					if (term.hasDocFreq()) {
+						termsBuilder.setDocFreq(termsBuilder.getDocFreq() + term.getDocFreq());
+					}
+					if (term.hasScore()) {
+						termsBuilder.setScore(termsBuilder.getScore() + term.getScore());
+					}
+					termsBuilder.setTermFreq(termsBuilder.getTermFreq() + term.getTermFreq());
+
+				}
+			}
+
 			segIndex++;
+		}
+
+		for (AnalysisRequest analysisRequest : analysisRequestList) {
+			Map<String, Term.Builder> termMap = analysisRequestToTermMap.get(analysisRequest);
+			if (termMap != null) {
+				List<Term.Builder> terms = new ArrayList<>(termMap.values());
+				List<Term.Builder> topTerms = TermFreq.getTopTerms(terms, analysisRequest.getTopN(), analysisRequest.getTermSort());
+				AnalysisResult.Builder analysisResultBuilder = AnalysisResult.newBuilder().setAnalysisRequest(analysisRequest);
+				topTerms.forEach(analysisResultBuilder::addTerms);
+				builder.addAnalysisResult(analysisResultBuilder);
+			}
 		}
 
 		for (CountRequest countRequest : facetCountsMap.keySet()) {
@@ -395,7 +425,6 @@ public class QueryCombiner {
 		if (!mergedResults.isEmpty()) {
 			Collections.sort(mergedResults, myCompare);
 
-
 			results = mergedResults.subList(0, resultsSize);
 
 			for (ScoredResult sr : results) {
@@ -478,7 +507,6 @@ public class QueryCombiner {
 
 		}
 
-
 		int i = 0;
 		for (ScoredResult scoredResult : results) {
 			if (i >= start) {
@@ -486,7 +514,6 @@ public class QueryCombiner {
 			}
 			i++;
 		}
-
 
 		LastResult.Builder newLastResultBuilder = LastResult.newBuilder();
 		for (String indexName : lastIndexResultMap.keySet()) {

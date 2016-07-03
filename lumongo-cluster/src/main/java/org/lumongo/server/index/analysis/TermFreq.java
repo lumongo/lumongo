@@ -39,7 +39,7 @@ public class TermFreq {
 		lmTerm.setTermFreq(lmTerm.getTermFreq() + 1);
 	}
 
-	public List<Lumongo.Term.Builder> topN(int n, Lumongo.AnalysisRequest.TermSort termSort) {
+	public List<Lumongo.Term.Builder> getTopTerms(int topN, Lumongo.AnalysisRequest.TermSort termSort) {
 
 		if (terms == null) {
 			terms = new ArrayList<>(tokenCount.values());
@@ -54,6 +54,11 @@ public class TermFreq {
 			}
 		}
 
+		return getTopTerms(terms, topN, termSort);
+
+	}
+
+	public static List<Lumongo.Term.Builder> getTopTerms(List<Lumongo.Term.Builder> terms, int n, Lumongo.AnalysisRequest.TermSort termSort) {
 		Comparator<Lumongo.Term.Builder> ordering = (Lumongo.Term.Builder o1, Lumongo.Term.Builder o2) -> {
 			if (Lumongo.AnalysisRequest.TermSort.TF.equals(termSort)) {
 				return Long.compare(o1.getTermFreq(), o2.getTermFreq());
@@ -78,7 +83,6 @@ public class TermFreq {
 			Collections.sort(terms, ordering);
 			return terms;
 		}
-
 	}
 
 }
