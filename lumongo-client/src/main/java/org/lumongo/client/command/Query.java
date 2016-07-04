@@ -6,12 +6,15 @@ import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.Lumongo.AnalysisRequest;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
+import org.lumongo.cluster.message.Lumongo.HighlightRequest;
 import org.lumongo.cluster.message.Lumongo.LMFacet;
+import org.lumongo.cluster.message.Lumongo.LastResult;
 import org.lumongo.cluster.message.Lumongo.Query.Operator;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
@@ -37,13 +40,14 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private int amount;
 	private int start;
 	private Collection<String> indexes;
-	private Lumongo.LastResult lastResult;
+	private LastResult lastResult;
 	private List<CountRequest> countRequests = Collections.emptyList();
 	private List<LMFacet> drillDowns = Collections.emptyList();
 	private List<FieldSort> fieldSorts = Collections.emptyList();
 	private Set<String> queryFields = Collections.emptySet();
 	private List<Lumongo.Query> filterQueries = Collections.emptyList();
-	private List<Lumongo.HighlightRequest> highlightRequests = Collections.emptyList();
+	private List<HighlightRequest> highlightRequests = Collections.emptyList();
+	private List<AnalysisRequest> analysisRequests = Collections.emptyList();
 	private Integer minimumNumberShouldMatch;
 	private Operator defaultOperator;
 	private Lumongo.FetchType resultFetchType;
@@ -134,11 +138,11 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return this;
 	}
 
-	public Lumongo.LastResult getLastResult() {
+	public LastResult getLastResult() {
 		return lastResult;
 	}
 
-	public Query setLastResult(Lumongo.LastResult lastResult) {
+	public Query setLastResult(LastResult lastResult) {
 		this.lastResult = lastResult;
 		return this;
 	}
@@ -267,7 +271,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 			this.highlightRequests = new ArrayList<>();
 		}
 
-		Lumongo.HighlightRequest.Builder highlight = Lumongo.HighlightRequest.newBuilder();
+		HighlightRequest.Builder highlight = HighlightRequest.newBuilder();
 		if (field != null && !field.isEmpty()) {
 			highlight.setField(field);
 		}
@@ -282,6 +286,42 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		}
 
 		highlightRequests.add(highlight.build());
+		return this;
+	}
+
+
+	public Query addSummaryAnalysis(String field, int topN) {
+		return addAnalysis(field, false,false,true, topN);
+	}
+
+	public Query addAnalysis(String field, Boolean tokens, Boolean docTerms, Boolean summaryTerms, Integer topN) {
+
+
+		AnalysisRequest.Builder analysisRequest = AnalysisRequest.newBuilder();
+		if (field != null && !field.isEmpty()) {
+			analysisRequest.setField(field);
+		}
+		if (tokens != null) {
+			analysisRequest.setTokens(tokens);
+		}
+		if (docTerms != null) {
+			analysisRequest.setDocTerms(docTerms);
+		}
+		if (summaryTerms != null) {
+			analysisRequest.setSummaryTerms(summaryTerms);
+		}
+		if (topN != null) {
+			analysisRequest.setTopN(topN);
+		}
+
+		return addAnalysis(analysisRequest);
+	}
+
+	public Query addAnalysis(AnalysisRequest.Builder analysisRequest) {
+		if (analysisRequests.isEmpty()) {
+			this.analysisRequests = new ArrayList<>();
+		}
+		analysisRequests.add(analysisRequest.build());
 		return this;
 	}
 
@@ -430,6 +470,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 		if (!highlightRequests.isEmpty()) {
 			requestBuilder.addAllHighlightRequest(highlightRequests);
+		}
+
+		if (!analysisRequests.isEmpty()) {
+			requestBuilder.addAllAnalysisRequest(analysisRequests);
 		}
 
 		if (resultFetchType != null) {

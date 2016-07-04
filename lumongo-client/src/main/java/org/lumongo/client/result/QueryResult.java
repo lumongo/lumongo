@@ -1,5 +1,6 @@
 package org.lumongo.client.result;
 
+import org.lumongo.cluster.message.Lumongo.AnalysisResult;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetGroup;
 import org.lumongo.cluster.message.Lumongo.LastResult;
@@ -46,6 +47,10 @@ public class QueryResult extends Result {
 
 	public int getFacetGroupCount() {
 		return queryResponse.getFacetGroupCount();
+	}
+
+	public List<AnalysisResult> getSummaryAnalysisResults() {
+		return queryResponse.getAnalysisResultList();
 	}
 
 	@Override

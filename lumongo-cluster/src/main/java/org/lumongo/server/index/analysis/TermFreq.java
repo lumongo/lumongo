@@ -80,7 +80,7 @@ public class TermFreq {
 			return Ordering.from(ordering).greatestOf(terms, n);
 		}
 		else {
-			Collections.sort(terms, ordering);
+			Collections.sort(terms, ordering.reversed());
 			return terms;
 		}
 	}
