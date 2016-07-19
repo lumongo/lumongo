@@ -3,6 +3,7 @@ package org.lumongo.server.index;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
@@ -322,14 +323,29 @@ public class LumongoSegment {
 		}
 	}
 
-	private List<AnalysisHandler> getAnalysisHandlerList(List<AnalysisRequest> analysisRequests) {
+	private List<AnalysisHandler> getAnalysisHandlerList(List<AnalysisRequest> analysisRequests) throws Exception {
 		if (analysisRequests.isEmpty()) {
 			return Collections.emptyList();
 		}
 
 		List<AnalysisHandler> analysisHandlerList = new ArrayList<>();
 		for (AnalysisRequest analysisRequest : analysisRequests) {
-			AnalysisHandler analysisHandler = new AnalysisHandler(directoryReader, perFieldAnalyzer, indexConfig, analysisRequest);
+
+			Analyzer analyzer = perFieldAnalyzer;
+
+			if (analysisRequest.hasAnalyzerOverride()) {
+				String analyzerName = analysisRequest.getAnalyzerOverride();
+
+				AnalyzerSettings analyzerSettings = indexConfig.getAnalyzerSettingsByName(analyzerName);
+				if (analyzerSettings != null) {
+					analyzer = LumongoAnalyzerFactory.getPerFieldAnalyzer(analyzerSettings);
+				}
+				else {
+					throw new RuntimeException("Invalid analyzer name <" + analyzerName + ">");
+				}
+			}
+			System.out.println(analysisRequest.getAnalyzerOverride());
+			AnalysisHandler analysisHandler = new AnalysisHandler(directoryReader, analyzer, indexConfig, analysisRequest);
 			analysisHandlerList.add(analysisHandler);
 		}
 		return analysisHandlerList;

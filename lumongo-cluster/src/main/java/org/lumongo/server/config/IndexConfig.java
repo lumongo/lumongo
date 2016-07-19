@@ -46,6 +46,10 @@ public class IndexConfig {
 		analyzerMap.put(DefaultAnalyzers.LC_KEYWORD, Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.LC_KEYWORD).setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE).build());
 		analyzerMap.put(DefaultAnalyzers.MIN_STEM,
 				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.MIN_STEM).setTokenizer(Tokenizer.STANDARD).addFilter(Filter.LOWERCASE).addFilter(Filter.STOPWORDS).addFilter(Filter.ENGLISH_MIN_STEM).build());
+
+		analyzerMap.put(DefaultAnalyzers.TWO_TWO_SHINGLE,
+				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.TWO_TWO_SHINGLE).setTokenizer(Tokenizer.STANDARD).addFilter(Filter.LOWERCASE).addFilter(Filter.STOPWORDS).addFilter(Filter.TWO_TWO_SHINGLE).build());
+
 		analyzerMap.put(DefaultAnalyzers.KSTEMMED,
 				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.KSTEMMED).setTokenizer(Tokenizer.STANDARD).addFilter(Filter.LOWERCASE).addFilter(Filter.STOPWORDS).addFilter(Filter.KSTEM).build());
 		analyzerMap.put(DefaultAnalyzers.LSH,
@@ -98,9 +102,13 @@ public class IndexConfig {
 		if (indexAs != null) {
 
 			String textAnalyzerName = indexAs.getAnalyzerName();
-			return analyzerMap.get(textAnalyzerName);
+			return getAnalyzerSettingsByName(textAnalyzerName);
 		}
 		return null;
+	}
+
+	public Lumongo.AnalyzerSettings getAnalyzerSettingsByName(String textAnalyzerName) {
+		return analyzerMap.get(textAnalyzerName);
 	}
 
 	public FieldConfig.FieldType getFieldTypeForIndexField(String fieldName) {

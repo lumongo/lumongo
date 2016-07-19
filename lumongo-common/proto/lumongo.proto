@@ -237,6 +237,7 @@ message AnalyzerSettings {
 		SNOWBALL_STEM = 7;
 		ENGLISH_POSSESSIVE = 8;
 		MINHASH = 9;
+		TWO_TWO_SHINGLE = 10;
 	}
 
 
@@ -471,6 +472,7 @@ message AnalysisRequest {
 	optional float maxSegFreqPerc = 10;
 	optional uint32 minSegFreq = 11;
 	optional uint32 maxSegFreq = 12;
+	optional string analyzerOverride = 13;
 }
 
 message FieldSimilarity {

@@ -23,7 +23,7 @@ public class AnalysisHandler {
 	private final AnalysisRequest analysisRequest;
 	private final String indexField;
 	private final String storedFieldName;
-	private final Analyzer perFieldAnalyzer;
+	private final Analyzer analyzer;
 
 	private final boolean docLevelEnabled;
 	private final boolean summaryLevelEnabled;
@@ -37,11 +37,11 @@ public class AnalysisHandler {
 	private DocFreq docFreq;
 	private TermFreq summaryTermFreq;
 
-	public AnalysisHandler(IndexReader indexReader, PerFieldAnalyzerWrapper perFieldAnalyzer, IndexConfig indexConfig, AnalysisRequest analysisRequest) {
+	public AnalysisHandler(IndexReader indexReader, Analyzer analyzer, IndexConfig indexConfig, AnalysisRequest analysisRequest) {
 		this.analysisRequest = analysisRequest;
 		this.indexField = analysisRequest.getField();
 		this.storedFieldName = indexConfig.getStoredFieldName(indexField);
-		this.perFieldAnalyzer = perFieldAnalyzer;
+		this.analyzer = analyzer;
 
 		this.docLevelEnabled = analysisRequest.getDocTerms() || analysisRequest.getTokens();
 		this.summaryLevelEnabled = analysisRequest.getSummaryTerms();
@@ -102,7 +102,7 @@ public class AnalysisHandler {
 
 			LumongoUtil.handleLists(storeFieldValues, (value) -> {
 				String content = value.toString();
-				try (TokenStream tokenStream = perFieldAnalyzer.tokenStream(indexField, content)) {
+				try (TokenStream tokenStream = analyzer.tokenStream(indexField, content)) {
 					tokenStream.reset();
 					while (tokenStream.incrementToken()) {
 						String token = tokenStream.getAttribute(CharTermAttribute.class).toString();

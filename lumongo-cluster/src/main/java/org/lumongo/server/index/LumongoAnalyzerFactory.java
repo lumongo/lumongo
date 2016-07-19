@@ -3,6 +3,7 @@ package org.lumongo.server.index;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.commongrams.CommonGramsFilter;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.KeywordTokenizer;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
@@ -16,6 +17,8 @@ import org.apache.lucene.analysis.en.KStemFilter;
 import org.apache.lucene.analysis.lsh.MinHashFilter;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
+import org.apache.lucene.analysis.ngram.NGramTokenFilter;
+import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.apache.lucene.analysis.standard.StandardFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
@@ -75,6 +78,11 @@ public class LumongoAnalyzerFactory {
 					}
 					else if (AnalyzerSettings.Filter.ASCII_FOLDING.equals(filter)) {
 						tok = new ASCIIFoldingFilter(lastTok);
+					}
+					else if (AnalyzerSettings.Filter.TWO_TWO_SHINGLE.equals(filter)) {
+						ShingleFilter shingleFilter = new ShingleFilter(lastTok, 2, 2);
+						shingleFilter.setOutputUnigrams(false);
+						tok = shingleFilter;
 					}
 					else if (AnalyzerSettings.Filter.KSTEM.equals(filter)) {
 						tok = new KStemFilter(lastTok);

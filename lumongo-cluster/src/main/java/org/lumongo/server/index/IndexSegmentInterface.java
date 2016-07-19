@@ -1,6 +1,5 @@
 package org.lumongo.server.index;
 
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.index.IndexWriter;
 
