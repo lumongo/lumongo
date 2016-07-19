@@ -84,6 +84,11 @@ public class LumongoAnalyzerFactory {
 						shingleFilter.setOutputUnigrams(false);
 						tok = shingleFilter;
 					}
+					else if (AnalyzerSettings.Filter.THREE_THREE_SHINGLE.equals(filter)) {
+						ShingleFilter shingleFilter = new ShingleFilter(lastTok, 3, 3);
+						shingleFilter.setOutputUnigrams(false);
+						tok = shingleFilter;
+					}
 					else if (AnalyzerSettings.Filter.KSTEM.equals(filter)) {
 						tok = new KStemFilter(lastTok);
 					}

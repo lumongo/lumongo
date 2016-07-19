@@ -11,5 +11,6 @@ public class DefaultAnalyzers {
 	public static final String KSTEMMED = "kstem";
 	public static final String LSH= "lsh";
 	public static final String TWO_TWO_SHINGLE= "twoTwoShingle";
+	public static final String THREE_THREE_SHINGLE= "threeThreeShingle";
 
 }

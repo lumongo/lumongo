@@ -238,6 +238,7 @@ message AnalyzerSettings {
 		ENGLISH_POSSESSIVE = 8;
 		MINHASH = 9;
 		TWO_TWO_SHINGLE = 10;
+		THREE_THREE_SHINGLE = 11;
 	}
 
 
