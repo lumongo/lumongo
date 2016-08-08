@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
@@ -407,20 +408,31 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 	public IndexWriter getIndexWriter(int segmentNumber) throws Exception {
 		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
-		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber);
+		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber) + "_index";
 		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
 				clusterConfig.getIndexBlockSize());
 		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 
 		IndexWriterConfig config = new IndexWriterConfig(getPerFieldAnalyzer());
 
-		//use flush interval to flush
 		config.setMaxBufferedDocs(Integer.MAX_VALUE);
-		config.setRAMBufferSizeMB(IndexWriterConfig.DISABLE_AUTO_FLUSH);
+		config.setRAMBufferSizeMB(32);
 
-		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 8, 48);
+		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 8, 64);
 
 		return new IndexWriter(nrtCachingDirectory, config);
+	}
+
+	public DirectoryTaxonomyWriter getTaxoWriter(int segmentNumber) throws IOException {
+		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
+		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber) + "_facets";
+		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
+				clusterConfig.getIndexBlockSize());
+		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
+
+		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 8, 64);
+
+		return new DirectoryTaxonomyWriter(nrtCachingDirectory);
 	}
 
 	public PerFieldAnalyzerWrapper getPerFieldAnalyzer() throws Exception {

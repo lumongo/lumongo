@@ -20,6 +20,9 @@ import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesReaderState;
+import org.apache.lucene.facet.taxonomy.TaxonomyReader;
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyReader;
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
@@ -42,6 +45,7 @@ import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.search.similarities.PerFieldSimilarityWrapper;
 import org.apache.lucene.search.similarities.Similarity;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
@@ -117,6 +121,9 @@ public class LumongoSegment {
 	private int segmentQueryCacheMaxAmount;
 	private PerFieldAnalyzerWrapper perFieldAnalyzer;
 
+	private DirectoryTaxonomyWriter taxoWriter;
+	private DirectoryTaxonomyReader taxoReader;
+
 	public LumongoSegment(int segmentNumber, IndexSegmentInterface indexSegmentInterface, IndexConfig indexConfig, FacetsConfig facetsConfig,
 			DocumentStorage documentStorage) throws Exception {
 		setupCaches(indexConfig);
@@ -165,15 +172,35 @@ public class LumongoSegment {
 			}
 		}
 
+		//TODO: is this a real use case?
+		try {
+			taxoWriter.getSize();
+		}
+		catch (AlreadyClosedException e) {
+			synchronized (this) {
+				this.taxoWriter = this.indexSegmentInterface.getTaxoWriter(segmentNumber);
+				this.taxoReader = new DirectoryTaxonomyReader(taxoWriter);
+			}
+		}
+
+
 	}
 
 	private void openIndexWriters() throws Exception {
 		if (this.indexWriter != null) {
 			indexWriter.close();
 		}
-		this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
+		if (this.taxoWriter != null) {
+			taxoWriter.close();
+		}
+
 		this.perFieldAnalyzer = this.indexSegmentInterface.getPerFieldAnalyzer();
+
+		this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
 		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getIndexSettings().getApplyUncommittedDeletes(), false);
+
+		this.taxoWriter = this.indexSegmentInterface.getTaxoWriter(segmentNumber);
+		this.taxoReader = new DirectoryTaxonomyReader(taxoWriter);
 	}
 
 	private void setupCaches(IndexConfig indexConfig) {
@@ -540,6 +567,11 @@ public class LumongoSegment {
 			if (fsc != null) {
 				fsc.clear();
 			}
+		}
+
+		DirectoryTaxonomyReader newone = TaxonomyReader.openIfChanged(taxoReader);
+		if (newone != null) {
+			taxoReader = newone;
 		}
 	}
 
