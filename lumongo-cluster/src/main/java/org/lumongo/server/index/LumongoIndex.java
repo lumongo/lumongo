@@ -366,7 +366,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
 			for (FacetAs fa : fc.getFacetAsList()) {
 				facetsConfig.setMultiValued(fa.getFacetName(), true);
-				facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME + "." + fa.getFacetName());
+				//facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME + "." + fa.getFacetName());
 				//facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME);
 			}
 

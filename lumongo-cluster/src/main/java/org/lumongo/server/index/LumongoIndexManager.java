@@ -660,11 +660,11 @@ public class LumongoIndexManager {
 						}
 
 						for (Map.Entry<String, Set<String>> entry : dimToValues.entrySet()) {
-							String indexFieldName = facetsConfig.getDimConfig(entry.getKey()).indexFieldName;
+							//String indexFieldName = facetsConfig.getDimConfig(entry.getKey()).indexFieldName;
 
 							BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 							for (String value : entry.getValue()) {
-								booleanQuery.add(new BooleanClause(new TermQuery(new org.apache.lucene.index.Term(indexFieldName, value)),
+								booleanQuery.add(new BooleanClause(new TermQuery(new org.apache.lucene.index.Term(entry.getKey(), value)),
 										BooleanClause.Occur.SHOULD));
 							}
 

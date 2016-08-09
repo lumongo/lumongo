@@ -440,8 +440,9 @@ public class LumongoSegment {
 		for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 
 			String label = countRequest.getFacetField().getLabel();
-			String indexFieldName = facetsConfig.getDimConfig(label).indexFieldName;
-			if (indexFieldName.equals(FacetsConfig.DEFAULT_INDEX_FIELD_NAME)) {
+			FacetsConfig.DimConfig dimConfig = facetsConfig.getDimConfig(label);
+
+			if (dimConfig.equals(FacetsConfig.DEFAULT_DIM_CONFIG)) {
 				throw new Exception(label + " is not defined as a facetable field");
 			}
 
@@ -479,7 +480,7 @@ public class LumongoSegment {
 					}
 				}
 
-				facetResult = facets.getTopChildren(numOfFacets, indexFieldName);
+				facetResult = facets.getTopChildren(numOfFacets, label);
 			}
 			catch (UncheckedExecutionException e) {
 				Throwable cause = e.getCause();
@@ -1068,7 +1069,6 @@ public class LumongoSegment {
 		for (FacetAs fa : fc.getFacetAsList()) {
 
 			String facetName = fa.getFacetName();
-			String facetFieldName = facetsConfig.getDimConfig(facetName).indexFieldName;
 
 			if (FieldConfig.FieldType.DATE.equals(fc.getFieldType())) {
 				FacetAs.DateHandling dateHandling = fa.getDateHandling();
@@ -1078,11 +1078,11 @@ public class LumongoSegment {
 
 						if (FacetAs.DateHandling.DATE_YYYYMMDD.equals(dateHandling)) {
 							String date = FORMATTER_YYYYMMDD.format(localDate);
-							addFacet(doc, facetFieldName, date);
+							addFacet(doc, facetName, date);
 						}
 						else if (FacetAs.DateHandling.DATE_YYYY_MM_DD.equals(dateHandling)) {
 							String date = FORMATTER_YYYY_MM_DD.format(localDate);
-							addFacet(doc, facetFieldName, date);
+							addFacet(doc, facetName, date);
 						}
 						else {
 							throw new RuntimeException("Not handled date handling <" + dateHandling + "> for facet <" + fa.getFacetName() + ">");
@@ -1098,17 +1098,17 @@ public class LumongoSegment {
 			else {
 				LumongoUtil.handleLists(o, obj -> {
 					String string = obj.toString();
-					addFacet(doc, facetFieldName, string);
+					addFacet(doc, facetName, string);
 				});
 			}
 
 		}
 	}
 
-	private void addFacet(Document doc, String facetFieldName, String value) {
+	private void addFacet(Document doc, String facetName, String value) {
 		if (!value.isEmpty()) {
-			doc.add(new FacetField(facetFieldName, value));
-			doc.add(new StringField(facetFieldName, new BytesRef(value), Store.NO));
+			doc.add(new FacetField(facetName, value));
+			doc.add(new StringField(facetName, new BytesRef(value), Store.NO));
 		}
 	}
 
