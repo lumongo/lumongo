@@ -845,6 +845,8 @@ public class LumongoSegment {
 		long currentTime = System.currentTimeMillis();
 
 		indexWriter.commit();
+		taxoWriter.commit();
+		;
 
 		lastCommit = currentTime;
 
@@ -872,6 +874,10 @@ public class LumongoSegment {
 
 		Directory directory = indexWriter.getDirectory();
 		indexWriter.close();
+		directory.close();
+
+		directory = taxoWriter.getDirectory();
+		taxoWriter.close();
 		directory.close();
 	}
 
@@ -1069,6 +1075,7 @@ public class LumongoSegment {
 		for (FacetAs fa : fc.getFacetAsList()) {
 
 			String facetName = fa.getFacetName();
+			String indexFieldName = facetsConfig.getDimConfig(facetName).indexFieldName;
 
 			if (FieldConfig.FieldType.DATE.equals(fc.getFieldType())) {
 				FacetAs.DateHandling dateHandling = fa.getDateHandling();
@@ -1078,11 +1085,11 @@ public class LumongoSegment {
 
 						if (FacetAs.DateHandling.DATE_YYYYMMDD.equals(dateHandling)) {
 							String date = FORMATTER_YYYYMMDD.format(localDate);
-							addFacet(doc, facetName, date);
+							addFacet(doc, facetName, indexFieldName, date);
 						}
 						else if (FacetAs.DateHandling.DATE_YYYY_MM_DD.equals(dateHandling)) {
 							String date = FORMATTER_YYYY_MM_DD.format(localDate);
-							addFacet(doc, facetName, date);
+							addFacet(doc, facetName, indexFieldName, date);
 						}
 						else {
 							throw new RuntimeException("Not handled date handling <" + dateHandling + "> for facet <" + fa.getFacetName() + ">");
@@ -1098,17 +1105,17 @@ public class LumongoSegment {
 			else {
 				LumongoUtil.handleLists(o, obj -> {
 					String string = obj.toString();
-					addFacet(doc, facetName, string);
+					addFacet(doc, facetName, indexFieldName, string);
 				});
 			}
 
 		}
 	}
 
-	private void addFacet(Document doc, String facetName, String value) {
+	private void addFacet(Document doc, String facetName, String indexFieldName, String value) {
 		if (!value.isEmpty()) {
 			doc.add(new FacetField(facetName, value));
-			doc.add(new StringField(facetName, new BytesRef(value), Store.NO));
+			doc.add(new StringField(indexFieldName, new BytesRef(value), Store.NO));
 		}
 	}
 
