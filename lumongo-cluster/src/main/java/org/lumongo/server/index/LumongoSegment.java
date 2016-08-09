@@ -14,12 +14,13 @@ import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.facet.FacetField;
 import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.Facets;
 import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.LabelAndValue;
-import org.apache.lucene.facet.sortedset.SortedSetDocValuesReaderState;
+import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
 import org.apache.lucene.facet.taxonomy.TaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
@@ -64,11 +65,9 @@ import org.lumongo.server.index.field.FloatFieldIndexer;
 import org.lumongo.server.index.field.IntFieldIndexer;
 import org.lumongo.server.index.field.LongFieldIndexer;
 import org.lumongo.server.index.field.StringFieldIndexer;
-import org.lumongo.server.search.FacetStateCache;
 import org.lumongo.server.search.QueryCacheKey;
 import org.lumongo.server.search.QueryResultCache;
 import org.lumongo.server.search.QueryWithFilters;
-import org.lumongo.server.search.facet.LumongoSortedSetDocValuesFacetCounts;
 import org.lumongo.similarity.ConstantSimilarity;
 import org.lumongo.similarity.TFSimilarity;
 import org.lumongo.storage.rawfiles.DocumentStorage;
@@ -115,7 +114,6 @@ public class LumongoSegment {
 	private Long lastChange;
 	private String indexName;
 	private QueryResultCache queryResultCache;
-	private FacetStateCache facetStateCache;
 
 	private FacetsConfig facetsConfig;
 	private int segmentQueryCacheMaxAmount;
@@ -213,8 +211,6 @@ public class LumongoSegment {
 		else {
 			this.queryResultCache = null;
 		}
-
-		this.facetStateCache = new FacetStateCache(8);
 
 	}
 
@@ -439,6 +435,8 @@ public class LumongoSegment {
 		FacetsCollector facetsCollector = new FacetsCollector();
 		indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
 
+		Facets facets = new FastTaxonomyFacetCounts(taxoReader, facetsConfig, facetsCollector);
+
 		for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 
 			String label = countRequest.getFacetField().getLabel();
@@ -474,20 +472,18 @@ public class LumongoSegment {
 
 			try {
 
-				SortedSetDocValuesReaderState state = facetStateCache.getFacetState(directoryReader, indexFieldName);
-
-				Facets facets = new LumongoSortedSetDocValuesFacetCounts(state, facetsCollector);
-
 				if (indexConfig.getNumberOfSegments() > 1) {
 					if (countRequest.hasSegmentFacets() && countRequest.getSegmentFacets() == 0) {
-						numOfFacets = state.getSize();
+						//TODO: this not ideal
+						numOfFacets = taxoReader.getSize();
 					}
 				}
 
-				facetResult = facets.getTopChildren(numOfFacets, label);
+				facetResult = facets.getTopChildren(numOfFacets, indexFieldName);
 			}
 			catch (UncheckedExecutionException e) {
 				Throwable cause = e.getCause();
+				//TODO is this possible anymore
 				if (cause.getMessage().contains(" was not indexed with SortedSetDocValues")) {
 					//this is when no data has been indexing into a facet
 				}
@@ -563,10 +559,7 @@ public class LumongoSegment {
 			if (qrc != null) {
 				qrc.clear();
 			}
-			FacetStateCache fsc = facetStateCache;
-			if (fsc != null) {
-				fsc.clear();
-			}
+
 		}
 
 		DirectoryTaxonomyReader newone = TaxonomyReader.openIfChanged(taxoReader);
@@ -906,6 +899,8 @@ public class LumongoSegment {
 
 		}
 
+		luceneDocument = facetsConfig.build(taxoWriter, luceneDocument);
+
 		Term term = new Term(LumongoConstants.ID_FIELD, uniqueId);
 
 		indexWriter.updateDocument(term, luceneDocument);
@@ -1112,7 +1107,7 @@ public class LumongoSegment {
 
 	private void addFacet(Document doc, String facetFieldName, String value) {
 		if (!value.isEmpty()) {
-			doc.add(new SortedSetDocValuesField(facetFieldName, new BytesRef(value)));
+			doc.add(new FacetField(facetFieldName, value));
 			doc.add(new StringField(facetFieldName, new BytesRef(value), Store.NO));
 		}
 	}

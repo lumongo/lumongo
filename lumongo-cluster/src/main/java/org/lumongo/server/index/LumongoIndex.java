@@ -11,7 +11,6 @@ import com.mongodb.client.model.UpdateOptions;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
@@ -368,6 +367,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 			for (FacetAs fa : fc.getFacetAsList()) {
 				facetsConfig.setMultiValued(fa.getFacetName(), true);
 				facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME + "." + fa.getFacetName());
+				//facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME);
 			}
 
 		}
