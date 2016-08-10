@@ -458,7 +458,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				if (segmentMap.containsKey(segmentNumber)) {
 					LumongoSegment s = segmentMap.remove(segmentNumber);
 					if (s != null) {
-						log.info("Committing and closing segment <" + segmentNumber + "> for index <" + indexName + ">");
+						log.info("Closing segment <" + segmentNumber + "> for index <" + indexName + ">");
 						s.close(terminate);
 						log.info("Removed segment <" + segmentNumber + "> for index <" + indexName + ">");
 						log.info("Current segments <" + (new TreeSet<>(segmentMap.keySet())) + "> for index <" + indexName + ">");

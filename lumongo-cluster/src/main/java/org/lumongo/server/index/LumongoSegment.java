@@ -838,8 +838,8 @@ public class LumongoSegment {
 	}
 
 	public void forceCommit() throws IOException {
+		log.info("Committing segment <" + segmentNumber + "> for index <" + indexName + ">");
 		long currentTime = System.currentTimeMillis();
-
 		indexWriter.commit();
 		taxoWriter.commit();
 
@@ -857,7 +857,6 @@ public class LumongoSegment {
 		if (lastCh != null) {
 			if ((currentTime - lastCh) > (indexConfig.getIndexSettings().getIdleTimeWithoutCommit() * 1000)) {
 				if ((lastCommit == null) || (lastCh > lastCommit)) {
-					log.info("Flushing segment <" + segmentNumber + "> for index <" + indexName + ">");
 					forceCommit();
 				}
 			}
