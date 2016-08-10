@@ -181,7 +181,6 @@ public class LumongoSegment {
 			}
 		}
 
-
 	}
 
 	private void openIndexWriters() throws Exception {
@@ -318,7 +317,6 @@ public class LumongoSegment {
 
 			segmentReponseBuilder.setIndexName(indexName);
 			segmentReponseBuilder.setSegmentNumber(segmentNumber);
-
 
 			if (!analysisHandlerList.isEmpty()) {
 				for (AnalysisHandler analysisHandler : analysisHandlerList) {
@@ -760,8 +758,6 @@ public class LumongoSegment {
 
 	}
 
-
-
 	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
 			throws Exception {
 
@@ -846,7 +842,6 @@ public class LumongoSegment {
 
 		indexWriter.commit();
 		taxoWriter.commit();
-		;
 
 		lastCommit = currentTime;
 
@@ -869,8 +864,10 @@ public class LumongoSegment {
 		}
 	}
 
-	public void close() throws IOException {
-		forceCommit();
+	public void close(boolean terminate) throws IOException {
+		if (!terminate) {
+			forceCommit();
+		}
 
 		Directory directory = indexWriter.getDirectory();
 		indexWriter.close();

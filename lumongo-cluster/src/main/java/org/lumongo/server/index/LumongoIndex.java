@@ -289,7 +289,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			segmentMap.keySet().stream().filter(segmentNumber -> !newSegments.contains(segmentNumber)).forEach(segmentNumber -> {
 				try {
-					unloadSegment(segmentNumber);
+					unloadSegment(segmentNumber, false);
 				}
 				catch (Exception e) {
 					log.error("Error unloading segment <" + segmentNumber + "> for index <" + indexName + ">");
@@ -338,20 +338,23 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	public void unload() throws IOException {
+	public void unload(boolean terminate) throws IOException {
 		indexLock.writeLock().lock();
 		try {
 			log.info("Canceling timers for <" + indexName + ">");
 			commitTask.cancel();
 			commitTimer.cancel();
-			log.info("Committing <" + indexName + ">");
-			doCommit(true);
+
+			if (!terminate) {
+				log.info("Committing <" + indexName + ">");
+				doCommit(true);
+			}
 
 			log.info("Shutting segment pool for <" + indexName + ">");
 			segmentPool.shutdownNow();
 
 			for (Integer segmentNumber : segmentMap.keySet()) {
-				unloadSegment(segmentNumber);
+				unloadSegment(segmentNumber, terminate);
 			}
 		}
 		finally {
@@ -447,7 +450,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 		return mongoConfig.getDatabaseName() + "_" + indexName;
 	}
 
-	public void unloadSegment(int segmentNumber) throws IOException {
+	public void unloadSegment(int segmentNumber, boolean terminate) throws IOException {
 		indexLock.writeLock().lock();
 		try {
 			ILock hzLock = hazelLockMap.get(segmentNumber);
@@ -456,7 +459,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 					LumongoSegment s = segmentMap.remove(segmentNumber);
 					if (s != null) {
 						log.info("Committing and closing segment <" + segmentNumber + "> for index <" + indexName + ">");
-						s.close();
+						s.close(terminate);
 						log.info("Removed segment <" + segmentNumber + "> for index <" + indexName + ">");
 						log.info("Current segments <" + (new TreeSet<>(segmentMap.keySet())) + "> for index <" + indexName + ">");
 					}
