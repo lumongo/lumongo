@@ -14,8 +14,11 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
+import org.apache.lucene.index.ConcurrentMergeScheduler;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.MergePolicy;
+import org.apache.lucene.index.TieredMergePolicy;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
@@ -419,9 +422,15 @@ public class LumongoIndex implements IndexSegmentInterface {
 		IndexWriterConfig config = new IndexWriterConfig(getPerFieldAnalyzer());
 
 		config.setMaxBufferedDocs(Integer.MAX_VALUE);
-		config.setRAMBufferSizeMB(32);
+		config.setRAMBufferSizeMB(100);
 
-		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 8, 64);
+		//ConcurrentMergeScheduler concurrentMergeScheduler = new ConcurrentMergeScheduler();
+		//concurrentMergeScheduler.setMaxMergesAndThreads(8,2);
+		//config.setMergeScheduler(concurrentMergeScheduler);
+
+		config.setUseCompoundFile(false);
+
+		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 5, 50);
 
 		return new IndexWriter(nrtCachingDirectory, config);
 	}
@@ -433,7 +442,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				clusterConfig.getIndexBlockSize());
 		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 
-		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 8, 64);
+		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 5, 50);
 
 		return new DirectoryTaxonomyWriter(nrtCachingDirectory);
 	}
