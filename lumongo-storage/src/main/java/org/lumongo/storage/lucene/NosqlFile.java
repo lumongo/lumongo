@@ -45,6 +45,10 @@ public interface NosqlFile {
 
 	void readBytes(long position, byte[] b, int offset, int length) throws IOException;
 
+	int readInt(long position) throws IOException;
+
+	long readLong(long position) throws IOException;
+
 	int getBlockSize();
 
 	long getChecksum();

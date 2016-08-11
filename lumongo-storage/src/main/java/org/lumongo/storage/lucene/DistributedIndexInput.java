@@ -67,7 +67,23 @@ public class DistributedIndexInput extends IndexInput {
 			throw new EOFException("read past EOF: " + this);
 		}
 
-		return nosqlFile.readByte(position++ + sliceOffset);
+		byte result = nosqlFile.readByte(position + sliceOffset);
+		position += 1;
+		return result;
+	}
+
+	@Override
+	public int readInt() throws IOException {
+		int result = nosqlFile.readInt(position + sliceOffset);
+		position += 4;
+		return result;
+	}
+
+	@Override
+	public long readLong() throws IOException {
+		long result = nosqlFile.readLong(position + sliceOffset);
+		position += 8;
+		return result;
 	}
 
 	@Override

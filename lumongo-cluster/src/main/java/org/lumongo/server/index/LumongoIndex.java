@@ -15,6 +15,8 @@ import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.ConcurrentMergeScheduler;
+import org.apache.lucene.index.IndexCommit;
+import org.apache.lucene.index.IndexDeletionPolicy;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.MergePolicy;
@@ -423,6 +425,26 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 		config.setMaxBufferedDocs(Integer.MAX_VALUE);
 		config.setRAMBufferSizeMB(100);
+		config.setIndexDeletionPolicy(new IndexDeletionPolicy() {
+			public void onInit(List<? extends IndexCommit> commits) {
+				// Note that commits.size() should normally be 1:
+				onCommit(commits);
+			}
+
+			/**
+			 * Deletes all commits except the most recent one.
+			 */
+			@Override
+			public void onCommit(List<? extends IndexCommit> commits) {
+				// Note that commits.size() should normally be 2 (if not
+				// called by onInit above):
+				int size = commits.size();
+				for (int i = 0; i < size - 1; i++) {
+					log.info("Deleting old commit for segment <" + segmentNumber + "> on index <" + indexName);
+					commits.get(i).delete();
+				}
+			}
+		});
 
 		//ConcurrentMergeScheduler concurrentMergeScheduler = new ConcurrentMergeScheduler();
 		//concurrentMergeScheduler.setMaxMergesAndThreads(8,2);
