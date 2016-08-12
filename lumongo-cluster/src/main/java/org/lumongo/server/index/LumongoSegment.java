@@ -14,12 +14,16 @@ import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.facet.FacetField;
 import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.Facets;
 import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.LabelAndValue;
-import org.apache.lucene.facet.sortedset.SortedSetDocValuesReaderState;
+import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
+import org.apache.lucene.facet.taxonomy.TaxonomyReader;
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyReader;
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
@@ -42,6 +46,7 @@ import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.search.similarities.PerFieldSimilarityWrapper;
 import org.apache.lucene.search.similarities.Similarity;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
@@ -60,11 +65,9 @@ import org.lumongo.server.index.field.FloatFieldIndexer;
 import org.lumongo.server.index.field.IntFieldIndexer;
 import org.lumongo.server.index.field.LongFieldIndexer;
 import org.lumongo.server.index.field.StringFieldIndexer;
-import org.lumongo.server.search.FacetStateCache;
 import org.lumongo.server.search.QueryCacheKey;
 import org.lumongo.server.search.QueryResultCache;
 import org.lumongo.server.search.QueryWithFilters;
-import org.lumongo.server.search.facet.LumongoSortedSetDocValuesFacetCounts;
 import org.lumongo.similarity.ConstantSimilarity;
 import org.lumongo.similarity.TFSimilarity;
 import org.lumongo.storage.rawfiles.DocumentStorage;
@@ -111,11 +114,13 @@ public class LumongoSegment {
 	private Long lastChange;
 	private String indexName;
 	private QueryResultCache queryResultCache;
-	private FacetStateCache facetStateCache;
 
 	private FacetsConfig facetsConfig;
 	private int segmentQueryCacheMaxAmount;
 	private PerFieldAnalyzerWrapper perFieldAnalyzer;
+
+	private DirectoryTaxonomyWriter taxoWriter;
+	private DirectoryTaxonomyReader taxoReader;
 
 	public LumongoSegment(int segmentNumber, IndexSegmentInterface indexSegmentInterface, IndexConfig indexConfig, FacetsConfig facetsConfig,
 			DocumentStorage documentStorage) throws Exception {
@@ -165,15 +170,34 @@ public class LumongoSegment {
 			}
 		}
 
+		//TODO: is this a real use case?
+		try {
+			taxoWriter.getSize();
+		}
+		catch (AlreadyClosedException e) {
+			synchronized (this) {
+				this.taxoWriter = this.indexSegmentInterface.getTaxoWriter(segmentNumber);
+				this.taxoReader = new DirectoryTaxonomyReader(taxoWriter);
+			}
+		}
+
 	}
 
 	private void openIndexWriters() throws Exception {
 		if (this.indexWriter != null) {
 			indexWriter.close();
 		}
-		this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
+		if (this.taxoWriter != null) {
+			taxoWriter.close();
+		}
+
 		this.perFieldAnalyzer = this.indexSegmentInterface.getPerFieldAnalyzer();
+
+		this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
 		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getIndexSettings().getApplyUncommittedDeletes(), false);
+
+		this.taxoWriter = this.indexSegmentInterface.getTaxoWriter(segmentNumber);
+		this.taxoReader = new DirectoryTaxonomyReader(taxoWriter);
 	}
 
 	private void setupCaches(IndexConfig indexConfig) {
@@ -186,8 +210,6 @@ public class LumongoSegment {
 		else {
 			this.queryResultCache = null;
 		}
-
-		this.facetStateCache = new FacetStateCache(8);
 
 	}
 
@@ -295,7 +317,6 @@ public class LumongoSegment {
 
 			segmentReponseBuilder.setIndexName(indexName);
 			segmentReponseBuilder.setSegmentNumber(segmentNumber);
-
 
 			if (!analysisHandlerList.isEmpty()) {
 				for (AnalysisHandler analysisHandler : analysisHandlerList) {
@@ -412,11 +433,14 @@ public class LumongoSegment {
 		FacetsCollector facetsCollector = new FacetsCollector();
 		indexSearcher.search(q, MultiCollector.wrap(collector, facetsCollector));
 
+		Facets facets = new FastTaxonomyFacetCounts(taxoReader, facetsConfig, facetsCollector);
+
 		for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 
 			String label = countRequest.getFacetField().getLabel();
-			String indexFieldName = facetsConfig.getDimConfig(label).indexFieldName;
-			if (indexFieldName.equals(FacetsConfig.DEFAULT_INDEX_FIELD_NAME)) {
+			FacetsConfig.DimConfig dimConfig = facetsConfig.getDimConfig(label);
+
+			if (dimConfig.equals(FacetsConfig.DEFAULT_DIM_CONFIG)) {
 				throw new Exception(label + " is not defined as a facetable field");
 			}
 
@@ -447,13 +471,10 @@ public class LumongoSegment {
 
 			try {
 
-				SortedSetDocValuesReaderState state = facetStateCache.getFacetState(directoryReader, indexFieldName);
-
-				Facets facets = new LumongoSortedSetDocValuesFacetCounts(state, facetsCollector);
-
 				if (indexConfig.getNumberOfSegments() > 1) {
 					if (countRequest.hasSegmentFacets() && countRequest.getSegmentFacets() == 0) {
-						numOfFacets = state.getSize();
+						//TODO: this not ideal
+						numOfFacets = taxoReader.getSize();
 					}
 				}
 
@@ -461,6 +482,7 @@ public class LumongoSegment {
 			}
 			catch (UncheckedExecutionException e) {
 				Throwable cause = e.getCause();
+				//TODO is this possible anymore
 				if (cause.getMessage().contains(" was not indexed with SortedSetDocValues")) {
 					//this is when no data has been indexing into a facet
 				}
@@ -536,10 +558,12 @@ public class LumongoSegment {
 			if (qrc != null) {
 				qrc.clear();
 			}
-			FacetStateCache fsc = facetStateCache;
-			if (fsc != null) {
-				fsc.clear();
-			}
+
+		}
+
+		DirectoryTaxonomyReader newone = TaxonomyReader.openIfChanged(taxoReader);
+		if (newone != null) {
+			taxoReader = newone;
 		}
 	}
 
@@ -734,8 +758,6 @@ public class LumongoSegment {
 
 	}
 
-
-
 	public ResultDocument getSourceDocument(String uniqueId, Long timestamp, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask)
 			throws Exception {
 
@@ -816,9 +838,10 @@ public class LumongoSegment {
 	}
 
 	public void forceCommit() throws IOException {
+		log.info("Committing segment <" + segmentNumber + "> for index <" + indexName + ">");
 		long currentTime = System.currentTimeMillis();
-
 		indexWriter.commit();
+		taxoWriter.commit();
 
 		lastCommit = currentTime;
 
@@ -834,18 +857,23 @@ public class LumongoSegment {
 		if (lastCh != null) {
 			if ((currentTime - lastCh) > (indexConfig.getIndexSettings().getIdleTimeWithoutCommit() * 1000)) {
 				if ((lastCommit == null) || (lastCh > lastCommit)) {
-					log.info("Flushing segment <" + segmentNumber + "> for index <" + indexName + ">");
 					forceCommit();
 				}
 			}
 		}
 	}
 
-	public void close() throws IOException {
-		forceCommit();
+	public void close(boolean terminate) throws IOException {
+		if (!terminate) {
+			forceCommit();
+		}
 
 		Directory directory = indexWriter.getDirectory();
 		indexWriter.close();
+		directory.close();
+
+		directory = taxoWriter.getDirectory();
+		taxoWriter.close();
 		directory.close();
 	}
 
@@ -873,6 +901,8 @@ public class LumongoSegment {
 			luceneDocument.add(new StoredField(LumongoConstants.STORED_META_FIELD, new BytesRef(LumongoUtil.mongoDocumentToByteArray(metadataMongoDoc))));
 
 		}
+
+		luceneDocument = facetsConfig.build(taxoWriter, luceneDocument);
 
 		Term term = new Term(LumongoConstants.ID_FIELD, uniqueId);
 
@@ -1041,7 +1071,7 @@ public class LumongoSegment {
 		for (FacetAs fa : fc.getFacetAsList()) {
 
 			String facetName = fa.getFacetName();
-			String facetFieldName = facetsConfig.getDimConfig(facetName).indexFieldName;
+			String indexFieldName = facetsConfig.getDimConfig(facetName).indexFieldName;
 
 			if (FieldConfig.FieldType.DATE.equals(fc.getFieldType())) {
 				FacetAs.DateHandling dateHandling = fa.getDateHandling();
@@ -1051,11 +1081,11 @@ public class LumongoSegment {
 
 						if (FacetAs.DateHandling.DATE_YYYYMMDD.equals(dateHandling)) {
 							String date = FORMATTER_YYYYMMDD.format(localDate);
-							addFacet(doc, facetFieldName, date);
+							addFacet(doc, facetName, indexFieldName, date);
 						}
 						else if (FacetAs.DateHandling.DATE_YYYY_MM_DD.equals(dateHandling)) {
 							String date = FORMATTER_YYYY_MM_DD.format(localDate);
-							addFacet(doc, facetFieldName, date);
+							addFacet(doc, facetName, indexFieldName, date);
 						}
 						else {
 							throw new RuntimeException("Not handled date handling <" + dateHandling + "> for facet <" + fa.getFacetName() + ">");
@@ -1071,17 +1101,17 @@ public class LumongoSegment {
 			else {
 				LumongoUtil.handleLists(o, obj -> {
 					String string = obj.toString();
-					addFacet(doc, facetFieldName, string);
+					addFacet(doc, facetName, indexFieldName, string);
 				});
 			}
 
 		}
 	}
 
-	private void addFacet(Document doc, String facetFieldName, String value) {
+	private void addFacet(Document doc, String facetName, String indexFieldName, String value) {
 		if (!value.isEmpty()) {
-			doc.add(new SortedSetDocValuesField(facetFieldName, new BytesRef(value)));
-			doc.add(new StringField(facetFieldName, new BytesRef(value), Store.NO));
+			doc.add(new FacetField(facetName, value));
+			doc.add(new StringField(indexFieldName, new BytesRef(value), Store.NO));
 		}
 	}
 

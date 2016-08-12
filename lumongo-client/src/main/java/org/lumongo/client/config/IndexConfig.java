@@ -6,7 +6,6 @@ import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.IndexSettings;
 import org.lumongo.fields.FieldConfigBuilder;
 
-import java.util.List;
 import java.util.TreeMap;
 
 public class IndexConfig {
@@ -24,6 +23,7 @@ public class IndexConfig {
 	private Integer segmentQueryCacheMaxAmount;
 	private Boolean storeDocumentInMongo;
 	private Boolean storeDocumentInIndex;
+	private Boolean storeIndexOnDisk;
 
 	private TreeMap<String, FieldConfig> fieldMap;
 	private TreeMap<String, AnalyzerSettings> analyzerSettingsMap;
@@ -191,6 +191,14 @@ public class IndexConfig {
 		this.storeDocumentInIndex = storeDocumentInIndex;
 	}
 
+	public Boolean getStoreIndexOnDisk() {
+		return storeIndexOnDisk;
+	}
+
+	public void setStoreIndexOnDisk(Boolean storeIndexOnDisk) {
+		this.storeIndexOnDisk = storeIndexOnDisk;
+	}
+
 	public IndexSettings getIndexSettings() {
 		IndexSettings.Builder isb = IndexSettings.newBuilder();
 		if (defaultSearchField != null) {
@@ -231,6 +239,10 @@ public class IndexConfig {
 			isb.setStoreDocumentInMongo(storeDocumentInMongo);
 		}
 
+		if (storeIndexOnDisk != null) {
+			isb.setStoreIndexOnDisk(storeIndexOnDisk);
+		}
+
 		for (String fieldName : fieldMap.keySet()) {
 			FieldConfig fieldConfig = fieldMap.get(fieldName);
 			isb.addFieldConfig(fieldConfig);
@@ -255,6 +267,7 @@ public class IndexConfig {
 		this.segmentQueryCacheMaxAmount = indexSettings.getSegmentQueryCacheMaxAmount();
 		this.storeDocumentInIndex = indexSettings.getStoreDocumentInIndex();
 		this.storeDocumentInMongo = indexSettings.getStoreDocumentInMongo();
+		this.storeIndexOnDisk = indexSettings.getStoreIndexOnDisk();
 		this.fieldMap = new TreeMap<>();
 
 		for (FieldConfig fc : indexSettings.getFieldConfigList()) {

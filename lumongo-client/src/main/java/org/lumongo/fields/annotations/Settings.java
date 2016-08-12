@@ -34,6 +34,8 @@ public @interface Settings {
 
 	boolean storeDocumentInIndex() default true;
 
-	boolean storeDocumentInMongo() default true;
+	boolean storeDocumentInMongo() default false;
+
+	boolean storeIndexOnDisk() default false;
 	
 }

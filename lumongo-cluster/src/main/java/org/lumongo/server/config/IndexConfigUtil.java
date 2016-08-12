@@ -29,6 +29,7 @@ public class IndexConfigUtil {
 	private static final String SEGMENT_QUERY_CACHE_MAX_AMOUNT = "segmentQueryCacheMaxAmount";
 	private static final String STORE_DOCUMENT_IN_MONGO = "storeDocumentInMongo";
 	private static final String STORE_DOCUMENT_IN_INDEX = "storeDocumentInIndex";
+	private static final String STORE_INDEX_ON_DISK = "storeIndexOnDisk";
 	private static final String SEGMENT_TOLERANCE = "segmentTolerance";
 	private static final String FIELD_CONFIGS = "fieldConfigs";
 	private static final String STORED_FIELD_NAME = "storedFieldName";
@@ -93,6 +94,7 @@ public class IndexConfigUtil {
 		indexSettings.setSegmentTolerance(settings.getDouble(SEGMENT_TOLERANCE));
 		indexSettings.setSegmentQueryCacheSize(settings.getInteger(SEGMENT_QUERY_CACHE_SIZE));
 		indexSettings.setSegmentQueryCacheMaxAmount(settings.getInteger(SEGMENT_QUERY_CACHE_MAX_AMOUNT));
+		indexSettings.setStoreIndexOnDisk(settings.getBoolean(STORE_INDEX_ON_DISK));
 
 		Document analyzerSettings = settings.get(ANALYZER_SETTINGS, Document.class);
 		for (String key : analyzerSettings.keySet()) {
@@ -196,6 +198,7 @@ public class IndexConfigUtil {
 		document.put(DEFAULT_SEARCH_FIELD, indexSettings.getDefaultSearchField());
 		document.put(STORE_DOCUMENT_IN_MONGO, indexSettings.getStoreDocumentInMongo());
 		document.put(STORE_DOCUMENT_IN_INDEX, indexSettings.getStoreDocumentInIndex());
+		document.put(STORE_INDEX_ON_DISK, indexSettings.getStoreIndexOnDisk());
 		document.put(APPLY_UNCOMMITTED_DELETES, indexSettings.getApplyUncommittedDeletes());
 		document.put(REQUEST_FACTOR, indexSettings.getRequestFactor());
 		document.put(MIN_SEGMENT_REQUEST, indexSettings.getMinSegmentRequest());

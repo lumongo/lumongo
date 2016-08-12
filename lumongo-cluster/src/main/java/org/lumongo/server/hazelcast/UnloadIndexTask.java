@@ -10,16 +10,18 @@ public class UnloadIndexTask implements Callable<Void>, Serializable {
 	private final int hazelcastPort;
 	
 	private final String indexName;
-	
-	public UnloadIndexTask(int hazelcastPort, String indexName) {
+	private final boolean delete;
+
+	public UnloadIndexTask(int hazelcastPort, String indexName, boolean delete) {
 		this.hazelcastPort = hazelcastPort;
 		this.indexName = indexName;
+		this.delete = delete;
 	}
 	
 	@Override
 	public Void call() throws Exception {
-		
-		HazelcastManager.getHazelcastManager(hazelcastPort).unloadIndex(indexName);
+
+		HazelcastManager.getHazelcastManager(hazelcastPort).unloadIndex(indexName, delete);
 		
 		return null;
 	}

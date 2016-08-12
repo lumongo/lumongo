@@ -8,7 +8,6 @@ import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.FetchResult;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.doc.ResultDocBuilder;
-import org.lumongo.util.ResultHelper;
 import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Embedded;
@@ -17,6 +16,7 @@ import org.lumongo.fields.annotations.IndexedFields;
 import org.lumongo.fields.annotations.Settings;
 import org.lumongo.fields.annotations.UniqueId;
 import org.lumongo.util.AnnotationUtil;
+import org.lumongo.util.ResultHelper;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -139,6 +139,7 @@ public class Mapper<T> {
 		indexConfig.setSegmentQueryCacheMaxAmount(settings.segmentQueryCacheMaxAmount());
 		indexConfig.setStoreDocumentInIndex(settings.storeDocumentInIndex());
 		indexConfig.setStoreDocumentInMongo(settings.storeDocumentInMongo());
+		indexConfig.setStoreIndexOnDisk(settings.storeIndexOnDisk());
 
 		for (Lumongo.FieldConfig fieldConfig : fieldConfigMapper.getFieldConfigs()) {
 			indexConfig.addFieldConfig(fieldConfig);

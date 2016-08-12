@@ -79,8 +79,7 @@ public class MongoDirectory implements NosqlDirectory {
 		this(mongo, dbname, indexName, sharded, DEFAULT_BLOCK_SIZE);
 	}
 
-	public MongoDirectory(MongoClient mongo, String ddName, String indexName, boolean sharded, int blockSize)
-					throws MongoException, IOException {
+	public MongoDirectory(MongoClient mongo, String ddName, String indexName, boolean sharded, int blockSize) throws MongoException, IOException {
 
 		this.mongo = mongo;
 		this.dbname = ddName;
@@ -127,7 +126,6 @@ public class MongoDirectory implements NosqlDirectory {
 
 	private void fetchInitialContents() throws MongoException, IOException {
 		MongoCollection<Document> c = getFilesCollection();
-
 
 		FindIterable<Document> cur = c.find();
 		for (Document d : cur) {
@@ -187,8 +185,7 @@ public class MongoDirectory implements NosqlDirectory {
 	private MongoFile createFile(String fileName) throws IOException {
 		synchronized (this) {
 
-			TreeSet<Short> fileNumbers = nameToFileMap.values().stream().map(mongoFile -> mongoFile.fileNumber)
-							.collect(Collectors.toCollection(TreeSet::new));
+			TreeSet<Short> fileNumbers = nameToFileMap.values().stream().map(mongoFile -> mongoFile.fileNumber).collect(Collectors.toCollection(TreeSet::new));
 
 			FindIterable<Document> documents = getFilesCollection().find();
 			for (Document document : documents) {
@@ -227,7 +224,7 @@ public class MongoDirectory implements NosqlDirectory {
 	public MongoFile fromDocument(Document document) throws IOException {
 		try {
 			MongoFile mongoFile = new MongoFile(this, (String) document.get(FILE_NAME), ((Number) document.get(FILE_NUMBER)).shortValue(),
-							((Number) document.get(BLOCK_SIZE)).intValue());
+					((Number) document.get(BLOCK_SIZE)).intValue());
 			mongoFile.setFileLength(((Number) document.get(LENGTH)).longValue());
 			mongoFile.setLastModified(((Number) document.get(LAST_MODIFIED)).longValue());
 			return mongoFile;
@@ -280,7 +277,6 @@ public class MongoDirectory implements NosqlDirectory {
 
 		MongoCollection<Document> b = getBlocksCollection();
 		b.deleteMany(query);
-
 
 		nameToFileMap.remove(nosqlFile.getFileName());
 

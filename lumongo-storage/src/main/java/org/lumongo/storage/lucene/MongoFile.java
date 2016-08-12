@@ -76,8 +76,7 @@ public class MongoFile implements NosqlFile {
 			}
 			*/
 		};
-		cache = CacheBuilder.newBuilder().concurrencyLevel(32).maximumSize(MongoDirectory.DEFAULT_BLOCK_MAX).removalListener(
-						removalListener).build();
+		cache = CacheBuilder.newBuilder().concurrencyLevel(32).maximumSize(MongoDirectory.DEFAULT_BLOCK_MAX).removalListener(removalListener).build();
 	}
 
 	public static void clearCache() {
@@ -145,9 +144,41 @@ public class MongoFile implements NosqlFile {
 
 	@Override
 	public byte readByte(long position) throws IOException {
+
+		int block = (int) (position / blockSize);
+		int blockOffset = (int) (position - (block * blockSize));
+
+		MongoBlock mb = currentReadBlock;
+
+		if (mb == null || block != mb.blockNumber) {
+			currentReadBlock = mb = getMongoBlock(block);
+		}
+
+		return mb.bytes[blockOffset];
+
+	}
+
+	private MongoBlock getMongoBlock(int block) throws IOException {
+
+		long blockKey = MongoBlock.computeBlockKey(this, block);
+
+		Callable<MongoBlock> loadBlockIfNeeded = () -> fetchBlock(block, true);
 		try {
-			int block = (int) (position / mongoDirectory.getBlockSize());
-			int blockOffset = (int) (position - (block * mongoDirectory.getBlockSize()));
+			return cache.get(blockKey, loadBlockIfNeeded);
+		}
+		catch (ExecutionException e) {
+			throw new IOException("Failed to load block <" + block + "> for file <" + fileName + "> of index <" + indexName + ">");
+		}
+
+	}
+
+	public void readBytes(long position, byte[] b, int offset, int length) throws IOException {
+
+		while (length > 0) {
+			int block = (int) (position / blockSize);
+			int blockOffset = (int) (position - (block * blockSize));
+
+			int readSize = Math.min(blockSize - blockOffset, length);
 
 			MongoBlock mb = currentReadBlock;
 
@@ -155,72 +186,48 @@ public class MongoFile implements NosqlFile {
 				currentReadBlock = mb = getMongoBlock(block);
 			}
 
-			return mb.bytes[blockOffset];
+			System.arraycopy(mb.bytes, blockOffset, b, offset, readSize);
+
+			position += readSize;
+			offset += readSize;
+			length -= readSize;
 		}
-		catch (ExecutionException e) {
-			throw new IOException("Failed to read byte at position: " + position);
-		}
-	}
 
-	private MongoBlock getMongoBlock(int block) throws ExecutionException, IOException {
-
-		long blockKey = MongoBlock.computeBlockKey(this, block);
-
-		Callable<MongoBlock> loadBlockIfNeeded = () -> {
-			/*
-			ReadWriteLock lock = lockHandler.getLock(blockKey);
-			Lock wLock = lock.writeLock();
-			wLock.lock();
-			try {
-			*/
-			MongoBlock mb1 = fetchBlock(block, true);
-			return mb1;
-			/*
-			}
-			finally {
-				wLock.unlock();
-			}
-
-			*/
-		};
-		return cache.get(blockKey, loadBlockIfNeeded);
-	}
-
-	public void readBytes(long position, byte[] b, int offset, int length) throws IOException {
-
-		try {
-
-			while (length > 0) {
-				int block = (int) (position / blockSize);
-				int blockOffset = (int) (position - (block * blockSize));
-
-				int readSize = Math.min(blockSize - blockOffset, length);
-
-				MongoBlock mb = currentReadBlock;
-
-				if (mb == null || block != mb.blockNumber) {
-					currentReadBlock = mb = getMongoBlock(block);
-				}
-
-				System.arraycopy(mb.bytes, blockOffset, b, offset, readSize);
-
-				position += readSize;
-				offset += readSize;
-				length -= readSize;
-			}
-		}
-		catch (ExecutionException e) {
-			throw new IOException("Failed to read bytes at position: " + position);
-		}
 	}
 
 	@Override
 	public void write(long position, byte b) throws IOException {
-		try {
+
+		int block = (int) (position / blockSize);
+		int blockOffset = (int) (position - (block * blockSize));
+
+		crc.update(b);
+
+		MongoBlock mb = currentWriteBlock;
+
+		if (mb == null || block != mb.blockNumber) {
+			if (mb != null) {
+				markDirty(mb);
+			}
+			currentWriteBlock = mb = getMongoBlock(block);
+		}
+
+		mb.bytes[blockOffset] = b;
+		mb.markDirty();
+
+		fileLength = Math.max(position + 1, fileLength);
+
+	}
+
+	@Override
+	public void write(long position, byte[] b, int offset, int length) throws IOException {
+
+		crc.update(b, offset, length);
+
+		while (length > 0) {
 			int block = (int) (position / blockSize);
 			int blockOffset = (int) (position - (block * blockSize));
-
-			crc.update(b);
+			int writeSize = Math.min(blockSize - blockOffset, length);
 
 			MongoBlock mb = currentWriteBlock;
 
@@ -231,46 +238,14 @@ public class MongoFile implements NosqlFile {
 				currentWriteBlock = mb = getMongoBlock(block);
 			}
 
-			mb.bytes[blockOffset] = b;
+			System.arraycopy(b, offset, mb.bytes, blockOffset, writeSize);
 			mb.markDirty();
-
-			fileLength = Math.max(position + 1, fileLength);
+			position += writeSize;
+			offset += writeSize;
+			length -= writeSize;
 		}
-		catch (ExecutionException e) {
-			throw new IOException("Failed to write byte at position: " + position);
-		}
-	}
+		fileLength = Math.max(position + length, fileLength);
 
-	@Override
-	public void write(long position, byte[] b, int offset, int length) throws IOException {
-		try {
-			crc.update(b, offset, length);
-
-			while (length > 0) {
-				int block = (int) (position / blockSize);
-				int blockOffset = (int) (position - (block * blockSize));
-				int writeSize = Math.min(blockSize - blockOffset, length);
-
-				MongoBlock mb = currentWriteBlock;
-
-				if (mb == null || block != mb.blockNumber) {
-					if (mb != null) {
-						markDirty(mb);
-					}
-					currentWriteBlock = mb = getMongoBlock(block);
-				}
-
-				System.arraycopy(b, offset, mb.bytes, blockOffset, writeSize);
-				mb.markDirty();
-				position += writeSize;
-				offset += writeSize;
-				length -= writeSize;
-			}
-			fileLength = Math.max(position + length, fileLength);
-		}
-		catch (ExecutionException e) {
-			throw new IOException("Failed to write bytes at position: " + position);
-		}
 	}
 
 	private void markDirty(MongoBlock mb) {
@@ -290,26 +265,13 @@ public class MongoFile implements NosqlFile {
 			Set<Long> dirtyBlockKeys = new HashSet<>(dirtyBlocks.keySet());
 
 			for (Long key : dirtyBlockKeys) {
-				/*
-				ReadWriteLock lock = lockHandler.getLock(key);
-				Lock wLock = lock.writeLock();
-				wLock.lock();
-				try {
 
-*/
 				dirtyBlocks.remove(key);
 
 				MongoBlock mb = cache.getIfPresent(key);
 				if (mb != null) {
 					mb.flushIfDirty();
 				}
-
-				/*
-				}
-				finally {
-					wLock.unlock();
-				}
-				*/
 			}
 
 		}
@@ -391,19 +353,57 @@ public class MongoFile implements NosqlFile {
 
 	@Override
 	public String toString() {
-		return "MongoFile{" +
-						"mongoDirectory=" + mongoDirectory +
-						", indexNumber=" + indexNumber +
-						", fileNumber=" + fileNumber +
-						", indexName='" + indexName + '\'' +
-						", blockSize=" + blockSize +
-						", fileLength=" + fileLength +
-						", lastModified=" + lastModified +
-						", fileName='" + fileName + '\'' +
-						", currentReadBlock=" + currentReadBlock +
-						", currentWriteBlock=" + currentWriteBlock +
-						", dirtyBlocks=" + dirtyBlocks +
-						", crc=" + crc +
-						'}';
+		return "MongoFile{" + "mongoDirectory=" + mongoDirectory + ", indexNumber=" + indexNumber + ", fileNumber=" + fileNumber + ", indexName='" + indexName
+				+ '\'' + ", blockSize=" + blockSize + ", fileLength=" + fileLength + ", lastModified=" + lastModified + ", fileName='" + fileName + '\''
+				+ ", currentReadBlock=" + currentReadBlock + ", currentWriteBlock=" + currentWriteBlock + ", dirtyBlocks=" + dirtyBlocks + ", crc=" + crc + '}';
 	}
+
+	@Override
+	public int readInt(long position) throws IOException {
+
+		int block = (int) (position / blockSize);
+		int blockOffset = (int) (position - (block * blockSize));
+
+		int readSize = Math.min(blockSize - blockOffset, 4);
+
+		MongoBlock mb = currentReadBlock;
+
+		if (mb == null || block != mb.blockNumber) {
+			currentReadBlock = mb = getMongoBlock(block);
+		}
+
+		if (readSize == 4) {
+			byte[] buffer = mb.bytes;
+			return ((buffer[blockOffset++] & 0xFF) << 24) | ((buffer[blockOffset++] & 0xFF) << 16) | ((buffer[blockOffset++] & 0xFF) << 8) | (
+					buffer[blockOffset++] & 0xFF);
+		}
+		return ((readByte(position++) & 0xFF) << 24) | ((readByte(position++) & 0xFF) << 16) | ((readByte(position++) & 0xFF) << 8) | (readByte(position++)
+				& 0xFF);
+	}
+
+	@Override
+	public long readLong(long position) throws IOException {
+		int block = (int) (position / blockSize);
+		int blockOffset = (int) (position - (block * blockSize));
+
+		int readSize = Math.min(blockSize - blockOffset, 8);
+
+		MongoBlock mb = currentReadBlock;
+
+		if (mb == null || block != mb.blockNumber) {
+			currentReadBlock = mb = getMongoBlock(block);
+		}
+
+		if (readSize == 8) {
+			byte[] buffer = mb.bytes;
+			final int i1 = ((buffer[blockOffset++] & 0xff) << 24) | ((buffer[blockOffset++] & 0xff) << 16) | ((buffer[blockOffset++] & 0xff) << 8) | (
+					buffer[blockOffset++] & 0xff);
+			final int i2 = ((buffer[blockOffset++] & 0xff) << 24) | ((buffer[blockOffset++] & 0xff) << 16) | ((buffer[blockOffset++] & 0xff) << 8) | (
+					buffer[blockOffset++] & 0xff);
+			return (((long) i1) << 32) | (i2 & 0xFFFFFFFFL);
+		}
+		return (((long) readInt(position)) << 32) | (readInt(position + 4) & 0xFFFFFFFFL);
+	}
+
+
 }

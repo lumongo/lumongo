@@ -194,10 +194,9 @@ public class HazelcastManager implements MembershipListener, LifecycleListener {
 	public IExecutorService getExecutorService() {
 		return hazelcastInstance.getExecutorService("default");
 	}
-	
-	public void unloadIndex(String indexName) throws IOException {
-		indexManager.unloadIndex(indexName);
-		
+
+	public void unloadIndex(String indexName, boolean terminate) throws IOException {
+		indexManager.unloadIndex(indexName, terminate);
 	}
 	
 	public long getClusterTime() {

@@ -288,7 +288,7 @@ public class LumongoIndexManager {
 			log.info("Unload index <" + indexName + "> for delete");
 			for (Member m : currentMembers) {
 				try {
-					UnloadIndexTask uit = new UnloadIndexTask(m.getSocketAddress().getPort(), indexName);
+					UnloadIndexTask uit = new UnloadIndexTask(m.getSocketAddress().getPort(), indexName, true);
 					if (!self.equals(m)) {
 						Future<Void> dt = executorService.submitToMember(uit, m);
 						dt.get();
@@ -314,7 +314,7 @@ public class LumongoIndexManager {
 		}
 	}
 
-	public void unloadIndex(String indexName) throws IOException {
+	public void unloadIndex(String indexName, boolean terminate) throws IOException {
 		globalLock.writeLock().lock();
 		try {
 			LumongoIndex i = indexMap.get(indexName);
@@ -322,7 +322,7 @@ public class LumongoIndexManager {
 				throw new IndexDoesNotExist(indexName);
 			}
 
-			i.unload();
+			i.unload(terminate);
 			indexMap.remove(indexName);
 		}
 		finally {
@@ -359,7 +359,7 @@ public class LumongoIndexManager {
 				LumongoIndex i = indexMap.get(indexName);
 				try {
 					log.info("Unloading <" + indexName + ">");
-					i.unload();
+					i.unload(false);
 				}
 				catch (Exception e) {
 					log.error(e.getClass().getSimpleName() + ": ", e);
