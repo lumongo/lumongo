@@ -478,10 +478,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 	}
 
 	public DirectoryTaxonomyWriter getTaxoWriter(int segmentNumber) throws IOException {
-		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
-		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber) + "_facets";
-		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
-				clusterConfig.getIndexBlockSize());
+
 
 		Directory d;
 
@@ -489,6 +486,10 @@ public class LumongoIndex implements IndexSegmentInterface {
 			d = MMapDirectory.open(getPathForFacetsIndex(segmentNumber));
 		}
 		else {
+			String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
+			String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber) + "_facets";
+			MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
+					clusterConfig.getIndexBlockSize());
 			d = new DistributedDirectory(mongoDirectory);
 		}
 
