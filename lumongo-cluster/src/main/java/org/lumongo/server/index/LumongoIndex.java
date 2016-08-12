@@ -14,13 +14,10 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
-import org.apache.lucene.index.ConcurrentMergeScheduler;
 import org.apache.lucene.index.IndexCommit;
 import org.apache.lucene.index.IndexDeletionPolicy;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.MergePolicy;
-import org.apache.lucene.index.TieredMergePolicy;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
@@ -28,6 +25,8 @@ import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.store.NRTCachingDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.bson.Document;
@@ -50,6 +49,7 @@ import org.lumongo.storage.lucene.DistributedDirectory;
 import org.lumongo.storage.lucene.MongoDirectory;
 import org.lumongo.storage.rawfiles.DocumentStorage;
 import org.lumongo.storage.rawfiles.MongoDocumentStorage;
+import org.lumongo.util.DeletingFileVisitor;
 import org.lumongo.util.LockHandler;
 import org.lumongo.util.LumongoThreadFactory;
 import org.lumongo.util.LumongoUtil;
@@ -58,6 +58,9 @@ import org.lumongo.util.SegmentUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -102,6 +105,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 	private final String indexName;
 	private final HazelcastManager hazelcastManager;
 	private final DocumentStorage documentStorage;
+
 	private Map<Member, Set<Integer>> memberToSegmentMap;
 	private Map<Integer, Member> segmentToMemberMap;
 	private Timer commitTimer;
@@ -415,11 +419,19 @@ public class LumongoIndex implements IndexSegmentInterface {
 	}
 
 	public IndexWriter getIndexWriter(int segmentNumber) throws Exception {
-		String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
-		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber) + "_index";
-		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
-				clusterConfig.getIndexBlockSize());
-		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
+
+		Directory d;
+		if (indexConfig.getIndexSettings().getStoreIndexOnDisk()) {
+			d = MMapDirectory.open(getPathForIndex(segmentNumber));
+		}
+		else {
+			String indexSegmentDbName = getIndexSegmentDbName(segmentNumber);
+			String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber) + "_index";
+			MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
+					clusterConfig.getIndexBlockSize());
+			d = new DistributedDirectory(mongoDirectory);
+		}
+
 
 		IndexWriterConfig config = new IndexWriterConfig(getPerFieldAnalyzer());
 
@@ -440,7 +452,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				// called by onInit above):
 				int size = commits.size();
 				for (int i = 0; i < size - 1; i++) {
-					log.info("Deleting old commit for segment <" + segmentNumber + "> on index <" + indexName);
+					//log.info("Deleting old commit for segment <" + segmentNumber + "> on index <" + indexName);
 					commits.get(i).delete();
 				}
 			}
@@ -452,9 +464,17 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 		config.setUseCompoundFile(false);
 
-		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 5, 50);
+		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(d, 15, 90);
 
 		return new IndexWriter(nrtCachingDirectory, config);
+	}
+
+	private Path getPathForIndex(int segmentNumber) {
+		return Paths.get("indexes", indexName + "_" + segmentNumber + "_idx");
+	}
+
+	private Path getPathForFacetsIndex(int segmentNumber) {
+		return Paths.get("indexes", indexName + "_" + segmentNumber + "_facets");
 	}
 
 	public DirectoryTaxonomyWriter getTaxoWriter(int segmentNumber) throws IOException {
@@ -462,9 +482,17 @@ public class LumongoIndex implements IndexSegmentInterface {
 		String indexSegmentCollectionName = getIndexSegmentCollectionName(segmentNumber) + "_facets";
 		MongoDirectory mongoDirectory = new MongoDirectory(mongo, indexSegmentDbName, indexSegmentCollectionName, clusterConfig.isSharded(),
 				clusterConfig.getIndexBlockSize());
-		DistributedDirectory dd = new DistributedDirectory(mongoDirectory);
 
-		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(dd, 5, 50);
+		Directory d;
+
+		if (indexConfig.getIndexSettings().getStoreIndexOnDisk()) {
+			d = MMapDirectory.open(getPathForFacetsIndex(segmentNumber));
+		}
+		else {
+			d = new DistributedDirectory(mongoDirectory);
+		}
+
+		NRTCachingDirectory nrtCachingDirectory = new NRTCachingDirectory(d, 2, 10);
 
 		return new DirectoryTaxonomyWriter(nrtCachingDirectory);
 	}
@@ -752,13 +780,29 @@ public class LumongoIndex implements IndexSegmentInterface {
 			MongoCollection<Document> dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
 			dbCollection.drop();
 		}
-		for (int i = 0; i < numberOfSegments; i++) {
 
-			String dbName = getIndexSegmentDbName(i);
-			String collectionName = getIndexSegmentCollectionName(i);
-			MongoDirectory.dropIndex(mongo, dbName, collectionName);
-
+		if (indexConfig.getIndexSettings().getStoreIndexOnDisk()) {
+			for (int i = 0; i < numberOfSegments; i++) {
+				{
+					Path p = getPathForIndex(i);
+					Files.walkFileTree(p, new DeletingFileVisitor());
+				}
+				{
+					Path p = getPathForFacetsIndex(i);
+					Files.walkFileTree(p, new DeletingFileVisitor());
+				}
+			}
 		}
+		else {
+			for (int i = 0; i < numberOfSegments; i++) {
+
+				String dbName = getIndexSegmentDbName(i);
+				String collectionName = getIndexSegmentCollectionName(i);
+				MongoDirectory.dropIndex(mongo, dbName, collectionName);
+
+			}
+		}
+
 		documentStorage.drop();
 
 		for (int i = 0; i < numberOfSegments; i++) {

@@ -265,26 +265,13 @@ public class MongoFile implements NosqlFile {
 			Set<Long> dirtyBlockKeys = new HashSet<>(dirtyBlocks.keySet());
 
 			for (Long key : dirtyBlockKeys) {
-				/*
-				ReadWriteLock lock = lockHandler.getLock(key);
-				Lock wLock = lock.writeLock();
-				wLock.lock();
-				try {
 
-*/
 				dirtyBlocks.remove(key);
 
 				MongoBlock mb = cache.getIfPresent(key);
 				if (mb != null) {
 					mb.flushIfDirty();
 				}
-
-				/*
-				}
-				finally {
-					wLock.unlock();
-				}
-				*/
 			}
 
 		}
@@ -377,7 +364,7 @@ public class MongoFile implements NosqlFile {
 		int block = (int) (position / blockSize);
 		int blockOffset = (int) (position - (block * blockSize));
 
-		int readSize = Math.min(blockSize - blockOffset, 2);
+		int readSize = Math.min(blockSize - blockOffset, 4);
 
 		MongoBlock mb = currentReadBlock;
 
@@ -399,7 +386,7 @@ public class MongoFile implements NosqlFile {
 		int block = (int) (position / blockSize);
 		int blockOffset = (int) (position - (block * blockSize));
 
-		int readSize = Math.min(blockSize - blockOffset, 2);
+		int readSize = Math.min(blockSize - blockOffset, 8);
 
 		MongoBlock mb = currentReadBlock;
 

@@ -163,6 +163,7 @@ message IndexSettings {
 	optional double segmentTolerance = 11 [default = 0.05];
 	optional uint32 segmentQueryCacheSize = 12 [default = 512];
 	optional uint32 segmentQueryCacheMaxAmount = 13 [default = 256];
+	optional bool storeIndexOnDisk = 14 [default = false];
 
 }
 
