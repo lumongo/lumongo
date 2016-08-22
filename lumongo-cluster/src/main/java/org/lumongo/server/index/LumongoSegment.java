@@ -516,6 +516,12 @@ public class LumongoSegment {
 			FieldConfig.FieldType sortFieldType = indexConfig.getFieldTypeForSortField(sortField);
 
 			if (IndexConfigUtil.isNumericOrDateFieldType(sortFieldType)) {
+
+				SortedNumericSelector.Type sortedNumericSelector = SortedNumericSelector.Type.MIN;
+				if (reverse) {
+					sortedNumericSelector = SortedNumericSelector.Type.MAX;
+				}
+
 				SortField.Type type;
 				if (IndexConfigUtil.isNumericIntFieldType(sortFieldType)) {
 					type = SortField.Type.INT;
@@ -535,10 +541,16 @@ public class LumongoSegment {
 				else {
 					throw new Exception("Invalid numeric sort type <" + sortFieldType + "> for sort field <" + sortField + ">");
 				}
-				sortFields.add(new SortedNumericSortField(sortField, type, reverse));
+				sortFields.add(new SortedNumericSortField(sortField, type, reverse, sortedNumericSelector));
 			}
 			else {
-				sortFields.add(new SortedSetSortField(sortField, reverse));
+
+				SortedSetSelector.Type sortedSetSelector = SortedSetSelector.Type.MIN;
+				if (reverse) {
+					sortedSetSelector = SortedSetSelector.Type.MAX;
+				}
+
+				sortFields.add(new SortedSetSortField(sortField, reverse, sortedSetSelector));
 			}
 
 		}
