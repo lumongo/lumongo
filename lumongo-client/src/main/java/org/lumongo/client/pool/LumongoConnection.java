@@ -90,6 +90,7 @@ public class LumongoConnection {
 		try {
 			if (bootstrap != null) {
 				bootstrap.group().shutdownGracefully(0, 15, TimeUnit.SECONDS);
+				shutdownHandler.removeResource(bootstrap.group());
 			}
 		}
 		catch (Exception e) {
