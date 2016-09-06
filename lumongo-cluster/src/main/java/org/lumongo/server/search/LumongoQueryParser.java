@@ -1,6 +1,9 @@
 package org.lumongo.server.search;
 
 import com.google.common.primitives.Doubles;
+import com.google.common.primitives.Floats;
+import com.google.common.primitives.Ints;
+import com.google.common.primitives.Longs;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.lsh.LSH;
 import org.apache.lucene.document.DoublePoint;
@@ -146,8 +149,19 @@ public class LumongoQueryParser extends QueryParser {
 			if (IndexConfigUtil.isDateFieldType(fieldType)) {
 				return getNumericOrDateRange(field, text, text, true, true);
 			}
-			else if (Doubles.tryParse(text) != null) {
-				return getNumericOrDateRange(field, text, text, true, true);
+			else {
+				if (IndexConfigUtil.isNumericIntFieldType(fieldType) && Ints.tryParse(text) != null) {
+					return getNumericOrDateRange(field, text, text, true, true);
+				}
+				else if (IndexConfigUtil.isNumericLongFieldType(fieldType) && Longs.tryParse(text) != null) {
+					return getNumericOrDateRange(field, text, text, true, true);
+				}
+				else if (IndexConfigUtil.isNumericFloatFieldType(fieldType) && Floats.tryParse(text) != null) {
+					return getNumericOrDateRange(field, text, text, true, true);
+				}
+				else if (IndexConfigUtil.isNumericDoubleFieldType(fieldType) && Doubles.tryParse(text) != null) {
+					return getNumericOrDateRange(field, text, text, true, true);
+				}
 			}
 			return null;
 		}
