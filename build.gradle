@@ -14,8 +14,8 @@ subprojects {
 	
 	version = '0.52-SNAPSHOT'
 	ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
-	ext.luceneVersion = '6.1.0'
-	ext.mongoJavaVersion = '3.2.2'
+	ext.luceneVersion = '6.2.0'
+	ext.mongoJavaVersion = '3.3.0'
 
 	group = 'org.lumongo'
 	

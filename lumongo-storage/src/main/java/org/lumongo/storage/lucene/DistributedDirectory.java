@@ -76,9 +76,14 @@ public class DistributedDirectory extends BaseDirectory {
 	}
 
 	@Override
-	public void renameFile(String source, String dest) throws IOException {
+	public void rename(String source, String dest) throws IOException {
 		ensureOpen();
 		nosqlDirectory.rename(source, dest);
+	}
+
+	@Override
+	public void syncMetaData() throws IOException {
+
 	}
 
 	/**
