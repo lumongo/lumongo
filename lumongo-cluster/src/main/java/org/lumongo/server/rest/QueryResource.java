@@ -18,12 +18,14 @@ import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.util.ResultHelper;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Date;
 import java.util.List;
 
 @Path(LumongoConstants.QUERY_URL)
@@ -38,7 +40,7 @@ public class QueryResource {
 	}
 
 	@GET
-	@Produces({ MediaType.APPLICATION_JSON + ";charset=utf-8" })
+	@Produces({ MediaType.APPLICATION_JSON + ";charset=utf-8", MediaType.TEXT_PLAIN + ";charset=utf-8" })
 	public Response get(@QueryParam(LumongoConstants.INDEX) List<String> indexName, @QueryParam(LumongoConstants.QUERY) String query,
 			@QueryParam(LumongoConstants.QUERY_FIELD) List<String> queryFields, @QueryParam(LumongoConstants.FILTER_QUERY) List<String> filterQueries,
 			@QueryParam(LumongoConstants.FILTER_QUERY_JSON) List<String> filterJsonQueries, @QueryParam(LumongoConstants.FIELDS) List<String> fields,
@@ -49,7 +51,7 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.DISMAX) Boolean dismax, @QueryParam(LumongoConstants.DISMAX_TIE) Float dismaxTie,
 			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm, @QueryParam(LumongoConstants.SIMILARITY) List<String> similarity,
 			@QueryParam(LumongoConstants.HIGHLIGHT) List<String> highlightList, @QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList,
-			@QueryParam(LumongoConstants.ANALYZE_JSON) List<String> analyzeJsonList) {
+			@QueryParam(LumongoConstants.ANALYZE_JSON) List<String> analyzeJsonList, @QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") String format) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 		if (query != null && !query.isEmpty()) {
@@ -254,13 +256,19 @@ public class QueryResource {
 		try {
 			QueryResponse qr = indexManager.query(qrBuilder.build());
 
-			String response = getStandardResponse(qr);
+			if (format.equals("json")) {
+				String response = getStandardResponse(qr);
 
-			if (pretty) {
-				response = JsonWriter.formatJson(response);
+				if (pretty) {
+					response = JsonWriter.formatJson(response);
+				}
+
+				return Response.status(LumongoConstants.SUCCESS).type(MediaType.APPLICATION_JSON + ";charset=utf-8").entity(response).build();
 			}
-
-			return Response.status(LumongoConstants.SUCCESS).entity(response).build();
+			else {
+				String response = getCSVResponse(fields, qr);
+				return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(response).build();
+			}
 		}
 		catch (Exception e) {
 			log.error(e.getClass().getSimpleName() + ":", e);
@@ -435,6 +443,61 @@ public class QueryResource {
 
 
 		responseBuilder.append("}");
+
+		return responseBuilder.toString();
+	}
+
+	private String getCSVResponse(List<String> fields, QueryResponse qr) {
+		StringBuilder responseBuilder = new StringBuilder();
+
+		// headersBuilder
+		StringBuilder headersBuilder = new StringBuilder();
+		fields.stream().filter(field -> !field.startsWith("-")).forEach(field -> headersBuilder.append(field).append(","));
+		responseBuilder.append(headersBuilder.toString().replaceFirst(",$", "\n"));
+
+		// records
+		qr.getResultsList().stream().filter(Lumongo.ScoredResult::hasResultDocument).forEach(sr -> {
+			Document document = ResultHelper.getDocumentFromResultDocument(sr.getResultDocument());
+
+			int i = 0;
+			for (String field : fields) {
+				Object obj = document.get(field);
+				if (obj != null) {
+					if (obj instanceof List) {
+						List value = (List) obj;
+						responseBuilder.append(value.toString());
+					}
+					else if (obj instanceof Date) {
+						Date value = (Date) obj;
+						responseBuilder.append(value.toString());
+					}
+					else if (obj instanceof Number) {
+						Number value = (Number) obj;
+						responseBuilder.append(value);
+					}
+					else {
+						String value = (String) obj;
+						if (value.contains(",") || value.contains(" ") || value.contains("\"") || value.contains("\n")) {
+							responseBuilder.append("\"");
+							responseBuilder.append(value.replace("\"", "\"\""));
+							responseBuilder.append("\"");
+						}
+						else {
+							responseBuilder.append(value);
+						}
+					}
+
+				}
+
+				i++;
+
+				if (i < fields.size()) {
+					responseBuilder.append(",");
+				}
+
+			}
+
+		});
 
 		return responseBuilder.toString();
 	}
