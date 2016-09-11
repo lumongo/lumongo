@@ -110,7 +110,7 @@ public class TermsResource {
 
 					for (Lumongo.Term term : terms.getTermList()) {
 						String value = term.getValue();
-						if (value.contains(",") || value.contains(" ") || value.contains("\"")) {
+						if (value.contains(",") || value.contains(" ") || value.contains("\"") || value.contains("\n")) {
 							csvString.append("\"");
 							csvString.append(value.replace("\"", "\"\""));
 							csvString.append("\"");
