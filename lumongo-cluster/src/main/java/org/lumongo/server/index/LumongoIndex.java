@@ -926,7 +926,12 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			LumongoMultiFieldQueryParser qp = null;
 			if (queryText == null || queryText.isEmpty()) {
-				return new MatchAllDocsQuery();
+				if (queryFields.isEmpty()) {
+					return new MatchAllDocsQuery();
+				}
+				else {
+					queryText = "*";
+				}
 			}
 			try {
 				qp = parsers.borrowObject();
