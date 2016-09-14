@@ -171,7 +171,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 	}
 
-	private static IndexConfig loadIndexSettings(MongoClient mongo, String database, String indexName) throws InvalidIndexConfig {
+	public static IndexConfig loadIndexSettings(MongoClient mongo, String database, String indexName) throws InvalidIndexConfig {
 		MongoDatabase db = mongo.getDatabase(database);
 		MongoCollection<Document> dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
 		Document settings = dbCollection.find(new BasicDBObject(MongoConstants.StandardFields._ID, SETTINGS_ID)).first();

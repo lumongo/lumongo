@@ -206,6 +206,10 @@ public class LumongoIndexManager {
 		}
 	}
 
+	public IndexConfig getIndexConfig(String indexName) throws InvalidIndexConfig {
+		return LumongoIndex.loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
+	}
+
 	public void loadIndex(String indexName, boolean loadAllSegments) throws Exception {
 		globalLock.writeLock().lock();
 		try {

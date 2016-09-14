@@ -36,6 +36,7 @@ public class RestServiceManager {
 		config.register(new QueryResource(indexManager));
 		config.register(new FetchResource(indexManager));
 		config.register(new FieldsResource(indexManager));
+		config.register(new IndexResource(indexManager));
 		config.register(new IndexesResource(indexManager));
 		config.register(new TermsResource(indexManager));
 		config.register(new MembersResource(indexManager));

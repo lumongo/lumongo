@@ -41,6 +41,7 @@ public class FieldsResource {
 				Document mongoDocument = new Document();
 				mongoDocument.put("index", indexName);
 				mongoDocument.put("fields", fieldNamesResponse.getFieldNameList());
+
 				String docString = JSONSerializers.getStrict().serialize(mongoDocument);
 
 				if (pretty) {

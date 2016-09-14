@@ -21,6 +21,7 @@ public class LumongoConstants {
 	public static final String FETCH_URL = "fetch";
 	public static final String FIELDS_URL = "fields";
 	public static final String TERMS_URL = "terms";
+	public static final String INDEX_URL = "index";
 	public static final String INDEXES_URL = "indexes";
 	public static final String MEMBERS_URL = "members";
 	public static final String STATS_URL = "stats";
