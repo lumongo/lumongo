@@ -50,6 +50,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -71,6 +72,8 @@ public class LumongoIndexManager {
 
 	private MongoClient mongo;
 
+	private AtomicLong queryNumber;
+
 	public LumongoIndexManager(MongoClient mongo, MongoConfig mongoConfig, ClusterConfig clusterConfig) throws UnknownHostException {
 		this.globalLock = new ReentrantReadWriteLock(true);
 
@@ -84,6 +87,8 @@ public class LumongoIndexManager {
 		this.internalClient = new InternalClient(clusterHelper, clusterConfig);
 
 		this.pool = Executors.newCachedThreadPool(new LumongoThreadFactory("manager"));
+
+		queryNumber = new AtomicLong();
 
 	}
 
@@ -695,12 +700,12 @@ public class LumongoIndexManager {
 	public QueryResponse query(final QueryRequest request) throws Exception {
 		globalLock.readLock().lock();
 		long start = System.currentTimeMillis();
-		String queryJson = "";
+		long queryId = queryNumber.getAndIncrement();
 		try {
 			//log.info("Running query: <" + request.getQuery() + "> on indexes <" + request.getIndexList() + ">");
 
-			queryJson = JsonFormat.printer().print(request);
-			log.info("Running query: <" + queryJson + ">");
+			String queryJson = JsonFormat.printer().print(request);
+			log.info("Running id <" + queryId + "> query <" + queryJson + ">");
 
 			final Map<String, QueryWithFilters> queryMap = getQueryMap(request);
 
@@ -749,7 +754,7 @@ public class LumongoIndexManager {
 		}
 		finally {
 			long end = System.currentTimeMillis();
-			log.info("Finished query: <" + queryJson + "> in " + (end - start) + "ms");
+			log.info("Finished query id <" + queryId + "> in " + (end - start) + "ms");
 
 			globalLock.readLock().unlock();
 		}

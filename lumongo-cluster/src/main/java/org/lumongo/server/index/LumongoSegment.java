@@ -258,7 +258,8 @@ public class LumongoSegment {
 
 				q = booleanQuery.build();
 			}
-			log.info("Lucene Query: " + q);
+
+			//log.info("Lucene Query: " + q);
 
 			IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
