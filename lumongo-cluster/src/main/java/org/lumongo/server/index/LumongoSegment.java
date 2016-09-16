@@ -48,6 +48,7 @@ import org.apache.lucene.search.similarities.PerFieldSimilarityWrapper;
 import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.AttributeSource;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.lumongo.LumongoConstants;
@@ -1208,6 +1209,13 @@ public class LumongoSegment {
 		}
 		else {
 
+			AttributeSource atts = null;
+			MaxNonCompetitiveBoostAttribute maxBoostAtt = null;
+			if (request.hasFuzzyTerm()) {
+				atts = new AttributeSource();
+				maxBoostAtt = atts.addAttribute(MaxNonCompetitiveBoostAttribute.class);
+			}
+
 			BytesRef startTermBytes;
 			BytesRef endTermBytes = null;
 
@@ -1239,22 +1247,37 @@ public class LumongoSegment {
 					Terms terms = fields.terms(fieldName);
 					if (terms != null) {
 
-						TermsEnum termsEnum = terms.iterator();
-						SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
-
-						if (!seekStatus.equals(SeekStatus.END)) {
+						if (request.hasFuzzyTerm()) {
+							FuzzyTerm fuzzyTerm = request.getFuzzyTerm();
+							FuzzyTermsEnum termsEnum = new FuzzyTermsEnum(terms, atts, new Term(fieldName, fuzzyTerm.getTerm()), fuzzyTerm.getEditDistance(),
+									fuzzyTerm.getPrefixLength(), fuzzyTerm.getTranspositions());
 							BytesRef text = termsEnum.term();
 
-							if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
+							handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+
+							while ((text = termsEnum.next()) != null) {
 								handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+							}
 
-								while ((text = termsEnum.next()) != null) {
+						}
+						else {
+							TermsEnum termsEnum = terms.iterator();
+							SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
 
-									if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
-										handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
-									}
-									else {
-										break;
+							if (!seekStatus.equals(SeekStatus.END)) {
+								BytesRef text = termsEnum.term();
+
+								if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
+									handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+
+									while ((text = termsEnum.next()) != null) {
+
+										if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
+											handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+										}
+										else {
+											break;
+										}
 									}
 								}
 							}

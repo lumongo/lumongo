@@ -73,4 +73,6 @@ public class LumongoConstants {
 	public static final String HIGHLIGHT_JSON = "hlJson";
 
 	public static final String ANALYZE_JSON = "alJson";
+
+	public static final String FUZZY_TERM_JSON = "fuzzyTermJson";
 }

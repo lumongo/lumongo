@@ -63,17 +63,28 @@ message SegmentMapping {
 	required LMMember member = 2;
 }
 
+message FuzzyTerm {
+	required string term = 1;
+	required uint32 editDistance = 2;
+	optional uint32 prefixLength = 3 [default = 0];
+	optional bool transpositions = 4 [default = true];
+}
+
 message GetTermsRequest {
 	required string indexName = 1;
 	required string fieldName = 2;
 	optional uint32 amount = 3 [default = 0];
+
 	optional string startTerm = 4;
 	optional string endTerm = 5;
 	optional uint32 minDocFreq = 6 [default = 1];
 	optional uint32 minTermFreq = 7 [default = 1];
 	optional string termFilter = 8;
 	optional string termMatch = 9;
+
 	repeated string includeTerm = 10;
+
+	optional FuzzyTerm fuzzyTerm = 11;
 }
 
 message GetTermsResponse {

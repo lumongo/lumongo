@@ -1,6 +1,8 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 import com.mongodb.util.JSONSerializers;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
@@ -34,8 +36,8 @@ public class TermsResource {
 			@QueryParam(LumongoConstants.MIN_DOC_FREQ) final Integer minDocFreq, @QueryParam(LumongoConstants.MIN_TERM_FREQ) final Integer minTermFreq,
 			@QueryParam(LumongoConstants.START_TERM) final String startTerm, @QueryParam(LumongoConstants.END_TERM) final String endTerm,
 			@QueryParam(LumongoConstants.TERM_FILTER) final String termFilter, @QueryParam(LumongoConstants.TERM_MATCH) final String termMatch,
-			@QueryParam(LumongoConstants.INCLUDE_TERM) final List<String> includeTerm, @QueryParam(LumongoConstants.PRETTY) boolean pretty,
-			@QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") final String format) {
+			@QueryParam(LumongoConstants.INCLUDE_TERM) final List<String> includeTerm, @QueryParam(LumongoConstants.FUZZY_TERM_JSON) final String fuzzyTermJson,
+			@QueryParam(LumongoConstants.PRETTY) boolean pretty, @QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") final String format) {
 
 		if (indexName != null && field != null) {
 
@@ -69,6 +71,20 @@ public class TermsResource {
 
 			if (includeTerm != null) {
 				termsBuilder.addAllIncludeTerm(includeTerm);
+			}
+
+			if (fuzzyTermJson != null) {
+				try {
+					Lumongo.FuzzyTerm.Builder fuzzyTermBuilder = Lumongo.FuzzyTerm.newBuilder();
+					JsonFormat.parser().merge(fuzzyTermJson, fuzzyTermBuilder);
+					termsBuilder.setFuzzyTerm(fuzzyTermBuilder);
+				}
+
+				catch (InvalidProtocolBufferException e) {
+					return Response.status(LumongoConstants.INTERNAL_ERROR)
+							.entity("Failed to parse analyzer json: " + e.getClass().getSimpleName() + ":" + e.getMessage()).build();
+				}
+
 			}
 
 			try {
