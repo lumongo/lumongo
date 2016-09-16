@@ -230,7 +230,7 @@ public class LumongoSegment {
 
 	public SegmentResponse querySegment(QueryWithFilters queryWithFilters, int amount, FieldDoc after, FacetRequest facetRequest, SortRequest sortRequest,
 			QueryCacheKey queryCacheKey, FetchType resultFetchType, List<String> fieldsToReturn, List<String> fieldsToMask,
-			List<HighlightRequest> highlightList, List<AnalysisRequest> analysisRequestList) throws Exception {
+			List<HighlightRequest> highlightList, List<AnalysisRequest> analysisRequestList, boolean debug) throws Exception {
 		try {
 			reopenIndexWritersIfNecessary();
 
@@ -260,12 +260,17 @@ public class LumongoSegment {
 				q = booleanQuery.build();
 			}
 
-			//log.info("Lucene Query: " + q);
+
 
 			IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
 			//similarity is only set query time, indexing time all these similarities are the same
 			indexSearcher.setSimilarity(getSimilarity(queryWithFilters));
+
+			if (debug) {
+				log.info("Lucene Query for index <" + indexName + "> segment <" + segmentNumber + ">: " + q);
+				log.info("Rewritten Query for index <" + indexName + "> segment <" + segmentNumber + ">: " + indexSearcher.rewrite(q));
+			}
 
 			int hasMoreAmount = amount + 1;
 
@@ -789,7 +794,7 @@ public class LumongoSegment {
 
 			SegmentResponse segmentResponse = this
 					.querySegment(queryWithFilters, 1, null, null, null, null, resultFetchType, fieldsToReturn, fieldsToMask, Collections.emptyList(),
-							Collections.emptyList());
+							Collections.emptyList(), false);
 
 			List<ScoredResult> scoredResultList = segmentResponse.getScoredResultList();
 			if (!scoredResultList.isEmpty()) {
@@ -1322,6 +1327,11 @@ public class LumongoSegment {
 		Lumongo.Term.Builder builder = termsMap.get(textStr);
 		builder.setDocFreq(builder.getDocFreq() + termsEnum.docFreq());
 		builder.setTermFreq(builder.getTermFreq() + termsEnum.totalTermFreq());
+		BoostAttribute boostAttribute = termsEnum.attributes().getAttribute(BoostAttribute.class);
+		if (boostAttribute != null) {
+			builder.setScore(boostAttribute.getBoost());
+		}
+
 	}
 
 	public SegmentCountResponse getNumberOfDocs() throws IOException {

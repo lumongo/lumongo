@@ -1075,7 +1075,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 						.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
 								queryRequest.getSortRequest(), new QueryCacheKey(queryRequest), queryRequest.getResultFetchType(),
 								queryRequest.getDocumentFieldsList(), queryRequest.getDocumentMaskedFieldsList(), queryRequest.getHighlightRequestList(),
-								queryRequest.getAnalysisRequestList()));
+								queryRequest.getAnalysisRequestList(), queryRequest.getDebug()));
 
 				responses.add(response);
 

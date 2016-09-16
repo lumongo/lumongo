@@ -1051,11 +1051,18 @@ public class LumongoIndexManager {
 					for (Term term : gtr.getTermList()) {
 						String key = term.getValue();
 						if (!terms.containsKey(key)) {
-							terms.put(key, Term.newBuilder().setValue(key).setDocFreq(0).setTermFreq(0));
+							Term.Builder termBuilder = Term.newBuilder().setValue(key).setDocFreq(0).setTermFreq(0);
+							if (term.hasScore()) {
+								termBuilder.setScore(0);
+							}
+							terms.put(key, termBuilder);
 						}
 						Term.Builder builder = terms.get(key);
 						builder.setDocFreq(builder.getDocFreq() + term.getDocFreq());
 						builder.setTermFreq(builder.getTermFreq() + term.getTermFreq());
+						if (term.hasScore()) {
+							builder.setScore(builder.getScore() + term.getScore());
+						}
 					}
 				}
 			}

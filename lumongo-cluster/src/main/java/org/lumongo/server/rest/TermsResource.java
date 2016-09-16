@@ -101,6 +101,9 @@ public class TermsResource {
 						termDoc.put("term", term.getValue());
 						termDoc.put("docFreq", term.getDocFreq());
 						termDoc.put("termFreq", term.getTermFreq());
+						if (term.hasScore()) {
+							termDoc.put("score", term.getScore());
+						}
 						termsDocs.add(termDoc);
 					}
 
@@ -122,6 +125,10 @@ public class TermsResource {
 					csvString.append("termFreq");
 					csvString.append(",");
 					csvString.append("docFreq");
+					if (termsBuilder.hasFuzzyTerm()) {
+						csvString.append(",");
+						csvString.append("score");
+					}
 					csvString.append("\n");
 
 					for (Lumongo.Term term : terms.getTermList()) {
@@ -138,6 +145,10 @@ public class TermsResource {
 						csvString.append(term.getTermFreq());
 						csvString.append(",");
 						csvString.append(term.getDocFreq());
+						if (term.hasScore()) {
+							csvString.append(",");
+							csvString.append(term.getScore());
+						}
 						csvString.append("\n");
 					}
 					return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(csvString.toString()).build();

@@ -456,6 +456,7 @@ message QueryRequest {
 	repeated FieldSimilarity fieldSimilarity = 13;
 	repeated HighlightRequest highlightRequest = 14;
 	repeated AnalysisRequest analysisRequest = 15;
+	optional bool debug = 16 [default = false];
 }
 
 

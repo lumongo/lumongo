@@ -43,6 +43,7 @@ public class LumongoConstants {
 	public static final String PRETTY = "pretty";
 	public static final String COMPUTE_FACET_ERROR = "computeFacetError";
 	public static final String MIN_MATCH = "mm";
+	public static final String DEBUG = "debug";
 	public static final String AMOUNT = "amount";
 	public static final String MIN_DOC_FREQ = "minDocFreq";
 	public static final String MIN_TERM_FREQ = "minTermFreq";
