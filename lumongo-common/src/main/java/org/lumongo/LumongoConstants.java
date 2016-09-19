@@ -54,6 +54,7 @@ public class LumongoConstants {
 	public static final String DISMAX= "dismax";
 	public static final String DISMAX_TIE = "dismaxTie";
 	public static final String SIMILARITY = "sim";
+	public static final String START = "start";
 
 	public static final String TERM_FILTER = "termFilter";
 	public static final String TERM_MATCH = "termMatch";
