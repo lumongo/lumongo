@@ -502,7 +502,7 @@ public class QueryResource {
 				}
 
 			}
-
+			responseBuilder.append("\n");
 		});
 
 		return responseBuilder.toString();
