@@ -392,7 +392,7 @@ public class LumongoSegment {
 		for (HighlightRequest highlight : highlightRequests) {
 			QueryScorer queryScorer = new QueryScorer(q, highlight.getField());
 			queryScorer.setExpandMultiTermQuery(true);
-			Fragmenter fragmenter = new SimpleSpanFragmenter(queryScorer);
+			Fragmenter fragmenter = new SimpleSpanFragmenter(queryScorer, highlight.getFragmentLength());
 			SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter(highlight.getPreTag(), highlight.getPostTag());
 			LumongoHighlighter highlighter = new LumongoHighlighter(simpleHTMLFormatter, queryScorer, highlight);
 			highlighter.setTextFragmenter(fragmenter);

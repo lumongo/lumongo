@@ -465,6 +465,7 @@ message HighlightRequest {
 	optional string preTag = 2 [default = "<em>"];
 	optional string postTag = 3 [default = "</em>"];
 	optional uint32 numberOfFragments = 4 [default = 1];
+	optional uint32 fragmentLength = 5 [default = 100];
 }
 
 message AnalysisRequest {
