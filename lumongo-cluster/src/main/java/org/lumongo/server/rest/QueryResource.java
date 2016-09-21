@@ -449,9 +449,6 @@ public class QueryResource {
 			responseBuilder.append("]");
 		}
 
-
-
-
 		responseBuilder.append("}");
 
 		return responseBuilder.toString();
@@ -475,7 +472,20 @@ public class QueryResource {
 				if (obj != null) {
 					if (obj instanceof List) {
 						List value = (List) obj;
-						responseBuilder.append(value.toString());
+						String output = "\"";
+						for (Object o : value) {
+							if (o instanceof String) {
+								String item = (String) o;
+								if (item.contains(",") || value.contains("\"") || value.contains("\n")) {
+									output += item.replace("\"", "\"\"") + ";";
+								}
+								else {
+									output += item + ";";
+								}
+							}
+						}
+						output += "\"";
+						responseBuilder.append(output);
 					}
 					else if (obj instanceof Date) {
 						Date value = (Date) obj;
@@ -511,4 +521,5 @@ public class QueryResource {
 
 		return responseBuilder.toString();
 	}
+
 }
