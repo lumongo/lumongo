@@ -5,7 +5,6 @@ import com.google.common.primitives.Floats;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.lsh.LSH;
 import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.FloatPoint;
 import org.apache.lucene.document.IntPoint;
@@ -21,8 +20,6 @@ import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -174,23 +171,6 @@ public class LumongoQueryParser extends QueryParser {
 		BooleanQuery.Builder builder = new BooleanQuery.Builder();
 		builder.setMinimumNumberShouldMatch(minimumNumberShouldMatch);
 		return builder;
-	}
-
-	@Override
-	protected Query getFieldQuery(String field, String queryText, int slop) throws ParseException {
-		Lumongo.AnalyzerSettings analyzerSettings = indexConfig.getAnalyzerSettingsForIndexField(field);
-		if (analyzerSettings != null) {
-			if (Lumongo.AnalyzerSettings.QueryHandling.MINHASH_QUERY.equals(analyzerSettings.getQueryHandling())) {
-				try {
-					float sim = slop / 100.0f;
-					return LSH.createSlowQuery(getAnalyzer(), field, new StringReader(queryText), 100, sim);
-				}
-				catch (IOException e) {
-					throw new ParseException(e.getMessage());
-				}
-			}
-		}
-		return super.getFieldQuery(field, queryText, slop);
 	}
 
 	@Override
