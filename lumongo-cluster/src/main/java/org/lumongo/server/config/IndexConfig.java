@@ -57,7 +57,7 @@ public class IndexConfig {
 				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.KSTEMMED).setTokenizer(Tokenizer.STANDARD).addFilter(Filter.LOWERCASE).addFilter(Filter.STOPWORDS).addFilter(Filter.KSTEM).build());
 		analyzerMap.put(DefaultAnalyzers.LSH,
 				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.LSH).setTokenizer(Tokenizer.STANDARD).addFilter(Filter.LOWERCASE).addFilter(Filter.ASCII_FOLDING)
-						.addFilter(Filter.KSTEM).addFilter(Filter.STOPWORDS).addFilter(Filter.MINHASH).build());
+						.addFilter(Filter.KSTEM).addFilter(Filter.STOPWORDS).addFilter(Filter.FIVE_FIVE_SHINGLE).addFilter(Filter.MINHASH).build());
 
 		for (Lumongo.AnalyzerSettings analyzerSettings : indexSettings.getAnalyzerSettingsList()) {
 			analyzerMap.put(analyzerSettings.getName(), analyzerSettings);

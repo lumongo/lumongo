@@ -13,7 +13,7 @@ import org.apache.lucene.analysis.core.WhitespaceTokenizer;
 import org.apache.lucene.analysis.en.EnglishMinimalStemFilter;
 import org.apache.lucene.analysis.en.EnglishPossessiveFilter;
 import org.apache.lucene.analysis.en.KStemFilter;
-import org.apache.lucene.analysis.lsh.MinHashFilter;
+import org.apache.lucene.analysis.minhash.MinHashFilterFactory;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.shingle.ShingleFilter;
@@ -24,8 +24,10 @@ import org.lumongo.analyzer.BooleanAnalyzer;
 import org.lumongo.cluster.message.Lumongo.AnalyzerSettings;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.IndexAs;
+import org.lumongo.filter.BritishUSFilter;
 import org.lumongo.server.config.IndexConfig;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +89,26 @@ public class LumongoAnalyzerFactory {
 						shingleFilter.setOutputUnigrams(false);
 						tok = shingleFilter;
 					}
+					else if (AnalyzerSettings.Filter.THREE_THREE_SHINGLE.equals(filter)) {
+						ShingleFilter shingleFilter = new ShingleFilter(lastTok, 3, 3);
+						shingleFilter.setOutputUnigrams(false);
+						tok = shingleFilter;
+					}
+					else if (AnalyzerSettings.Filter.THREE_THREE_SHINGLE.equals(filter)) {
+						ShingleFilter shingleFilter = new ShingleFilter(lastTok, 3, 3);
+						shingleFilter.setOutputUnigrams(false);
+						tok = shingleFilter;
+					}
+					else if (AnalyzerSettings.Filter.FOUR_FOUR_SHINGLE.equals(filter)) {
+						ShingleFilter shingleFilter = new ShingleFilter(lastTok, 4, 4);
+						shingleFilter.setOutputUnigrams(false);
+						tok = shingleFilter;
+					}
+					else if (AnalyzerSettings.Filter.FIVE_FIVE_SHINGLE.equals(filter)) {
+						ShingleFilter shingleFilter = new ShingleFilter(lastTok, 5, 5);
+						shingleFilter.setOutputUnigrams(false);
+						tok = shingleFilter;
+					}
 					else if (AnalyzerSettings.Filter.KSTEM.equals(filter)) {
 						tok = new KStemFilter(lastTok);
 					}
@@ -103,7 +125,10 @@ public class LumongoAnalyzerFactory {
 						tok = new EnglishPossessiveFilter(lastTok);
 					}
 					else if (AnalyzerSettings.Filter.MINHASH.equals(filter)) {
-						tok = new MinHashFilter(lastTok, 100);
+						tok = new MinHashFilterFactory(Collections.emptyMap()).create(lastTok);
+					}
+					else if (AnalyzerSettings.Filter.BRITISH_US.equals(filter)) {
+						tok = new BritishUSFilter(lastTok);
 					}
 					else {
 						throw new RuntimeException("Unknown filter type <" + filter + ">");

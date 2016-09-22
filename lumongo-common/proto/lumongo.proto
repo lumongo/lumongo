@@ -251,6 +251,9 @@ message AnalyzerSettings {
 		MINHASH = 9;
 		TWO_TWO_SHINGLE = 10;
 		THREE_THREE_SHINGLE = 11;
+		FOUR_FOUR_SHINGLE = 12;
+		FIVE_FIVE_SHINGLE = 13;
+		BRITISH_US = 14;
 	}
 
 
