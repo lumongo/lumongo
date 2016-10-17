@@ -42,6 +42,12 @@ public class LumongoAnalyzerFactory {
 	public static Analyzer getPerFieldAnalyzer(AnalyzerSettings analyzerSettings) throws Exception {
 
 		return new Analyzer() {
+
+			@Override
+			public int getPositionIncrementGap(String fieldName) {
+				return 100;
+			}
+
 			@Override
 			protected TokenStreamComponents createComponents(String fieldName) {
 				AnalyzerSettings.Tokenizer tokenizer = analyzerSettings.getTokenizer();
