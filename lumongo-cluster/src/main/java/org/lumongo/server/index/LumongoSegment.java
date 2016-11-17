@@ -1047,7 +1047,7 @@ public class LumongoSegment {
 					}
 					else {
 						throw new RuntimeException(
-								"Expecting date for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">, found <" + o.getClass()
+								"Expecting boolean for document field <" + storedFieldName + "> / sort field <" + sortFieldName + ">, found <" + o.getClass()
 										+ ">");
 					}
 				});
