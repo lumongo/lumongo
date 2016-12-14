@@ -45,7 +45,7 @@ public class StartNode {
 				hazelcastPort = LumongoConstants.DEFAULT_HAZELCAST_PORT;
 			}
 
-			BooleanQuery.setMaxClauseCount(4096);
+			BooleanQuery.setMaxClauseCount(16 * 1024);
 
 			LumongoNode luceneNode = new LumongoNode(mongoConfig, serverAddress, hazelcastPort);
 
