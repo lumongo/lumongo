@@ -68,6 +68,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		MongoDatabase storageDb = mongoClient.getDatabase(database);
 		MongoCollection<Document> coll = storageDb.getCollection(ASSOCIATED_FILES + "." + FILES);
 		coll.createIndex(new Document(ASSOCIATED_METADATA + "." + DOCUMENT_UNIQUE_ID_KEY, 1));
+		coll.createIndex(new Document(ASSOCIATED_METADATA + "." + FILE_UNIQUE_ID_KEY, 1));
 
 		if (sharded) {
 
