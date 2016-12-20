@@ -16,12 +16,14 @@ public class DateFieldIndexer extends FieldIndexer {
 
 	@Override
 	protected void handleValue(Document d, String storedFieldName, Object value, String indexedFieldName) throws Exception {
-		if (value instanceof Date) {
-			d.add(createField((Date) value, indexedFieldName));
-		}
-		else {
-			throw new Exception(
-					"Expecting collection of Date or Date for field <" + storedFieldName + "> and found <" + value.getClass().getSimpleName() + ">");
+		if (value != null) {
+			if (value instanceof Date) {
+				d.add(createField((Date) value, indexedFieldName));
+			}
+			else {
+				throw new Exception(
+						"Expecting collection of Date or Date for field <" + storedFieldName + "> and found <" + value.getClass().getSimpleName() + ">");
+			}
 		}
 	}
 

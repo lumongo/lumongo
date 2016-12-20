@@ -11,21 +11,22 @@ public abstract class NumericFieldIndexer extends FieldIndexer {
 
 	@Override
 	protected void handleValue(Document d, String storedFieldName, Object value, String indexedFieldName) throws Exception {
-		if (value instanceof Number) {
-			d.add(createField((Number) value, indexedFieldName));
-		}
-		else if (value instanceof String) {
-			try {
-				d.add(createField(parseString((String) value), indexedFieldName));
+		if (value != null) {
+			if (value instanceof Number) {
+				d.add(createField((Number) value, indexedFieldName));
 			}
-			catch (NumberFormatException e) {
-				throw new Exception("String value <" + value + "> for field <" + storedFieldName + "> cannot be parsed as a the defined numeric type");
+			else if (value instanceof String) {
+				try {
+					d.add(createField(parseString((String) value), indexedFieldName));
+				}
+				catch (NumberFormatException e) {
+					throw new Exception("String value <" + value + "> for field <" + storedFieldName + "> cannot be parsed as a the defined numeric type");
+				}
 			}
-		}
-		else {
-			throw new Exception(
-					"Expecting collection of Number, collection of numeric String, Number, or numeric String for field <" + storedFieldName + "> and found <"
-							+ value.getClass().getSimpleName() + ">");
+			else {
+				throw new Exception("Expecting collection of Number, collection of numeric String, Number, or numeric String for field <" + storedFieldName
+						+ "> and found <" + value.getClass().getSimpleName() + ">");
+			}
 		}
 	}
 
