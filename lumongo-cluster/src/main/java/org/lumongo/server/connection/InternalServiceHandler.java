@@ -115,7 +115,7 @@ public class InternalServiceHandler extends InternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to run internal query: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -128,7 +128,7 @@ public class InternalServiceHandler extends InternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to run internal store: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -141,7 +141,7 @@ public class InternalServiceHandler extends InternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to run internal fetch: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -154,7 +154,7 @@ public class InternalServiceHandler extends InternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to run internal delete: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -167,7 +167,7 @@ public class InternalServiceHandler extends InternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to run get number of docs: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -180,7 +180,7 @@ public class InternalServiceHandler extends InternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to clear index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -193,7 +193,7 @@ public class InternalServiceHandler extends InternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to optimized index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -206,7 +206,7 @@ public class InternalServiceHandler extends InternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to get field names: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -219,7 +219,7 @@ public class InternalServiceHandler extends InternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to get terms: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
