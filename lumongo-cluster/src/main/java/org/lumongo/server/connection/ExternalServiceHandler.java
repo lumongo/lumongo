@@ -156,7 +156,7 @@ public class ExternalServiceHandler extends ExternalService {
 				}
 			}
 
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
