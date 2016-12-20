@@ -131,7 +131,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to run query: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -169,7 +169,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to delete: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -182,7 +182,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to fetch: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -195,7 +195,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to create index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 		
@@ -209,7 +209,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to change index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 		
@@ -223,7 +223,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to delete index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -236,7 +236,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to get indexes: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -249,7 +249,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to get number of docs: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -262,7 +262,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to clear index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -275,7 +275,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to optimize index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -288,7 +288,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to get field names: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -301,7 +301,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to get terms: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -314,7 +314,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to get members: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -331,7 +331,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to group fetch: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
@@ -348,7 +348,7 @@ public class ExternalServiceHandler extends ExternalService {
 		}
 		catch (Exception e) {
 			log.error("Failed to batch delete: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getMessage());
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
 			done.run(null);
 		}
 	}
