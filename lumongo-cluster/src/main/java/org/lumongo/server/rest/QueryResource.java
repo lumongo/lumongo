@@ -267,7 +267,7 @@ public class QueryResource {
 			QueryResponse qr = indexManager.query(qrBuilder.build());
 
 			if (format.equals("json")) {
-				String response = getStandardResponse(qr);
+				String response = getStandardResponse(qr, !pretty);
 
 				if (pretty) {
 					response = JsonWriter.formatJson(response);
@@ -287,7 +287,7 @@ public class QueryResource {
 
 	}
 
-	private String getStandardResponse(QueryResponse qr) throws InvalidProtocolBufferException {
+	private String getStandardResponse(QueryResponse qr, boolean strict) throws InvalidProtocolBufferException {
 		StringBuilder responseBuilder = new StringBuilder();
 		responseBuilder.append("{");
 		responseBuilder.append("\"totalHits\": ");
@@ -361,7 +361,13 @@ public class QueryResource {
 
 					Document document = ResultHelper.getDocumentFromResultDocument(sr.getResultDocument());
 					responseBuilder.append("\"document\": ");
-					responseBuilder.append(JSONSerializers.getStrict().serialize(document));
+
+					if (strict) {
+						responseBuilder.append(JSONSerializers.getStrict().serialize(document));
+					}
+					else {
+						responseBuilder.append(JSONSerializers.getLegacy().serialize(document));
+					}
 
 				}
 
