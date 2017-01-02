@@ -1,13 +1,11 @@
 package org.lumongo.server.rest;
 
 import com.cedarsoftware.util.io.JsonWriter;
-import com.google.protobuf.ByteString;
 import com.mongodb.util.JSONSerializers;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.server.index.LumongoIndexManager;
-import org.lumongo.util.LumongoUtil;
 import org.lumongo.util.ResultHelper;
 
 import javax.ws.rs.GET;
@@ -43,7 +41,13 @@ public class FetchResource {
 
 			if (fetchResponse.hasResultDocument()) {
 				Document document = ResultHelper.getDocumentFromResultDocument(fetchResponse.getResultDocument());
-				String docString = JSONSerializers.getStrict().serialize(document);
+				String docString;
+				if (pretty) {
+					docString = JSONSerializers.getLegacy().serialize(document);
+				}
+				else {
+					docString = JSONSerializers.getStrict().serialize(document);
+				}
 
 				if (pretty) {
 					docString = JsonWriter.formatJson(docString);
