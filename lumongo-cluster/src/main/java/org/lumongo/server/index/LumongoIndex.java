@@ -265,7 +265,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 					}
 				}
 				catch (Exception e) {
-					log.error("Failed to flushing segment <" + segment.getSegmentNumber() + "> for index <" + indexName + ">: " + e.getClass().getSimpleName()
+					log.error("Failed to flush segment <" + segment.getSegmentNumber() + "> for index <" + indexName + ">: " + e.getClass().getSimpleName()
 							+ ": ", e);
 				}
 			}
