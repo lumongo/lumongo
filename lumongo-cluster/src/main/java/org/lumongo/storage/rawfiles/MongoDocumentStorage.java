@@ -22,7 +22,6 @@ import org.lumongo.cluster.message.Lumongo.Metadata;
 import org.lumongo.cluster.message.Lumongo.ResultDocument;
 import org.lumongo.storage.constants.MongoConstants;
 import org.lumongo.util.CommonCompression;
-import org.lumongo.util.CommonCompression.CompressionLevel;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -198,8 +198,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 		gridFS.uploadFromStream(fileName, is, gridFSUploadOptions);
 	}
 
-	private GridFSUploadOptions getGridFSUploadOptions(String uniqueId, String fileName, boolean compress, long timestamp,
-			Map<String, String> metadataMap) {
+	private GridFSUploadOptions getGridFSUploadOptions(String uniqueId, String fileName, boolean compress, long timestamp, Map<String, String> metadataMap) {
 		Document metadata = new Document();
 		if (metadataMap != null) {
 			for (String key : metadataMap.keySet()) {
@@ -257,7 +256,8 @@ public class MongoDocumentStorage implements DocumentStorage {
 			return null;
 		}
 
-		InputStream is = gridFS.openDownloadStream(file.getObjectId());;
+		InputStream is = gridFS.openDownloadStream(file.getObjectId());
+		;
 
 		Document metadata = file.getMetadata();
 		if (metadata.containsKey(COMPRESSED_FLAG)) {
@@ -274,8 +274,7 @@ public class MongoDocumentStorage implements DocumentStorage {
 	public AssociatedDocument getAssociatedDocument(String uniqueId, String fileName, FetchType fetchType) throws Exception {
 		GridFSBucket gridFS = createGridFSConnection();
 		if (!FetchType.NONE.equals(fetchType)) {
-			GridFSFile file = gridFS
-					.find(new Document(ASSOCIATED_METADATA + "." + FILE_UNIQUE_ID_KEY, getGridFsId(uniqueId, fileName))).first();
+			GridFSFile file = gridFS.find(new Document(ASSOCIATED_METADATA + "." + FILE_UNIQUE_ID_KEY, getGridFsId(uniqueId, fileName))).first();
 			if (null != file) {
 				return loadGridFSToAssociatedDocument(gridFS, file, fetchType);
 			}
@@ -343,9 +342,12 @@ public class MongoDocumentStorage implements DocumentStorage {
 			outputstream.write(uniquieIdKeyValue.getBytes(charset));
 
 			String filename = gridFSFile.getFilename();
-			String filenameKeyValue = "\"filename\": \"" + filename + "\"";
+			String filenameKeyValue = "\"filename\": \"" + filename + "\", ";
 			outputstream.write(filenameKeyValue.getBytes(charset));
 
+			Date uploadDate = gridFSFile.getUploadDate();
+			String uploadDateKeyValue = "\"uploadDate\": {\"$date\":" + uploadDate.getTime() + "}";
+			outputstream.write(uploadDateKeyValue.getBytes(charset));
 
 			metadata.remove(TIMESTAMP);
 			metadata.remove(COMPRESSED_FLAG);
