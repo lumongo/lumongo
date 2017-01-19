@@ -21,7 +21,7 @@ public interface DocumentStorage {
 	
 	AssociatedDocument getAssociatedDocument(String uniqueId, String filename, FetchType fetchType) throws Exception;
 
-	void getAssociatedDocuments(OutputStream outputstream) throws IOException;
+	void getAssociatedDocuments(OutputStream outputstream, Document filter) throws IOException;
 
 	void storeAssociatedDocument(String uniqueId, String fileName, InputStream is, boolean compress, long timestamp, Map<String, String> metadataMap)
 					throws Exception;

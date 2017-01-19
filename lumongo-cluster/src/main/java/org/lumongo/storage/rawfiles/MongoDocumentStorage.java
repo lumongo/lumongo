@@ -319,11 +319,11 @@ public class MongoDocumentStorage implements DocumentStorage {
 		return aBuilder.build();
 	}
 
-	public void getAssociatedDocuments(OutputStream outputstream) throws IOException {
+	public void getAssociatedDocuments(OutputStream outputstream, Document filter) throws IOException {
 		Charset charset = Charset.forName("UTF-8");
 
 		GridFSBucket gridFS = createGridFSConnection();
-		GridFSFindIterable gridFSFiles = gridFS.find();
+		GridFSFindIterable gridFSFiles = gridFS.find(filter);
 		outputstream.write("{\n".getBytes(charset));
 		outputstream.write(" \"associatedDocs\": [\n".getBytes(charset));
 

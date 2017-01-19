@@ -1370,10 +1370,10 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	public void getAllAssociatedDocuments(OutputStream outputStream) throws IOException {
+	public void getAssociatedDocuments(OutputStream outputStream, Document filter) throws IOException {
 		indexLock.readLock().lock();
 		try {
-			documentStorage.getAssociatedDocuments(outputStream);
+			documentStorage.getAssociatedDocuments(outputStream, filter);
 		}
 		finally {
 			indexLock.readLock().unlock();
