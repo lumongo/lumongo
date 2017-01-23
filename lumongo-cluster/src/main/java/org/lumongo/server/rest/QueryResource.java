@@ -501,6 +501,10 @@ public class QueryResource {
 						Number value = (Number) obj;
 						responseBuilder.append(value);
 					}
+					else if (obj instanceof Boolean) {
+						Boolean value = (Boolean) obj;
+						responseBuilder.append(value);
+					}
 					else {
 						String value = (String) obj;
 						if (value.contains(",") || value.contains(" ") || value.contains("\"") || value.contains("\n")) {
