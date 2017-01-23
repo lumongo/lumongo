@@ -5,15 +5,15 @@ description 'LuMongo Cluster'
 dependencies {	    
     compile project(':lumongo-storage')	
     compile project(':lumongo-client') //needed for admin tools
-    compile 'com.hazelcast:hazelcast:3.6.3'
-    compile 'net.sf.jopt-simple:jopt-simple:5.0.1'
+    compile 'com.hazelcast:hazelcast:3.7.4'
+    compile 'net.sf.jopt-simple:jopt-simple:5.0.3'
     compile "org.apache.lucene:lucene-facet:$luceneVersion"
     compile "org.apache.lucene:lucene-queryparser:$luceneVersion"
     compile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
     compile "org.apache.lucene:lucene-highlighter:$luceneVersion"
 
-    compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.22.2'
-    compile 'com.cedarsoftware:json-io:2.6.0'
+    compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.25'
+    compile 'com.cedarsoftware:json-io:4.9.6'
 
 }
 

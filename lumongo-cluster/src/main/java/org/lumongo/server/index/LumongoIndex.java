@@ -265,7 +265,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 					}
 				}
 				catch (Exception e) {
-					log.error("Failed to flushing segment <" + segment.getSegmentNumber() + "> for index <" + indexName + ">: " + e.getClass().getSimpleName()
+					log.error("Failed to flush segment <" + segment.getSegmentNumber() + "> for index <" + indexName + ">: " + e.getClass().getSimpleName()
 							+ ": ", e);
 				}
 			}
@@ -1370,10 +1370,10 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	public void getAllAssociatedDocuments(OutputStream outputStream) throws IOException {
+	public void getAssociatedDocuments(OutputStream outputStream, Document filter) throws IOException {
 		indexLock.readLock().lock();
 		try {
-			documentStorage.getAssociatedDocuments(outputStream);
+			documentStorage.getAssociatedDocuments(outputStream, filter);
 		}
 		finally {
 			indexLock.readLock().unlock();

@@ -13,6 +13,7 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
@@ -1130,7 +1131,7 @@ public class LumongoIndexManager {
 		}
 	}
 
-	public void getAllAssociatedDocuments(String indexName, OutputStream outputStream) throws IOException {
+	public void getAssociatedDocuments(String indexName, OutputStream outputStream, Document filter) throws IOException {
 		globalLock.readLock().lock();
 		try {
 			LumongoIndex i = indexMap.get(indexName);
@@ -1138,7 +1139,7 @@ public class LumongoIndexManager {
 				throw new IndexDoesNotExist(indexName);
 			}
 
-			i.getAllAssociatedDocuments(outputStream);
+			i.getAssociatedDocuments(outputStream, filter);
 
 		}
 		finally {

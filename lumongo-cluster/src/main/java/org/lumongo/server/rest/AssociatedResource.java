@@ -1,6 +1,7 @@
 package org.lumongo.server.rest;
 
 import org.apache.log4j.Logger;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.util.StreamHelper;
@@ -37,8 +38,6 @@ public class AssociatedResource {
 	public Response get(@Context Response response, @QueryParam(LumongoConstants.ID) final String uniqueId,
 			@QueryParam(LumongoConstants.FILE_NAME) final String fileName, @QueryParam(LumongoConstants.INDEX) final String indexName) {
 
-
-
 		StreamingOutput stream = new StreamingOutput() {
 
 			@Override
@@ -69,7 +68,8 @@ public class AssociatedResource {
 	@POST
 	@Produces({ MediaType.TEXT_XML })
 	public Response post(@QueryParam(LumongoConstants.ID) String uniqueId, @QueryParam(LumongoConstants.FILE_NAME) String fileName,
-			@QueryParam(LumongoConstants.INDEX) String indexName, @QueryParam(LumongoConstants.COMPRESSED) Boolean compressed, @QueryParam(LumongoConstants.META) List<String> meta, InputStream is) {
+			@QueryParam(LumongoConstants.INDEX) String indexName, @QueryParam(LumongoConstants.COMPRESSED) Boolean compressed,
+			@QueryParam(LumongoConstants.META) List<String> meta, InputStream is) {
 		if (uniqueId != null && fileName != null && indexName != null) {
 
 			HashMap<String, String> metaMap = new HashMap<>();
@@ -79,7 +79,7 @@ public class AssociatedResource {
 					if (colonIndex != -1) {
 						String key = m.substring(0, colonIndex);
 						String value = m.substring(colonIndex + 1).trim();
-						metaMap.put(key,value);
+						metaMap.put(key, value);
 					}
 					else {
 						throw new WebApplicationException("Meta must be in the form key:value");
@@ -112,14 +112,22 @@ public class AssociatedResource {
 	@GET
 	@Path("/all")
 	@Produces({ MediaType.APPLICATION_JSON })
-	public Response get(@QueryParam(LumongoConstants.INDEX) final String indexName) {
+	public Response get(@QueryParam(LumongoConstants.INDEX) final String indexName, @QueryParam(LumongoConstants.QUERY) String query) {
 
 		StreamingOutput stream = new StreamingOutput() {
 
 			@Override
 			public void write(OutputStream output) throws IOException, WebApplicationException {
 
-				indexManager.getAllAssociatedDocuments(indexName, output);
+				Document filter;
+				if (query != null) {
+					filter = Document.parse(query);
+				}
+				else {
+					filter = new Document();
+				}
+
+				indexManager.getAssociatedDocuments(indexName, output, filter);
 			}
 
 		};
