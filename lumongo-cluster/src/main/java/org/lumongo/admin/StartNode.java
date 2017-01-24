@@ -4,6 +4,7 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.search.BooleanQuery;
 import org.lumongo.LumongoConstants;
 import org.lumongo.admin.help.LumongoHelpFormatter;
@@ -46,6 +47,7 @@ public class StartNode {
 			}
 
 			BooleanQuery.setMaxClauseCount(16 * 1024);
+			FacetsConfig.DEFAULT_DIM_CONFIG.multiValued = true;
 
 			LumongoNode luceneNode = new LumongoNode(mongoConfig, serverAddress, hazelcastPort);
 

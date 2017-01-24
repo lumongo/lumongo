@@ -657,7 +657,7 @@ public class LumongoIndexManager {
 
 					List<LMFacet> drillDownList = facetRequest.getDrillDownList();
 					if (!drillDownList.isEmpty()) {
-						FacetsConfig facetsConfig = i.getFacetsConfig();
+
 
 						Map<String, Set<String>> dimToValues = new HashMap<>();
 						for (LMFacet drillDown : drillDownList) {
@@ -670,7 +670,7 @@ public class LumongoIndexManager {
 						}
 
 						for (Map.Entry<String, Set<String>> entry : dimToValues.entrySet()) {
-							String indexFieldName = facetsConfig.getDimConfig(entry.getKey()).indexFieldName;
+							String indexFieldName = FacetsConfig.DEFAULT_INDEX_FIELD_NAME + "." + entry.getKey();
 
 							BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 							for (String value : entry.getValue()) {

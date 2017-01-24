@@ -371,25 +371,6 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
-	private FacetsConfig generateFacetsConfig() {
-		FacetsConfig facetsConfig = new FacetsConfig();
-		for (String storedFieldName : indexConfig.getIndexedStoredFieldNames()) {
-
-			FieldConfig fc = indexConfig.getFieldConfig(storedFieldName);
-			for (FacetAs fa : fc.getFacetAsList()) {
-				facetsConfig.setMultiValued(fa.getFacetName(), true);
-				//facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME + "." + fa.getFacetName());
-				//facetsConfig.setIndexFieldName(fa.getFacetName(), FacetsConfig.DEFAULT_INDEX_FIELD_NAME);
-			}
-
-		}
-		return facetsConfig;
-	}
-
-	public FacetsConfig getFacetsConfig() {
-		return facetsConfig;
-	}
-
 	private void loadSegment(int segmentNumber) throws Exception {
 		indexLock.writeLock().lock();
 		try {
@@ -404,7 +385,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				//Just for clarity
 				IndexSegmentInterface indexSegmentInterface = this;
 
-				facetsConfig = generateFacetsConfig();
+				facetsConfig = new FacetsConfig();
 				LumongoSegment s = new LumongoSegment(segmentNumber, indexSegmentInterface, indexConfig, facetsConfig, documentStorage);
 				segmentMap.put(segmentNumber, s);
 
@@ -431,7 +412,6 @@ public class LumongoIndex implements IndexSegmentInterface {
 					clusterConfig.getIndexBlockSize());
 			d = new DistributedDirectory(mongoDirectory);
 		}
-
 
 		IndexWriterConfig config = new IndexWriterConfig(getPerFieldAnalyzer());
 
@@ -478,7 +458,6 @@ public class LumongoIndex implements IndexSegmentInterface {
 	}
 
 	public DirectoryTaxonomyWriter getTaxoWriter(int segmentNumber) throws IOException {
-
 
 		Directory d;
 
@@ -1142,8 +1121,6 @@ public class LumongoIndex implements IndexSegmentInterface {
 			IndexSettings indexSettings = newIndexConfig.getIndexSettings();
 			indexConfig.configure(indexSettings);
 
-			facetsConfig = generateFacetsConfig();
-
 			parsers.clear();
 
 			//force analyzer to be fetched first so it doesn't fail only on one segment below
@@ -1151,7 +1128,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			for (LumongoSegment s : segmentMap.values()) {
 				try {
-					s.updateIndexSettings(indexSettings, facetsConfig);
+					s.updateIndexSettings(indexSettings);
 				}
 				catch (Exception ignored) {
 				}

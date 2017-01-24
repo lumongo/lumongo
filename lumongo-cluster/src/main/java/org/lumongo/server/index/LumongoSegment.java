@@ -214,10 +214,9 @@ public class LumongoSegment {
 
 	}
 
-	public void updateIndexSettings(IndexSettings indexSettings, FacetsConfig facetsConfig) throws Exception {
+	public void updateIndexSettings(IndexSettings indexSettings) throws Exception {
 
 		this.indexConfig.configure(indexSettings);
-		this.facetsConfig = facetsConfig;
 
 		setupCaches(indexConfig);
 		openIndexWriters();
@@ -259,8 +258,6 @@ public class LumongoSegment {
 
 				q = booleanQuery.build();
 			}
-
-
 
 			IndexSearcher indexSearcher = new IndexSearcher(directoryReader);
 
@@ -446,11 +443,6 @@ public class LumongoSegment {
 		for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 
 			String label = countRequest.getFacetField().getLabel();
-			FacetsConfig.DimConfig dimConfig = facetsConfig.getDimConfig(label);
-
-			if (dimConfig.equals(FacetsConfig.DEFAULT_DIM_CONFIG)) {
-				throw new Exception(label + " is not defined as a facetable field");
-			}
 
 			if (countRequest.hasSegmentFacets()) {
 				if (indexConfig.getNumberOfSegments() == 1) {
@@ -490,9 +482,8 @@ public class LumongoSegment {
 			}
 			catch (UncheckedExecutionException e) {
 				Throwable cause = e.getCause();
-				//TODO is this possible anymore
 				if (cause.getMessage().contains(" was not indexed with SortedSetDocValues")) {
-					//this is when no data has been indexing into a facet
+					//this is when no data has been indexing into a facet or facet does not exist
 				}
 				else {
 					throw e;
@@ -1091,7 +1082,6 @@ public class LumongoSegment {
 		for (FacetAs fa : fc.getFacetAsList()) {
 
 			String facetName = fa.getFacetName();
-			String indexFieldName = facetsConfig.getDimConfig(facetName).indexFieldName;
 
 			if (FieldConfig.FieldType.DATE.equals(fc.getFieldType())) {
 				FacetAs.DateHandling dateHandling = fa.getDateHandling();
@@ -1101,11 +1091,11 @@ public class LumongoSegment {
 
 						if (FacetAs.DateHandling.DATE_YYYYMMDD.equals(dateHandling)) {
 							String date = FORMATTER_YYYYMMDD.format(localDate);
-							addFacet(doc, facetName, indexFieldName, date);
+							addFacet(doc, facetName, date);
 						}
 						else if (FacetAs.DateHandling.DATE_YYYY_MM_DD.equals(dateHandling)) {
 							String date = FORMATTER_YYYY_MM_DD.format(localDate);
-							addFacet(doc, facetName, indexFieldName, date);
+							addFacet(doc, facetName, date);
 						}
 						else {
 							throw new RuntimeException("Not handled date handling <" + dateHandling + "> for facet <" + fa.getFacetName() + ">");
@@ -1121,17 +1111,17 @@ public class LumongoSegment {
 			else {
 				LumongoUtil.handleLists(o, obj -> {
 					String string = obj.toString();
-					addFacet(doc, facetName, indexFieldName, string);
+					addFacet(doc, facetName, string);
 				});
 			}
 
 		}
 	}
 
-	private void addFacet(Document doc, String facetName, String indexFieldName, String value) {
+	private void addFacet(Document doc, String facetName, String value) {
 		if (!value.isEmpty()) {
 			doc.add(new FacetField(facetName, value));
-			doc.add(new StringField(indexFieldName, new BytesRef(value), Store.NO));
+			doc.add(new StringField(FacetsConfig.DEFAULT_INDEX_FIELD_NAME + "." + facetName, new BytesRef(value), Store.NO));
 		}
 	}
 
