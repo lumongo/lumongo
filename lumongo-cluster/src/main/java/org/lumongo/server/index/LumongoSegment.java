@@ -9,7 +9,7 @@ import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.LegacyLongField;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.SortedSetDocValuesField;
 import org.apache.lucene.document.StoredField;
@@ -898,7 +898,8 @@ public class LumongoSegment {
 
 		luceneDocument.add(new StringField(LumongoConstants.ID_FIELD, uniqueId, Store.YES));
 
-		luceneDocument.add(new LegacyLongField(LumongoConstants.TIMESTAMP_FIELD, timestamp, Store.YES));
+		luceneDocument.add(new LongPoint(LumongoConstants.TIMESTAMP_FIELD, timestamp));
+		luceneDocument.add(new StoredField(LumongoConstants.TIMESTAMP_FIELD, timestamp));
 
 		if (indexConfig.getIndexSettings().getStoreDocumentInIndex()) {
 			luceneDocument.add(new StoredField(LumongoConstants.STORED_DOC_FIELD, new BytesRef(LumongoUtil.mongoDocumentToByteArray(mongoDocument))));
