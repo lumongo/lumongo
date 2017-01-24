@@ -76,10 +76,10 @@ public class LumongoQueryParser extends QueryParser {
 			int min = start == null ? Integer.MIN_VALUE : Integer.parseInt(start);
 			int max = end == null ? Integer.MAX_VALUE : Integer.parseInt(end);
 			if (!startInclusive) {
-				min += 1;
+				min = Math.addExact(min, 1);
 			}
 			if (!endInclusive) {
-				max -= 1;
+				max = Math.addExact(max, -1);
 			}
 			return IntPoint.newRangeQuery(fieldName, min, max);
 		}
@@ -87,10 +87,10 @@ public class LumongoQueryParser extends QueryParser {
 			long min = start == null ? Long.MIN_VALUE : Long.parseLong(start);
 			long max = end == null ? Long.MAX_VALUE : Long.parseLong(end);
 			if (!startInclusive) {
-				min += 1;
+				min = Math.addExact(min, 1);
 			}
 			if (!endInclusive) {
-				max -= 1;
+				max = Math.addExact(max, -1);
 			}
 			return LongPoint.newRangeQuery(fieldName, min, max);
 		}
@@ -98,10 +98,10 @@ public class LumongoQueryParser extends QueryParser {
 			float min = start == null ? Float.NEGATIVE_INFINITY : Float.parseFloat(start);
 			float max = end == null ? Float.POSITIVE_INFINITY : Float.parseFloat(end);
 			if (!startInclusive) {
-				min += Math.nextUp(min);
+				min = Math.nextUp(min);
 			}
 			if (!endInclusive) {
-				max -= Math.nextDown(max);
+				max = Math.nextDown(max);
 			}
 			return FloatPoint.newRangeQuery(fieldName, min, max);
 		}
@@ -109,10 +109,10 @@ public class LumongoQueryParser extends QueryParser {
 			double min = start == null ? Double.NEGATIVE_INFINITY : Double.parseDouble(start);
 			double max = end == null ? Double.POSITIVE_INFINITY : Double.parseDouble(end);
 			if (!startInclusive) {
-				min += Math.nextUp(min);
+				min = Math.nextUp(min);
 			}
 			if (!endInclusive) {
-				max -= Math.nextDown(max);
+				max = Math.nextDown(max);
 			}
 			return DoublePoint.newRangeQuery(fieldName, min, max);
 		}
@@ -126,10 +126,10 @@ public class LumongoQueryParser extends QueryParser {
 				max = getDateAsLong(end);
 			}
 			if (!startInclusive) {
-				min += 1;
+				min = Math.addExact(min, 1);
 			}
 			if (!endInclusive) {
-				max -= 1;
+				max = Math.addExact(max, 1);
 			}
 			return LongPoint.newRangeQuery(fieldName, min, max);
 		}
