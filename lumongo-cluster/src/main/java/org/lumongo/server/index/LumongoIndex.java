@@ -385,7 +385,10 @@ public class LumongoIndex implements IndexSegmentInterface {
 				//Just for clarity
 				IndexSegmentInterface indexSegmentInterface = this;
 
+				//doesnt need to be done each time and it is done in StartNode but helps with test cases that take different paths
+				FacetsConfig.DEFAULT_DIM_CONFIG.multiValued = true;
 				facetsConfig = new FacetsConfig();
+
 				LumongoSegment s = new LumongoSegment(segmentNumber, indexSegmentInterface, indexConfig, facetsConfig, documentStorage);
 				segmentMap.put(segmentNumber, s);
 
