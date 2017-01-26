@@ -76,8 +76,9 @@ public class ExternalServiceHandler extends ExternalService {
 		PeerInfo externalServerInfo = new PeerInfo(ConnectionHelper.getHostName(), externalServicePort);
 		
 		int externalWorkers = clusterConfig.getExternalWorkers();
-		
-		RpcServerCallExecutor executor = new NonInterruptingThreadPoolCallExecutor(externalWorkers, externalWorkers, new RenamingThreadFactoryProxy(
+		int maximumPoolSize = externalWorkers * 4;
+
+		RpcServerCallExecutor executor = new NonInterruptingThreadPoolCallExecutor(externalWorkers, maximumPoolSize, new RenamingThreadFactoryProxy(
 						ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc", Executors.defaultThreadFactory()));
 		
 		DuplexTcpServerPipelineFactory serverFactory = new DuplexTcpServerPipelineFactory(externalServerInfo);

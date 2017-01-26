@@ -60,7 +60,7 @@ public class InternalServiceHandler extends InternalService {
 		
 		PeerInfo internalServerInfo = new PeerInfo(ConnectionHelper.getHostName(), internalServicePort);
 		int coreInternalWorkers = clusterConfig.getInternalWorkers();
-		int maxInternalWorkers = 1024; // TODO fix this
+		int maxInternalWorkers = coreInternalWorkers * 64; //TODO why?
 		
 		RpcServerCallExecutor executor = new NonInterruptingThreadPoolCallExecutor(coreInternalWorkers, maxInternalWorkers, new RenamingThreadFactoryProxy(
 						InternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc", Executors.defaultThreadFactory()));
