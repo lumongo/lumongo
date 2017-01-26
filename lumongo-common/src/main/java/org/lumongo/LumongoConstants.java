@@ -70,11 +70,12 @@ public class LumongoConstants {
 	public static final String STORED_DOC_FIELD = "_lmsdf_";
 	public static final String ID_FIELD = "_lmidf_";
 	public static final String FIELDS_LIST_FIELD = "_lmflf_";
+	public static final String SUPERBIT_PREFIX = "_lmsb_";
 
 	public static final String HIGHLIGHT = "hl";
+
 	public static final String HIGHLIGHT_JSON = "hlJson";
 
 	public static final String ANALYZE_JSON = "alJson";
-
 	public static final String FUZZY_TERM_JSON = "fuzzyTermJson";
 }

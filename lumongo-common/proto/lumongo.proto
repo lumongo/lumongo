@@ -195,11 +195,23 @@ message FieldConfig {
 	repeated IndexAs indexAs = 3;
 	repeated FacetAs facetAs = 4;
 	repeated SortAs sortAs = 5;
+	repeated ProjectAs projectAs = 6;
 }
 
 message IndexAs {
 	required string indexFieldName = 1;
 	optional string analyzerName = 2;
+}
+
+message ProjectAs {
+	required string field = 1;
+	optional Superbit superbit = 2;
+}
+
+message Superbit {
+	required uint32 inputDim = 1;
+	optional uint32 batches = 2 [default = 1];
+	optional uint32 seed = 3 [default = 1357];
 }
 
 message FacetAs {
@@ -460,6 +472,13 @@ message QueryRequest {
 	repeated HighlightRequest highlightRequest = 14;
 	repeated AnalysisRequest analysisRequest = 15;
 	optional bool debug = 16 [default = false];
+	repeated CosineSimRequest cosineSimRequest = 17;
+}
+
+message CosineSimRequest {
+	required string field = 1;
+	required double similarity = 2;
+	repeated double vector = 3;
 }
 
 

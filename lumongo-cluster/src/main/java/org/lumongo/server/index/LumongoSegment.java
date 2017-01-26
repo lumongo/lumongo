@@ -2,6 +2,7 @@ package org.lumongo.server.index;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.protobuf.ByteString;
+import info.debatty.java.lsh.SuperBit;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -443,6 +444,10 @@ public class LumongoSegment {
 		for (CountRequest countRequest : facetRequest.getCountRequestList()) {
 
 			String label = countRequest.getFacetField().getLabel();
+
+			if (!indexConfig.existingFacet(label)) {
+				throw new Exception(label + " is not defined as a facetable field");
+			}
 
 			if (countRequest.hasSegmentFacets()) {
 				if (indexConfig.getNumberOfSegments() == 1) {
@@ -939,39 +944,75 @@ public class LumongoSegment {
 
 					handleSortForStoredField(luceneDocument, storedFieldName, fc, o);
 
-					for (IndexAs indexAs : fc.getIndexAsList()) {
+					handleIndexingForStoredField(luceneDocument, storedFieldName, fc, fieldType, o);
 
-						String indexedFieldName = indexAs.getIndexFieldName();
-						luceneDocument.add(new StringField(LumongoConstants.FIELDS_LIST_FIELD, indexedFieldName, Store.NO));
-
-						if (FieldConfig.FieldType.NUMERIC_INT.equals(fieldType)) {
-							IntFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
-						}
-						else if (FieldConfig.FieldType.NUMERIC_LONG.equals(fieldType)) {
-							LongFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
-						}
-						else if (FieldConfig.FieldType.NUMERIC_FLOAT.equals(fieldType)) {
-							FloatFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
-						}
-						else if (FieldConfig.FieldType.NUMERIC_DOUBLE.equals(fieldType)) {
-							DoubleFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
-						}
-						else if (FieldConfig.FieldType.DATE.equals(fieldType)) {
-							DateFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
-						}
-						else if (FieldConfig.FieldType.BOOL.equals(fieldType)) {
-							BooleanFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
-						}
-						else if (FieldConfig.FieldType.STRING.equals(fieldType)) {
-							StringFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
-						}
-						else {
-							throw new RuntimeException("Unsupported field type <" + fieldType + ">");
-						}
-					}
+					handleProjectForStoredField(luceneDocument, fc, o);
 				}
 			}
 
+		}
+	}
+
+	private void handleProjectForStoredField(Document luceneDocument, FieldConfig fc, Object o) throws Exception {
+		for (ProjectAs projectAs : fc.getProjectAsList()) {
+			if (projectAs.hasSuperbit()) {
+				if (o instanceof List) {
+					List<Number> values = (List<Number>) o;
+
+					double vec[] = new double[values.size()];
+					int i = 0;
+					for (Number value : values) {
+						vec[i++] = value.doubleValue();
+					}
+
+					SuperBit superBitForField = indexConfig.getSuperBitForField(projectAs.getField());
+					boolean[] signature = superBitForField.signature(vec);
+
+					int j = 0;
+					for (boolean s : signature) {
+						StringFieldIndexer.INSTANCE.index(luceneDocument, projectAs.getField(), s ? "1" : "0", LumongoConstants.SUPERBIT_PREFIX + "." + j);
+						j++;
+					}
+
+				}
+				else {
+					throw new Exception("Expecting a list for superbit field <" + projectAs.getField() + ">");
+				}
+			}
+		}
+	}
+
+	private void handleIndexingForStoredField(Document luceneDocument, String storedFieldName, FieldConfig fc, FieldConfig.FieldType fieldType, Object o)
+			throws Exception {
+		for (IndexAs indexAs : fc.getIndexAsList()) {
+
+			String indexedFieldName = indexAs.getIndexFieldName();
+			luceneDocument.add(new StringField(LumongoConstants.FIELDS_LIST_FIELD, indexedFieldName, Store.NO));
+
+			if (FieldConfig.FieldType.NUMERIC_INT.equals(fieldType)) {
+				IntFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
+			}
+			else if (FieldConfig.FieldType.NUMERIC_LONG.equals(fieldType)) {
+				LongFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
+			}
+			else if (FieldConfig.FieldType.NUMERIC_FLOAT.equals(fieldType)) {
+				FloatFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
+			}
+			else if (FieldConfig.FieldType.NUMERIC_DOUBLE.equals(fieldType)) {
+				DoubleFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
+			}
+			else if (FieldConfig.FieldType.DATE.equals(fieldType)) {
+				DateFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
+			}
+			else if (FieldConfig.FieldType.BOOL.equals(fieldType)) {
+				BooleanFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
+			}
+			else if (FieldConfig.FieldType.STRING.equals(fieldType)) {
+				StringFieldIndexer.INSTANCE.index(luceneDocument, storedFieldName, o, indexedFieldName);
+			}
+			else {
+				throw new RuntimeException("Unsupported field type <" + fieldType + ">");
+			}
 		}
 	}
 

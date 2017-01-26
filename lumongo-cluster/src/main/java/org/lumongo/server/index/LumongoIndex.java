@@ -1005,6 +1005,9 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 								String sortField = fs.getSortField();
 								FieldConfig.FieldType sortType = indexConfig.getFieldTypeForSortField(sortField);
+								if (sortType == null) {
+									throw new Exception(sortField + " is not defined as a sortable field");
+								}
 
 								SortValue sortValue = sortValues.getSortValue(sortTermsIndex);
 
