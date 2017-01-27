@@ -1,12 +1,15 @@
 package org.lumongo.client.result;
 
+import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo.AnalysisResult;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
 import org.lumongo.cluster.message.Lumongo.FacetGroup;
 import org.lumongo.cluster.message.Lumongo.LastResult;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
+import org.lumongo.util.ResultHelper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class QueryResult extends Result {
@@ -26,6 +29,40 @@ public class QueryResult extends Result {
 
 	public List<ScoredResult> getResults() {
 		return queryResponse.getResultsList();
+	}
+
+	public ScoredResult getFirstResult() {
+		if (hasResults()) {
+			return getResults().get(0);
+		}
+		return null;
+	}
+
+	public List<Document> getDocuments() {
+		List<Document> documents = new ArrayList<>();
+		for (ScoredResult scoredResult : queryResponse.getResultsList()) {
+			Document doc = ResultHelper.getDocumentFromScoredResult(scoredResult);
+			if (doc != null) {
+				documents.add(doc);
+			}
+			else {
+				throw new IllegalStateException("Cannot get results without fetch type of full");
+			}
+		}
+		return documents;
+	}
+
+	public Document getFirstDocument() {
+		if (hasResults()) {
+			Document doc = ResultHelper.getDocumentFromScoredResult(getResults().get(0));
+			if (doc != null) {
+				return doc;
+			}
+			else {
+				throw new IllegalStateException("Cannot get results without fetch type of full");
+			}
+		}
+		return null;
 	}
 
 	public LastResult getLastResult() {
