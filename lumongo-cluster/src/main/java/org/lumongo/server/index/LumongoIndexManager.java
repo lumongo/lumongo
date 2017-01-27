@@ -688,6 +688,10 @@ public class LumongoIndexManager {
 					queryWithFilters.addFilterQuery(i.getQuery(filterQuery));
 				}
 
+				for (CosineSimRequest cosineSimRequest : queryRequest.getCosineSimRequestList()) {
+					i.handleCosineSimQuery(queryWithFilters, cosineSimRequest);
+				}
+
 				queryMap.put(indexName, queryWithFilters);
 			}
 

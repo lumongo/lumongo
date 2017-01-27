@@ -13,6 +13,7 @@ import java.util.Map;
 public class QueryWithFilters {
 	private Query query;
 	private List<Query> filterQueries = Collections.emptyList();
+	private List<Query> scoredFilterQueries = Collections.emptyList();
 
 	private Map<String, AnalyzerSettings.Similarity> similarityOverrideMap = Collections.emptyMap();
 
@@ -34,6 +35,22 @@ public class QueryWithFilters {
 		}
 		
 		filterQueries.add(filterQuery);
+	}
+
+	public List<Query> getScoredFilterQueries() {
+		return scoredFilterQueries;
+	}
+
+	public void setScoredFilterQueries(List<Query> scoredFilterQueries) {
+		this.scoredFilterQueries = scoredFilterQueries;
+	}
+
+	public void addScoredFilterQuery(Query scoredFilterQuery) {
+		if (scoredFilterQueries.isEmpty()) {
+			scoredFilterQueries = new ArrayList<>();
+		}
+
+		scoredFilterQueries.add(scoredFilterQuery);
 	}
 
 	public Query getQuery() {

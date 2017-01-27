@@ -54,6 +54,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private Set<String> documentFields = Collections.emptySet();
 	private Set<String> documentMaskedFields = Collections.emptySet();
 	private List<Lumongo.FieldSimilarity> fieldSimilarities = Collections.emptyList();
+	private List<Lumongo.CosineSimRequest> cosineSimRequests = Collections.emptyList();
 	private Boolean dismax;
 	private Float dismaxTie;
 
@@ -188,6 +189,26 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		}
 
 		fieldSimilarities.add(fieldSimilarity);
+
+		return this;
+	}
+
+	public Query addCosineSim(String field, double[] vector, double similarity) {
+
+		Lumongo.CosineSimRequest.Builder builder = Lumongo.CosineSimRequest.newBuilder().setField(field).setSimilarity(similarity);
+		for (int i = 0; i < vector.length; i++) {
+			builder.addVector(vector[i]);
+		}
+		addCosineSim(builder.build());
+		return this;
+	}
+
+	private Query addCosineSim(Lumongo.CosineSimRequest cosineSimRequest) {
+		if (cosineSimRequests.isEmpty()) {
+			cosineSimRequests = new ArrayList<>();
+		}
+
+		cosineSimRequests.add(cosineSimRequest);
 
 		return this;
 	}
@@ -478,6 +499,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 		if (resultFetchType != null) {
 			requestBuilder.setResultFetchType(resultFetchType);
+		}
+
+		if (!cosineSimRequests.isEmpty()) {
+			requestBuilder.addAllCosineSimRequest(cosineSimRequests);
 		}
 
 		requestBuilder.addAllDocumentFields(documentFields);

@@ -8,6 +8,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
+import info.debatty.java.lsh.SuperBit;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
@@ -25,6 +26,7 @@ import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.store.NRTCachingDirectory;
@@ -32,7 +34,30 @@ import org.apache.lucene.util.BytesRef;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.*;
+import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
+import org.lumongo.cluster.message.Lumongo.DeleteRequest;
+import org.lumongo.cluster.message.Lumongo.FetchType;
+import org.lumongo.cluster.message.Lumongo.FieldConfig;
+import org.lumongo.cluster.message.Lumongo.FieldSort;
+import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
+import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
+import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
+import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
+import org.lumongo.cluster.message.Lumongo.GetTermsResponseInternal;
+import org.lumongo.cluster.message.Lumongo.HighlightRequest;
+import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
+import org.lumongo.cluster.message.Lumongo.IndexSettings;
+import org.lumongo.cluster.message.Lumongo.LastIndexResult;
+import org.lumongo.cluster.message.Lumongo.LastResult;
+import org.lumongo.cluster.message.Lumongo.QueryRequest;
+import org.lumongo.cluster.message.Lumongo.ResultDocument;
+import org.lumongo.cluster.message.Lumongo.ScoredResult;
+import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
+import org.lumongo.cluster.message.Lumongo.SegmentResponse;
+import org.lumongo.cluster.message.Lumongo.SortRequest;
+import org.lumongo.cluster.message.Lumongo.SortValue;
+import org.lumongo.cluster.message.Lumongo.SortValues;
+import org.lumongo.cluster.message.Lumongo.StoreRequest;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
@@ -884,6 +909,39 @@ public class LumongoIndex implements IndexSegmentInterface {
 		}
 	}
 
+	public void handleCosineSimQuery(QueryWithFilters queryWithFilters, Lumongo.CosineSimRequest cosineSimRequest) {
+		indexLock.readLock().lock();
+
+		try {
+
+			double vector[] = new double[cosineSimRequest.getVectorCount()];
+			for (int i = 0; i < cosineSimRequest.getVectorCount(); i++) {
+				vector[i] = cosineSimRequest.getVector(i);
+			}
+
+			SuperBit superBit = indexConfig.getSuperBitForField(cosineSimRequest.getField());
+			boolean[] signature = superBit.signature(vector);
+
+			int mm = (int) ((1 - (Math.acos(cosineSimRequest.getSimilarity()) / Math.PI)) * signature.length);
+			BooleanQuery.Builder booleanQueryBuilder = new BooleanQuery.Builder();
+			booleanQueryBuilder.setMinimumNumberShouldMatch(mm);
+			for (int i = 0; i < signature.length; i++) {
+				String fieldName = LumongoConstants.SUPERBIT_PREFIX + "." + i;
+				booleanQueryBuilder.add(new BooleanClause(new TermQuery(new org.apache.lucene.index.Term(fieldName, signature[i] ? "1" : "0")),
+						BooleanClause.Occur.SHOULD));
+				queryWithFilters.addSimilarityOverride(
+						Lumongo.FieldSimilarity.newBuilder().setField(fieldName).setSimilarity(Lumongo.AnalyzerSettings.Similarity.CONSTANT).build());
+			}
+
+			BooleanQuery query = booleanQueryBuilder.build();
+			queryWithFilters.addScoredFilterQuery(query);
+
+		}
+		finally {
+			indexLock.readLock().unlock();
+		}
+	}
+
 	public Query getQuery(Lumongo.Query lumongoQuery) throws Exception {
 		indexLock.readLock().lock();
 
@@ -1242,6 +1300,9 @@ public class LumongoIndex implements IndexSegmentInterface {
 			List<String> toRemove = new ArrayList<>();
 			for (String field : fields) {
 				if (field.startsWith(FacetsConfig.DEFAULT_INDEX_FIELD_NAME)) {
+					toRemove.add(field);
+				}
+				if (field.startsWith(LumongoConstants.SUPERBIT_PREFIX)) {
 					toRemove.add(field);
 				}
 			}

@@ -152,6 +152,10 @@ public class IndexConfig {
 		return superbitMap.get(field);
 	}
 
+	public Lumongo.Superbit getSuperBitConfigForField(String field) {
+		return superbitConfigMap.get(field);
+	}
+
 	public Lumongo.AnalyzerSettings getAnalyzerSettingsByName(String textAnalyzerName) {
 		return analyzerMap.get(textAnalyzerName);
 	}
@@ -192,4 +196,5 @@ public class IndexConfig {
 	public String toString() {
 		return "IndexConfig{" + "numberOfSegments=" + numberOfSegments + ", indexName='" + indexName + '\'' + ", indexSettings=" + indexSettings + '}';
 	}
+
 }
