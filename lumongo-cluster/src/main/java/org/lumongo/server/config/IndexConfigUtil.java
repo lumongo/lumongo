@@ -165,31 +165,33 @@ public class IndexConfigUtil {
 			}
 			{
 				List<Document> projectAsList = (List<Document>) fieldConfigObj.get(PROJECT_AS);
-				for (Document projectAsObj : projectAsList) {
+				if (projectAsList != null) {
+					for (Document projectAsObj : projectAsList) {
 
-					Lumongo.ProjectAs.Builder builder = Lumongo.ProjectAs.newBuilder();
-					builder.setField(projectAsObj.getString(FIELD));
+						Lumongo.ProjectAs.Builder builder = Lumongo.ProjectAs.newBuilder();
+						builder.setField(projectAsObj.getString(FIELD));
 
-					Document superBitObj = (Document) projectAsObj.get(SUPER_BIT);
-					if (superBitObj != null) {
-						Lumongo.Superbit.Builder sbBuilder = Lumongo.Superbit.newBuilder();
-						Integer inputDim = superBitObj.getInteger(INPUT_DIM);
-						if (inputDim != null) {
-							sbBuilder.setInputDim(inputDim);
-						}
-						Integer batches = superBitObj.getInteger(BATCHES);
-						if (batches != null) {
-							sbBuilder.setBatches(batches);
-						}
-						Integer seed = superBitObj.getInteger(SEED);
-						if (seed != null) {
-							sbBuilder.setSeed(seed);
+						Document superBitObj = (Document) projectAsObj.get(SUPER_BIT);
+						if (superBitObj != null) {
+							Lumongo.Superbit.Builder sbBuilder = Lumongo.Superbit.newBuilder();
+							Integer inputDim = superBitObj.getInteger(INPUT_DIM);
+							if (inputDim != null) {
+								sbBuilder.setInputDim(inputDim);
+							}
+							Integer batches = superBitObj.getInteger(BATCHES);
+							if (batches != null) {
+								sbBuilder.setBatches(batches);
+							}
+							Integer seed = superBitObj.getInteger(SEED);
+							if (seed != null) {
+								sbBuilder.setSeed(seed);
+							}
+
+							builder.setSuperbit(sbBuilder);
 						}
 
-						builder.setSuperbit(sbBuilder);
+						fieldConfig.addProjectAs(builder);
 					}
-
-					fieldConfig.addProjectAs(builder);
 				}
 			}
 
