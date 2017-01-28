@@ -1,6 +1,7 @@
 package org.lumongo.server.config;
 
 import org.bson.Document;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AnalyzerSettings;
 import org.lumongo.cluster.message.Lumongo.FacetAs;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
@@ -39,11 +40,17 @@ public class IndexConfigUtil {
 	private static final String INDEX_AS = "indexAs";
 	private static final String FACET_AS = "facetAs";
 	private static final String SORT_AS = "sortAs";
+	private static final String PROJECT_AS = "projectAs";
 	private static final String FACET_NAME = "facetName";
 	private static final String FIELD_TYPE = "fieldType";
 	private static final String FACET_DATE_HANDLING = "dateHandling";
 	private static final String SORT_STRING_HANDLING = "stringHandling";
 	private static final String SORT_FIELD_NAME = "sortFieldName";
+	private static final String FIELD = "field";
+	private static final String SUPER_BIT = "superBit";
+	private static final String INPUT_DIM = "inputDim";
+	private static final String BATCHES = "batches";
+	private static final String SEED = "seed";
 
 	private static final String TOKENIZER = "tokenizer";
 	private static final String SIMILARITY = "similarity";
@@ -154,6 +161,35 @@ public class IndexConfigUtil {
 					}
 
 					fieldConfig.addSortAs(builder);
+				}
+			}
+			{
+				List<Document> projectAsList = (List<Document>) fieldConfigObj.get(PROJECT_AS);
+				for (Document projectAsObj : projectAsList) {
+
+					Lumongo.ProjectAs.Builder builder = Lumongo.ProjectAs.newBuilder();
+					builder.setField(projectAsObj.getString(FIELD));
+
+					Document superBitObj = (Document) projectAsObj.get(SUPER_BIT);
+					if (superBitObj != null) {
+						Lumongo.Superbit.Builder sbBuilder = Lumongo.Superbit.newBuilder();
+						Integer inputDim = superBitObj.getInteger(INPUT_DIM);
+						if (inputDim != null) {
+							sbBuilder.setInputDim(inputDim);
+						}
+						Integer batches = superBitObj.getInteger(BATCHES);
+						if (batches != null) {
+							sbBuilder.setBatches(batches);
+						}
+						Integer seed = superBitObj.getInteger(SEED);
+						if (seed != null) {
+							sbBuilder.setSeed(seed);
+						}
+
+						builder.setSuperbit(sbBuilder);
+					}
+
+					fieldConfig.addProjectAs(builder);
 				}
 			}
 
@@ -271,6 +307,26 @@ public class IndexConfigUtil {
 					sortAsObjList.add(sortAsObj);
 				}
 				fieldConfig.put(SORT_AS, sortAsObjList);
+			}
+
+			{
+				List<Document> projectAsObjlist = new ArrayList<>();
+				for (Lumongo.ProjectAs projectAs : fc.getProjectAsList()) {
+					Document projectAsObj = new Document();
+					projectAsObj.put(FIELD, projectAs.getField());
+					if (projectAs.hasSuperbit()) {
+						Document sbObj = new Document();
+
+						Lumongo.Superbit superbit = projectAs.getSuperbit();
+						sbObj.put(INPUT_DIM, superbit.getInputDim());
+						sbObj.put(BATCHES, superbit.getBatches());
+						sbObj.put(SEED, superbit.getSeed());
+
+						projectAsObj.put(SUPER_BIT, sbObj);
+					}
+					projectAsObjlist.add(projectAsObj);
+				}
+				fieldConfig.put(PROJECT_AS, projectAsObjlist);
 			}
 
 			fieldConfigs.add(fieldConfig);
