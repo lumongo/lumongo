@@ -52,7 +52,7 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm, @QueryParam(LumongoConstants.SIMILARITY) List<String> similarity,
 			@QueryParam(LumongoConstants.DEBUG) Boolean debug, @QueryParam(LumongoConstants.START) Integer start,
 			@QueryParam(LumongoConstants.HIGHLIGHT) List<String> highlightList, @QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList,
-			@QueryParam(LumongoConstants.ANALYZE_JSON) List<String> analyzeJsonList, @QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") String format) {
+			@QueryParam(LumongoConstants.ANALYZE_JSON) List<String> analyzeJsonList, @QueryParam(LumongoConstants.COS_SIM_JSON) List<String> cosineSimJsonList, @QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") String format) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 
@@ -133,6 +133,21 @@ public class QueryResource {
 			for (String filterQuery : filterQueries) {
 				Lumongo.Query filterQueryBuilder = Lumongo.Query.newBuilder().setQ(filterQuery).build();
 				qrBuilder.addFilterQuery(filterQueryBuilder);
+			}
+		}
+
+		if (cosineSimJsonList != null) {
+			for (String cosineSimJson : cosineSimJsonList) {
+				try {
+					Lumongo.CosineSimRequest.Builder consineSimRequest = Lumongo.CosineSimRequest.newBuilder();
+					JsonFormat.parser().merge(cosineSimJson, consineSimRequest);
+					qrBuilder.addCosineSimRequest(consineSimRequest);
+				}
+				catch (InvalidProtocolBufferException e) {
+					return Response.status(LumongoConstants.INTERNAL_ERROR)
+							.entity("Failed to parse cosine sim json: " + e.getClass().getSimpleName() + ":" + e.getMessage()).build();
+				}
+
 			}
 		}
 
