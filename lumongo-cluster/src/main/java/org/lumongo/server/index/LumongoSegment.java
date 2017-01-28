@@ -294,7 +294,7 @@ public class LumongoSegment {
 
 			Query q = queryWithFilters.getQuery();
 
-			if (!queryWithFilters.getFilterQueries().isEmpty()) {
+			if (!queryWithFilters.getFilterQueries().isEmpty() || !queryWithFilters.getScoredFilterQueries().isEmpty()) {
 				BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 
 				for (Query filterQuery : queryWithFilters.getFilterQueries()) {
