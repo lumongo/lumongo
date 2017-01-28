@@ -12,7 +12,8 @@ import java.net.URL;
 
 /**
  * Created by Matt Davis on 9/22/16.
- * @author @mdavis
+ * @author mdavis
+ * Matt Davis
  */
 public class BritishUSFilter extends TokenFilter {
 
