@@ -210,7 +210,7 @@ message ProjectAs {
 
 message Superbit {
 	required uint32 inputDim = 1;
-	optional uint32 batches = 2 [default = 3];
+    optional uint32 batches = 2 [default = 1];
 	optional uint32 seed = 3 [default = 1357];
 }
 
