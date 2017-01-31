@@ -1020,7 +1020,8 @@ public class LumongoSegment {
 
 					int j = 0;
 					for (boolean s : signature) {
-						StringFieldIndexer.INSTANCE.index(luceneDocument, projectAs.getField(), s ? "1" : "0", LumongoConstants.SUPERBIT_PREFIX + "." + j);
+						StringFieldIndexer.INSTANCE.index(luceneDocument, projectAs.getField(), s ? "1" : "0",
+								LumongoConstants.SUPERBIT_PREFIX + "." + projectAs.getField() + "." + j);
 						j++;
 					}
 
