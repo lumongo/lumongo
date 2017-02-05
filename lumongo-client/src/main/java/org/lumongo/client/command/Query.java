@@ -57,6 +57,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private List<Lumongo.CosineSimRequest> cosineSimRequests = Collections.emptyList();
 	private Boolean dismax;
 	private Float dismaxTie;
+	private Boolean dontCache;
 
 	public Query(String index, String query, int amount) {
 		this(new String[] { index }, query, amount);
@@ -433,6 +434,14 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return this;
 	}
 
+	public Boolean getDontCache() {
+		return dontCache;
+	}
+
+	public void setDontCache(Boolean dontCache) {
+		this.dontCache = dontCache;
+	}
+
 	@Override
 	public QueryRequest getRequest() {
 		QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
@@ -503,6 +512,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 		if (!cosineSimRequests.isEmpty()) {
 			requestBuilder.addAllCosineSimRequest(cosineSimRequests);
+		}
+
+		if (dontCache != null) {
+			requestBuilder.setDontCache(dontCache);
 		}
 
 		requestBuilder.addAllDocumentFields(documentFields);

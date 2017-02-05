@@ -456,11 +456,11 @@ message IndexSegmentResponse {
 }
 
 message QueryRequest {
-	repeated string index = 1;
-	optional Query query = 2;
-	required uint32 amount = 3;
-	repeated Query filterQuery = 4;
-	optional FacetRequest facetRequest = 5;
+    repeated string index = 1;
+    optional Query query = 2;
+    required uint32 amount = 3;
+    repeated Query filterQuery = 4;
+    optional FacetRequest facetRequest = 5;
 	optional SortRequest sortRequest = 6;
 	optional uint32 start = 7;
 	optional LastResult lastResult = 8;
@@ -473,6 +473,7 @@ message QueryRequest {
 	repeated AnalysisRequest analysisRequest = 15;
 	optional bool debug = 16 [default = false];
 	repeated CosineSimRequest cosineSimRequest = 17;
+    optional bool dontCache = 18 [default = false];
 }
 
 message CosineSimRequest {

@@ -1114,11 +1114,20 @@ public class LumongoIndex implements IndexSegmentInterface {
 
 			for (final LumongoSegment segment : segmentMap.values()) {
 
-				Future<SegmentResponse> response = segmentPool.submit(() -> segment
-						.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
-								queryRequest.getSortRequest(), new QueryCacheKey(queryRequest), queryRequest.getResultFetchType(),
-								queryRequest.getDocumentFieldsList(), queryRequest.getDocumentMaskedFieldsList(), queryRequest.getHighlightRequestList(),
-								queryRequest.getAnalysisRequestList(), queryRequest.getDebug()));
+				Future<SegmentResponse> response = segmentPool.submit(() -> {
+
+					QueryCacheKey queryCacheKey = null;
+
+					if (!queryRequest.getDontCache()) {
+						queryCacheKey = new QueryCacheKey(queryRequest);
+					}
+
+					return segment
+							.querySegment(queryWithFilters, requestedAmount, lastScoreDocMap.get(segment.getSegmentNumber()), queryRequest.getFacetRequest(),
+									queryRequest.getSortRequest(), queryCacheKey, queryRequest.getResultFetchType(), queryRequest.getDocumentFieldsList(),
+									queryRequest.getDocumentMaskedFieldsList(), queryRequest.getHighlightRequestList(), queryRequest.getAnalysisRequestList(),
+									queryRequest.getDebug());
+				});
 
 				responses.add(response);
 
