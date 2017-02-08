@@ -50,7 +50,8 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.PRETTY) boolean pretty, @QueryParam(LumongoConstants.COMPUTE_FACET_ERROR) boolean computeFacetError,
 			@QueryParam(LumongoConstants.DISMAX) Boolean dismax, @QueryParam(LumongoConstants.DISMAX_TIE) Float dismaxTie,
 			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm, @QueryParam(LumongoConstants.SIMILARITY) List<String> similarity,
-			@QueryParam(LumongoConstants.DEBUG) Boolean debug, @QueryParam(LumongoConstants.START) Integer start,
+			@QueryParam(LumongoConstants.DEBUG) Boolean debug, @QueryParam(LumongoConstants.DONT_CACHE) Boolean dontCache,
+			@QueryParam(LumongoConstants.START) Integer start,
 			@QueryParam(LumongoConstants.HIGHLIGHT) List<String> highlightList, @QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList,
 			@QueryParam(LumongoConstants.ANALYZE_JSON) List<String> analyzeJsonList, @QueryParam(LumongoConstants.COS_SIM_JSON) List<String> cosineSimJsonList, @QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") String format) {
 
@@ -62,6 +63,10 @@ public class QueryResource {
 
 		if (start != null) {
 			qrBuilder.setStart(start);
+		}
+
+		if (dontCache != null) {
+			qrBuilder.setDontCache(dontCache);
 		}
 
 		if (query != null && !query.isEmpty()) {

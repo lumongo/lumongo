@@ -80,4 +80,5 @@ public class LumongoConstants {
 	public static final String FUZZY_TERM_JSON = "fuzzyTermJson";
 	public static final String COS_SIM_JSON = "cosSimJson";
 
+	public static final String DONT_CACHE = "dontCache";
 }
