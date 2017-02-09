@@ -30,5 +30,3 @@ To learn more see the [wiki](https://github.com/lumongo/lumongo/wiki):
 * [Java Client](https://github.com/lumongo/lumongo/wiki/Java-Client)
 * [Maven/Gradle](https://github.com/lumongo/lumongo/wiki/Maven) 
 
-
-[![Build Status](https://drone.io/github.com/lumongo/lumongo/status.png)](https://drone.io/github.com/lumongo/lumongo/latest)
