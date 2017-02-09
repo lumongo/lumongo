@@ -926,7 +926,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 			BooleanQuery.Builder booleanQueryBuilder = new BooleanQuery.Builder();
 			booleanQueryBuilder.setMinimumNumberShouldMatch(mm);
 			for (int i = 0; i < signature.length; i++) {
-				String fieldName = LumongoConstants.SUPERBIT_PREFIX + "." + cosineSimRequest.getField() + i;
+				String fieldName = LumongoConstants.SUPERBIT_PREFIX + "." + cosineSimRequest.getField() + "." + i;
 				booleanQueryBuilder.add(new BooleanClause(new TermQuery(new org.apache.lucene.index.Term(fieldName, signature[i] ? "1" : "0")),
 						BooleanClause.Occur.SHOULD));
 				queryWithFilters.addSimilarityOverride(
