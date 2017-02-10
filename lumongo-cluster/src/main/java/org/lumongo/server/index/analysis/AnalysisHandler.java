@@ -44,7 +44,7 @@ public class AnalysisHandler {
 		this.analyzer = analyzer;
 
 		this.summaryType = analysisRequest.getSummaryType();
-		this.computeDocLevel = analysisRequest.getDocTerms() || analysisRequest.getTokens() || AnalysisRequest.SummaryType.TOP_TERM_TOP_N.equals(summaryType);
+		this.computeDocLevel = analysisRequest.getDocTerms() || analysisRequest.getTokens() || AnalysisRequest.SummaryType.TOP_TERMS_TOP_N.equals(summaryType);
 		this.summaryLevelEnabled = analysisRequest.getSummaryTerms();
 
 		this.enabled = computeDocLevel || summaryLevelEnabled;
@@ -98,7 +98,7 @@ public class AnalysisHandler {
 			analysisResult.setAnalysisRequest(analysisRequest);
 
 			TermFreq docTermFreq = null;
-			if (computeDocLevel || AnalysisRequest.SummaryType.TOP_TERM_TOP_N.equals(summaryType)) {
+			if (computeDocLevel || AnalysisRequest.SummaryType.TOP_TERMS_TOP_N.equals(summaryType)) {
 				docTermFreq = new TermFreq(docFreq);
 			}
 			final TermFreq docTermFreqFinal = docTermFreq;
@@ -140,7 +140,7 @@ public class AnalysisHandler {
 							}
 						}
 
-						if (computeDocLevel || AnalysisRequest.SummaryType.TOP_TERM_TOP_N.equals(summaryType)) {
+						if (computeDocLevel || AnalysisRequest.SummaryType.TOP_TERMS_TOP_N.equals(summaryType)) {
 							docTermFreqFinal.addTerm(token);
 						}
 						if (summaryLevelEnabled && AnalysisRequest.SummaryType.ALL_TERMS_TOP_N.equals(summaryType)) {
