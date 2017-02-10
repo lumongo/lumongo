@@ -54,7 +54,8 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.START) Integer start, @QueryParam(LumongoConstants.HIGHLIGHT) List<String> highlightList,
 			@QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList,
 			@QueryParam(LumongoConstants.ANALYZE_JSON) List<String> analyzeJsonList, @QueryParam(LumongoConstants.COS_SIM_JSON) List<String> cosineSimJsonList,
-			@QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") String format, @QueryParam(LumongoConstants.BATCH) boolean batch) {
+			@QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") String format, @QueryParam(LumongoConstants.BATCH) boolean batch,
+			@QueryParam(LumongoConstants.BATCH_SIZE) @DefaultValue("500") Integer batchSize) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 
@@ -282,10 +283,10 @@ public class QueryResource {
 			sortRequest.addFieldSort(fieldSort);
 		}
 		qrBuilder.setSortRequest(sortRequest);
+		qrBuilder.setAmount(rows);
 
 		try {
 			if (format.equals("json")) {
-				qrBuilder.setAmount(rows);
 				QueryResponse qr = indexManager.query(qrBuilder.build());
 				String response = getStandardResponse(qr, !pretty);
 
@@ -298,7 +299,8 @@ public class QueryResource {
 			else {
 				if (fields != null && !fields.isEmpty()) {
 					if (batch) {
-						qrBuilder.setAmount(500);
+						qrBuilder.setAmount(batchSize);
+
 						QueryResponse qr = indexManager.query(qrBuilder.build());
 
 						StringBuilder responseBuilder = new StringBuilder();
