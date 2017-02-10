@@ -51,9 +51,10 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.DISMAX) Boolean dismax, @QueryParam(LumongoConstants.DISMAX_TIE) Float dismaxTie,
 			@QueryParam(LumongoConstants.MIN_MATCH) Integer mm, @QueryParam(LumongoConstants.SIMILARITY) List<String> similarity,
 			@QueryParam(LumongoConstants.DEBUG) Boolean debug, @QueryParam(LumongoConstants.DONT_CACHE) Boolean dontCache,
-			@QueryParam(LumongoConstants.START) Integer start,
-			@QueryParam(LumongoConstants.HIGHLIGHT) List<String> highlightList, @QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList,
-			@QueryParam(LumongoConstants.ANALYZE_JSON) List<String> analyzeJsonList, @QueryParam(LumongoConstants.COS_SIM_JSON) List<String> cosineSimJsonList, @QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") String format) {
+			@QueryParam(LumongoConstants.START) Integer start, @QueryParam(LumongoConstants.HIGHLIGHT) List<String> highlightList,
+			@QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList,
+			@QueryParam(LumongoConstants.ANALYZE_JSON) List<String> analyzeJsonList, @QueryParam(LumongoConstants.COS_SIM_JSON) List<String> cosineSimJsonList,
+			@QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") String format, @QueryParam(LumongoConstants.BATCH) boolean batch) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 
@@ -132,7 +133,6 @@ public class QueryResource {
 				}
 			}
 		}
-		qrBuilder.setAmount(rows);
 
 		if (filterQueries != null) {
 			for (String filterQuery : filterQueries) {
@@ -284,9 +284,9 @@ public class QueryResource {
 		qrBuilder.setSortRequest(sortRequest);
 
 		try {
-			QueryResponse qr = indexManager.query(qrBuilder.build());
-
 			if (format.equals("json")) {
+				qrBuilder.setAmount(rows);
+				QueryResponse qr = indexManager.query(qrBuilder.build());
 				String response = getStandardResponse(qr, !pretty);
 
 				if (pretty) {
@@ -296,8 +296,44 @@ public class QueryResource {
 				return Response.status(LumongoConstants.SUCCESS).type(MediaType.APPLICATION_JSON + ";charset=utf-8").entity(response).build();
 			}
 			else {
-				String response = getCSVResponse(fields, qr);
-				return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(response).build();
+				if (fields != null && !fields.isEmpty()) {
+					if (batch) {
+						qrBuilder.setAmount(500);
+						QueryResponse qr = indexManager.query(qrBuilder.build());
+
+						StringBuilder responseBuilder = new StringBuilder();
+						buildHeaderForCSV(fields, responseBuilder);
+
+						int count = 0;
+						while (qr.getResultsList().size() > 0) {
+							for (Lumongo.ScoredResult scoredResult : qr.getResultsList()) {
+								Document doc = ResultHelper.getDocumentFromScoredResult(scoredResult);
+								appendDocument(fields, responseBuilder, doc);
+
+								count++;
+								if (count % 1000 == 0) {
+									System.out.println("Docs processed so far: " + count);
+								}
+							}
+
+							qrBuilder.setLastResult(qr.getLastResult());
+							qr = indexManager.query(qrBuilder.build());
+
+						}
+
+						return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(responseBuilder.toString())
+								.build();
+					}
+					else {
+						QueryResponse qr = indexManager.query(qrBuilder.build());
+						String response = getCSVResponse(fields, qr);
+						return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(response).build();
+					}
+				}
+				else {
+					return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8")
+							.entity("Please specify fields to be exported i.e. fl=title&fl=abstract").build();
+				}
 			}
 		}
 		catch (Exception e) {
@@ -305,6 +341,14 @@ public class QueryResource {
 			return Response.status(LumongoConstants.INTERNAL_ERROR).entity(e.getClass().getSimpleName() + ":" + e.getMessage()).build();
 		}
 
+	}
+
+	private void buildHeaderForCSV(@QueryParam(LumongoConstants.FIELDS) List<String> fields, StringBuilder responseBuilder) {
+		// headersBuilder
+		StringBuilder headersBuilder = new StringBuilder();
+
+		fields.stream().filter(field -> !field.startsWith("-")).forEach(field -> headersBuilder.append(field).append(","));
+		responseBuilder.append(headersBuilder.toString().replaceFirst(",$", "\n"));
 	}
 
 	private String getStandardResponse(QueryResponse qr, boolean strict) throws InvalidProtocolBufferException {
@@ -484,72 +528,73 @@ public class QueryResource {
 		StringBuilder responseBuilder = new StringBuilder();
 
 		// headersBuilder
-		StringBuilder headersBuilder = new StringBuilder();
-		fields.stream().filter(field -> !field.startsWith("-")).forEach(field -> headersBuilder.append(field).append(","));
-		responseBuilder.append(headersBuilder.toString().replaceFirst(",$", "\n"));
+		buildHeaderForCSV(fields, responseBuilder);
 
 		// records
 		qr.getResultsList().stream().filter(Lumongo.ScoredResult::hasResultDocument).forEach(sr -> {
 			Document document = ResultHelper.getDocumentFromResultDocument(sr.getResultDocument());
-
-			int i = 0;
-			for (String field : fields) {
-				Object obj = document.get(field);
-				if (obj != null) {
-					if (obj instanceof List) {
-						List value = (List) obj;
-						String output = "\"";
-						for (Object o : value) {
-							if (o instanceof String) {
-								String item = (String) o;
-								if (item.contains(",") || value.contains("\"") || value.contains("\n")) {
-									output += item.replace("\"", "\"\"") + ";";
-								}
-								else {
-									output += item + ";";
-								}
-							}
-						}
-						output += "\"";
-						responseBuilder.append(output);
-					}
-					else if (obj instanceof Date) {
-						Date value = (Date) obj;
-						responseBuilder.append(value.toString());
-					}
-					else if (obj instanceof Number) {
-						Number value = (Number) obj;
-						responseBuilder.append(value);
-					}
-					else if (obj instanceof Boolean) {
-						Boolean value = (Boolean) obj;
-						responseBuilder.append(value);
-					}
-					else {
-						String value = (String) obj;
-						if (value.contains(",") || value.contains(" ") || value.contains("\"") || value.contains("\n")) {
-							responseBuilder.append("\"");
-							responseBuilder.append(value.replace("\"", "\"\""));
-							responseBuilder.append("\"");
-						}
-						else {
-							responseBuilder.append(value);
-						}
-					}
-
-				}
-
-				i++;
-
-				if (i < fields.size()) {
-					responseBuilder.append(",");
-				}
-
-			}
-			responseBuilder.append("\n");
+			appendDocument(fields, responseBuilder, document);
 		});
 
 		return responseBuilder.toString();
+	}
+
+	private void appendDocument(List<String> fields, StringBuilder responseBuilder, Document document) {
+		int i = 0;
+		for (String field : fields) {
+			Object obj = document.get(field);
+			if (obj != null) {
+				if (obj instanceof List) {
+					List value = (List) obj;
+					String output = "\"";
+					for (Object o : value) {
+						if (o instanceof String) {
+							String item = (String) o;
+							if (item.contains(",") || value.contains("\"") || value.contains("\n")) {
+								output += item.replace("\"", "\"\"") + ";";
+							}
+							else {
+								output += item + ";";
+							}
+						}
+					}
+					output += "\"";
+					responseBuilder.append(output);
+				}
+				else if (obj instanceof Date) {
+					Date value = (Date) obj;
+					responseBuilder.append(value.toString());
+				}
+				else if (obj instanceof Number) {
+					Number value = (Number) obj;
+					responseBuilder.append(value);
+				}
+				else if (obj instanceof Boolean) {
+					Boolean value = (Boolean) obj;
+					responseBuilder.append(value);
+				}
+				else {
+					String value = (String) obj;
+					if (value.contains(",") || value.contains(" ") || value.contains("\"") || value.contains("\n")) {
+						responseBuilder.append("\"");
+						responseBuilder.append(value.replace("\"", "\"\""));
+						responseBuilder.append("\"");
+					}
+					else {
+						responseBuilder.append(value);
+					}
+				}
+
+			}
+
+			i++;
+
+			if (i < fields.size()) {
+				responseBuilder.append(",");
+			}
+
+		}
+		responseBuilder.append("\n");
 	}
 
 }
