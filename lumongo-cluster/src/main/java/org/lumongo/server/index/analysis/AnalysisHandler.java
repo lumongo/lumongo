@@ -161,7 +161,7 @@ public class AnalysisHandler {
 					termBuilderList.forEach(analysisResult::addTerms);
 					return analysisResult.build();
 				}
-				if (summaryLevelEnabled && AnalysisRequest.SummaryType.ALL_TERMS_TOP_N.equals(summaryType)) {
+				if (summaryLevelEnabled && AnalysisRequest.SummaryType.TOP_TERMS_TOP_N.equals(summaryType)) {
 					termBuilderList.forEach(summaryTermFreq::addTerm);
 				}
 

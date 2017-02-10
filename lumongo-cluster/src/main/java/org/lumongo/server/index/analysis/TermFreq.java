@@ -42,7 +42,8 @@ public class TermFreq {
 	public void addTerm(Lumongo.Term.Builder term) {
 		Lumongo.Term.Builder lmTerm = tokenCount.get(term.getValue());
 		if (lmTerm == null) {
-			tokenCount.put(term.getValue(), term);
+			lmTerm = Lumongo.Term.newBuilder(term.buildPartial());
+			tokenCount.put(term.getValue(), lmTerm);
 		}
 		else {
 			lmTerm.setTermFreq(lmTerm.getTermFreq() + term.getTermFreq());
