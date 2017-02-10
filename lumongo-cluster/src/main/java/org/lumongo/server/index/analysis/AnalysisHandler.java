@@ -37,6 +37,8 @@ public class AnalysisHandler {
 	private DocFreq docFreq;
 	private TermFreq summaryTermFreq;
 
+	private int docsHandled;
+
 	public AnalysisHandler(IndexReader indexReader, Analyzer analyzer, IndexConfig indexConfig, AnalysisRequest analysisRequest) {
 		this.analysisRequest = analysisRequest;
 		this.indexField = analysisRequest.getField();
@@ -89,6 +91,9 @@ public class AnalysisHandler {
 	public Lumongo.AnalysisResult handleDocument(Document document) {
 
 		if (storedFieldName != null && enabled) {
+
+			docsHandled++;
+
 			Object storeFieldValues = ResultHelper.getValueFromMongoDocument(document, storedFieldName);
 
 			Lumongo.AnalysisResult.Builder analysisResult = Lumongo.AnalysisResult.newBuilder();
@@ -155,7 +160,7 @@ public class AnalysisHandler {
 			if (docLevelEnabled) {
 				if (analysisRequest.getDocTerms()) {
 
-					List<Lumongo.Term.Builder> termBuilderList = docTermFreq.getTopTerms(analysisRequest.getTopN(), analysisRequest.getTermSort());
+					List<Lumongo.Term.Builder> termBuilderList = docTermFreq.getTopTerms(analysisRequest.getTopN(), analysisRequest.getTermSort(), 1);
 					termBuilderList.forEach(analysisResult::addTerms);
 
 				}
@@ -174,7 +179,7 @@ public class AnalysisHandler {
 
 			//return all from segment for now
 			int segmentTopN = 0;
-			List<Lumongo.Term.Builder> termBuilderList = summaryTermFreq.getTopTerms(segmentTopN, analysisRequest.getTermSort());
+			List<Lumongo.Term.Builder> termBuilderList = summaryTermFreq.getTopTerms(segmentTopN, analysisRequest.getTermSort(), docsHandled);
 			termBuilderList.forEach(analysisResult::addTerms);
 
 			return analysisResult.build();
