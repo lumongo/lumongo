@@ -498,6 +498,11 @@ message AnalysisRequest {
 		TF = 3;
 	}
 
+	enum SummaryType {
+		ALL_TERMS_TOP_N = 1;
+		TOP_TERMS_TOP_N = 2;
+	}
+
 	required string field = 1;
 	optional bool tokens = 2 [default = false];
 	optional bool docTerms = 3 [default = false];
@@ -511,7 +516,7 @@ message AnalysisRequest {
 	optional uint32 minSegFreq = 11;
 	optional uint32 maxSegFreq = 12;
 	optional string analyzerOverride = 13;
-	optional bool docSummary = 14 [default = false];
+	optional SummaryType summaryType = 14 [default = ALL_TERMS_TOP_N];
 }
 
 message FieldSimilarity {

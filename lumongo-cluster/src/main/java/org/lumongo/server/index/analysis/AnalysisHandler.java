@@ -2,7 +2,6 @@ package org.lumongo.server.index.analysis;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.index.IndexReader;
 import org.bson.Document;
@@ -25,11 +24,12 @@ public class AnalysisHandler {
 	private final String storedFieldName;
 	private final Analyzer analyzer;
 
-	private final boolean docLevelEnabled;
+	private final boolean computeDocLevel;
 	private final boolean summaryLevelEnabled;
 	private final boolean enabled;
 	private final int minWordLength;
 	private final int maxWordLength;
+	private final AnalysisRequest.SummaryType summaryType;
 
 	private Integer minSegmentDocFreqCount;
 	private Integer maxSegmentDocFreqCount;
@@ -37,17 +37,17 @@ public class AnalysisHandler {
 	private DocFreq docFreq;
 	private TermFreq summaryTermFreq;
 
-	private int docsHandled;
-
 	public AnalysisHandler(IndexReader indexReader, Analyzer analyzer, IndexConfig indexConfig, AnalysisRequest analysisRequest) {
 		this.analysisRequest = analysisRequest;
 		this.indexField = analysisRequest.getField();
 		this.storedFieldName = indexConfig.getStoredFieldName(indexField);
 		this.analyzer = analyzer;
 
-		this.docLevelEnabled = analysisRequest.getDocTerms() || analysisRequest.getTokens();
+		this.summaryType = analysisRequest.getSummaryType();
+		this.computeDocLevel = analysisRequest.getDocTerms() || analysisRequest.getTokens() || AnalysisRequest.SummaryType.TOP_TERM_TOP_N.equals(summaryType);
 		this.summaryLevelEnabled = analysisRequest.getSummaryTerms();
-		this.enabled = docLevelEnabled || summaryLevelEnabled;
+
+		this.enabled = computeDocLevel || summaryLevelEnabled;
 
 		this.minWordLength = analysisRequest.getMinWordLen();
 		this.maxWordLength = analysisRequest.getMaxWordLen();
@@ -92,15 +92,13 @@ public class AnalysisHandler {
 
 		if (storedFieldName != null && enabled) {
 
-			docsHandled++;
-
 			Object storeFieldValues = ResultHelper.getValueFromMongoDocument(document, storedFieldName);
 
 			Lumongo.AnalysisResult.Builder analysisResult = Lumongo.AnalysisResult.newBuilder();
 			analysisResult.setAnalysisRequest(analysisRequest);
 
 			TermFreq docTermFreq = null;
-			if (docLevelEnabled) {
+			if (computeDocLevel || AnalysisRequest.SummaryType.TOP_TERM_TOP_N.equals(summaryType)) {
 				docTermFreq = new TermFreq(docFreq);
 			}
 			final TermFreq docTermFreqFinal = docTermFreq;
@@ -142,10 +140,10 @@ public class AnalysisHandler {
 							}
 						}
 
-						if (docLevelEnabled) {
+						if (computeDocLevel || AnalysisRequest.SummaryType.TOP_TERM_TOP_N.equals(summaryType)) {
 							docTermFreqFinal.addTerm(token);
 						}
-						if (summaryLevelEnabled) {
+						if (summaryLevelEnabled && AnalysisRequest.SummaryType.ALL_TERMS_TOP_N.equals(summaryType)) {
 							summaryTermFreq.addTerm(token);
 						}
 
@@ -157,14 +155,16 @@ public class AnalysisHandler {
 
 			});
 
-			if (docLevelEnabled) {
+			if (computeDocLevel) {
+				List<Lumongo.Term.Builder> termBuilderList = docTermFreq.getTopTerms(analysisRequest.getTopN(), analysisRequest.getTermSort());
 				if (analysisRequest.getDocTerms()) {
-
-					List<Lumongo.Term.Builder> termBuilderList = docTermFreq.getTopTerms(analysisRequest.getTopN(), analysisRequest.getTermSort(), 1);
 					termBuilderList.forEach(analysisResult::addTerms);
-
+					return analysisResult.build();
 				}
-				return analysisResult.build();
+				if (summaryLevelEnabled && AnalysisRequest.SummaryType.ALL_TERMS_TOP_N.equals(summaryType)) {
+					termBuilderList.forEach(summaryTermFreq::addTerm);
+				}
+
 			}
 			return null;
 
@@ -179,7 +179,7 @@ public class AnalysisHandler {
 
 			//return all from segment for now
 			int segmentTopN = 0;
-			List<Lumongo.Term.Builder> termBuilderList = summaryTermFreq.getTopTerms(segmentTopN, analysisRequest.getTermSort(), docsHandled);
+			List<Lumongo.Term.Builder> termBuilderList = summaryTermFreq.getTopTerms(segmentTopN, analysisRequest.getTermSort());
 			termBuilderList.forEach(analysisResult::addTerms);
 
 			return analysisResult.build();

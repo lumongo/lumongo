@@ -39,7 +39,17 @@ public class TermFreq {
 		lmTerm.setTermFreq(lmTerm.getTermFreq() + 1);
 	}
 
-	public List<Lumongo.Term.Builder> getTopTerms(int topN, Lumongo.AnalysisRequest.TermSort termSort, int docCount) {
+	public void addTerm(Lumongo.Term.Builder term) {
+		Lumongo.Term.Builder lmTerm = tokenCount.get(term.getValue());
+		if (lmTerm == null) {
+			tokenCount.put(term.getValue(), term);
+		}
+		else {
+			lmTerm.setTermFreq(lmTerm.getTermFreq() + term.getTermFreq());
+		}
+	}
+
+	public List<Lumongo.Term.Builder> getTopTerms(int topN, Lumongo.AnalysisRequest.TermSort termSort) {
 
 		if (terms == null) {
 			terms = new ArrayList<>(tokenCount.values());
@@ -48,7 +58,7 @@ public class TermFreq {
 		if (Lumongo.AnalysisRequest.TermSort.TFIDF.equals(termSort)) {
 			if (docFreq != null) {
 				for (Lumongo.Term.Builder term : terms) {
-					double score = docFreq.getScoreForTerm((long) (term.getTermFreq() / (double) docCount), term.getDocFreq());
+					double score = docFreq.getScoreForTerm(term.getTermFreq(), term.getDocFreq());
 					term.setScore(score);
 				}
 			}
