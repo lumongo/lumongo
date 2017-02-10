@@ -1,18 +1,18 @@
 package org.lumongo;
 
 public class LumongoConstants {
-	
+
 	public final static int DEFAULT_HAZELCAST_PORT = 5701;
 	public final static int DEFAULT_INTERNAL_SERVICE_PORT = 32190;
 	public final static int DEFAULT_EXTERNAL_SERVICE_PORT = 32191;
 	public final static int DEFAULT_REST_SERVICE_PORT = 32192;
-	
+
 	//HTTP constants
 	public static final int SUCCESS = 200;
 	public static final int BAD_REQUEST = 400;
 	public static final int NOT_FOUND = 404;
 	public static final int INTERNAL_ERROR = 500;
-	
+
 	public static final String GET = "GET";
 	public static final String POST = "POST";
 
@@ -49,9 +49,9 @@ public class LumongoConstants {
 	public static final String MIN_TERM_FREQ = "minTermFreq";
 	public static final String START_TERM = "startTerm";
 	public static final String END_TERM = "endTerm";
-	public static final String DEFAULT_OP= "defaultOp";
-	public static final String DRILL_DOWN= "drillDown";
-	public static final String DISMAX= "dismax";
+	public static final String DEFAULT_OP = "defaultOp";
+	public static final String DRILL_DOWN = "drillDown";
+	public static final String DISMAX = "dismax";
 	public static final String DISMAX_TIE = "dismaxTie";
 	public static final String SIMILARITY = "sim";
 	public static final String START = "start";
@@ -61,10 +61,10 @@ public class LumongoConstants {
 	public static final String INCLUDE_TERM = "includeTerm";
 
 	public static final String FORMAT = "format";
-	
+
 	//General
 	public static final String UTF8 = "UTF-8";
-	
+
 	public static final String TIMESTAMP_FIELD = "_lmtsf_";
 	public static final String STORED_META_FIELD = "_lmsmf_";
 	public static final String STORED_DOC_FIELD = "_lmsdf_";
@@ -81,4 +81,5 @@ public class LumongoConstants {
 	public static final String COS_SIM_JSON = "cosSimJson";
 
 	public static final String DONT_CACHE = "dontCache";
+	public static final String BATCH = "batch";
 }
