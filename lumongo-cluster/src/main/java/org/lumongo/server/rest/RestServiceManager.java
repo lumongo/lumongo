@@ -42,6 +42,7 @@ public class RestServiceManager {
 		config.register(new MembersResource(indexManager));
 		config.register(new StatsResource(indexManager));
 		server = GrizzlyHttpServerFactory.createHttpServer(baseUri, config);
+		server.getListener("grizzly").setMaxHttpHeaderSize(128 * 1024);
 		
 	}
 	
