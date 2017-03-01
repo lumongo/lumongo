@@ -266,6 +266,7 @@ message AnalyzerSettings {
 		FOUR_FOUR_SHINGLE = 12;
 		FIVE_FIVE_SHINGLE = 13;
 		BRITISH_US = 14;
+		CONCAT_ALL = 15;
 	}
 
 

@@ -16,6 +16,7 @@ import org.apache.lucene.analysis.en.KStemFilter;
 import org.apache.lucene.analysis.minhash.MinHashFilterFactory;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
+import org.apache.lucene.analysis.miscellaneous.WordDelimiterFilter;
 import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.apache.lucene.analysis.standard.StandardFilter;
@@ -31,6 +32,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.lucene.analysis.miscellaneous.WordDelimiterFilter.CATENATE_ALL;
 
 public class LumongoAnalyzerFactory {
 	private IndexConfig indexConfig;
@@ -135,6 +138,9 @@ public class LumongoAnalyzerFactory {
 					}
 					else if (AnalyzerSettings.Filter.BRITISH_US.equals(filter)) {
 						tok = new BritishUSFilter(lastTok);
+					}
+					else if (AnalyzerSettings.Filter.CONCAT_ALL.equals(filter)) {
+						tok = new WordDelimiterFilter(lastTok, CATENATE_ALL, null);
 					}
 					else {
 						throw new RuntimeException("Unknown filter type <" + filter + ">");
