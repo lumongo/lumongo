@@ -24,43 +24,45 @@ sourceSets {
 }
 
 
-task compileProto << {
-	File outputDir = project.file("gen-src")
-	File protoDir = project.file("proto")
+task compileProto {
+	doLast {
+		File outputDir = project.file("gen-src")
+		File protoDir = project.file("proto")
 
-	String os = System.getProperty("os.name").toLowerCase();
-	String protocCommand = "protoc";
+		String os = System.getProperty("os.name").toLowerCase();
+		String protocCommand = "protoc";
 
-	println("OS: " + os);
-	if (os.contains("linux")) {
-		protocCommand = rootProject.file("util" + File.separator +  "protoc").toString();
-	}
-	else {
-		println("Using protoc on path");
-	}
+		println("OS: " + os);
+		if (os.contains("linux")) {
+			protocCommand = rootProject.file("util" + File.separator +  "protoc").toString();
+		}
+		else {
+			println("Using protoc on path");
+		}
 
-	if (!outputDir.exists()) {
-		outputDir.mkdir();
-	}
+		if (!outputDir.exists()) {
+			outputDir.mkdir();
+		}
 
-	if (protoDir.isDirectory() && protoDir.exists()) {
+		if (protoDir.isDirectory() && protoDir.exists()) {
 		
-		String[] protos = protoDir.list()
+			String[] protos = protoDir.list()
 		
-		for (String proto : protos) {
-			if (proto.endsWith(".proto")) {
-				String protoFull = protoDir.getAbsolutePath() + File.separator + proto
-				println("Compiling proto in <" + protoFull + "> to <" + outputDir.getAbsolutePath() + ">")
-				exec {
-					setStandardOutput(System.out)
-					executable protocCommand
-					args '--proto_path=' + protoDir.getAbsolutePath(), '--java_out=' + outputDir.getAbsolutePath(), protoFull
+			for (String proto : protos) {
+				if (proto.endsWith(".proto")) {
+					String protoFull = protoDir.getAbsolutePath() + File.separator + proto
+					println("Compiling proto in <" + protoFull + "> to <" + outputDir.getAbsolutePath() + ">")
+					exec {
+						setStandardOutput(System.out)
+						executable protocCommand
+						args '--proto_path=' + protoDir.getAbsolutePath(), '--java_out=' + outputDir.getAbsolutePath(), protoFull
+					}
 				}
 			}
 		}
-	}
-	else {
-		println("Error: " + protoDir.getAbsolutePath() + " does not exist or is not a directory")
+		else {
+			println("Error: " + protoDir.getAbsolutePath() + " does not exist or is not a directory")
+		}
 	}
 }
 
