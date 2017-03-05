@@ -242,9 +242,15 @@ public class LumongoSegment {
 		this.perFieldAnalyzer = this.indexSegmentInterface.getPerFieldAnalyzer();
 
 		this.indexWriter = this.indexSegmentInterface.getIndexWriter(segmentNumber);
+		if (this.directoryReader != null) {
+			this.directoryReader.close();
+		}
 		this.directoryReader = DirectoryReader.open(indexWriter, indexConfig.getIndexSettings().getApplyUncommittedDeletes(), false);
 
 		this.taxoWriter = this.indexSegmentInterface.getTaxoWriter(segmentNumber);
+		if (this.taxoReader != null) {
+			this.taxoReader.close();
+		}
 		this.taxoReader = new DirectoryTaxonomyReader(taxoWriter);
 	}
 
