@@ -62,6 +62,10 @@ public class IndexConfig {
 				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.THREE_THREE_SHINGLE).setTokenizer(Tokenizer.STANDARD).addFilter(Filter.LOWERCASE)
 						.addFilter(Filter.THREE_THREE_SHINGLE).build());
 
+		analyzerMap.put(DefaultAnalyzers.LC_CONCAT_ALL,
+				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.LC_CONCAT_ALL).setTokenizer(Tokenizer.KEYWORD).addFilter(Filter.LOWERCASE)
+						.addFilter(Filter.CONCAT_ALL).build());
+
 		analyzerMap.put(DefaultAnalyzers.KSTEMMED,
 				Lumongo.AnalyzerSettings.newBuilder().setName(DefaultAnalyzers.KSTEMMED).setTokenizer(Tokenizer.STANDARD).addFilter(Filter.LOWERCASE)
 						.addFilter(Filter.STOPWORDS).addFilter(Filter.KSTEM).build());
