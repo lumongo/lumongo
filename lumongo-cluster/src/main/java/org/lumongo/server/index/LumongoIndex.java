@@ -1224,6 +1224,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 		finally {
 			indexLock.readLock().unlock();
 		}
+		reloadIndexSettings();
 	}
 
 	public GetNumberOfDocsResponse getNumberOfDocs() throws Exception {
