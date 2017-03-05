@@ -249,19 +249,21 @@ war {
 
 
 
-task setProjectArtifacts << {
-	def allProjects = [] as LinkedHashSet
-	CompileGwt.collectDependedUponProjects(project, allProjects, "runtime")
+task setProjectArtifacts {
+	doLast {
+		def allProjects = [] as LinkedHashSet
+		CompileGwt.collectDependedUponProjects(project, allProjects, "runtime")
 
-	def allProjectArtifacts = [] as LinkedHashSet
+		def allProjectArtifacts = [] as LinkedHashSet
 
-	allProjects.each { project ->
-		project.configurations.findAll().each {
-			allProjectArtifacts.addAll(it.allArtifacts.getFiles().getFiles())
-		}
-	};
+		allProjects.each { project ->
+			project.configurations.findAll().each {
+				allProjectArtifacts.addAll(it.allArtifacts.getFiles().getFiles())
+			}
+		};
 
-	project.ext.projectArtifacts = allProjectArtifacts
+		project.ext.projectArtifacts = allProjectArtifacts
+	}
 }
 
 
