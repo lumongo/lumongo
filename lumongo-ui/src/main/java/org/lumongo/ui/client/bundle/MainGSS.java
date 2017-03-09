@@ -9,4 +9,5 @@ public interface MainGSS extends CssResource {
 
 	String card();
 
+	String materialContent();
 }

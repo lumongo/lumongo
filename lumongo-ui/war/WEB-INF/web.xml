@@ -4,7 +4,15 @@
               http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
          version="2.5" xmlns="http://java.sun.com/xml/ns/javaee">
 
+    <servlet>
+        <servlet-name>uiqueryservice</servlet-name>
+        <servlet-class>org.lumongo.ui.server.UIQueryServiceImpl</servlet-class>
+    </servlet>
 
+    <servlet-mapping>
+        <servlet-name>uiqueryservice</servlet-name>
+        <url-pattern>/lumongoui/uiqueryservice</url-pattern>
+    </servlet-mapping>
 
     <filter>
         <filter-name>gwtCacheControlFilter</filter-name>

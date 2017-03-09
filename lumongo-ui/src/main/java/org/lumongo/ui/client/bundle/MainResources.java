@@ -11,6 +11,8 @@ public interface MainResources extends ClientBundle {
 
 	MainResources INSTANCE = GWT.create(MainResources.class);
 
+	MainGSS GSS = INSTANCE.mainGSS();
+
 	@ClientBundle.Source("main.gss")
 	MainGSS mainGSS();
 }

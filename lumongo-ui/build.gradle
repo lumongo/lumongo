@@ -5,6 +5,19 @@ compileGwt.modules = ['org.lumongo.ui.LumongoUI']
 dependencies {
     compile project(':lumongo-client')
 
-    compile 'com.vaadin.polymer:vaadin-gwt-polymer-elements:1.2.3.0'
+    compile("com.google.gwt:gwt-user:2.8.0")
+    // Needed by GWT, should be handled by gradle build
+    compile('javax.validation:validation-api:1.0.0.GA')
+    compile('com.github.gwtmaterialdesign:gwt-material:2.0-rc4')
+    compile('com.github.gwtmaterialdesign:gwt-material-themes:2.0-rc4')
+    compile('com.github.gwtmaterialdesign:gwt-material-addins:2.0-rc4')
+    compile('com.github.gwtmaterialdesign:gwt-material-jquery:1.0-rc4')
+    compile('com.github.gwtmaterialdesign:gwt-material-table:1.0-rc4')
+    compile('org.kohsuke:github-api:1.56') {
+        exclude group: 'org.jenkins-ci' //by group
+        exclude group: 'commons-lang'
+    }
+    compile('org.ow2.asm:asm:5.0.4')
+    compile("com.google.guava:guava-gwt:21.0-rc1")
 }
 
