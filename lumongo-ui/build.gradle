@@ -5,9 +5,11 @@ compileGwt.modules = ['org.lumongo.ui.LumongoUI']
 dependencies {
     compile project(':lumongo-client')
 
-    compile("com.google.gwt:gwt-user:2.8.0")
+
     // Needed by GWT, should be handled by gradle build
     compile('javax.validation:validation-api:1.0.0.GA')
+
+
     compile('com.github.gwtmaterialdesign:gwt-material:2.0-rc4')
     compile('com.github.gwtmaterialdesign:gwt-material-themes:2.0-rc4')
     compile('com.github.gwtmaterialdesign:gwt-material-addins:2.0-rc4')
@@ -19,5 +21,11 @@ dependencies {
     }
     compile('org.ow2.asm:asm:5.0.4')
     compile("com.google.guava:guava-gwt:21.0-rc1")
+
+
 }
 
+configurations {
+    //gwt-material-jquery is putting this on the classpath, hopefully they fix upstream to fix the JuliLog jetty exception
+    compile.exclude group: 'com.google.gwt', module: 'gwt-dev'
+}

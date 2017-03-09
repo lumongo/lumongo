@@ -32,7 +32,7 @@ public interface GWTConstants {
 ConfigurationContainer configurations = project.configurations
 configurations.create(GWTConstants.GWT_CONFIGURATION_NAME).
         setVisible(false).
-        extendsFrom(configurations.getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME)).
+        extendsFrom(configurations.getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME)).
         setDescription("GWT libraries to be used to compile this GWT project.")
 
 configurations.create(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).
@@ -50,6 +50,7 @@ ExternalModuleDependency dependency
 dependency = new DefaultExternalModuleDependency("com.google.gwt", "gwt-dev", gwtVersion)
 dependency.setTransitive(false)
 project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME).dependencies.add(dependency)
+project.configurations.getByName(WarPlugin.PROVIDED_COMPILE_CONFIGURATION_NAME).dependencies.add(dependency)
 project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
 
 
@@ -76,7 +77,7 @@ project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME
 dependency = new DefaultExternalModuleDependency("javax.validation", "validation-api", "1.0.0.GA")
 project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME).dependencies.add(dependency)
 project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
-project.configurations.getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME).dependencies.add(dependency)
+project.configurations.getByName(JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME).dependencies.add(dependency)
 
 dependency = new DefaultExternalModuleDependency("javax.validation", "validation-api", "1.0.0.GA")
 ModuleFactoryHelper.addExplicitArtifactsIfDefined(dependency, null, "sources")
@@ -89,7 +90,7 @@ project.configurations.getByName(WarPlugin.PROVIDED_COMPILE_CONFIGURATION_NAME).
 project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
 
 dependency = new DefaultExternalModuleDependency("com.google.gwt", "gwt-servlet", gwtVersion)
-project.configurations.getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME).dependencies.add(dependency)
+project.configurations.getByName(JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME).dependencies.add(dependency)
 project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
 
 project.extensions.eclipse.classpath.minusConfigurations.add(project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME))

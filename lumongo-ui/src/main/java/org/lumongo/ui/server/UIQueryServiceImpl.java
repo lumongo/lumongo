@@ -8,4 +8,5 @@ import org.lumongo.ui.client.services.UIQueryService;
  * @author pmeyer
  */
 public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryService {
+
 }
