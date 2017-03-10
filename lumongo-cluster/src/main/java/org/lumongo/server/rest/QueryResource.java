@@ -71,66 +71,66 @@ public class QueryResource {
 			qrBuilder.setDontCache(dontCache);
 		}
 
-		if (query != null && !query.isEmpty()) {
-			Lumongo.Query.Builder queryBuilder = Lumongo.Query.newBuilder();
+		Lumongo.Query.Builder queryBuilder = Lumongo.Query.newBuilder();
+		if (query != null) {
 			queryBuilder.setQ(query);
-			if (mm != null) {
-				queryBuilder.setMm(mm);
+		}
+		if (mm != null) {
+			queryBuilder.setMm(mm);
+		}
+		if (dismax != null) {
+			queryBuilder.setDismax(dismax);
+			if (dismaxTie != null) {
+				queryBuilder.setDismaxTie(dismaxTie);
 			}
-			if (dismax != null) {
-				queryBuilder.setDismax(dismax);
-				if (dismaxTie != null) {
-					queryBuilder.setDismaxTie(dismaxTie);
-				}
+		}
+		if (!queryFields.isEmpty()) {
+			queryBuilder.addAllQf(queryFields);
+		}
+		if (defaultOperator != null) {
+			if (defaultOperator.equalsIgnoreCase("AND")) {
+				queryBuilder.setDefaultOp(Lumongo.Query.Operator.AND);
 			}
-			if (!queryFields.isEmpty()) {
-				queryBuilder.addAllQf(queryFields);
+			else if (defaultOperator.equalsIgnoreCase("OR")) {
+				queryBuilder.setDefaultOp(Lumongo.Query.Operator.OR);
 			}
-			if (defaultOperator != null) {
-				if (defaultOperator.equalsIgnoreCase("AND")) {
-					queryBuilder.setDefaultOp(Lumongo.Query.Operator.AND);
-				}
-				else if (defaultOperator.equalsIgnoreCase("OR")) {
-					queryBuilder.setDefaultOp(Lumongo.Query.Operator.OR);
-				}
-				else {
-					Response.status(LumongoConstants.INTERNAL_ERROR).entity("Invalid default operator <" + defaultOperator + ">").build();
-				}
+			else {
+				Response.status(LumongoConstants.INTERNAL_ERROR).entity("Invalid default operator <" + defaultOperator + ">").build();
 			}
+		}
 
-			qrBuilder.setQuery(queryBuilder);
+		qrBuilder.setQuery(queryBuilder);
 
-			if (similarity != null) {
-				for (String sim : similarity) {
-					if (sim.contains(":")) {
-						int i = sim.indexOf(":");
-						String field = sim.substring(0, i);
-						String simType = sim.substring(i + 1);
+		if (similarity != null) {
+			for (String sim : similarity) {
+				if (sim.contains(":")) {
+					int i = sim.indexOf(":");
+					String field = sim.substring(0, i);
+					String simType = sim.substring(i + 1);
 
-						FieldSimilarity.Builder fieldSimilarity = FieldSimilarity.newBuilder();
-						fieldSimilarity.setField(field);
+					FieldSimilarity.Builder fieldSimilarity = FieldSimilarity.newBuilder();
+					fieldSimilarity.setField(field);
 
-						if (simType.equalsIgnoreCase("bm25")) {
-							fieldSimilarity.setSimilarity(Similarity.BM25);
-						}
-						else if (simType.equalsIgnoreCase("constant")) {
-							fieldSimilarity.setSimilarity(Similarity.CONSTANT);
-						}
-						else if (simType.equalsIgnoreCase("tf")) {
-							fieldSimilarity.setSimilarity(Similarity.TF);
-						}
-						else if (simType.equalsIgnoreCase("tfidf")) {
-							fieldSimilarity.setSimilarity(Similarity.TFIDF);
-						}
-						else {
-							Response.status(LumongoConstants.INTERNAL_ERROR).entity("Unknown similarity type <" + simType + ">").build();
-						}
-
-						qrBuilder.addFieldSimilarity(fieldSimilarity);
+					if (simType.equalsIgnoreCase("bm25")) {
+						fieldSimilarity.setSimilarity(Similarity.BM25);
+					}
+					else if (simType.equalsIgnoreCase("constant")) {
+						fieldSimilarity.setSimilarity(Similarity.CONSTANT);
+					}
+					else if (simType.equalsIgnoreCase("tf")) {
+						fieldSimilarity.setSimilarity(Similarity.TF);
+					}
+					else if (simType.equalsIgnoreCase("tfidf")) {
+						fieldSimilarity.setSimilarity(Similarity.TFIDF);
 					}
 					else {
-						Response.status(LumongoConstants.INTERNAL_ERROR).entity("Similarity <" + sim + "> should be in the form field:simType").build();
+						Response.status(LumongoConstants.INTERNAL_ERROR).entity("Unknown similarity type <" + simType + ">").build();
 					}
+
+					qrBuilder.addFieldSimilarity(fieldSimilarity);
+				}
+				else {
+					Response.status(LumongoConstants.INTERNAL_ERROR).entity("Similarity <" + sim + "> should be in the form field:simType").build();
 				}
 			}
 		}

@@ -166,15 +166,15 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return queryFields;
 	}
 
-	public Query setQueryFields(Collection<String> queryFields) {
-		this.queryFields = new HashSet<String>(queryFields);
-		return this;
-	}
-
 	public Query setQueryFields(String... queryFields) {
 		this.queryFields = new HashSet<>(Arrays.asList(queryFields));
 		return this;
 
+	}
+
+	public Query setQueryFields(Collection<String> queryFields) {
+		this.queryFields = new HashSet<String>(queryFields);
+		return this;
 	}
 
 	public Query addFieldSimilarity(String field, Lumongo.AnalyzerSettings.Similarity similarity) {
@@ -311,13 +311,11 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return this;
 	}
 
-
 	public Query addSummaryAnalysis(String field, int topN) {
-		return addAnalysis(field, false,false,true, topN);
+		return addAnalysis(field, false, false, true, topN);
 	}
 
 	public Query addAnalysis(String field, Boolean tokens, Boolean docTerms, Boolean summaryTerms, Integer topN) {
-
 
 		AnalysisRequest.Builder analysisRequest = AnalysisRequest.newBuilder();
 		if (field != null && !field.isEmpty()) {
@@ -448,28 +446,28 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		requestBuilder.setAmount(amount);
 		requestBuilder.setStart(start);
 
-		if (query != null && !query.isEmpty()) {
-			Lumongo.Query.Builder queryBuilder = Lumongo.Query.newBuilder();
+		Lumongo.Query.Builder queryBuilder = Lumongo.Query.newBuilder();
+		if (query != null) {
 			queryBuilder.setQ(query);
-			if (minimumNumberShouldMatch != null) {
-				queryBuilder.setMm(minimumNumberShouldMatch);
-			}
-			if (!queryFields.isEmpty()) {
-				queryBuilder.addAllQf(queryFields);
-			}
-			if (defaultOperator != null) {
-				queryBuilder.setDefaultOp(defaultOperator);
-			}
-
-			if (dismax != null) {
-				queryBuilder.setDismax(dismax);
-				if (dismaxTie != null) {
-					queryBuilder.setDismaxTie(dismaxTie);
-				}
-			}
-
-			requestBuilder.setQuery(queryBuilder);
 		}
+		if (minimumNumberShouldMatch != null) {
+			queryBuilder.setMm(minimumNumberShouldMatch);
+		}
+		if (!queryFields.isEmpty()) {
+			queryBuilder.addAllQf(queryFields);
+		}
+		if (defaultOperator != null) {
+			queryBuilder.setDefaultOp(defaultOperator);
+		}
+
+		if (dismax != null) {
+			queryBuilder.setDismax(dismax);
+			if (dismaxTie != null) {
+				queryBuilder.setDismaxTie(dismaxTie);
+			}
+		}
+
+		requestBuilder.setQuery(queryBuilder);
 
 		if (lastResult != null) {
 			requestBuilder.setLastResult(lastResult);
@@ -543,21 +541,9 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 
 	@Override
 	public String toString() {
-		return "Query{" +
-				"query='" + query + '\'' +
-				", amount=" + amount +
-				", indexes=" + indexes +
-				", lastResult=" + lastResult +
-				", countRequests=" + countRequests +
-				", drillDowns=" + drillDowns +
-				", fieldSorts=" + fieldSorts +
-				", queryFields=" + queryFields +
-				", filterQueries=" + filterQueries +
-				", minimumNumberShouldMatch=" + minimumNumberShouldMatch +
-				", defaultOperator=" + defaultOperator +
-				", resultFetchType=" + resultFetchType +
-				", documentFields=" + documentFields +
-				", documentMaskedFields=" + documentMaskedFields +
-				'}';
+		return "Query{" + "query='" + query + '\'' + ", amount=" + amount + ", indexes=" + indexes + ", lastResult=" + lastResult + ", countRequests="
+				+ countRequests + ", drillDowns=" + drillDowns + ", fieldSorts=" + fieldSorts + ", queryFields=" + queryFields + ", filterQueries="
+				+ filterQueries + ", minimumNumberShouldMatch=" + minimumNumberShouldMatch + ", defaultOperator=" + defaultOperator + ", resultFetchType="
+				+ resultFetchType + ", documentFields=" + documentFields + ", documentMaskedFields=" + documentMaskedFields + '}';
 	}
 }
