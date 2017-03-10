@@ -5,10 +5,12 @@ import gwt.material.design.client.constants.NavBarType;
 import gwt.material.design.client.constants.SideNavType;
 import gwt.material.design.client.constants.TextAlign;
 import gwt.material.design.client.ui.MaterialHeader;
+import gwt.material.design.client.ui.MaterialImage;
 import gwt.material.design.client.ui.MaterialNavBar;
 import gwt.material.design.client.ui.MaterialNavBrand;
 import gwt.material.design.client.ui.MaterialNavSection;
 import gwt.material.design.client.ui.MaterialSideNav;
+import org.lumongo.ui.client.bundle.MainResources;
 
 /**
  * Created by Payam Meyer on 3/10/17.
@@ -37,7 +39,8 @@ public class Header extends MaterialHeader {
 		sideNav.setBackgroundColor(Color.GREY_LIGHTEN_3);
 		sideNav.setCloseOnClick(false);
 		sideNav.hide();
-		MaterialNavBrand navBrand = new MaterialNavBrand("LuMongo");
+		MaterialNavBrand navBrand = new MaterialNavBrand();
+		navBrand.add(new MaterialImage(MainResources.INSTANCE.logoLong()));
 		navBrand.setHref("#");
 		navBrand.addClickHandler(clickEvent -> sideNav.hide());
 		sideNav.add(navBrand);
