@@ -3,3 +3,8 @@
 .card {
 	padding: 20px;
 }
+
+.materialContent {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}

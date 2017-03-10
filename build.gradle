@@ -1,3 +1,13 @@
+buildscript {
+	repositories {
+		mavenCentral()
+		jcenter()
+	}
+	dependencies {
+		classpath(group: 'com.sahlbach.gradle', name: 'gradle-jetty-eclipse-plugin', version: '1.9.+')
+		classpath 'com.github.rholder:gradle-one-jar:1.0.3'
+	}
+}
 
 defaultTasks 'compileProto', 'createDeploy'
 

@@ -2,42 +2,42 @@ import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDepen
 import org.gradle.api.internal.artifacts.dsl.dependencies.ModuleFactoryHelper
 
 apply plugin: 'war'
-apply from: 'https://raw.github.com/akhikhl/gretty/master/pluginScripts/gretty.plugin'
+apply plugin: 'jettyEclipse'
 
-project.ext { gwtVersion = '2.8.0-beta1' }
+project.ext { gwtVersion = '2.8.0' }
 
 final File gwtExtraDir = project.file(project.getBuildDir().name + File.separator + "gwt" + File.separator + "extras")
 final File gwtWarDir = project.file(project.getBuildDir().name + File.separator + "gwt" + File.separator + "war")
 final String PROJECT_DIR_NAME_LC = project.name.toLowerCase();
 
 public interface GWTConstants {
-	public final static String LIB_NAME = "lib"
-	public final static String WAR_DIR_NAME = "war"
-	public final static String WEB_INF_NAME = "WEB-INF"
-	public final static String CLASSES_NAME = "classes"
-	public final static String DEPLOY_NAME = "deploy"
-	public final static String GWT_CONFIGURATION_NAME = "gwt"
-	public final static String ECLIPSE_EXCLUDE_CONFIGURATION_NAME = "eclipseExclude"
+    public final static String LIB_NAME = "lib"
+    public final static String WAR_DIR_NAME = "war"
+    public final static String WEB_INF_NAME = "WEB-INF"
+    public final static String CLASSES_NAME = "classes"
+    public final static String DEPLOY_NAME = "deploy"
+    public final static String GWT_CONFIGURATION_NAME = "gwt"
+    public final static String ECLIPSE_EXCLUDE_CONFIGURATION_NAME = "eclipseExclude"
 
-	public final static String WEB_INF_CLASSES_DIR_NAME = WEB_INF_NAME + File.separator + CLASSES_NAME
-	public final static String WEB_INF_DEPLOY_DIR_NAME = WEB_INF_NAME + File.separator + DEPLOY_NAME
-	public final static String WEB_INF_LIB_DIR_NAME = WEB_INF_NAME + File.separator + LIB_NAME
+    public final static String WEB_INF_CLASSES_DIR_NAME = WEB_INF_NAME + File.separator + CLASSES_NAME
+    public final static String WEB_INF_DEPLOY_DIR_NAME = WEB_INF_NAME + File.separator + DEPLOY_NAME
+    public final static String WEB_INF_LIB_DIR_NAME = WEB_INF_NAME + File.separator + LIB_NAME
 
-	public final static String WAR_WEB_INF_DIR_NAME = WAR_DIR_NAME + File.separator + WEB_INF_NAME
-	public final static String WAR_WEB_INF_CLASSES_DIR_NAME = WAR_WEB_INF_DIR_NAME + File.separator + CLASSES_NAME
-	public final static String WAR_WEB_INF_LIB_DIR_NAME = WAR_WEB_INF_DIR_NAME + File.separator + LIB_NAME
+    public final static String WAR_WEB_INF_DIR_NAME = WAR_DIR_NAME + File.separator + WEB_INF_NAME
+    public final static String WAR_WEB_INF_CLASSES_DIR_NAME = WAR_WEB_INF_DIR_NAME + File.separator + CLASSES_NAME
+    public final static String WAR_WEB_INF_LIB_DIR_NAME = WAR_WEB_INF_DIR_NAME + File.separator + LIB_NAME
 }
 
 
 ConfigurationContainer configurations = project.configurations
 configurations.create(GWTConstants.GWT_CONFIGURATION_NAME).
-		setVisible(false).
-		extendsFrom(configurations.getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME)).
-		setDescription("GWT libraries to be used to compile this GWT project.")
+        setVisible(false).
+        extendsFrom(configurations.getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME)).
+        setDescription("GWT libraries to be used to compile this GWT project.")
 
 configurations.create(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).
-		setVisible(false).
-		setDescription("GWT jars to exclude from eclipse project because they are part of the GWT container already")
+        setVisible(false).
+        setDescription("GWT jars to exclude from eclipse project because they are part of the GWT container already")
 
 
 project.extensions.eclipse.classpath.containers 'com.google.gwt.eclipse.core.GWT_CONTAINER'
@@ -50,10 +50,26 @@ ExternalModuleDependency dependency
 dependency = new DefaultExternalModuleDependency("com.google.gwt", "gwt-dev", gwtVersion)
 dependency.setTransitive(false)
 project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME).dependencies.add(dependency)
+project.configurations.getByName(WarPlugin.PROVIDED_COMPILE_CONFIGURATION_NAME).dependencies.add(dependency)
 project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
 
 
-dependency = new DefaultExternalModuleDependency("org.ow2.asm", "asm-all", "5+")
+dependency = new DefaultExternalModuleDependency("org.ow2.asm", "asm-all", "5.1+")
+dependency.setTransitive(false)
+project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME).dependencies.add(dependency)
+project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
+
+dependency = new DefaultExternalModuleDependency("ant", "ant", "1.6.5")
+dependency.setTransitive(false)
+project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME).dependencies.add(dependency)
+project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
+
+dependency = new DefaultExternalModuleDependency("colt", "colt", "1.2.0")
+dependency.setTransitive(false)
+project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME).dependencies.add(dependency)
+project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
+
+dependency = new DefaultExternalModuleDependency("tapestry", "tapestry", "4.0.2")
 dependency.setTransitive(false)
 project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME).dependencies.add(dependency)
 project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
@@ -61,7 +77,7 @@ project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME
 dependency = new DefaultExternalModuleDependency("javax.validation", "validation-api", "1.0.0.GA")
 project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME).dependencies.add(dependency)
 project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
-project.configurations.getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME).dependencies.add(dependency)
+project.configurations.getByName(JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME).dependencies.add(dependency)
 
 dependency = new DefaultExternalModuleDependency("javax.validation", "validation-api", "1.0.0.GA")
 ModuleFactoryHelper.addExplicitArtifactsIfDefined(dependency, null, "sources")
@@ -74,18 +90,18 @@ project.configurations.getByName(WarPlugin.PROVIDED_COMPILE_CONFIGURATION_NAME).
 project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
 
 dependency = new DefaultExternalModuleDependency("com.google.gwt", "gwt-servlet", gwtVersion)
-project.configurations.getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME).dependencies.add(dependency)
+project.configurations.getByName(JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME).dependencies.add(dependency)
 project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME).dependencies.add(dependency)
 
 project.extensions.eclipse.classpath.minusConfigurations.add(project.configurations.getByName(GWTConstants.ECLIPSE_EXCLUDE_CONFIGURATION_NAME))
 
 project.tasks.withType(JavaCompile.class).all { JavaCompile task ->
-	if (task.getClasspath()) {
-		task.setClasspath(task.getClasspath() + project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME))
-	}
-	else {
-		task.setClasspath(project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME))
-	}
+    if (task.getClasspath()) {
+        task.setClasspath(task.getClasspath() + project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME))
+    }
+    else {
+        task.setClasspath(project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME))
+    }
 }
 
 
@@ -93,190 +109,188 @@ class CompileGwt extends org.gradle.api.internal.ConventionTask implements GWTCo
 
 
 
-	static final String COMPILER_CLASSNAME = 'com.google.gwt.dev.Compiler'
-	static final String GWT_CLASSPATH_ID = 'gwt.classpath'
+    static final String COMPILER_CLASSNAME = 'com.google.gwt.dev.Compiler'
+    static final String GWT_CLASSPATH_ID = 'gwt.classpath'
 
-	String style = 'OBF'
+    String style = 'OBF'
 
-	String logLevel = 'INFO'
-	boolean debug = false
-	boolean disableClassMetadata = false
-	boolean disableCastChecking = false
-	boolean validateOnly = false
-	boolean draftCompile = false
-	boolean compileReport = false
-	int localWorkers = Runtime.getRuntime().availableProcessors()
+    String logLevel = 'INFO'
+    boolean debug = false
+    boolean disableClassMetadata = false
+    boolean disableCastChecking = false
+    boolean validateOnly = false
+    boolean draftCompile = false
+    boolean compileReport = false
+    int localWorkers = Runtime.getRuntime().availableProcessors()
 
-	java.util.List customJvmArgs = []
-	Map customEnvironment = [:]
-	Map customSystemProperties = [:]
+    java.util.List customJvmArgs = []
+    Map customEnvironment = [:]
+    Map customSystemProperties = [:]
 
-	Map options = [
-			fork          : true,
-			failonerror   : true,
-			maxmemory     : "1024m",
-			newEnvironment: false,
-			cloneVm       : false
-	]
-
-
-	Map otherArgs = [
-			classpathref: GWT_CLASSPATH_ID,
-			classname   : COMPILER_CLASSNAME
-	]
-
-	@Input
-	Collection<String> modules
-
-	@InputFiles
-	FileCollection classpath
-
-	@OutputDirectory
-	File warOutputDir
-
-	@OutputDirectory
-	File extraOutputDir
-
-	@org.gradle.api.tasks.TaskAction
-	def compileGwt() {
-
-		if (project.hasProperty("gwtStyle")) {
-			style = project.ext.gwtStyle;
-		}
-		logger.warn("Style: " + style);
-
-		if( modules == null || modules.size == 0 ) {
-			logger.warn("No GWT Modules defined for project " + project.name)
-			throw new StopActionException("No gwt modules specified")
-		}
-
-		def allProjects = [] as LinkedHashSet
-		collectDependedUponProjects(project, allProjects, "compile")
-
-		project.getAnt().path(id: GWT_CLASSPATH_ID) {
-			classpath.each {
-				logger.info("Add {} to GWT classpath!", it)
-				pathelement(location: it)
-			}
-			allProjects.each { p ->
-				p.configurations['source'].allArtifacts.getFiles().each {
-					logger.info("Add {} to GWT classpath!", it)
-					pathelement(location: it)
-				}
-			}
-		}
-
-		ant.java(otherArgs + options) {
-			customJvmArgs.each { jvmarg(value: it) }
-			customEnvironment.each {String key, value -> env(key: key, value: value) }
-			customSystemProperties.each {String key, value -> sysproperty(key: key, value: value) }
-
-			if (debug) {
-				arg(line: '-ea')
-			}
-
-			if (validateOnly) arg(line: '-validateOnly')
-			if (draftCompile) arg(line: '-draftCompile')
-			if (compileReport) arg(line: '-compileReport')
-			if (localWorkers > 1) arg(line: "-localWorkers ${localWorkers}")
+    Map options = [
+            fork          : true,
+            failonerror   : true,
+            maxmemory     : "1024m",
+            newEnvironment: false,
+            cloneVm       : false
+    ]
 
 
-			if (disableClassMetadata) arg(line: "-disableClassMetadata")
-			if (disableCastChecking) arg(line: "-XdisableCastChecking")
+    Map otherArgs = [
+            classpathref: GWT_CLASSPATH_ID,
+            classname   : COMPILER_CLASSNAME
+    ]
 
-			arg(line: "-logLevel ${logLevel}")
-			arg(line: "-style ${style}")
+    @Input
+    Collection<String> modules
 
-			extraOutputDir.mkdirs()
-			arg(line: "-extra \"${extraOutputDir}\"")
+    @InputFiles
+    FileCollection classpath
+
+    @OutputDirectory
+    File warOutputDir
+
+    @OutputDirectory
+    File extraOutputDir
+
+    @org.gradle.api.tasks.TaskAction
+    def compileGwt() {
+
+        if (project.hasProperty("gwtStyle")) {
+            style = project.ext.gwtStyle;
+        }
+        logger.warn("Style: " + style);
+
+        if( modules == null || modules.size == 0 ) {
+            logger.warn("No GWT Modules defined for project " + project.name)
+            throw new StopActionException("No gwt modules specified")
+        }
+
+        def allProjects = [] as LinkedHashSet
+        collectDependedUponProjects(project, allProjects, "compile")
+
+        project.getAnt().path(id: GWT_CLASSPATH_ID) {
+            classpath.each {
+                logger.info("Add {} to GWT classpath!", it)
+                pathelement(location: it)
+            }
+            allProjects.each { p ->
+                p.configurations['source'].allArtifacts.getFiles().each {
+                    logger.info("Add {} to GWT classpath!", it)
+                    pathelement(location: it)
+                }
+            }
+        }
+
+        ant.java(otherArgs + options) {
+            customJvmArgs.each { jvmarg(value: it) }
+            customEnvironment.each {String key, value -> env(key: key, value: value) }
+            customSystemProperties.each {String key, value -> sysproperty(key: key, value: value) }
+
+            if (debug) {
+                arg(line: '-ea')
+            }
+
+            if (validateOnly) arg(line: '-validateOnly')
+            if (draftCompile) arg(line: '-draftCompile')
+            if (compileReport) arg(line: '-compileReport')
+            if (localWorkers > 1) arg(line: "-localWorkers ${localWorkers}")
 
 
-			warOutputDir.mkdirs()
-			arg(line: "-war \"${warOutputDir}\"")
+            if (disableClassMetadata) arg(line: "-disableClassMetadata")
+            if (disableCastChecking) arg(line: "-XdisableCastChecking")
 
-			modules.each {
-				logger.info("Compiling GWT Module {}", it)
-				arg(value: it)
-			}
+            arg(line: "-logLevel ${logLevel}")
+            arg(line: "-style ${style}")
 
-		}
-	}
+            extraOutputDir.mkdirs()
+            arg(line: "-extra \"${extraOutputDir}\"")
 
-	static collectDependedUponProjects(org.gradle.api.Project project, LinkedHashSet result, String type) {
-		def config = project.configurations.findByName(type)
-		if (config) {
-			def projectDeps = config.allDependencies.withType(org.gradle.api.artifacts.ProjectDependency)
-			def dependedUponProjects = projectDeps*.dependencyProject
-			result.addAll(dependedUponProjects)
-			for (dependedUponProject in dependedUponProjects) {
-				collectDependedUponProjects(dependedUponProject, result, type)
-			}
-		}
-	}
+
+            warOutputDir.mkdirs()
+            arg(line: "-war \"${warOutputDir}\"")
+
+            modules.each {
+                logger.info("Compiling GWT Module {}", it)
+                arg(value: it)
+            }
+
+        }
+    }
+
+    static collectDependedUponProjects(org.gradle.api.Project project, LinkedHashSet result, String type) {
+        def config = project.configurations.findByName(type)
+        if (config) {
+            def projectDeps = config.allDependencies.withType(org.gradle.api.artifacts.ProjectDependency)
+            def dependedUponProjects = projectDeps*.dependencyProject
+            result.addAll(dependedUponProjects)
+            for (dependedUponProject in dependedUponProjects) {
+                collectDependedUponProjects(dependedUponProject, result, type)
+            }
+        }
+    }
 }
 
 
 
 task compileGwt(type: CompileGwt, dependsOn: org.gradle.api.plugins.JavaPlugin.COMPILE_JAVA_TASK_NAME) {
-	classpath = project.files(sourceSets.main.resources.srcDirs,
-			sourceSets.main.java.srcDirs,
-			sourceSets.main.output.classesDir,
-			project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME),
-			project.configurations.getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME))
-	warOutputDir = gwtWarDir
-	extraOutputDir = gwtExtraDir
+    classpath = project.files(sourceSets.main.resources.srcDirs,
+            sourceSets.main.java.srcDirs,
+            sourceSets.main.output.classesDir,
+            project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME),
+            project.configurations.getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME))
+    warOutputDir = gwtWarDir
+    extraOutputDir = gwtExtraDir
 }
 
 war {
-	dependsOn 'compileGwt'
-	duplicatesStrategy = 'exclude'
+    dependsOn 'compileGwt'
+    duplicatesStrategy = 'exclude'
 
-	from project.fileTree(gwtWarDir)
+    from project.fileTree(gwtWarDir)
 
-	webAppDirName = GWTConstants.WAR_DIR_NAME
+    webAppDirName = GWTConstants.WAR_DIR_NAME
 
-	//don't pull in eclipse compile of gwt
-	//don't pull in jars from war/WEB-INF/lib dir (lib/gwt-servlet.jar for example)
-	from(GWTConstants.WAR_DIR_NAME) {
-		exclude PROJECT_DIR_NAME_LC
-		exclude GWTConstants.WEB_INF_DEPLOY_DIR_NAME
-		exclude GWTConstants.WEB_INF_CLASSES_DIR_NAME
-		exclude GWTConstants.WEB_INF_LIB_DIR_NAME
-	}
+    //don't pull in eclipse compile of gwt
+    //don't pull in jars from war/WEB-INF/lib dir (lib/gwt-servlet.jar for example)
+    from(GWTConstants.WAR_DIR_NAME) {
+        exclude PROJECT_DIR_NAME_LC
+        exclude GWTConstants.WEB_INF_DEPLOY_DIR_NAME
+        exclude GWTConstants.WEB_INF_CLASSES_DIR_NAME
+        exclude GWTConstants.WEB_INF_LIB_DIR_NAME
+    }
 
 }
 
 
 
 
-task setProjectArtifacts {
-	doLast {
-		def allProjects = [] as LinkedHashSet
-		CompileGwt.collectDependedUponProjects(project, allProjects, "runtime")
+task setProjectArtifacts << {
+    def allProjects = [] as LinkedHashSet
+    GwtBase.collectDependedUponProjects(project, allProjects, "runtime")
 
-		def allProjectArtifacts = [] as LinkedHashSet
+    def allProjectArtifacts = [] as LinkedHashSet
 
-		allProjects.each { project ->
-			project.configurations.findAll().each {
-				allProjectArtifacts.addAll(it.allArtifacts.getFiles().getFiles())
-			}
-		};
+    allProjects.each { project ->
+        project.configurations.findAll().each {
+            allProjectArtifacts.addAll(it.allArtifacts.getFiles().getFiles())
+        }
+    };
 
-		project.ext.projectArtifacts = allProjectArtifacts
-	}
+    project.ext.projectArtifacts = allProjectArtifacts
 }
 
 
 
 
 task copyLibs(type: Sync) {
-	from configurations.runtime
-	exclude ('**/gwt-user*')
-	exclude { detail ->
-		project.ext.projectArtifacts.contains(detail.file)
-	}
-	into GWTConstants.WAR_WEB_INF_LIB_DIR_NAME
-	rename 'gwt-servlet-(.+).jar', 'gwt-servlet.jar'
+    from configurations.runtime
+    exclude ('**/gwt-user*')
+    exclude { detail ->
+        project.ext.projectArtifacts.contains(detail.file)
+    }
+    into GWTConstants.WAR_WEB_INF_LIB_DIR_NAME
+    rename 'gwt-servlet-(.+).jar', 'gwt-servlet.jar'
 }
 
 

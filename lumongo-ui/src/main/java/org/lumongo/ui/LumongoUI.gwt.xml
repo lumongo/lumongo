@@ -5,11 +5,12 @@
     <inherits name='com.google.gwt.place.Place'/>
     <inherits name="com.google.gwt.i18n.I18N"/>
 
-    <inherits name="com.vaadin.polymer.Elements"/>
+    <inherits name="gwt.material.design.GwtMaterialWithJQuery"/>
+    <inherits name="gwt.material.design.themes.ThemeGreyResources"/>
 
     <entry-point class='org.lumongo.ui.client.LumongoUI'/>
 
-    <set-configuration-property name="CssResource.enableGss" value="true" />
+    <set-configuration-property name="CssResource.enableGss" value="true"/>
 
 
     <source path='client'/>

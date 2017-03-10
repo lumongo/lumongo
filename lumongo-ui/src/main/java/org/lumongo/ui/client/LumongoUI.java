@@ -1,123 +1,69 @@
 package org.lumongo.ui.client;
 
 import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.dom.client.StyleElement;
-import com.google.gwt.dom.client.StyleInjector;
-import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.RootPanel;
-import com.vaadin.polymer.Polymer;
-import com.vaadin.polymer.paper.widget.PaperDrawerPanel;
-import com.vaadin.polymer.paper.widget.PaperHeaderPanel;
-import com.vaadin.polymer.paper.widget.PaperIconButton;
-import com.vaadin.polymer.paper.widget.PaperItem;
-import com.vaadin.polymer.paper.widget.PaperMaterial;
-import com.vaadin.polymer.paper.widget.PaperMenu;
-import com.vaadin.polymer.paper.widget.PaperToolbar;
+import com.google.gwt.user.client.ui.SimplePanel;
+import com.google.gwt.user.client.ui.Widget;
+import gwt.material.design.client.ui.MaterialHeader;
+import gwt.material.design.client.ui.MaterialSection;
+import gwt.material.design.client.ui.html.Main;
 import org.lumongo.ui.client.bundle.MainResources;
-
-import java.util.Arrays;
+import org.lumongo.ui.client.charting.HighChartsInjector;
+import org.lumongo.ui.client.charting.Highcharts;
+import org.lumongo.ui.client.places.PlaceHandler;
 
 /**
- * Created by mdavis on 4/10/16.
+ * Created by Payam Meyer on 4/10/16.
+ * @author pmeyer
  */
-public class LumongoUI implements EntryPoint {
+public class LumongoUI implements ContentPresenter, EntryPoint {
+
+	private SimplePanel simplePanel;
+	private Widget footer;
+	private MaterialHeader header;
+	private MaterialSection mainContentWrapper;
+
 	@Override
 	public void onModuleLoad() {
 
 		MainResources.INSTANCE.mainGSS().ensureInjected();
+		new HighChartsInjector().inject();
 
-		Polymer.importHref(Arrays.asList("iron-icons/iron-icons.html", "iron-flex-layout/classes/iron-flex-layout.html"), o -> {
-			loadPage();
+		Main baseView = createBaseView();
 
-			return null;
-		});
+		PlaceHandler placeHandler = new PlaceHandler();
+		placeHandler.init();
 
+		RootPanel.get().add(baseView);
 
 	}
 
-	private void loadPage() {
+	@Override
+	public Main createBaseView() {
+		MainResources.GSS.ensureInjected();
 
-		PaperDrawerPanel paperDrawerPanel = new PaperDrawerPanel();
+		final Main mainWrapper = new Main();
+		mainWrapper.setId("main-wrapper");
 
-		PaperHeaderPanel drawerHeaderPanel = getDrawerPanel();
+		Highcharts.setExportUrl("");
 
-		paperDrawerPanel.add(drawerHeaderPanel);
+		mainContentWrapper = new MaterialSection();
+		mainContentWrapper.addStyleName(MainResources.GSS.materialContent());
 
-		PaperHeaderPanel mainHeaderPanel = getMainPanel();
+		simplePanel = new SimplePanel();
+		simplePanel.getElement().setId("contentContainer");
 
-		paperDrawerPanel.add(mainHeaderPanel);
+		mainContentWrapper.add(simplePanel);
 
-		RootPanel.get().add(paperDrawerPanel);
+		mainWrapper.add(header);
+		mainWrapper.add(mainContentWrapper);
+		mainWrapper.add(footer);
+
+		return mainWrapper;
 	}
 
-	private PaperHeaderPanel getDrawerPanel() {
-		PaperHeaderPanel drawerHeaderPanel = new PaperHeaderPanel();
-		drawerHeaderPanel.setAttributes("drawer");
-
-		PaperToolbar toolbar = new PaperToolbar();
-		toolbar.add(new PaperItem("LuMongo"));
-		drawerHeaderPanel.add(toolbar);
-
-		PaperMenu paperMenu = new PaperMenu();
-
-		paperMenu.add(new PaperMaterial("Search"));
-		paperMenu.add(new PaperMaterial("Admin"));
-		paperMenu.add(new PaperMaterial("Something"));
-
-		drawerHeaderPanel.add(paperMenu);
-
-		return drawerHeaderPanel;
-	}
-
-	private PaperHeaderPanel getMainPanel() {
-		PaperHeaderPanel drawerHeaderPanel = new PaperHeaderPanel();
-		drawerHeaderPanel.setAttributes("main");
-
-		PaperToolbar toolbar = new PaperToolbar();
-
-		HTMLPanel headerWrapper = new HTMLPanel("");
-		headerWrapper.addStyleName("layout");
-		headerWrapper.addStyleName("horizontal");
-		headerWrapper.addStyleName("center");
-		headerWrapper.setWidth("100%");
-
-		PaperIconButton menu = new PaperIconButton();
-		menu.setIcon("menu");
-		menu.setAttributes("paper-drawer-toggle");
-		headerWrapper.add(menu);
-
-		HTMLPanel main = new HTMLPanel("Search");
-		main.addStyleName("flex");
-		headerWrapper.add(main);
-
-		PaperIconButton apps = new PaperIconButton();
-		apps.setIcon("apps");
-		headerWrapper.add(apps);
-
-		toolbar.add(headerWrapper);
-
-		drawerHeaderPanel.add(toolbar);
-
-		HTMLPanel content = new HTMLPanel("");
-		content.addStyleName(MainResources.INSTANCE.mainGSS().card());
-		PaperMaterial card1 = new PaperMaterial();
-		card1.setElevation(2);
-		PaperItem item1 = new PaperItem("Item 1");
-		card1.add(item1);
-
-		item1.setHeight("200px");
-		content.add(card1);
-
-
-		PaperMaterial card2 = new PaperMaterial();
-		card2.setElevation(2);
-		PaperItem item2= new PaperItem("Item 2");
-		item2.setHeight("200px");
-		card2.add(item2);
-		content.add(card2);
-
-		drawerHeaderPanel.add(content);
-
-		return drawerHeaderPanel;
+	@Override
+	public void setContent(Widget content) {
+		simplePanel.setWidget(content);
 	}
 }
