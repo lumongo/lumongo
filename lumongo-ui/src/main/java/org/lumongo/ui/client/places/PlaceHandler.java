@@ -6,11 +6,14 @@ import com.google.gwt.dom.client.ScriptElement;
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.place.shared.PlaceChangeEvent;
 import com.google.gwt.place.shared.PlaceHistoryMapper;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.lumongo.ui.client.ContentPresenter;
 import org.lumongo.ui.client.LumongoUI;
 import org.lumongo.ui.client.controllers.MainController;
 import org.lumongo.ui.client.controllers.WidgetController;
 import org.lumongo.ui.client.eventbus.ResetSearchingEvent;
+import org.lumongo.ui.client.services.ServiceProvider;
+import org.lumongo.ui.shared.InstanceInfo;
 
 public class PlaceHandler implements PlaceChangeEvent.Handler {
 
@@ -18,8 +21,8 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 	private WidgetController widgetController;
 	private final LumongoUI lumongoUI;
 
-	public PlaceHandler() {
-		lumongoUI = new LumongoUI();
+	public PlaceHandler(LumongoUI lumongoUI) {
+		this.lumongoUI = lumongoUI;
 		widgetController = new WidgetController();
 	}
 
@@ -42,7 +45,7 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 	}
 
 	protected void initPlaces() {
-		MainController.get().init(getPlaceHistoryMapper(), getDefaultPlace(), getHomePlace());
+		MainController.get().init(getPlaceHistoryMapper(), getDefaultPlace(), getDefaultPlace());
 	}
 
 	protected ContentPresenter getContentPresenter() {
@@ -128,10 +131,6 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 	}
 
 	protected final Place getDefaultPlace() {
-		return getHomePlace();
-	}
-
-	protected Place getHomePlace() {
 		return new HomePlace();
 	}
 
@@ -140,13 +139,23 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 	}
 
 	protected void displayHomePlace() {
-		LumongoUI contentPresenter = (LumongoUI) getContentPresenter();
 		getContentPresenter().setContent(null);
 
 		// show the splash page...
-		MainController.get().getEventBus().fireEvent(new ResetSearchingEvent());
-		getWidgetController().getHomeView().drawSplashPage();
-		getContentPresenter().setContent(getWidgetController().getHomeView());
+		ServiceProvider.get().getLumongoService().getInstanceInfo(new AsyncCallback<InstanceInfo>() {
+			@Override
+			public void onFailure(Throwable caught) {
+
+			}
+
+			@Override
+			public void onSuccess(InstanceInfo result) {
+				MainController.get().getEventBus().fireEvent(new ResetSearchingEvent());
+				getWidgetController().getHomeView().drawSplashPage(result);
+				getContentPresenter().setContent(getWidgetController().getHomeView());
+			}
+		});
+
 
 	}
 

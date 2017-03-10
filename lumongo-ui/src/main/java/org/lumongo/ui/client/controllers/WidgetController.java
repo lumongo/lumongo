@@ -11,7 +11,7 @@ public class WidgetController {
 	private HomeView homeView;
 
 	public WidgetController() {
-
+		homeView = new HomeView();
 	}
 
 	public HomeView getHomeView() {

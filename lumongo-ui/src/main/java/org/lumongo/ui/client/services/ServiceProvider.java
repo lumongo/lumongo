@@ -14,14 +14,14 @@ public class ServiceProvider {
 		return serviceProvider;
 	}
 
-	private UIQueryServiceAsync searchService;
+	private UIQueryServiceAsync uiQueryServiceAsync;
 
 	private ServiceProvider() {
-		searchService = GWT.create(UIQueryService.class);
+		uiQueryServiceAsync = GWT.create(UIQueryService.class);
 	}
 
-	public UIQueryServiceAsync getSearchService() {
-		return searchService;
+	public UIQueryServiceAsync getLumongoService() {
+		return uiQueryServiceAsync;
 	}
 
 }

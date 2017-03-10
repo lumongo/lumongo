@@ -5,12 +5,14 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.Widget;
 import gwt.material.design.client.ui.MaterialHeader;
-import gwt.material.design.client.ui.MaterialSection;
+import gwt.material.design.client.ui.html.Div;
 import gwt.material.design.client.ui.html.Main;
 import org.lumongo.ui.client.bundle.MainResources;
 import org.lumongo.ui.client.charting.HighChartsInjector;
 import org.lumongo.ui.client.charting.Highcharts;
 import org.lumongo.ui.client.places.PlaceHandler;
+import org.lumongo.ui.client.widgets.Footer;
+import org.lumongo.ui.client.widgets.Header;
 
 /**
  * Created by Payam Meyer on 4/10/16.
@@ -21,7 +23,6 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 	private SimplePanel simplePanel;
 	private Widget footer;
 	private MaterialHeader header;
-	private MaterialSection mainContentWrapper;
 
 	@Override
 	public void onModuleLoad() {
@@ -29,12 +30,20 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 		MainResources.INSTANCE.mainGSS().ensureInjected();
 		new HighChartsInjector().inject();
 
-		Main baseView = createBaseView();
+		Div div = new Div();
 
-		PlaceHandler placeHandler = new PlaceHandler();
+		header = new Header();
+		Main baseView = createBaseView();
+		footer = new Footer();
+
+		div.add(header);
+		div.add(baseView);
+		div.add(footer);
+
+		PlaceHandler placeHandler = new PlaceHandler(this);
 		placeHandler.init();
 
-		RootPanel.get().add(baseView);
+		RootPanel.get().add(div);
 
 	}
 
@@ -47,17 +56,10 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 
 		Highcharts.setExportUrl("");
 
-		mainContentWrapper = new MaterialSection();
-		mainContentWrapper.addStyleName(MainResources.GSS.materialContent());
-
 		simplePanel = new SimplePanel();
 		simplePanel.getElement().setId("contentContainer");
 
-		mainContentWrapper.add(simplePanel);
-
-		mainWrapper.add(header);
-		mainWrapper.add(mainContentWrapper);
-		mainWrapper.add(footer);
+		mainWrapper.add(simplePanel);
 
 		return mainWrapper;
 	}
@@ -65,5 +67,9 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 	@Override
 	public void setContent(Widget content) {
 		simplePanel.setWidget(content);
+	}
+
+	public MaterialHeader getHeader() {
+		return header;
 	}
 }

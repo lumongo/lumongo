@@ -1,5 +1,6 @@
 package org.lumongo.ui.client.controllers;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.SimpleEventBus;
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.place.shared.PlaceController;
@@ -35,6 +36,7 @@ public class MainController {
 		this.homePlace = homePlace;
 		PlaceHistoryHandler historyHandler = new PlaceHistoryHandler(placeHistoryMapper);
 		historyHandler.register(placeController, eventBus, defaultPlace);
+		GWT.log("Here?");
 		historyHandler.handleCurrentHistory();
 	}
 

@@ -6,6 +6,8 @@
     <inherits name="com.google.gwt.i18n.I18N"/>
 
     <inherits name="gwt.material.design.GwtMaterialWithJQuery"/>
+    <inherits name="gwt.material.design.addins.GwtMaterialAddins"/>
+    <inherits name="gwt.material.design.themes.ThemeGrey"/>
     <inherits name="gwt.material.design.themes.ThemeGreyResources"/>
 
     <entry-point class='org.lumongo.ui.client.LumongoUI'/>
