@@ -13,6 +13,7 @@ import org.lumongo.ui.client.controllers.MainController;
 import org.lumongo.ui.client.controllers.WidgetController;
 import org.lumongo.ui.client.eventbus.ResetSearchingEvent;
 import org.lumongo.ui.client.services.ServiceProvider;
+import org.lumongo.ui.client.widgets.ToastHelper;
 import org.lumongo.ui.shared.InstanceInfo;
 
 public class PlaceHandler implements PlaceChangeEvent.Handler {
@@ -145,7 +146,7 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 		ServiceProvider.get().getLumongoService().getInstanceInfo(new AsyncCallback<InstanceInfo>() {
 			@Override
 			public void onFailure(Throwable caught) {
-
+				ToastHelper.showFailure(caught.getMessage());
 			}
 
 			@Override
@@ -155,7 +156,6 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 				getContentPresenter().setContent(getWidgetController().getHomeView());
 			}
 		});
-
 
 	}
 

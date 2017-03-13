@@ -27,8 +27,9 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 	@Override
 	public void onModuleLoad() {
 
+		HighChartsInjector highChartsInjector = new HighChartsInjector();
+		highChartsInjector.inject();
 		MainResources.INSTANCE.mainGSS().ensureInjected();
-		new HighChartsInjector().inject();
 
 		Div div = new Div();
 
@@ -49,10 +50,11 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 
 	@Override
 	public Main createBaseView() {
-		MainResources.GSS.ensureInjected();
 
 		final Main mainWrapper = new Main();
 		mainWrapper.setId("main-wrapper");
+		mainWrapper.setMarginTop(40);
+		mainWrapper.setMarginBottom(40);
 
 		Highcharts.setExportUrl("");
 

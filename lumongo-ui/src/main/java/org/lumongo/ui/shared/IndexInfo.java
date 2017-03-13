@@ -12,7 +12,7 @@ public class IndexInfo implements IsSerializable {
 
 	private String name;
 	private List<String> fieldNames;
-	private Double size;
+	private Long size;
 	private Integer totalDocs;
 
 	public String getName() {
@@ -31,11 +31,11 @@ public class IndexInfo implements IsSerializable {
 		this.fieldNames = fieldNames;
 	}
 
-	public Double getSize() {
+	public Long getSize() {
 		return size;
 	}
 
-	public void setSize(Double size) {
+	public void setSize(Long size) {
 		this.size = size;
 	}
 

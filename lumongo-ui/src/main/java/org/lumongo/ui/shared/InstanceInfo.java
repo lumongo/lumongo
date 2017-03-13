@@ -12,9 +12,11 @@ import java.util.List;
 public class InstanceInfo implements IsSerializable {
 
 	private List<IndexInfo> indexes = Collections.emptyList();
-	private Double serverMemory;
-	private Double lumongoMemory;
-	private Double diskSize;
+	private String lumongoVersion;
+	private String luceneVersion;
+	private Long serverMemory;
+	private Long lumongoMemory;
+	private Long diskSize;
 
 	public List<IndexInfo> getIndexes() {
 		return indexes;
@@ -24,32 +26,49 @@ public class InstanceInfo implements IsSerializable {
 		this.indexes = indexes;
 	}
 
-	public Double getServerMemory() {
+	public String getLumongoVersion() {
+		return lumongoVersion;
+	}
+
+	public void setLumongoVersion(String lumongoVersion) {
+		this.lumongoVersion = lumongoVersion;
+	}
+
+	public String getLuceneVersion() {
+		return luceneVersion;
+	}
+
+	public void setLuceneVersion(String luceneVersion) {
+		this.luceneVersion = luceneVersion;
+	}
+
+	public Long getServerMemory() {
 		return serverMemory;
 	}
 
-	public void setServerMemory(Double serverMemory) {
+	public void setServerMemory(Long serverMemory) {
 		this.serverMemory = serverMemory;
 	}
 
-	public Double getLumongoMemory() {
+	public Long getLumongoMemory() {
 		return lumongoMemory;
 	}
 
-	public void setLumongoMemory(Double lumongoMemory) {
+	public void setLumongoMemory(Long lumongoMemory) {
 		this.lumongoMemory = lumongoMemory;
 	}
 
-	public Double getDiskSize() {
+	public Long getDiskSize() {
 		return diskSize;
 	}
 
-	public void setDiskSize(Double diskSize) {
+	public void setDiskSize(Long diskSize) {
 		this.diskSize = diskSize;
 	}
 
 	@Override
 	public String toString() {
-		return "InstanceInfo{" + "indexes=" + indexes + ", serverMemory=" + serverMemory + ", lumongoMemory=" + lumongoMemory + ", diskSize=" + diskSize + '}';
+		return "InstanceInfo{" + "indexes=" + indexes + ", lumongoVersion='" + lumongoVersion + '\'' + ", luceneVersion='" + luceneVersion + '\''
+				+ ", serverMemory=" + serverMemory + ", lumongoMemory=" + lumongoMemory + ", diskSize=" + diskSize + '}';
 	}
 }
