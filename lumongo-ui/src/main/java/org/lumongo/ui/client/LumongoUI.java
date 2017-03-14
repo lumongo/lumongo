@@ -1,6 +1,7 @@
 package org.lumongo.ui.client;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.Widget;
@@ -29,6 +30,7 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 	public void onModuleLoad() {
 
 		MainResources.INSTANCE.mainGSS().ensureInjected();
+		GWT.log("Injecting highlighter.");
 		HighlighterInjector.inject();
 		HighChartsInjector highChartsInjector = new HighChartsInjector() {
 			@Override

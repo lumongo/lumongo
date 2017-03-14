@@ -79,6 +79,8 @@ public class HomeView extends Div {
 
 		row.add(div);
 
+		//Highlight.e(div.getElement());
+
 		//HighlightBlock.f(div);
 
 	}

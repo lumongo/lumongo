@@ -1,6 +1,6 @@
 package org.lumongo.ui.client.highlighter;
 
-import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.dom.client.Element;
 import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsType;
@@ -10,12 +10,15 @@ import jsinterop.annotations.JsType;
  * @author pmeyer
  */
 @JsType(namespace = JsPackage.GLOBAL, isNative = true)
-public class HighlightBlock {
-
-	public HighlightBlock() {
-	}
+public class Highlight {
 
 	@JsMethod
-	public static native void f(Widget block);
+	public native void configure(HighlightOptions highlightOptions);
+
+	@JsMethod
+	public native void initHighlightingOnLoad();
+
+	@JsMethod
+	public static native void e(Element block);
 
 }
