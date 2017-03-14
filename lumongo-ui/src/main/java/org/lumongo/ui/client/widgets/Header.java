@@ -5,6 +5,7 @@ import gwt.material.design.client.constants.IconType;
 import gwt.material.design.client.constants.NavBarType;
 import gwt.material.design.client.constants.SideNavType;
 import gwt.material.design.client.constants.TextAlign;
+import gwt.material.design.client.constants.WavesType;
 import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleBody;
 import gwt.material.design.client.ui.MaterialCollapsibleHeader;
@@ -61,6 +62,7 @@ public class Header extends MaterialHeader {
 			MaterialCollapsible collapsible = new MaterialCollapsible();
 			MaterialCollapsibleItem materialCollapsibleItem = new MaterialCollapsibleItem();
 			MaterialCollapsibleHeader collapsibleHeader = new MaterialCollapsibleHeader();
+			collapsibleHeader.setWaves(WavesType.DEFAULT);
 			materialCollapsibleItem.add(collapsibleHeader);
 			collapsible.add(materialCollapsibleItem);
 
@@ -75,6 +77,7 @@ public class Header extends MaterialHeader {
 			MaterialCollapsible collapsible = new MaterialCollapsible();
 			MaterialCollapsibleItem materialCollapsibleItem = new MaterialCollapsibleItem();
 			MaterialCollapsibleHeader collapsibleHeader = new MaterialCollapsibleHeader();
+			collapsibleHeader.setWaves(WavesType.DEFAULT);
 			materialCollapsibleBody = new MaterialCollapsibleBody();
 			materialCollapsibleItem.add(collapsibleHeader);
 			materialCollapsibleItem.add(materialCollapsibleBody);
@@ -100,6 +103,7 @@ public class Header extends MaterialHeader {
 
 		for (IndexInfo indexInfo : sideNavItems.getIndexes()) {
 			MaterialLink indexLink = new MaterialLink(indexInfo.getName());
+			indexLink.setWaves(WavesType.DEFAULT);
 			indexLink.addClickHandler(clickEvent -> MainController.get().goTo(new QueryPlace(indexInfo.getName(), null)));
 			materialCollapsibleBody.add(indexLink);
 		}

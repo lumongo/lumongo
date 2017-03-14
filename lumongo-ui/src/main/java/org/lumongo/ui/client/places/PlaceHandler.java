@@ -139,12 +139,26 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 		getContentPresenter().setContent(null);
 
 		if (place.getIndexName() != null) {
-			if (place.getQueryId() != null) {
-				// execute query and show the query/results page.
-			}
-			else {
-				// just show the query page.
-			}
+			// TODO: think about this instance info stuff
+			ServiceProvider.get().getLumongoService().getInstanceInfo(new AsyncCallback<InstanceInfo>() {
+				@Override
+				public void onFailure(Throwable caught) {
+					ToastHelper.showFailure(caught.getMessage());
+				}
+
+				@Override
+				public void onSuccess(InstanceInfo result) {
+					MainController.get().getEventBus().fireEvent(new ResetSearchingEvent());
+					((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(result);
+					if (place.getQueryId() != null) {
+						// execute query and show the query/results page.
+					}
+					else {
+						// just show the query page.
+					}
+				}
+			});
+
 		}
 		else {
 			ToastHelper.showFailure("Invalid index name, taking you back to overview.");
