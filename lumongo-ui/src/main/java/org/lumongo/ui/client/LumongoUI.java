@@ -10,6 +10,7 @@ import gwt.material.design.client.ui.html.Main;
 import org.lumongo.ui.client.bundle.MainResources;
 import org.lumongo.ui.client.charting.HighChartsInjector;
 import org.lumongo.ui.client.charting.Highcharts;
+import org.lumongo.ui.client.highlighter.HighlighterInjector;
 import org.lumongo.ui.client.places.PlaceHandler;
 import org.lumongo.ui.client.widgets.Footer;
 import org.lumongo.ui.client.widgets.Header;
@@ -28,9 +29,11 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 	public void onModuleLoad() {
 
 		MainResources.INSTANCE.mainGSS().ensureInjected();
+		HighlighterInjector.inject();
 		HighChartsInjector highChartsInjector = new HighChartsInjector() {
 			@Override
 			public void onload() {
+
 				Div div = new Div();
 
 				header = new Header();

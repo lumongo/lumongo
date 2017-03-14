@@ -6,6 +6,7 @@ import gwt.material.design.client.ui.MaterialCardContent;
 import gwt.material.design.client.ui.MaterialCardTitle;
 import gwt.material.design.client.ui.MaterialColumn;
 import gwt.material.design.client.ui.MaterialLabel;
+import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialRow;
 import gwt.material.design.client.ui.html.Div;
 import org.lumongo.ui.client.charting.Highcharts;
@@ -26,19 +27,21 @@ public class HomeView extends Div {
 	public void drawSplashPage(InstanceInfo instanceInfo) {
 		clear();
 
+		MaterialPanel panel = new MaterialPanel();
 		MaterialRow row = new MaterialRow();
-		add(row);
+		panel.add(row);
+		add(panel);
 
-		MaterialColumn column = new MaterialColumn();
-		column.setGrid("l4");
-		row.add(column);
+		MaterialColumn infoColumn = new MaterialColumn();
+		infoColumn.setGrid("s12 m6");
+		row.add(infoColumn);
 
 		MaterialCard infoCard = new MaterialCard();
 		infoCard.setBackgroundColor(Color.GREY_DARKEN_1);
 		infoCard.setTextColor(Color.WHITE);
 		MaterialCardContent infoContent = new MaterialCardContent();
 		infoCard.add(infoContent);
-		column.add(infoCard);
+		infoColumn.add(infoCard);
 
 		MaterialCardTitle infoCardTitle = new MaterialCardTitle();
 		infoCardTitle.setText("Basic Info");
@@ -56,12 +59,27 @@ public class HomeView extends Div {
 		infoContent.add(serverMemoryLabel);
 		infoContent.add(diskSpaceLabel);
 
+		MaterialColumn chartColumn = new MaterialColumn();
+		chartColumn.setGrid("s12 m6");
 		Map<String, Serializable> data = new HashMap<>();
 		for (IndexInfo indexInfo : instanceInfo.getIndexes()) {
 			data.put(indexInfo.getName(), indexInfo.getTotalDocs());
 		}
 		Highcharts chart = PieChart.getBuilder().setChartTitle("Index Info").setHeight(400).setData(data).setYAxisAllowDecimals(false).build();
-		column.add(chart);
+		chartColumn.add(chart);
+		row.add(chartColumn);
+
+		Div div = new Div();
+		div.add(new MaterialLabel("{ \n" + "    domain: \"127.0.0.1\",\n" + "    https: false,\n" + "    localUsers: true,\n" + "    disableSAML: true,\n"
+				+ "    userCollection: \"local\",\n" + "    exportUrl: \"http://localhost:9999/dataprocessing/export\",\n"
+				+ "    portfolioUrl: \"http://localhost:9999/dataprocessing/portfolio\",\n"
+				+ "    downloadUrl: \"http://localhost:9999/dataprocessing/download\",\n"
+				+ "    downloadChartsUrl: \"http://localhost:9999/dataprocessing/charts\",\n" + "    lingoBaseUrl: \"https://admin.lexicalintelligence.com/\"\n"
+				+ "}\n"));
+
+		row.add(div);
+
+		//HighlightBlock.f(div);
 
 	}
 }
