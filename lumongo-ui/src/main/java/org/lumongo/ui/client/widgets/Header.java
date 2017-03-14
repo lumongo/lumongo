@@ -57,19 +57,34 @@ public class Header extends MaterialHeader {
 		navBrand.addClickHandler(clickEvent -> sideNav.hide());
 		sideNav.add(navBrand);
 
-		MaterialCollapsible collapsible = new MaterialCollapsible();
-		MaterialCollapsibleItem materialCollapsibleItem = new MaterialCollapsibleItem();
-		MaterialCollapsibleHeader collapsibleHeader = new MaterialCollapsibleHeader();
-		materialCollapsibleBody = new MaterialCollapsibleBody();
-		materialCollapsibleItem.add(collapsibleHeader);
-		materialCollapsibleItem.add(materialCollapsibleBody);
-		collapsible.add(materialCollapsibleItem);
-		MaterialLink overView = new MaterialLink("Overview", new MaterialIcon(IconType.INFO));
-		overView.addClickHandler(clickEvent -> MainController.get().goTo(new HomePlace()));
-		MaterialLink indexes = new MaterialLink("Indexes", new MaterialIcon(IconType.SEARCH));
-		collapsibleHeader.add(indexes);
-		sideNav.add(overView);
-		sideNav.add(collapsible);
+		{
+			MaterialCollapsible collapsible = new MaterialCollapsible();
+			MaterialCollapsibleItem materialCollapsibleItem = new MaterialCollapsibleItem();
+			MaterialCollapsibleHeader collapsibleHeader = new MaterialCollapsibleHeader();
+			materialCollapsibleItem.add(collapsibleHeader);
+			collapsible.add(materialCollapsibleItem);
+
+			MaterialLink overView = new MaterialLink("Overview", new MaterialIcon(IconType.INFO));
+			overView.addClickHandler(clickEvent -> MainController.get().goTo(new HomePlace()));
+			collapsibleHeader.add(overView);
+
+			sideNav.add(collapsible);
+		}
+
+		{
+			MaterialCollapsible collapsible = new MaterialCollapsible();
+			MaterialCollapsibleItem materialCollapsibleItem = new MaterialCollapsibleItem();
+			MaterialCollapsibleHeader collapsibleHeader = new MaterialCollapsibleHeader();
+			materialCollapsibleBody = new MaterialCollapsibleBody();
+			materialCollapsibleItem.add(collapsibleHeader);
+			materialCollapsibleItem.add(materialCollapsibleBody);
+			collapsible.add(materialCollapsibleItem);
+
+			MaterialLink indexes = new MaterialLink("Indexes", new MaterialIcon(IconType.SEARCH));
+			collapsibleHeader.add(indexes);
+
+			sideNav.add(collapsible);
+		}
 
 		add(navBar);
 		add(sideNav);
