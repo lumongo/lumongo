@@ -9,7 +9,7 @@ import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialRow;
 import gwt.material.design.client.ui.html.Div;
 import org.lumongo.ui.client.charting.Highcharts;
-import org.lumongo.ui.client.charting.charts.BarChart;
+import org.lumongo.ui.client.charting.charts.PieChart;
 import org.lumongo.ui.shared.IndexInfo;
 import org.lumongo.ui.shared.InstanceInfo;
 
@@ -60,7 +60,7 @@ public class HomeView extends Div {
 		for (IndexInfo indexInfo : instanceInfo.getIndexes()) {
 			data.put(indexInfo.getName(), indexInfo.getTotalDocs());
 		}
-		Highcharts chart = BarChart.getBuilder().setChartTitle("Index Info").setHeight(400).setData(data).setYAxisAllowDecimals(false).build();
+		Highcharts chart = PieChart.getBuilder().setChartTitle("Index Info").setHeight(400).setData(data).setYAxisAllowDecimals(false).build();
 		column.add(chart);
 
 	}

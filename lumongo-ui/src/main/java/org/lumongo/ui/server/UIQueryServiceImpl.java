@@ -63,11 +63,12 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 			indexInfo.setTotalDocs((int) lumongoWorkPool.getNumberOfDocs(indexName).getNumberOfDocs());
 			indexInfo.setFieldNames(new ArrayList<>(lumongoWorkPool.getFields(new GetFields(indexName)).getFieldNames()));
 
+
 			indexInfoList.add(indexInfo);
 		}
 
 		instanceInfo.setIndexes(indexInfoList);
-		instanceInfo.setServerMemory(Runtime.getRuntime().totalMemory());
+		instanceInfo.setServerMemory(Runtime.getRuntime().maxMemory());
 		instanceInfo.setDiskSize(100L);
 
 		return instanceInfo;

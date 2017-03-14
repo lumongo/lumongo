@@ -27,24 +27,27 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 	@Override
 	public void onModuleLoad() {
 
-		HighChartsInjector highChartsInjector = new HighChartsInjector();
-		highChartsInjector.inject();
 		MainResources.INSTANCE.mainGSS().ensureInjected();
+		HighChartsInjector highChartsInjector = new HighChartsInjector() {
+			@Override
+			public void onload() {
+				Div div = new Div();
 
-		Div div = new Div();
+				header = new Header();
+				Main baseView = createBaseView();
+				footer = new Footer();
 
-		header = new Header();
-		Main baseView = createBaseView();
-		footer = new Footer();
+				div.add(header);
+				div.add(baseView);
+				div.add(footer);
 
-		div.add(header);
-		div.add(baseView);
-		div.add(footer);
+				PlaceHandler placeHandler = new PlaceHandler(LumongoUI.this);
+				placeHandler.init();
 
-		PlaceHandler placeHandler = new PlaceHandler(this);
-		placeHandler.init();
-
-		RootPanel.get().add(div);
+				RootPanel.get().add(div);
+			}
+		};
+		highChartsInjector.inject();
 
 	}
 

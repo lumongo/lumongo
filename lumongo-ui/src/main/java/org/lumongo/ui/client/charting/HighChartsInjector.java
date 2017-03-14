@@ -5,9 +5,10 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.ScriptInjector;
 
 /**
- * Created by millm on 3/7/2016.
+ * Created by Payam Meyer on 3/7/2016.
+ * @author millm
  */
-public class HighChartsInjector {
+public abstract class HighChartsInjector {
 
 	private boolean highchartsLoaded = false;
 	private boolean jqueryLoaded = false;
@@ -34,6 +35,7 @@ public class HighChartsInjector {
 					@Override
 					public void onSuccess(Void result) {
 						highchartsLoaded = true;
+						onload();
 						GWT.log("Succeeded to load highcharts exporting");
 					}
 				}).setWindow(ScriptInjector.TOP_WINDOW).inject();
@@ -81,4 +83,6 @@ public class HighChartsInjector {
 	public boolean isJqueryuiLoaded() {
 		return jqueryuiLoaded;
 	}
+
+	public abstract void onload();
 }
