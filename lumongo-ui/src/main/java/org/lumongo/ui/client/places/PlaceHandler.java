@@ -109,8 +109,8 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 		if (place instanceof HomePlace) {
 			displayHomePlace();
 		}
-		else if (place instanceof SearchPlace) {
-			displaySearchPlace((SearchPlace) place);
+		else if (place instanceof QueryPlace) {
+			displayQueryPlace((QueryPlace) place);
 		}
 	}
 
@@ -135,8 +135,21 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 		return new HomePlace();
 	}
 
-	protected void displaySearchPlace(SearchPlace place) {
+	protected void displayQueryPlace(QueryPlace place) {
+		getContentPresenter().setContent(null);
 
+		if (place.getIndexName() != null) {
+			if (place.getQueryId() != null) {
+				// execute query and show the query/results page.
+			}
+			else {
+				// just show the query page.
+			}
+		}
+		else {
+			ToastHelper.showFailure("Invalid index name, taking you back to overview.");
+			MainController.get().goTo(new HomePlace());
+		}
 	}
 
 	protected void displayHomePlace() {
@@ -153,6 +166,7 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 			public void onSuccess(InstanceInfo result) {
 				MainController.get().getEventBus().fireEvent(new ResetSearchingEvent());
 				getWidgetController().getHomeView().drawSplashPage(result);
+				((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(result);
 				getContentPresenter().setContent(getWidgetController().getHomeView());
 			}
 		});

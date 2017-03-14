@@ -1,11 +1,8 @@
 package org.lumongo.ui.client;
 
 import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.ui.RootPanel;
-import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.Widget;
-import gwt.material.design.client.ui.MaterialHeader;
 import gwt.material.design.client.ui.html.Div;
 import gwt.material.design.client.ui.html.Main;
 import org.lumongo.ui.client.bundle.MainResources;
@@ -22,15 +19,14 @@ import org.lumongo.ui.client.widgets.Header;
  */
 public class LumongoUI implements ContentPresenter, EntryPoint {
 
-	private SimplePanel simplePanel;
-	private Widget footer;
-	private MaterialHeader header;
+	private Main simplePanel;
+	private Footer footer;
+	private Header header;
 
 	@Override
 	public void onModuleLoad() {
 
 		MainResources.INSTANCE.mainGSS().ensureInjected();
-		GWT.log("Injecting highlighter.");
 		HighlighterInjector.inject();
 		HighChartsInjector highChartsInjector = new HighChartsInjector() {
 			@Override
@@ -39,11 +35,11 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 				Div div = new Div();
 
 				header = new Header();
-				Main baseView = createBaseView();
+				simplePanel = createBaseView();
 				footer = new Footer();
 
 				div.add(header);
-				div.add(baseView);
+				div.add(simplePanel);
 				div.add(footer);
 
 				PlaceHandler placeHandler = new PlaceHandler(LumongoUI.this);
@@ -59,27 +55,25 @@ public class LumongoUI implements ContentPresenter, EntryPoint {
 	@Override
 	public Main createBaseView() {
 
-		final Main mainWrapper = new Main();
-		mainWrapper.setId("main-wrapper");
-		mainWrapper.setMarginTop(40);
-		mainWrapper.setMarginBottom(40);
+		simplePanel = new Main();
+		simplePanel.setId("main-wrapper");
+		simplePanel.setMarginTop(40);
+		simplePanel.setMarginBottom(40);
 
 		Highcharts.setExportUrl("");
 
-		simplePanel = new SimplePanel();
-		simplePanel.getElement().setId("contentContainer");
-
-		mainWrapper.add(simplePanel);
-
-		return mainWrapper;
+		return simplePanel;
 	}
 
 	@Override
 	public void setContent(Widget content) {
-		simplePanel.setWidget(content);
+		simplePanel.clear();
+		if (content != null) {
+			simplePanel.add(content);
+		}
 	}
 
-	public MaterialHeader getHeader() {
+	public Header getHeader() {
 		return header;
 	}
 }

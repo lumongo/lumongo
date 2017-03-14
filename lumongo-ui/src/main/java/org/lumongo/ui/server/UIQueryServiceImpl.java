@@ -23,6 +23,7 @@ import java.util.Properties;
 public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(UIQueryServiceImpl.class);
+	private static final int MB = 1024 * 1024;
 	private LumongoWorkPool lumongoWorkPool;
 	private String lumongoVersion;
 	private String luceneVersion;
@@ -52,9 +53,9 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 		InstanceInfo instanceInfo = new InstanceInfo();
 		instanceInfo.setLumongoVersion(lumongoVersion);
 		instanceInfo.setLuceneVersion(luceneVersion);
-		instanceInfo.setLumongoMemory(120L);
 
 		GetIndexesResult indexes = lumongoWorkPool.getIndexes();
+
 		List<IndexInfo> indexInfoList = new ArrayList<>();
 		for (String indexName : indexes.getIndexNames()) {
 			IndexInfo indexInfo = new IndexInfo();
@@ -63,13 +64,18 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 			indexInfo.setTotalDocs((int) lumongoWorkPool.getNumberOfDocs(indexName).getNumberOfDocs());
 			indexInfo.setFieldNames(new ArrayList<>(lumongoWorkPool.getFields(new GetFields(indexName)).getFieldNames()));
 
-
 			indexInfoList.add(indexInfo);
 		}
 
 		instanceInfo.setIndexes(indexInfoList);
-		instanceInfo.setServerMemory(Runtime.getRuntime().maxMemory());
-		instanceInfo.setDiskSize(100L);
+
+		Runtime runtime = Runtime.getRuntime();
+
+		// TODO: These need to be LuMongo's not this app, who cares about this app?
+		instanceInfo.setJvmUsedMemory((runtime.totalMemory() - runtime.freeMemory()) / MB);
+		instanceInfo.setJvmFreeMemory(runtime.freeMemory() / MB);
+		instanceInfo.setJvmTotalMemoryMB(runtime.totalMemory() / MB);
+		instanceInfo.setJvmMaxMemoryMB(runtime.maxMemory() / MB);
 
 		return instanceInfo;
 	}

@@ -16,7 +16,7 @@ import java.util.Map;
 public class PlaceHistoryMapperImpl implements PlaceHistoryMapper {
 
 	private static final List<PlacePojo> DEFAULT_PLACES = Arrays.asList(new PlacePojo<>("home", new HomePlace.Tokenizer(), HomePlace.class),
-			new PlacePojo<>("search", new SearchPlace.Tokenizer(), SearchPlace.class));
+			new PlacePojo<>("query", new QueryPlace.Tokenizer(), QueryPlace.class));
 
 	private Map<String, PlaceTokenizer<Place>> tokenizersByPrefix = new HashMap<>();
 	private Map<Class<?>, PlaceTokenizer<Place>> tokenizersByPlace = new HashMap<>();

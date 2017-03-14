@@ -9,7 +9,7 @@ import jsinterop.annotations.JsType;
  * Created by Payam Meyer on 3/14/17.
  * @author pmeyer
  */
-@JsType(namespace = JsPackage.GLOBAL, isNative = true)
+@JsType(namespace = JsPackage.GLOBAL, isNative = true, name = "hljs")
 public class Highlight {
 
 	@JsMethod
@@ -19,6 +19,6 @@ public class Highlight {
 	public native void initHighlightingOnLoad();
 
 	@JsMethod
-	public static native void e(Element block);
+	public static native void highlightBlock(Element block);
 
 }
