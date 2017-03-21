@@ -58,6 +58,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	private Boolean dismax;
 	private Float dismaxTie;
 	private Boolean dontCache;
+	private Boolean debug;
 
 	public Query(String index, String query, int amount) {
 		this(new String[] { index }, query, amount);
@@ -440,11 +441,20 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		this.dontCache = dontCache;
 	}
 
+	public Boolean getDebug() {
+		return debug;
+	}
+
+	public void setDebug(Boolean debug) {
+		this.debug = debug;
+	}
+
 	@Override
 	public QueryRequest getRequest() {
 		QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
 		requestBuilder.setAmount(amount);
 		requestBuilder.setStart(start);
+		requestBuilder.setDebug(debug);
 
 		Lumongo.Query.Builder queryBuilder = Lumongo.Query.newBuilder();
 		if (query != null) {

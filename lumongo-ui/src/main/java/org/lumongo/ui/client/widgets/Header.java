@@ -23,7 +23,8 @@ import org.lumongo.ui.client.controllers.MainController;
 import org.lumongo.ui.client.places.HomePlace;
 import org.lumongo.ui.client.places.QueryPlace;
 import org.lumongo.ui.shared.IndexInfo;
-import org.lumongo.ui.shared.InstanceInfo;
+
+import java.util.List;
 
 /**
  * Created by Payam Meyer on 3/10/17.
@@ -98,10 +99,10 @@ public class Header extends MaterialHeader {
 		return sideNav;
 	}
 
-	public void setSideNavItems(InstanceInfo sideNavItems) {
+	public void setSideNavItems(List<IndexInfo> indexes) {
 		materialCollapsibleBody.clear();
 
-		for (IndexInfo indexInfo : sideNavItems.getIndexes()) {
+		for (IndexInfo indexInfo : indexes) {
 			MaterialLink indexLink = new MaterialLink(indexInfo.getName());
 			indexLink.setWaves(WavesType.DEFAULT);
 			indexLink.addClickHandler(clickEvent -> MainController.get().goTo(new QueryPlace(indexInfo.getName(), null)));

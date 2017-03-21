@@ -5,7 +5,6 @@ compileGwt.modules = ['org.lumongo.ui.LumongoUI']
 dependencies {
     compile project(':lumongo-client')
 
-
     // Needed by GWT, should be handled by gradle build
     compile('javax.validation:validation-api:1.0.0.GA')
 
@@ -20,8 +19,9 @@ dependencies {
         exclude group: 'commons-lang'
     }
     compile('org.ow2.asm:asm:5.0.4')
-    compile("com.google.guava:guava-gwt:21.0-rc1")
-
+    compile('com.google.guava:guava-gwt:21.0-rc1')
+    compile('org.mongodb.morphia:morphia:1.2.1')
+    compile('com.cedarsoftware:json-io:4.9.6')
 
 }
 

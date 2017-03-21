@@ -7,14 +7,16 @@ import com.google.gwt.place.shared.Place;
 import com.google.gwt.place.shared.PlaceChangeEvent;
 import com.google.gwt.place.shared.PlaceHistoryMapper;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import gwt.material.design.client.ui.MaterialLoader;
 import org.lumongo.ui.client.ContentPresenter;
 import org.lumongo.ui.client.LumongoUI;
 import org.lumongo.ui.client.controllers.MainController;
 import org.lumongo.ui.client.controllers.WidgetController;
-import org.lumongo.ui.client.eventbus.ResetSearchingEvent;
 import org.lumongo.ui.client.services.ServiceProvider;
 import org.lumongo.ui.client.widgets.ToastHelper;
 import org.lumongo.ui.shared.InstanceInfo;
+import org.lumongo.ui.shared.UIQueryResults;
+import org.lumongo.ui.shared.UIQueryState;
 
 public class PlaceHandler implements PlaceChangeEvent.Handler {
 
@@ -138,27 +140,50 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 	protected void displayQueryPlace(QueryPlace place) {
 		getContentPresenter().setContent(null);
 
+		MaterialLoader.showLoading(true);
 		if (place.getIndexName() != null) {
 			// TODO: think about this instance info stuff
-			ServiceProvider.get().getLumongoService().getInstanceInfo(new AsyncCallback<InstanceInfo>() {
-				@Override
-				public void onFailure(Throwable caught) {
-					ToastHelper.showFailure(caught.getMessage());
-				}
-
-				@Override
-				public void onSuccess(InstanceInfo result) {
-					MainController.get().getEventBus().fireEvent(new ResetSearchingEvent());
-					((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(result);
-					if (place.getQueryId() != null) {
-						// execute query and show the query/results page.
+			if (place.getQueryId() != null) {
+				// execute query and show the query/results page.
+				ServiceProvider.get().getLumongoService().search(place.getQueryId(), new AsyncCallback<UIQueryResults>() {
+					@Override
+					public void onFailure(Throwable caught) {
+						MaterialLoader.showLoading(false);
+						ToastHelper.showFailure(caught.getMessage());
 					}
-					else {
-						// just show the query page.
-					}
-				}
-			});
 
+					@Override
+					public void onSuccess(UIQueryResults result) {
+						MaterialLoader.showLoading(false);
+						((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(result.getIndexes());
+
+					}
+				});
+			}
+			else {
+				// just show the query page.
+				if (UIQueryState.getIndexes() == null) {
+					ServiceProvider.get().getLumongoService().getInstanceInfo(new AsyncCallback<InstanceInfo>() {
+						@Override
+						public void onFailure(Throwable caught) {
+							MaterialLoader.showLoading(false);
+							ToastHelper.showFailure(caught.getMessage());
+						}
+
+						@Override
+						public void onSuccess(InstanceInfo result) {
+							MaterialLoader.showLoading(false);
+							getWidgetController().getHomeView().drawSplashPage(result);
+							((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(result.getIndexes());
+							getContentPresenter().setContent(getWidgetController().getHomeView());
+						}
+					});
+				}
+				else {
+					((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(UIQueryState.getIndexes());
+					getContentPresenter().setContent(getWidgetController().getHomeView());
+				}
+			}
 		}
 		else {
 			ToastHelper.showFailure("Invalid index name, taking you back to overview.");
@@ -178,9 +203,9 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 
 			@Override
 			public void onSuccess(InstanceInfo result) {
-				MainController.get().getEventBus().fireEvent(new ResetSearchingEvent());
+				UIQueryState.setIndexes(result.getIndexes());
 				getWidgetController().getHomeView().drawSplashPage(result);
-				((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(result);
+				((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(result.getIndexes());
 				getContentPresenter().setContent(getWidgetController().getHomeView());
 			}
 		});
