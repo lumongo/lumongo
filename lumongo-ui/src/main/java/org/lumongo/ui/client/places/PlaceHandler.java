@@ -13,7 +13,7 @@ import org.lumongo.ui.client.LumongoUI;
 import org.lumongo.ui.client.controllers.MainController;
 import org.lumongo.ui.client.controllers.WidgetController;
 import org.lumongo.ui.client.services.ServiceProvider;
-import org.lumongo.ui.client.widgets.ToastHelper;
+import org.lumongo.ui.client.widgets.base.ToastHelper;
 import org.lumongo.ui.shared.InstanceInfo;
 import org.lumongo.ui.shared.UIQueryResults;
 import org.lumongo.ui.shared.UIQueryState;
@@ -141,11 +141,28 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 		getContentPresenter().setContent(null);
 
 		MaterialLoader.showLoading(true);
-		if (place.getIndexName() != null) {
-			// TODO: think about this instance info stuff
-			if (place.getQueryId() != null) {
-				// execute query and show the query/results page.
-				ServiceProvider.get().getLumongoService().search(place.getQueryId(), new AsyncCallback<UIQueryResults>() {
+
+		if (place.getQueryId() != null) {
+			// execute query and show the query/results page.
+			ServiceProvider.get().getLumongoService().search(place.getQueryId(), new AsyncCallback<UIQueryResults>() {
+				@Override
+				public void onFailure(Throwable caught) {
+					MaterialLoader.showLoading(false);
+					ToastHelper.showFailure(caught.getMessage());
+				}
+
+				@Override
+				public void onSuccess(UIQueryResults result) {
+					MaterialLoader.showLoading(false);
+					getWidgetController().getQueryView().draw(result);
+					getContentPresenter().setContent(getWidgetController().getQueryView());
+				}
+			});
+		}
+		else {
+			// just show the query page.
+			if (UIQueryState.getIndexes() == null) {
+				ServiceProvider.get().getLumongoService().getInstanceInfo(new AsyncCallback<InstanceInfo>() {
 					@Override
 					public void onFailure(Throwable caught) {
 						MaterialLoader.showLoading(false);
@@ -153,41 +170,22 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 					}
 
 					@Override
-					public void onSuccess(UIQueryResults result) {
+					public void onSuccess(InstanceInfo result) {
 						MaterialLoader.showLoading(false);
-						((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(result.getIndexes());
-
+						UIQueryResults results = new UIQueryResults();
+						results.setIndexes(result.getIndexes());
+						getWidgetController().getQueryView().draw(results);
+						getContentPresenter().setContent(getWidgetController().getQueryView());
 					}
 				});
 			}
 			else {
-				// just show the query page.
-				if (UIQueryState.getIndexes() == null) {
-					ServiceProvider.get().getLumongoService().getInstanceInfo(new AsyncCallback<InstanceInfo>() {
-						@Override
-						public void onFailure(Throwable caught) {
-							MaterialLoader.showLoading(false);
-							ToastHelper.showFailure(caught.getMessage());
-						}
-
-						@Override
-						public void onSuccess(InstanceInfo result) {
-							MaterialLoader.showLoading(false);
-							getWidgetController().getHomeView().drawSplashPage(result);
-							((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(result.getIndexes());
-							getContentPresenter().setContent(getWidgetController().getHomeView());
-						}
-					});
-				}
-				else {
-					((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(UIQueryState.getIndexes());
-					getContentPresenter().setContent(getWidgetController().getHomeView());
-				}
+				MaterialLoader.showLoading(false);
+				UIQueryResults results = new UIQueryResults();
+				results.setIndexes(UIQueryState.getIndexes());
+				getWidgetController().getQueryView().draw(results);
+				getContentPresenter().setContent(getWidgetController().getQueryView());
 			}
-		}
-		else {
-			ToastHelper.showFailure("Invalid index name, taking you back to overview.");
-			MainController.get().goTo(new HomePlace());
 		}
 	}
 
@@ -205,7 +203,6 @@ public class PlaceHandler implements PlaceChangeEvent.Handler {
 			public void onSuccess(InstanceInfo result) {
 				UIQueryState.setIndexes(result.getIndexes());
 				getWidgetController().getHomeView().drawSplashPage(result);
-				((LumongoUI) getContentPresenter()).getHeader().setSideNavItems(result.getIndexes());
 				getContentPresenter().setContent(getWidgetController().getHomeView());
 			}
 		});

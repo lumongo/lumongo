@@ -1,4 +1,4 @@
-package org.lumongo.ui.client.widgets;
+package org.lumongo.ui.client.widgets.base;
 
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.user.client.Window;

@@ -21,6 +21,7 @@ dependencies {
     compile('org.ow2.asm:asm:5.0.4')
     compile('com.google.guava:guava-gwt:21.0-rc1')
     compile('org.mongodb.morphia:morphia:1.2.1')
+    compile('org.mongodb.morphia:morphia-gwt:1.0.0-rc3')
     compile('com.cedarsoftware:json-io:4.9.6')
 
 }

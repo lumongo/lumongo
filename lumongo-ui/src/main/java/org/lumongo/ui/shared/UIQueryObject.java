@@ -6,8 +6,10 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by Payam Meyer on 3/9/17.
@@ -19,37 +21,40 @@ public class UIQueryObject implements IsSerializable {
 	@Id
 	private ObjectId queryId;
 	private String query;
-	private List<String> indexNames = Collections.emptyList();
+	private Set<String> indexNames = Collections.emptySet();
 	private boolean debug;
 	private int start;
 	private boolean dontCache;
 	private Integer mm;
 	private Boolean dismax;
 	private Float dismaxTie;
-	private List<String> queryFields = Collections.emptyList();
+	private Set<String> queryFields = Collections.emptySet();
 	private String defaultOperator;
-	private Map<String, String> similarities;
-	private List<String> filterQueries;
-	private List<String> cosineSimJsonList;
-	private List<String> filterJsonQueries;
-	private List<String> highlightList;
-	private List<String> highlightJsonList;
-	private List<String> analyzeJsonList;
-	private List<String> displayFields;
-	private List<String> facets;
+	private Map<String, String> similarities = Collections.emptyMap();
+	private List<String> filterQueries = Collections.emptyList();
+	private List<String> cosineSimJsonList = Collections.emptyList();
+	private List<String> filterJsonQueries = Collections.emptyList();
+	private List<String> highlightList = Collections.emptyList();
+	private List<String> highlightJsonList = Collections.emptyList();
+	private List<String> analyzeJsonList = Collections.emptyList();
+	private List<String> displayFields = Collections.emptyList();
+	private List<String> facets = Collections.emptyList();
 	private Boolean computeFacetError;
 	private List<String> drillDowns;
-	private Map<String, String> sortList;
+	private Map<String, String> sortList = Collections.emptyMap();
 	private int rows;
 
 	public UIQueryObject() {
 	}
 
-	public List<String> getIndexNames() {
+	public Set<String> getIndexNames() {
+		if (indexNames.isEmpty()) {
+			indexNames = new HashSet<>();
+		}
 		return indexNames;
 	}
 
-	public void setIndexNames(List<String> indexNames) {
+	public void setIndexNames(Set<String> indexNames) {
 		this.indexNames = indexNames;
 	}
 
@@ -113,11 +118,14 @@ public class UIQueryObject implements IsSerializable {
 		this.dismaxTie = dismaxTie;
 	}
 
-	public List<String> getQueryFields() {
+	public Set<String> getQueryFields() {
+		if (queryFields.isEmpty()) {
+			queryFields = new HashSet<>();
+		}
 		return queryFields;
 	}
 
-	public void setQueryFields(List<String> queryFields) {
+	public void setQueryFields(Set<String> queryFields) {
 		this.queryFields = queryFields;
 	}
 

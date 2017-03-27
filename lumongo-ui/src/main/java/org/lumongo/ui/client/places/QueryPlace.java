@@ -14,16 +14,10 @@ import java.util.Map;
  */
 public class QueryPlace extends Place {
 
-	private String indexName;
 	private String queryId;
 
-	public QueryPlace(String indexName, String queryId) {
-		this.indexName = indexName;
+	public QueryPlace(String queryId) {
 		this.queryId = queryId;
-	}
-
-	public String getIndexName() {
-		return indexName;
 	}
 
 	public String getQueryId() {
@@ -32,7 +26,7 @@ public class QueryPlace extends Place {
 
 	@Override
 	public String toString() {
-		return "QueryPlace{" + "indexName='" + indexName + '\'' + ", queryId='" + queryId + '\'' + '}';
+		return "QueryPlace{" + "queryId='" + queryId + '\'' + '}';
 	}
 
 	public static class Tokenizer implements PlaceTokenizer<QueryPlace> {
@@ -41,18 +35,14 @@ public class QueryPlace extends Place {
 		public QueryPlace getPlace(String token) {
 
 			Map<String, List<String>> params = UrlBuilder.buildListParamMap(token);
-			String indexName = UrlBuilder.getSingleValue(params, "indexName");
 			String queryId = UrlBuilder.getSingleValue(params, "queryId");
 
-			return new QueryPlace(indexName, queryId);
+			return new QueryPlace(queryId);
 		}
 
 		@Override
 		public String getToken(QueryPlace place) {
 			UrlParamBuilder builder = new UrlParamBuilder();
-			if (place.getIndexName() != null) {
-				builder.setParameter("indexName", place.getIndexName());
-			}
 			if (place.getQueryId() != null) {
 				builder.setParameter("queryId", place.getQueryId());
 			}

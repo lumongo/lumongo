@@ -11,4 +11,8 @@ public interface MainGSS extends CssResource {
 	String card();
 
 	String materialContent();
+
+	String searchBox();
+
+	String searchBoxInput();
 }

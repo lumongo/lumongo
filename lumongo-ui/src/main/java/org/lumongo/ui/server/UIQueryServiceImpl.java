@@ -76,18 +76,7 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 		instanceInfo.setLumongoVersion(lumongoVersion);
 		instanceInfo.setLuceneVersion(luceneVersion);
 
-		GetIndexesResult indexes = lumongoWorkPool.getIndexes();
-
-		List<IndexInfo> indexInfoList = new ArrayList<>();
-		for (String indexName : indexes.getIndexNames()) {
-			IndexInfo indexInfo = new IndexInfo();
-			indexInfo.setName(indexName);
-			indexInfo.setSize(20L);
-			indexInfo.setTotalDocs((int) lumongoWorkPool.getNumberOfDocs(indexName).getNumberOfDocs());
-			indexInfo.setFieldNames(new ArrayList<>(lumongoWorkPool.getFields(new GetFields(indexName)).getFieldNames()));
-
-			indexInfoList.add(indexInfo);
-		}
+		List<IndexInfo> indexInfoList = getIndexInfos();
 
 		instanceInfo.setIndexes(indexInfoList);
 
@@ -102,6 +91,22 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 		return instanceInfo;
 	}
 
+	private List<IndexInfo> getIndexInfos() throws Exception {
+		GetIndexesResult indexes = lumongoWorkPool.getIndexes();
+
+		List<IndexInfo> indexInfoList = new ArrayList<>();
+		for (String indexName : indexes.getIndexNames()) {
+			IndexInfo indexInfo = new IndexInfo();
+			indexInfo.setName(indexName);
+			indexInfo.setSize(20L);
+			indexInfo.setTotalDocs((int) lumongoWorkPool.getNumberOfDocs(indexName).getNumberOfDocs());
+			indexInfo.setFieldNames(new ArrayList<>(lumongoWorkPool.getFields(new GetFields(indexName)).getFieldNames()));
+
+			indexInfoList.add(indexInfo);
+		}
+		return indexInfoList;
+	}
+
 	@Override
 	public UIQueryResults search(String queryId) throws Exception {
 
@@ -109,6 +114,8 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 			UIQueryResults results = new UIQueryResults();
 
 			UIQueryObject uiQueryObject = datastore.createQuery(UIQueryObject.class).field("_id").equal(new ObjectId(queryId)).get();
+			results.setUiQueryObject(uiQueryObject);
+			results.setIndexes(getIndexInfos());
 
 			Query query = new Query(uiQueryObject.getIndexNames(), uiQueryObject.getQuery(), uiQueryObject.getRows());
 
@@ -226,6 +233,7 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 				}
 			}
 
+			System.out.println("Searching: " + query);
 			QueryResult queryResult = lumongoWorkPool.query(query);
 
 			for (Lumongo.ScoredResult scoredResult : queryResult.getResults()) {
@@ -245,6 +253,17 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 		}
 		catch (Exception e) {
 			LOG.error("Failed to execute query.", e);
+			throw e;
+		}
+	}
+
+	@Override
+	public String saveQuery(UIQueryObject uiQueryObject) throws Exception {
+		try {
+			return datastore.save(uiQueryObject).getId().toString();
+		}
+		catch (Exception e) {
+			LOG.error("Failed to save the query.");
 			throw e;
 		}
 	}

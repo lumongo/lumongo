@@ -10,6 +10,8 @@
     <inherits name="gwt.material.design.themes.ThemeGrey"/>
     <inherits name="gwt.material.design.themes.ThemeGreyResources"/>
 
+    <inherits name="org.mongodb.morphia.Morphia"/>
+
     <entry-point class='org.lumongo.ui.client.LumongoUI'/>
 
     <set-configuration-property name="CssResource.enableGss" value="true"/>

@@ -1,10 +1,60 @@
-
-
 .card {
-	padding: 20px;
+    padding: 20px;
 }
 
 .materialContent {
     margin-top: 30px;
     margin-bottom: 30px;
+}
+
+body {
+    background-color: #bbb;
+}
+
+.searchBox {
+    cursor: text;
+    height: 40px;
+    background: rgba(255, 255, 255, .15);
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    display: -webkit-box;
+    display: -moz-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    -webkit-box-flex: 1;
+    box-flex: 1;
+    -webkit-flex-grow: 1;
+    flex-grow: 1;
+    margin-left: 30px;
+    margin-top: 12px;
+}
+
+.searchBoxInput {
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-box-flex: 1 !important;
+    box-flex: 1 !important;
+    -webkit-flex-grow: 1 !important;
+    flex-grow: 1 !important;
+    -webkit-flex-shrink: 1 !important;
+    flex-shrink: 1 !important;
+    background-color: transparent !important;
+    border: none !important;
+    display: block !important;
+    font: 400 16px Roboto, RobotoDraft, Helvetica, Arial, sans-serif !important;
+    height: 24px !important;
+    line-height: 24px !important;
+    margin: 0 !important;
+    min-width: 0% !important;
+    outline: none !important;
+    padding: 5px !important;
+    z-index: 0 !important;
+    color: black;
+    width: 400px !important;
 }
