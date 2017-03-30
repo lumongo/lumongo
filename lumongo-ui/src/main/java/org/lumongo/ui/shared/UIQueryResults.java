@@ -18,6 +18,7 @@ public class UIQueryResults implements IsSerializable {
 	private List<String> jsonDocs = Collections.emptyList();
 	private Map<String, Long> facetCountsMap = Collections.emptyMap();
 	private UIQueryObject uiQueryObject;
+	private long totalResults;
 
 	public UIQueryResults() {
 	}
@@ -54,5 +55,13 @@ public class UIQueryResults implements IsSerializable {
 
 	public UIQueryObject getUiQueryObject() {
 		return uiQueryObject;
+	}
+
+	public long getTotalResults() {
+		return totalResults;
+	}
+
+	public void setTotalResults(long totalResults) {
+		this.totalResults = totalResults;
 	}
 }

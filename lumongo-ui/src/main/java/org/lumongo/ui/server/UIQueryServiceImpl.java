@@ -4,6 +4,7 @@ import com.cedarsoftware.util.io.JsonWriter;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
+import com.mongodb.util.JSONSerializers;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.lumongo.client.command.GetFields;
@@ -118,6 +119,9 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 			results.setIndexes(getIndexInfos());
 
 			Query query = new Query(uiQueryObject.getIndexNames(), uiQueryObject.getQuery(), uiQueryObject.getRows());
+			if (query.getQuery().isEmpty()) {
+				query.setQuery("*:*");
+			}
 
 			query.setDebug(uiQueryObject.isDebug());
 
@@ -233,13 +237,19 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 				}
 			}
 
-			System.out.println("Searching: " + query);
+			LOG.info("Query: " + query);
 			QueryResult queryResult = lumongoWorkPool.query(query);
+
+			results.setTotalResults(queryResult.getTotalHits());
 
 			for (Lumongo.ScoredResult scoredResult : queryResult.getResults()) {
 				Document document = ResultHelper.getDocumentFromScoredResult(scoredResult);
 				if (document != null) {
-					results.addFormattedDocument(JsonWriter.formatJson(document.toJson()));
+					// always add index name and ID
+					document.put("indexName", scoredResult.getIndexName());
+					document.put("id", scoredResult.getUniqueId());
+					String jsonDoc = JSONSerializers.getLegacy().serialize(document);
+					results.addFormattedDocument(JsonWriter.formatJson(jsonDoc));
 				}
 			}
 

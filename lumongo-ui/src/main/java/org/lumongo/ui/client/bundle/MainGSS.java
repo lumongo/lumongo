@@ -15,4 +15,10 @@ public interface MainGSS extends CssResource {
 	String searchBox();
 
 	String searchBoxInput();
+
+	String selectable();
+
+	String wordBreakAll();
+
+	String borderBottom();
 }

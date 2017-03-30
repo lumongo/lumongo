@@ -5,6 +5,7 @@ import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -28,7 +29,7 @@ public class UIQueryObject implements IsSerializable {
 	private Integer mm;
 	private Boolean dismax;
 	private Float dismaxTie;
-	private Set<String> queryFields = Collections.emptySet();
+	private List<String> queryFields = Collections.emptyList();
 	private String defaultOperator;
 	private Map<String, String> similarities = Collections.emptyMap();
 	private List<String> filterQueries = Collections.emptyList();
@@ -42,7 +43,7 @@ public class UIQueryObject implements IsSerializable {
 	private Boolean computeFacetError;
 	private List<String> drillDowns;
 	private Map<String, String> sortList = Collections.emptyMap();
-	private int rows;
+	private int rows = 10;
 
 	public UIQueryObject() {
 	}
@@ -118,14 +119,14 @@ public class UIQueryObject implements IsSerializable {
 		this.dismaxTie = dismaxTie;
 	}
 
-	public Set<String> getQueryFields() {
+	public List<String> getQueryFields() {
 		if (queryFields.isEmpty()) {
-			queryFields = new HashSet<>();
+			queryFields = new ArrayList<>();
 		}
 		return queryFields;
 	}
 
-	public void setQueryFields(Set<String> queryFields) {
+	public void setQueryFields(List<String> queryFields) {
 		this.queryFields = queryFields;
 	}
 
@@ -194,6 +195,9 @@ public class UIQueryObject implements IsSerializable {
 	}
 
 	public List<String> getDisplayFields() {
+		if (displayFields.isEmpty()) {
+			displayFields = new ArrayList<>();
+		}
 		return displayFields;
 	}
 
