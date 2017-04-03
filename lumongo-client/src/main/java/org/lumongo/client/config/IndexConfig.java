@@ -255,7 +255,7 @@ public class IndexConfig {
 		return isb.build();
 	}
 
-	protected void configure(IndexSettings indexSettings) {
+	public void configure(IndexSettings indexSettings) {
 		this.defaultSearchField = indexSettings.getDefaultSearchField();
 		this.applyUncommittedDeletes = indexSettings.getApplyUncommittedDeletes();
 		this.requestFactor = indexSettings.getRequestFactor();

@@ -49,6 +49,10 @@ public class UIQueryResults implements IsSerializable {
 		facetCountsMap.put(facet, count);
 	}
 
+	public Map<String, Long> getFacetCountsMap() {
+		return facetCountsMap;
+	}
+
 	public void setUiQueryObject(UIQueryObject uiQueryObject) {
 		this.uiQueryObject = uiQueryObject;
 	}

@@ -1,28 +1,28 @@
 package org.lumongo.ui.client.widgets.query;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.IconType;
+import gwt.material.design.client.constants.TabType;
 import gwt.material.design.client.ui.MaterialBadge;
 import gwt.material.design.client.ui.MaterialButton;
-import gwt.material.design.client.ui.MaterialCheckBox;
 import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleBody;
 import gwt.material.design.client.ui.MaterialCollapsibleHeader;
 import gwt.material.design.client.ui.MaterialCollapsibleItem;
-import gwt.material.design.client.ui.MaterialColumn;
-import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialLink;
 import gwt.material.design.client.ui.MaterialListBox;
-import gwt.material.design.client.ui.MaterialRow;
-import gwt.material.design.client.ui.MaterialTextBox;
+import gwt.material.design.client.ui.MaterialTabItem;
+import gwt.material.design.client.ui.html.Br;
 import gwt.material.design.client.ui.html.Div;
 import gwt.material.design.client.ui.html.Option;
-import org.lumongo.ui.client.bundle.MainResources;
 import org.lumongo.ui.client.controllers.MainController;
 import org.lumongo.ui.client.places.QueryPlace;
 import org.lumongo.ui.client.services.ServiceProvider;
+import org.lumongo.ui.client.widgets.base.CustomTabPanel;
 import org.lumongo.ui.client.widgets.base.CustomTextBox;
 import org.lumongo.ui.client.widgets.base.ToastHelper;
 import org.lumongo.ui.shared.IndexInfo;
@@ -43,6 +43,8 @@ public class QueryOptionsView extends Div {
 	private UIQueryObject uiQueryObject;
 	private final MaterialCollapsible fieldNameCollapsible;
 	private final Map<String, MaterialCollapsibleItem> fieldItems = new HashMap<>();
+	private final Div filterQueryDiv;
+	private List<FilterQueryWidget> filterQueries = new ArrayList<>();
 
 	public QueryOptionsView(UIQueryResults uiQueryResults) {
 		setMargin(15);
@@ -53,16 +55,20 @@ public class QueryOptionsView extends Div {
 			uiQueryObject = new UIQueryObject();
 		}
 
-		MaterialButton resetButton = new MaterialButton("Reset", IconType.REFRESH);
-		resetButton.addClickHandler(clickEvent -> {
-			MainController.get().goTo(new QueryPlace(null));
-		});
-		add(resetButton);
-
 		if (!uiQueryResults.getJsonDocs().isEmpty()) {
-			MaterialBadge resultsBadge = new MaterialBadge("Total Results: " + uiQueryResults.getTotalResults());
+			MaterialBadge resultsBadge = new MaterialBadge("Total Results: " + NumberFormat.getFormat("#,##0").format(uiQueryResults.getTotalResults()));
 			add(resultsBadge);
+			add(new Br());
 		}
+
+		MaterialButton executeButton = new MaterialButton("Execute", IconType.SEARCH);
+		executeButton.addClickHandler(clickEvent -> runSearch());
+		executeButton.setMarginRight(2);
+		add(executeButton);
+
+		MaterialButton resetButton = new MaterialButton("Reset", IconType.REFRESH);
+		resetButton.addClickHandler(clickEvent -> MainController.get().goTo(new QueryPlace(null)));
+		add(resetButton);
 
 		MaterialListBox indexesListBox = new MaterialListBox();
 		indexesListBox.setMultipleSelect(true);
@@ -96,18 +102,19 @@ public class QueryOptionsView extends Div {
 		add(fieldNameCollapsible);
 
 		CustomTextBox searchBox = new CustomTextBox(true);
-		searchBox.setPlaceHolder("q:");
+		searchBox.setPlaceHolder("q=*:*");
 		searchBox.setValue(uiQueryObject.getQuery());
 		searchBox.addKeyUpHandler(clickEvent -> {
 			if (clickEvent.getNativeKeyCode() == KeyCodes.KEY_ENTER) {
 				uiQueryObject.setQuery(searchBox.getValue());
-				runSearch(uiQueryObject);
+				runSearch();
 			}
 		});
 
+		searchBox.getButton().setTitle("Execute Query");
 		searchBox.getButton().addClickHandler(clickEvent -> {
 			uiQueryObject.setQuery(searchBox.getValue());
-			runSearch(uiQueryObject);
+			runSearch();
 		});
 
 		add(searchBox);
@@ -120,11 +127,50 @@ public class QueryOptionsView extends Div {
 		rowsIntegerBox.getTextBox().addChangeHandler(changeEvent -> uiQueryObject.setRows(Integer.valueOf(rowsIntegerBox.getValue())));
 		rowsIntegerBox.addKeyUpHandler(clickEvent -> {
 			if (clickEvent.getNativeKeyCode() == KeyCodes.KEY_ENTER) {
-				runSearch(uiQueryObject);
+				runSearch();
 			}
 		});
 
 		add(rowsIntegerBox);
+
+		filterQueryDiv = new Div();
+		if (!uiQueryObject.getFilterQueries().isEmpty()) {
+			for (String fq : uiQueryObject.getFilterQueries()) {
+				createFilterQueryWidget(fq);
+			}
+		}
+		else {
+			createFilterQueryWidget(null);
+		}
+
+		add(filterQueryDiv);
+
+	}
+
+	private void createFilterQueryWidget(String fq) {
+
+		FilterQueryWidget filterQueryWidget = new FilterQueryWidget();
+		filterQueryWidget.setPlaceHolder("fq=*:*");
+		filterQueryWidget.getPlusButton().addClickHandler(clickEvent -> createFilterQueryWidget(null));
+		if (fq != null) {
+			filterQueryWidget.getTextBox().setValue(fq);
+		}
+
+		filterQueryWidget.getMinusButton().addClickHandler(clickEvent -> {
+			if (filterQueryDiv.getWidgetCount() > 1) {
+				filterQueryDiv.remove(filterQueryWidget);
+				filterQueries.remove(filterQueryWidget);
+				uiQueryObject.getFilterQueries().remove(filterQueryWidget.getValue());
+			}
+			else {
+				uiQueryObject.getFilterQueries().remove(filterQueryWidget.getValue());
+				filterQueryWidget.getTextBox().setValue("");
+			}
+		});
+
+		filterQueries.add(filterQueryWidget);
+
+		filterQueryDiv.add(filterQueryWidget);
 
 	}
 
@@ -143,78 +189,21 @@ public class QueryOptionsView extends Div {
 		body.setPaddingTop(0);
 		body.setBackgroundColor(Color.WHITE);
 
-		MaterialRow row = new MaterialRow();
-		MaterialColumn leftColumn = new MaterialColumn(6, 6, 6);
-		MaterialColumn rightColumn = new MaterialColumn(6, 6, 6);
+		CustomTabPanel tabPanel = new CustomTabPanel(TabType.DEFAULT);
+		tabPanel.setMarginLeft(-40);
+		tabPanel.setMarginRight(-40);
 
-		MaterialTextBox filterTextBox = new MaterialTextBox("Start typing to filter...");
-		row.add(filterTextBox);
+		MaterialTabItem qfTabItem = tabPanel.createAndAddTabListItem("QF", "#qf");
+		tabPanel.createAndAddTabPane("qf", new FieldsDiv(indexInfo.getQfList(), uiQueryObject.getQueryFields()));
+		header.addClickHandler(clickEvent -> qfTabItem.selectTab());
 
-		row.add(leftColumn);
-		row.add(rightColumn);
-		body.add(row);
+		tabPanel.createAndAddTabListItem("FL", "#fl");
+		tabPanel.createAndAddTabPane("fl", new FieldsDiv(indexInfo.getFlList(), uiQueryObject.getDisplayFields()));
 
-		leftColumn.add(new MaterialLabel("QF:"));
-		rightColumn.add(new MaterialLabel("FL:"));
+		tabPanel.createAndAddTabListItem("Facets", "#facets");
+		tabPanel.createAndAddTabPane("facets", new FieldsDiv(indexInfo.getFacetList(), uiQueryObject.getFacets()));
 
-		List<MaterialCheckBox> qfCheckBoxes = new ArrayList<>();
-		List<MaterialCheckBox> flCheckBoxes = new ArrayList<>();
-
-		for (String fieldName : indexInfo.getFieldNames()) {
-			MaterialCheckBox qfCheckBox = new MaterialCheckBox(fieldName);
-			qfCheckBox.addStyleName(MainResources.GSS.wordBreakAll());
-			if (uiQueryObject.getQueryFields().contains(fieldName)) {
-				qfCheckBox.setValue(true);
-			}
-			qfCheckBox.addValueChangeHandler(event -> {
-				if (event.getValue()) {
-					uiQueryObject.getQueryFields().add(qfCheckBox.getText());
-				}
-				else {
-					uiQueryObject.getQueryFields().remove(qfCheckBox.getText());
-				}
-
-			});
-			qfCheckBoxes.add(qfCheckBox);
-			leftColumn.add(qfCheckBox);
-
-			MaterialCheckBox flCheckBox = new MaterialCheckBox(fieldName);
-			flCheckBox.addStyleName(MainResources.GSS.wordBreakAll());
-			if (uiQueryObject.getDisplayFields().contains(fieldName)) {
-				flCheckBox.setValue(true);
-			}
-			flCheckBox.addValueChangeHandler(event -> {
-				if (event.getValue()) {
-					uiQueryObject.getDisplayFields().add(flCheckBox.getText());
-				}
-				else {
-					uiQueryObject.getDisplayFields().remove(flCheckBox.getText());
-				}
-
-			});
-			flCheckBoxes.add(flCheckBox);
-			rightColumn.add(flCheckBox);
-		}
-
-		filterTextBox.addKeyUpHandler(keyUpEvent -> {
-			for (MaterialCheckBox qfCheckBox : qfCheckBoxes) {
-				if (!qfCheckBox.getText().contains(filterTextBox.getValue())) {
-					qfCheckBox.setVisible(false);
-				}
-				else {
-					qfCheckBox.setVisible(true);
-				}
-			}
-
-			for (MaterialCheckBox flCheckBox : flCheckBoxes) {
-				if (!flCheckBox.getText().contains(filterTextBox.getValue())) {
-					flCheckBox.setVisible(false);
-				}
-				else {
-					flCheckBox.setVisible(true);
-				}
-			}
-		});
+		body.add(tabPanel);
 
 		item.add(header);
 		item.add(body);
@@ -222,7 +211,13 @@ public class QueryOptionsView extends Div {
 		fieldNameCollapsible.add(item);
 	}
 
-	private void runSearch(UIQueryObject uiQueryObject) {
+	private void runSearch() {
+		for (FilterQueryWidget fqw : filterQueries) {
+			if (!fqw.getValue().isEmpty()) {
+				uiQueryObject.getFilterQueries().add(fqw.getValue());
+			}
+		}
+		GWT.log("UIQueryObj:" + uiQueryObject.getQueryFields());
 		ServiceProvider.get().getLumongoService().saveQuery(uiQueryObject, new AsyncCallback<String>() {
 			@Override
 			public void onFailure(Throwable caught) {

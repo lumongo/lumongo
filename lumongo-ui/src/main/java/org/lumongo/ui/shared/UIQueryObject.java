@@ -6,7 +6,7 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,36 +22,33 @@ public class UIQueryObject implements IsSerializable {
 	@Id
 	private ObjectId queryId;
 	private String query;
-	private Set<String> indexNames = Collections.emptySet();
+	private Set<String> indexNames = new HashSet<>();
 	private boolean debug;
 	private int start;
 	private boolean dontCache;
 	private Integer mm;
 	private Boolean dismax;
 	private Float dismaxTie;
-	private List<String> queryFields = Collections.emptyList();
+	private List<String> queryFields = new ArrayList<>();
 	private String defaultOperator;
-	private Map<String, String> similarities = Collections.emptyMap();
-	private List<String> filterQueries = Collections.emptyList();
-	private List<String> cosineSimJsonList = Collections.emptyList();
-	private List<String> filterJsonQueries = Collections.emptyList();
-	private List<String> highlightList = Collections.emptyList();
-	private List<String> highlightJsonList = Collections.emptyList();
-	private List<String> analyzeJsonList = Collections.emptyList();
-	private List<String> displayFields = Collections.emptyList();
-	private List<String> facets = Collections.emptyList();
+	private Map<String, String> similarities = new HashMap<>();
+	private List<String> filterQueries = new ArrayList<>();
+	private List<String> cosineSimJsonList = new ArrayList<>();
+	private List<String> filterJsonQueries = new ArrayList<>();
+	private List<String> highlightList = new ArrayList<>();
+	private List<String> highlightJsonList = new ArrayList<>();
+	private List<String> analyzeJsonList = new ArrayList<>();
+	private List<String> displayFields = new ArrayList<>();
+	private List<String> facets = new ArrayList<>();
 	private Boolean computeFacetError;
 	private List<String> drillDowns;
-	private Map<String, String> sortList = Collections.emptyMap();
+	private Map<String, String> sortList = new HashMap<>();
 	private int rows = 10;
 
 	public UIQueryObject() {
 	}
 
 	public Set<String> getIndexNames() {
-		if (indexNames.isEmpty()) {
-			indexNames = new HashSet<>();
-		}
 		return indexNames;
 	}
 
@@ -120,9 +117,6 @@ public class UIQueryObject implements IsSerializable {
 	}
 
 	public List<String> getQueryFields() {
-		if (queryFields.isEmpty()) {
-			queryFields = new ArrayList<>();
-		}
 		return queryFields;
 	}
 
@@ -195,9 +189,6 @@ public class UIQueryObject implements IsSerializable {
 	}
 
 	public List<String> getDisplayFields() {
-		if (displayFields.isEmpty()) {
-			displayFields = new ArrayList<>();
-		}
 		return displayFields;
 	}
 
@@ -247,5 +238,15 @@ public class UIQueryObject implements IsSerializable {
 
 	public void setRows(int rows) {
 		this.rows = rows;
+	}
+
+	@Override
+	public String toString() {
+		return "UIQueryObject{" + "queryId=" + queryId + ", query='" + query + '\'' + ", indexNames=" + indexNames + ", debug=" + debug + ", start=" + start
+				+ ", dontCache=" + dontCache + ", mm=" + mm + ", dismax=" + dismax + ", dismaxTie=" + dismaxTie + ", queryFields=" + queryFields
+				+ ", defaultOperator='" + defaultOperator + '\'' + ", similarities=" + similarities + ", filterQueries=" + filterQueries
+				+ ", cosineSimJsonList=" + cosineSimJsonList + ", filterJsonQueries=" + filterJsonQueries + ", highlightList=" + highlightList
+				+ ", highlightJsonList=" + highlightJsonList + ", analyzeJsonList=" + analyzeJsonList + ", displayFields=" + displayFields + ", facets="
+				+ facets + ", computeFacetError=" + computeFacetError + ", drillDowns=" + drillDowns + ", sortList=" + sortList + ", rows=" + rows + '}';
 	}
 }

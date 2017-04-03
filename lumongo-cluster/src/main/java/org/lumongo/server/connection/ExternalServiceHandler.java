@@ -3,8 +3,8 @@ package org.lumongo.server.connection;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.pro.duplex.PeerInfo;
-import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
 import com.googlecode.protobuf.pro.duplex.execute.NonInterruptingThreadPoolCallExecutor;
+import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
 import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerPipelineFactory;
 import com.googlecode.protobuf.pro.duplex.util.RenamingThreadFactoryProxy;
 import io.netty.bootstrap.ServerBootstrap;
@@ -14,40 +14,10 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.apache.log4j.Logger;
 import org.bson.BSON;
 import org.bson.BasicBSONObject;
-import org.lumongo.cluster.message.Lumongo.BatchDeleteRequest;
-import org.lumongo.cluster.message.Lumongo.BatchDeleteResponse;
-import org.lumongo.cluster.message.Lumongo.BatchFetchRequest;
-import org.lumongo.cluster.message.Lumongo.BatchFetchResponse;
-import org.lumongo.cluster.message.Lumongo.ClearRequest;
-import org.lumongo.cluster.message.Lumongo.ClearResponse;
-import org.lumongo.cluster.message.Lumongo.DeleteRequest;
-import org.lumongo.cluster.message.Lumongo.DeleteResponse;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
-import org.lumongo.cluster.message.Lumongo.FetchRequest;
-import org.lumongo.cluster.message.Lumongo.FetchResponse;
-import org.lumongo.cluster.message.Lumongo.GetFieldNamesRequest;
-import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
-import org.lumongo.cluster.message.Lumongo.GetIndexesRequest;
-import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
-import org.lumongo.cluster.message.Lumongo.GetMembersRequest;
-import org.lumongo.cluster.message.Lumongo.GetMembersResponse;
-import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsRequest;
-import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
-import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
-import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
-import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
-import org.lumongo.cluster.message.Lumongo.IndexCreateResponse;
-import org.lumongo.cluster.message.Lumongo.IndexDeleteRequest;
-import org.lumongo.cluster.message.Lumongo.IndexDeleteResponse;
-import org.lumongo.cluster.message.Lumongo.IndexSettingsRequest;
-import org.lumongo.cluster.message.Lumongo.IndexSettingsResponse;
-import org.lumongo.cluster.message.Lumongo.OptimizeRequest;
-import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
-import org.lumongo.cluster.message.Lumongo.QueryRequest;
-import org.lumongo.cluster.message.Lumongo.QueryResponse;
-import org.lumongo.cluster.message.Lumongo.StoreRequest;
-import org.lumongo.cluster.message.Lumongo.StoreResponse;
+import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
+import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.index.LumongoIndexManager;
 
@@ -319,7 +289,20 @@ public class ExternalServiceHandler extends ExternalService {
 			done.run(null);
 		}
 	}
-	
+
+	@Override
+	public void getIndexConfig(RpcController controller, Lumongo.GetIndexConfigRequest request, RpcCallback<Lumongo.GetIndexConfigResponse> done) {
+		try {
+			IndexConfig indexConfig = indexManger.getIndexConfig(request.getIndexName());
+			done.run(Lumongo.GetIndexConfigResponse.newBuilder().setIndexSettings(indexConfig.getIndexSettings()).build());
+		}
+		catch (Exception e) {
+			log.error("Failed to get get index config: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
+			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
+			done.run(null);
+		}
+	}
+
 	@Override
 	public void batchFetch(RpcController controller, BatchFetchRequest request, RpcCallback<BatchFetchResponse> done) {
 		try {

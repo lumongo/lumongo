@@ -192,4 +192,12 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
 		GetMembersResult getMembersResult = execute(new GetMembers());
 		updateMembers(getMembersResult.getMembers());
 	}
+
+	public GetIndexConfigResult getIndexConfig(GetIndexConfig getIndexConfig) throws Exception {
+		return execute(getIndexConfig);
+	}
+
+	public ListenableFuture<GetIndexConfigResult> getIndexConfigAsync(GetIndexConfig getIndexConfig) throws Exception {
+		return executeAsync(getIndexConfig);
+	}
 }

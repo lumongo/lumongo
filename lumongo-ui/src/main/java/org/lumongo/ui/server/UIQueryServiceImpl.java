@@ -7,7 +7,7 @@ import com.mongodb.MongoClientOptions;
 import com.mongodb.util.JSONSerializers;
 import org.bson.Document;
 import org.bson.types.ObjectId;
-import org.lumongo.client.command.GetFields;
+import org.lumongo.client.command.GetIndexConfig;
 import org.lumongo.client.command.Query;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
@@ -29,6 +29,7 @@ import javax.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.TreeMap;
 
 /**
  * Created by Payam Meyer on 3/9/17.
@@ -73,23 +74,29 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 
 	@Override
 	public InstanceInfo getInstanceInfo() throws Exception {
-		InstanceInfo instanceInfo = new InstanceInfo();
-		instanceInfo.setLumongoVersion(lumongoVersion);
-		instanceInfo.setLuceneVersion(luceneVersion);
+		try {
+			InstanceInfo instanceInfo = new InstanceInfo();
+			instanceInfo.setLumongoVersion(lumongoVersion);
+			instanceInfo.setLuceneVersion(luceneVersion);
 
-		List<IndexInfo> indexInfoList = getIndexInfos();
+			List<IndexInfo> indexInfoList = getIndexInfos();
 
-		instanceInfo.setIndexes(indexInfoList);
+			instanceInfo.setIndexes(indexInfoList);
 
-		Runtime runtime = Runtime.getRuntime();
+			Runtime runtime = Runtime.getRuntime();
 
-		// TODO: These need to be LuMongo's not this app, who cares about this app?
-		instanceInfo.setJvmUsedMemory((runtime.totalMemory() - runtime.freeMemory()) / MB);
-		instanceInfo.setJvmFreeMemory(runtime.freeMemory() / MB);
-		instanceInfo.setJvmTotalMemoryMB(runtime.totalMemory() / MB);
-		instanceInfo.setJvmMaxMemoryMB(runtime.maxMemory() / MB);
+			// TODO: These need to be LuMongo's not this app, who cares about this app?
+			instanceInfo.setJvmUsedMemory((runtime.totalMemory() - runtime.freeMemory()) / MB);
+			instanceInfo.setJvmFreeMemory(runtime.freeMemory() / MB);
+			instanceInfo.setJvmTotalMemoryMB(runtime.totalMemory() / MB);
+			instanceInfo.setJvmMaxMemoryMB(runtime.maxMemory() / MB);
 
-		return instanceInfo;
+			return instanceInfo;
+		}
+		catch (Exception e) {
+			LOG.error("Failed to get the instance info.", e);
+			throw e;
+		}
 	}
 
 	private List<IndexInfo> getIndexInfos() throws Exception {
@@ -101,7 +108,22 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 			indexInfo.setName(indexName);
 			indexInfo.setSize(20L);
 			indexInfo.setTotalDocs((int) lumongoWorkPool.getNumberOfDocs(indexName).getNumberOfDocs());
-			indexInfo.setFieldNames(new ArrayList<>(lumongoWorkPool.getFields(new GetFields(indexName)).getFieldNames()));
+
+			TreeMap<String, Lumongo.FieldConfig> fieldConfigMap = lumongoWorkPool.getIndexConfig(new GetIndexConfig(indexName)).getIndexConfig()
+					.getFieldConfigMap();
+			for (String fieldName : fieldConfigMap.keySet()) {
+				indexInfo.getFlList().add(fieldName);
+				Lumongo.FieldConfig fieldConfig = fieldConfigMap.get(fieldName);
+
+				for (Lumongo.IndexAs indexAs : fieldConfig.getIndexAsList()) {
+					indexInfo.getQfList().add(indexAs.getIndexFieldName());
+				}
+
+				for (Lumongo.FacetAs facetAs : fieldConfig.getFacetAsList()) {
+					indexInfo.getFacetList().add(facetAs.getFacetName());
+				}
+
+			}
 
 			indexInfoList.add(indexInfo);
 		}
@@ -119,7 +141,7 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 			results.setIndexes(getIndexInfos());
 
 			Query query = new Query(uiQueryObject.getIndexNames(), uiQueryObject.getQuery(), uiQueryObject.getRows());
-			if (query.getQuery().isEmpty()) {
+			if (query.getQuery() == null || query.getQuery().isEmpty()) {
 				query.setQuery("*:*");
 			}
 
@@ -136,15 +158,18 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 			if (uiQueryObject.getMm() != null) {
 				query.setMinimumNumberShouldMatch(uiQueryObject.getMm());
 			}
+
 			if (uiQueryObject.isDismax() != null) {
 				query.setDismax(uiQueryObject.isDismax());
 				if (uiQueryObject.getDismaxTie() != null) {
 					query.setDismaxTie(uiQueryObject.getDismaxTie());
 				}
 			}
+
 			if (!uiQueryObject.getQueryFields().isEmpty()) {
 				uiQueryObject.getQueryFields().forEach(query::addQueryField);
 			}
+
 			if (uiQueryObject.getDefaultOperator() != null) {
 				String defaultOperator = uiQueryObject.getDefaultOperator();
 				if (defaultOperator.equalsIgnoreCase("AND")) {
@@ -237,6 +262,10 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 				}
 			}
 
+			for (String facetField : uiQueryObject.getFacets()) {
+				query.addCountRequest(facetField, 100);
+			}
+
 			LOG.info("Query: " + query);
 			QueryResult queryResult = lumongoWorkPool.query(query);
 
@@ -254,8 +283,10 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 			}
 
 			for (String facet : uiQueryObject.getFacets()) {
-				for (Lumongo.FacetCount fc : queryResult.getFacetCounts(facet)) {
-					results.addFacetCount(fc.getFacet(), fc.getCount());
+				if (queryResult.getFacetCounts(facet) != null) {
+					for (Lumongo.FacetCount fc : queryResult.getFacetCounts(facet)) {
+						results.addFacetCount(fc.getFacet(), fc.getCount());
+					}
 				}
 			}
 
