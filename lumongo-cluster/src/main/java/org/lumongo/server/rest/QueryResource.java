@@ -25,6 +25,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.OutputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
@@ -301,30 +305,41 @@ public class QueryResource {
 					if (batch) {
 						qrBuilder.setAmount(batchSize);
 
-						QueryResponse qr = indexManager.query(qrBuilder.build());
+						StreamingOutput outputStream = output -> {
+							try {
+								QueryResponse qr = indexManager.query(qrBuilder.build());
 
-						StringBuilder responseBuilder = new StringBuilder();
-						buildHeaderForCSV(fields, responseBuilder);
+								buildHeaderForCSV(fields, new StringBuilder(), output);
 
-						int count = 0;
-						while (qr.getResultsList().size() > 0) {
-							for (Lumongo.ScoredResult scoredResult : qr.getResultsList()) {
-								Document doc = ResultHelper.getDocumentFromScoredResult(scoredResult);
-								appendDocument(fields, responseBuilder, doc);
+								int count = 0;
 
-								count++;
-								if (count % 1000 == 0) {
-									System.out.println("Docs processed so far: " + count);
+								while (qr.getResultsList().size() > 0) {
+									for (Lumongo.ScoredResult scoredResult : qr.getResultsList()) {
+										Document doc = ResultHelper.getDocumentFromScoredResult(scoredResult);
+										appendDocument(fields, null, output, doc);
+
+										count++;
+										if (count % 1000 == 0) {
+											log.info("Docs processed so far: " + count);
+										}
+									}
+
+									qrBuilder.setLastResult(qr.getLastResult());
+									qr = indexManager.query(qrBuilder.build());
+
 								}
 							}
+							catch (Exception e) {
+								e.printStackTrace();
+							}
 
-							qrBuilder.setLastResult(qr.getLastResult());
-							qr = indexManager.query(qrBuilder.build());
+						};
 
-						}
+						LocalDateTime now = LocalDateTime.now();
+						DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-H-mm-ss");
 
-						return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(responseBuilder.toString())
-								.build();
+						return Response.ok(outputStream, MediaType.APPLICATION_OCTET_STREAM)
+								.header("content-disposition", "attachment; filename = " + "lumongoDownload_" + now.format(formatter) + ".csv").build();
 					}
 					else {
 						QueryResponse qr = indexManager.query(qrBuilder.build());
@@ -345,12 +360,17 @@ public class QueryResource {
 
 	}
 
-	private void buildHeaderForCSV(@QueryParam(LumongoConstants.FIELDS) List<String> fields, StringBuilder responseBuilder) {
-		// headersBuilder
-		StringBuilder headersBuilder = new StringBuilder();
+	private void buildHeaderForCSV(@QueryParam(LumongoConstants.FIELDS) List<String> fields, StringBuilder headerBuilder, OutputStream outputStream)
+			throws Exception {
 
-		fields.stream().filter(field -> !field.startsWith("-")).forEach(field -> headersBuilder.append(field).append(","));
-		responseBuilder.append(headersBuilder.toString().replaceFirst(",$", "\n"));
+		fields.stream().filter(field -> !field.startsWith("-")).forEach(field -> headerBuilder.append(field).append(","));
+		String headerOutput = headerBuilder.toString().replaceFirst(",$", "\n");
+
+		if (outputStream != null) {
+			outputStream.write(headerOutput.getBytes());
+			outputStream.flush();
+		}
+
 	}
 
 	private String getStandardResponse(QueryResponse qr, boolean strict) throws InvalidProtocolBufferException {
@@ -526,23 +546,31 @@ public class QueryResource {
 		return responseBuilder.toString();
 	}
 
-	private String getCSVResponse(List<String> fields, QueryResponse qr) {
+	private String getCSVResponse(List<String> fields, QueryResponse qr) throws Exception {
 		StringBuilder responseBuilder = new StringBuilder();
 
 		// headersBuilder
-		buildHeaderForCSV(fields, responseBuilder);
+		buildHeaderForCSV(fields, responseBuilder, null);
 
 		// records
 		qr.getResultsList().stream().filter(Lumongo.ScoredResult::hasResultDocument).forEach(sr -> {
 			Document document = ResultHelper.getDocumentFromResultDocument(sr.getResultDocument());
-			appendDocument(fields, responseBuilder, document);
+			try {
+				appendDocument(fields, responseBuilder, null, document);
+			}
+			catch (Exception e) {
+				log.error("Failed to get the CSV.", e);
+			}
 		});
 
 		return responseBuilder.toString();
 	}
 
-	private void appendDocument(List<String> fields, StringBuilder responseBuilder, Document document) {
+	private void appendDocument(List<String> fields, StringBuilder responseBuilder, OutputStream outputStream, Document document) throws Exception {
 		int i = 0;
+		if (responseBuilder == null) {
+			responseBuilder = new StringBuilder();
+		}
 		for (String field : fields) {
 			Object obj = document.get(field);
 			if (obj != null) {
@@ -597,6 +625,11 @@ public class QueryResource {
 
 		}
 		responseBuilder.append("\n");
+
+		if (outputStream != null) {
+			outputStream.write(responseBuilder.toString().getBytes());
+			outputStream.flush();
+		}
 	}
 
 }
