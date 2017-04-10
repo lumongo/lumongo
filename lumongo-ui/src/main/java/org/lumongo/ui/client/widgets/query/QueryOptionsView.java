@@ -1,6 +1,5 @@
 package org.lumongo.ui.client.widgets.query;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -28,6 +27,7 @@ import org.lumongo.ui.client.widgets.base.ToastHelper;
 import org.lumongo.ui.shared.IndexInfo;
 import org.lumongo.ui.shared.UIQueryObject;
 import org.lumongo.ui.shared.UIQueryResults;
+import org.lumongo.ui.shared.UIUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -193,15 +193,18 @@ public class QueryOptionsView extends Div {
 		tabPanel.setMarginLeft(-40);
 		tabPanel.setMarginRight(-40);
 
-		MaterialTabItem qfTabItem = tabPanel.createAndAddTabListItem("QF", "#qf");
-		tabPanel.createAndAddTabPane("qf", new FieldsDiv(indexInfo.getQfList(), uiQueryObject.getQueryFields()));
+		String qfTabId = UIUtil.getRandomId();
+		MaterialTabItem qfTabItem = tabPanel.createAndAddTabListItem("QF", "#" + qfTabId);
+		tabPanel.createAndAddTabPane(qfTabId, new FieldsDiv(indexInfo.getQfList(), uiQueryObject.getQueryFields()));
 		header.addClickHandler(clickEvent -> qfTabItem.selectTab());
 
-		tabPanel.createAndAddTabListItem("FL", "#fl");
-		tabPanel.createAndAddTabPane("fl", new FieldsDiv(indexInfo.getFlList(), uiQueryObject.getDisplayFields()));
+		String flTabId = UIUtil.getRandomId();
+		tabPanel.createAndAddTabListItem("FL", "#" + flTabId);
+		tabPanel.createAndAddTabPane(flTabId, new FieldsDiv(indexInfo.getFlList(), uiQueryObject.getDisplayFields()));
 
-		tabPanel.createAndAddTabListItem("Facets", "#facets");
-		tabPanel.createAndAddTabPane("facets", new FieldsDiv(indexInfo.getFacetList(), uiQueryObject.getFacets()));
+		String facetsTabId = UIUtil.getRandomId();
+		tabPanel.createAndAddTabListItem("Facets", "#" + facetsTabId);
+		tabPanel.createAndAddTabPane(facetsTabId, new FieldsDiv(indexInfo.getFacetList(), uiQueryObject.getFacets()));
 
 		body.add(tabPanel);
 
@@ -217,7 +220,6 @@ public class QueryOptionsView extends Div {
 				uiQueryObject.getFilterQueries().add(fqw.getValue());
 			}
 		}
-		GWT.log("UIQueryObj:" + uiQueryObject.getQueryFields());
 		ServiceProvider.get().getLumongoService().saveQuery(uiQueryObject, new AsyncCallback<String>() {
 			@Override
 			public void onFailure(Throwable caught) {

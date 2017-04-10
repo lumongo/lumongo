@@ -25,8 +25,8 @@ public class FieldsDiv extends MaterialRow {
 		MaterialTextBox filterTextBox = new MaterialTextBox("Start typing to filter...");
 		column.add(filterTextBox);
 
-		MaterialCheckBox selectAllFLCheckBox = new MaterialCheckBox("Select All");
-		selectAllFLCheckBox.addValueChangeHandler(event -> {
+		MaterialCheckBox selectAllCheckBox = new MaterialCheckBox("Select All");
+		selectAllCheckBox.addValueChangeHandler(event -> {
 			for (MaterialCheckBox checkBox : checkBoxes) {
 				checkBox.setValue(event.getValue());
 				if (event.getValue()) {
@@ -37,7 +37,7 @@ public class FieldsDiv extends MaterialRow {
 				}
 			}
 		});
-		column.add(selectAllFLCheckBox);
+		column.add(selectAllCheckBox);
 
 		for (String fieldName : fieldsToShowList) {
 			MaterialCheckBox checkBox = new MaterialCheckBox(fieldName);
