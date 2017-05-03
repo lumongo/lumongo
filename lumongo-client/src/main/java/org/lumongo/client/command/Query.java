@@ -454,7 +454,10 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		QueryRequest.Builder requestBuilder = QueryRequest.newBuilder();
 		requestBuilder.setAmount(amount);
 		requestBuilder.setStart(start);
-		requestBuilder.setDebug(debug);
+
+		if (debug != null) {
+			requestBuilder.setDebug(debug);
+		}
 
 		Lumongo.Query.Builder queryBuilder = Lumongo.Query.newBuilder();
 		if (query != null) {
