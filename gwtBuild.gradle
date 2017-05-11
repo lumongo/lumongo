@@ -4,7 +4,7 @@ import org.gradle.api.internal.artifacts.dsl.dependencies.ModuleFactoryHelper
 apply plugin: 'war'
 apply plugin: 'jettyEclipse'
 
-project.ext { gwtVersion = '2.8.0' }
+project.ext { gwtVersion = '2.8.1' }
 
 final File gwtExtraDir = project.file(project.getBuildDir().name + File.separator + "gwt" + File.separator + "extras")
 final File gwtWarDir = project.file(project.getBuildDir().name + File.separator + "gwt" + File.separator + "war")
