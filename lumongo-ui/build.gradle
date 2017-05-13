@@ -3,30 +3,26 @@ apply from: '../gwtBuild.gradle'
 compileGwt.modules = ['org.lumongo.ui.LumongoUI']
 
 dependencies {
-    compile project(':lumongo-client')
+	compile project(':lumongo-client')
 
-    // Needed by GWT, should be handled by gradle build
-    compile('javax.validation:validation-api:1.0.0.GA')
-
-
-    compile('com.github.gwtmaterialdesign:gwt-material:2.0-rc4')
-    compile('com.github.gwtmaterialdesign:gwt-material-themes:2.0-rc4')
-    compile('com.github.gwtmaterialdesign:gwt-material-addins:2.0-rc4')
-    compile('com.github.gwtmaterialdesign:gwt-material-jquery:1.0-rc4')
-    compile('com.github.gwtmaterialdesign:gwt-material-table:1.0-rc4')
-    compile('org.kohsuke:github-api:1.56') {
-        exclude group: 'org.jenkins-ci' //by group
-        exclude group: 'commons-lang'
-    }
-    compile('org.ow2.asm:asm:5.0.4')
-    compile('com.google.guava:guava-gwt:21.0-rc1')
-    compile('org.mongodb.morphia:morphia:1.2.1')
-    compile('org.mongodb.morphia:morphia-gwt:1.0.0-rc3')
-    compile('com.cedarsoftware:json-io:4.9.6')
+	compile('com.github.gwtmaterialdesign:gwt-material:2.0-rc4')
+	compile('com.github.gwtmaterialdesign:gwt-material-themes:2.0-rc4')
+	compile('com.github.gwtmaterialdesign:gwt-material-addins:2.0-rc4')
+	compile('com.github.gwtmaterialdesign:gwt-material-jquery:1.0-rc4')
+	compile('com.github.gwtmaterialdesign:gwt-material-table:1.0-rc4')
+	compile('org.kohsuke:github-api:1.56') {
+		exclude group: 'org.jenkins-ci' //by group
+		exclude group: 'commons-lang'
+	}
+	compile('org.ow2.asm:asm:5.0.4')
+	compile('com.google.guava:guava-gwt:21.0-rc1')
+	compile('org.mongodb.morphia:morphia:1.2.1')
+	compile('org.mongodb.morphia:morphia-gwt:1.0.0-rc3')
+	compile('com.cedarsoftware:json-io:4.9.6')
 
 }
 
 configurations {
-    //gwt-material-jquery is putting this on the classpath, hopefully they fix upstream to fix the JuliLog jetty exception
-    compile.exclude group: 'com.google.gwt', module: 'gwt-dev'
+	//gwt-material-jquery is putting this on the classpath, hopefully they fix upstream to fix the JuliLog jetty exception
+	compile.exclude group: 'com.google.gwt', module: 'gwt-dev'
 }
