@@ -24,7 +24,7 @@ subprojects {
 	
 	version = '0.53-SNAPSHOT'
 	ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
-	ext.luceneVersion = '6.5.1'
+	ext.luceneVersion = '6.6.0'
 	ext.mongoJavaVersion = '3.4.1'
 
 	group = 'org.lumongo'
@@ -34,6 +34,9 @@ subprojects {
 		mavenCentral()
 		flatDir name: 'directoryRepository', dirs: rootProject.file('notInMaven')
 
+		maven {
+			url "https://dist.apache.org/repos/dist/dev/lucene/lucene-solr-6.6.0-RC1-rev4d055f00bba9a745737e4b6c3f9dff06dd35aa2e/lucene/maven/"
+		}
 	}
 
     dependencies {
