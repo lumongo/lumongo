@@ -70,6 +70,10 @@ public class QueryResource {
 				qrBuilder.setLastResult(CursorHelper.getLastResultFromCursor(cursor));
 			}
 			outputCursor = true;
+			if (sort == null || sort.isEmpty()) {
+				return Response.status(LumongoConstants.INTERNAL_ERROR)
+						.entity("Sort on unique value or value combination is required to use a cursor (i.e. id or title,id)").build();
+			}
 		}
 
 		if (debug != null) {
