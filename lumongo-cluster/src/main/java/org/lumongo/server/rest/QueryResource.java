@@ -64,11 +64,12 @@ public class QueryResource {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
 
-		boolean outputCursor = true;
+		boolean outputCursor = false;
 		if (cursor != null) {
 			if (!cursor.equals("0")) {
 				qrBuilder.setLastResult(CursorHelper.getLastResultFromCursor(cursor));
 			}
+			outputCursor = true;
 		}
 
 		if (debug != null) {
@@ -388,8 +389,9 @@ public class QueryResource {
 		responseBuilder.append(qr.getTotalHits());
 		if (cursor) {
 			responseBuilder.append(",");
-			responseBuilder.append("\"cursor\": ");
+			responseBuilder.append("\"cursor\": \"");
 			responseBuilder.append(CursorHelper.getUniqueSortedCursor(qr.getLastResult()));
+			responseBuilder.append("\"");
 		}
 
 		if (!qr.getAnalysisResultList().isEmpty()) {
