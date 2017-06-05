@@ -34,30 +34,7 @@ import org.apache.lucene.util.BytesRef;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
-import org.lumongo.cluster.message.Lumongo.DeleteRequest;
-import org.lumongo.cluster.message.Lumongo.FetchType;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.FieldSort;
-import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
-import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
-import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
-import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
-import org.lumongo.cluster.message.Lumongo.GetTermsResponseInternal;
-import org.lumongo.cluster.message.Lumongo.HighlightRequest;
-import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
-import org.lumongo.cluster.message.Lumongo.LastIndexResult;
-import org.lumongo.cluster.message.Lumongo.LastResult;
-import org.lumongo.cluster.message.Lumongo.QueryRequest;
-import org.lumongo.cluster.message.Lumongo.ResultDocument;
-import org.lumongo.cluster.message.Lumongo.ScoredResult;
-import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
-import org.lumongo.cluster.message.Lumongo.SegmentResponse;
-import org.lumongo.cluster.message.Lumongo.SortRequest;
-import org.lumongo.cluster.message.Lumongo.SortValue;
-import org.lumongo.cluster.message.Lumongo.SortValues;
-import org.lumongo.cluster.message.Lumongo.StoreRequest;
+import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
@@ -888,7 +865,9 @@ public class LumongoIndex implements IndexSegmentInterface {
 				if (deleteRequest.getDeleteDocument()) {
 					LumongoSegment s = findSegmentFromUniqueId(deleteRequest.getUniqueId());
 					s.deleteDocument(uniqueId);
-					documentStorage.deleteSourceDocument(uniqueId);
+					if (indexConfig.getIndexSettings().getStoreDocumentInMongo()) {
+						documentStorage.deleteSourceDocument(uniqueId);
+					}
 				}
 
 				if (deleteRequest.getDeleteAllAssociated()) {
