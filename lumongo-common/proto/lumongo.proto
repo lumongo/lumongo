@@ -1,7 +1,7 @@
 syntax = "proto2";
 
 option java_generic_services = true;
-
+//option java_multiple_files = true;
 option java_package = "org.lumongo.cluster.message";
 
 service ExternalService {

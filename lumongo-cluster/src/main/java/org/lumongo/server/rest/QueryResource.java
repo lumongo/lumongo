@@ -7,6 +7,7 @@ import com.mongodb.util.JSONSerializers;
 import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
+import org.lumongo.client.command.CursorHelper;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Similarity;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
@@ -59,9 +60,21 @@ public class QueryResource {
 			@QueryParam(LumongoConstants.HIGHLIGHT_JSON) List<String> highlightJsonList,
 			@QueryParam(LumongoConstants.ANALYZE_JSON) List<String> analyzeJsonList, @QueryParam(LumongoConstants.COS_SIM_JSON) List<String> cosineSimJsonList,
 			@QueryParam(LumongoConstants.FORMAT) @DefaultValue("json") String format, @QueryParam(LumongoConstants.BATCH) boolean batch,
-			@QueryParam(LumongoConstants.BATCH_SIZE) @DefaultValue("500") Integer batchSize) {
+			@QueryParam(LumongoConstants.BATCH_SIZE) @DefaultValue("500") Integer batchSize, @QueryParam(LumongoConstants.CURSOR) String cursor) {
 
 		QueryRequest.Builder qrBuilder = QueryRequest.newBuilder().addAllIndex(indexName);
+
+		boolean outputCursor = false;
+		if (cursor != null) {
+			if (!cursor.equals("0")) {
+				qrBuilder.setLastResult(CursorHelper.getLastResultFromCursor(cursor));
+			}
+			outputCursor = true;
+			if (sort == null || sort.isEmpty()) {
+				return Response.status(LumongoConstants.INTERNAL_ERROR)
+						.entity("Sort on unique value or value combination is required to use a cursor (i.e. id or title,id)").build();
+			}
+		}
 
 		if (debug != null) {
 			qrBuilder.setDebug(debug);
@@ -292,7 +305,7 @@ public class QueryResource {
 		try {
 			if (format.equals("json")) {
 				QueryResponse qr = indexManager.query(qrBuilder.build());
-				String response = getStandardResponse(qr, !pretty);
+				String response = getStandardResponse(qr, !pretty, outputCursor);
 
 				if (pretty) {
 					response = JsonWriter.formatJson(response);
@@ -373,11 +386,17 @@ public class QueryResource {
 
 	}
 
-	private String getStandardResponse(QueryResponse qr, boolean strict) throws InvalidProtocolBufferException {
+	private String getStandardResponse(QueryResponse qr, boolean strict, boolean cursor) throws InvalidProtocolBufferException {
 		StringBuilder responseBuilder = new StringBuilder();
 		responseBuilder.append("{");
 		responseBuilder.append("\"totalHits\": ");
 		responseBuilder.append(qr.getTotalHits());
+		if (cursor) {
+			responseBuilder.append(",");
+			responseBuilder.append("\"cursor\": \"");
+			responseBuilder.append(CursorHelper.getUniqueSortedCursor(qr.getLastResult()));
+			responseBuilder.append("\"");
+		}
 
 		if (!qr.getAnalysisResultList().isEmpty()) {
 			responseBuilder.append(",");
