@@ -34,9 +34,9 @@ subprojects {
 		mavenCentral()
 		flatDir name: 'directoryRepository', dirs: rootProject.file('notInMaven')
 
-		maven {
-			url "https://dist.apache.org/repos/dist/dev/lucene/lucene-solr-6.6.0-RC1-rev4d055f00bba9a745737e4b6c3f9dff06dd35aa2e/lucene/maven/"
-		}
+		//maven {
+			//url "https://dist.apache.org/repos/dist/dev/lucene/lucene-solr-6.6.0-RC1-rev4d055f00bba9a745737e4b6c3f9dff06dd35aa2e/lucene/maven/"
+		//}
 	}
 
     dependencies {
