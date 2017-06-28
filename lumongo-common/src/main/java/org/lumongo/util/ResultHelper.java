@@ -2,7 +2,6 @@ package org.lumongo.util;
 
 import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.util.LumongoUtil;
 
 import java.util.ArrayList;
 import java.util.List;

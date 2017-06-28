@@ -9,7 +9,7 @@ buildscript {
 	}
 }
 
-defaultTasks 'compileProto', 'createDeploy'
+defaultTasks 'createDeploy'
 
 apply plugin: 'java'
 
