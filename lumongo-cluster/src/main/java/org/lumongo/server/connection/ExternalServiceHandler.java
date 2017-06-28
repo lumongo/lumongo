@@ -1,117 +1,50 @@
 package org.lumongo.server.connection;
 
-import com.google.protobuf.RpcCallback;
-import com.google.protobuf.RpcController;
-import com.googlecode.protobuf.pro.duplex.PeerInfo;
-import com.googlecode.protobuf.pro.duplex.execute.NonInterruptingThreadPoolCallExecutor;
-import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
-import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerPipelineFactory;
-import com.googlecode.protobuf.pro.duplex.util.RenamingThreadFactoryProxy;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.grpc.Metadata;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 import org.apache.log4j.Logger;
 import org.bson.BSON;
 import org.bson.BasicBSONObject;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
-import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
-import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.index.LumongoIndexManager;
+import org.lumongo.util.cache.MetaKeys;
 
 import java.net.UnknownHostException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
-public class ExternalServiceHandler extends ExternalService {
+public class ExternalServiceHandler extends ExternalServiceGrpc.ExternalServiceImplBase {
 	private final static Logger log = Logger.getLogger(ExternalServiceHandler.class);
-	
-	private final LumongoIndexManager indexManger;
-	private final ClusterConfig clusterConfig;
-	private final LocalNodeConfig localNodeConfig;
-	
-	private ServerBootstrap bootstrap;
-	
-	public ExternalServiceHandler(ClusterConfig clusterConfig, LocalNodeConfig localNodeConfig, LumongoIndexManager indexManger) throws UnknownHostException {
-		this.clusterConfig = clusterConfig;
-		this.localNodeConfig = localNodeConfig;
-		this.indexManger = indexManger;
-		
-	}
-	
-	public void start() {
-		int externalServicePort = localNodeConfig.getExternalServicePort();
-		PeerInfo externalServerInfo = new PeerInfo(ConnectionHelper.getHostName(), externalServicePort);
-		
-		int externalWorkers = clusterConfig.getExternalWorkers();
-		int maximumPoolSize = externalWorkers * 4;
 
-		RpcServerCallExecutor executor = new NonInterruptingThreadPoolCallExecutor(externalWorkers, maximumPoolSize, new RenamingThreadFactoryProxy(
-						ExternalService.class.getSimpleName() + "-" + localNodeConfig.getHazelcastPort() + "-Rpc", Executors.defaultThreadFactory()));
-		
-		DuplexTcpServerPipelineFactory serverFactory = new DuplexTcpServerPipelineFactory(externalServerInfo);
-		serverFactory.setRpcServerCallExecutor(executor);
-		
-		bootstrap = new ServerBootstrap();
-		bootstrap.group(new NioEventLoopGroup(0, new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-"
-										+ localNodeConfig.getHazelcastPort() + "-Boss", Executors.defaultThreadFactory())),
-						new NioEventLoopGroup(0, new RenamingThreadFactoryProxy(ExternalService.class.getSimpleName() + "-"
-										+ localNodeConfig.getHazelcastPort() + "-Worker", Executors.defaultThreadFactory())));
-		bootstrap.channel(NioServerSocketChannel.class);
-		bootstrap.childHandler(serverFactory);
-		
-		//TODO think about these options
-		bootstrap.option(ChannelOption.SO_SNDBUF, 1048576);
-		bootstrap.option(ChannelOption.SO_RCVBUF, 1048576);
-		bootstrap.childOption(ChannelOption.SO_RCVBUF, 1048576);
-		bootstrap.childOption(ChannelOption.SO_SNDBUF, 1048576);
-		bootstrap.option(ChannelOption.TCP_NODELAY, true);
-		
-		bootstrap.localAddress(externalServicePort);
-		
-		serverFactory.setLogger(null);
-		serverFactory.registerConnectionEventListener(new StandardConnectionNotifier(log));
-		
-		serverFactory.getRpcServiceRegistry().registerService(this);
-		
-		bootstrap.bind();
-		
+	private final LumongoIndexManager indexManger;
+
+	public ExternalServiceHandler(LumongoIndexManager indexManger) throws UnknownHostException {
+		this.indexManger = indexManger;
 	}
-	
-	public void shutdown() {
-		
-		log.info("Starting external service shutdown");
-		bootstrap.group().shutdownGracefully(1, clusterConfig.getExternalShutdownTimeout(), TimeUnit.SECONDS);
-		
-		try {
-			bootstrap.group().terminationFuture().sync();
-		}
-		catch (Exception e) {
-			log.info("Failed to stop external service within " + clusterConfig.getExternalShutdownTimeout() + "s" + e);
-		}
-		
-	}
-	
+
 	@Override
-	public void query(RpcController controller, QueryRequest request, RpcCallback<QueryResponse> done) {
+	public void query(QueryRequest request, StreamObserver<QueryResponse> responseObserver) {
 		try {
-			QueryResponse qr = indexManger.query(request);
-			done.run(qr);
+			responseObserver.onNext(indexManger.query(request));
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to run query: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			Metadata m = new Metadata();
+			m.put(MetaKeys.ERROR_KEY, e.getMessage());
+			responseObserver.onError(new StatusRuntimeException(Status.UNKNOWN, m));
 		}
+
 	}
-	
+
 	@Override
-	public void store(RpcController controller, StoreRequest request, RpcCallback<StoreResponse> done) {
+	public void store(StoreRequest request, StreamObserver<StoreResponse> responseObserver) {
 		try {
-			StoreResponse sr = indexManger.storeDocument(request);
-			done.run(sr);
+			responseObserver.onNext(indexManger.storeDocument(request));
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to store: <" + request.getUniqueId() + "> in index <" + request.getIndexName() + ">: " + e.getClass().getSimpleName() + ": ", e);
@@ -127,214 +60,212 @@ public class ExternalServiceHandler extends ExternalService {
 				}
 			}
 
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void delete(RpcController controller, DeleteRequest request, RpcCallback<DeleteResponse> done) {
+	public void delete(DeleteRequest request, StreamObserver<DeleteResponse> responseObserver) {
 		try {
-			DeleteResponse dr = indexManger.deleteDocument(request);
-			done.run(dr);
+			responseObserver.onNext(indexManger.deleteDocument(request));
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to delete: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void fetch(RpcController controller, FetchRequest request, RpcCallback<FetchResponse> done) {
+	public void fetch(FetchRequest request, StreamObserver<FetchResponse> responseObserver) {
 		try {
-			FetchResponse fr = indexManger.fetch(request);
-			done.run(fr);
+			responseObserver.onNext(indexManger.fetch(request));
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to fetch: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void createIndex(RpcController controller, IndexCreateRequest request, RpcCallback<IndexCreateResponse> done) {
+	public void createIndex(IndexCreateRequest request, StreamObserver<IndexCreateResponse> responseObserver) {
 		try {
-			IndexCreateResponse r = indexManger.createIndex(request);
-			done.run(r);
+			responseObserver.onNext(indexManger.createIndex(request));
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to create index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
-		
+
 	}
-	
+
 	@Override
-	public void changeIndex(RpcController controller, IndexSettingsRequest request, RpcCallback<IndexSettingsResponse> done) {
+	public void changeIndex(IndexSettingsRequest request, StreamObserver<IndexSettingsResponse> responseObserver) {
 		try {
 			IndexSettingsResponse r = indexManger.updateIndex(request.getIndexName(), request.getIndexSettings());
-			done.run(r);
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to change index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
-		
+
 	}
-	
+
 	@Override
-	public void deleteIndex(RpcController controller, IndexDeleteRequest request, RpcCallback<IndexDeleteResponse> done) {
+	public void deleteIndex(IndexDeleteRequest request, StreamObserver<IndexDeleteResponse> responseObserver) {
 		try {
 			IndexDeleteResponse r = indexManger.deleteIndex(request);
-			done.run(r);
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to delete index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void getIndexes(RpcController controller, GetIndexesRequest request, RpcCallback<GetIndexesResponse> done) {
+	public void getIndexes(GetIndexesRequest request, StreamObserver<GetIndexesResponse> responseObserver) {
 		try {
 			GetIndexesResponse r = indexManger.getIndexes(request);
-			done.run(r);
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to get indexes: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void getNumberOfDocs(RpcController controller, GetNumberOfDocsRequest request, RpcCallback<GetNumberOfDocsResponse> done) {
+	public void getNumberOfDocs(GetNumberOfDocsRequest request, StreamObserver<GetNumberOfDocsResponse> responseObserver) {
 		try {
 			GetNumberOfDocsResponse r = indexManger.getNumberOfDocs(request);
-			done.run(r);
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to get number of docs: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void clear(RpcController controller, ClearRequest request, RpcCallback<ClearResponse> done) {
+	public void clear(ClearRequest request, StreamObserver<ClearResponse> responseObserver) {
 		try {
 			ClearResponse r = indexManger.clearIndex(request);
-			done.run(r);
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to clear index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void optimize(RpcController controller, OptimizeRequest request, RpcCallback<OptimizeResponse> done) {
+	public void optimize(OptimizeRequest request, StreamObserver<OptimizeResponse> responseObserver) {
 		try {
 			OptimizeResponse r = indexManger.optimize(request);
-			done.run(r);
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to optimize index: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void getFieldNames(RpcController controller, GetFieldNamesRequest request, RpcCallback<GetFieldNamesResponse> done) {
+	public void getFieldNames(GetFieldNamesRequest request, StreamObserver<GetFieldNamesResponse> responseObserver) {
 		try {
 			GetFieldNamesResponse r = indexManger.getFieldNames(request);
-			done.run(r);
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to get field names: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void getTerms(RpcController controller, GetTermsRequest request, RpcCallback<GetTermsResponse> done) {
+	public void getTerms(GetTermsRequest request, StreamObserver<GetTermsResponse> responseObserver) {
 		try {
 			GetTermsResponse r = indexManger.getTerms(request);
-			done.run(r);
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to get terms: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void getMembers(RpcController controller, GetMembersRequest request, RpcCallback<GetMembersResponse> done) {
+	public void getMembers(GetMembersRequest request, StreamObserver<GetMembersResponse> responseObserver) {
 		try {
 			GetMembersResponse r = indexManger.getMembers(request);
-			done.run(r);
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to get members: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
 
 	@Override
-	public void getIndexConfig(RpcController controller, Lumongo.GetIndexConfigRequest request, RpcCallback<Lumongo.GetIndexConfigResponse> done) {
+	public void getIndexConfig(Lumongo.GetIndexConfigRequest request, StreamObserver<Lumongo.GetIndexConfigResponse> responseObserver) {
 		try {
 			IndexConfig indexConfig = indexManger.getIndexConfig(request.getIndexName());
-			done.run(Lumongo.GetIndexConfigResponse.newBuilder().setIndexSettings(indexConfig.getIndexSettings()).build());
+			GetIndexConfigResponse r = GetIndexConfigResponse.newBuilder().setIndexSettings(indexConfig.getIndexSettings()).build();
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to get get index config: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
 
 	@Override
-	public void batchFetch(RpcController controller, BatchFetchRequest request, RpcCallback<BatchFetchResponse> done) {
+	public void batchFetch(BatchFetchRequest request, StreamObserver<BatchFetchResponse> responseObserver) {
 		try {
 			BatchFetchResponse.Builder gfrb = BatchFetchResponse.newBuilder();
 			for (FetchRequest fr : request.getFetchRequestList()) {
 				FetchResponse res = indexManger.fetch(fr);
 				gfrb.addFetchResponse(res);
 			}
-			done.run(gfrb.build());
+			BatchFetchResponse r = gfrb.build();
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to group fetch: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 	@Override
-	public void batchDelete(RpcController controller, BatchDeleteRequest request, RpcCallback<BatchDeleteResponse> done) {
+	public void batchDelete(BatchDeleteRequest request, StreamObserver<BatchDeleteResponse> responseObserver) {
 		try {
-			
+
 			for (DeleteRequest dr : request.getRequestList()) {
-				@SuppressWarnings("unused")
-				DeleteResponse res = indexManger.deleteDocument(dr);
+				@SuppressWarnings("unused") DeleteResponse res = indexManger.deleteDocument(dr);
 			}
-			done.run(BatchDeleteResponse.newBuilder().build());
+			BatchDeleteResponse r = BatchDeleteResponse.newBuilder().build();
+			responseObserver.onNext(r);
+			responseObserver.onCompleted();
 		}
 		catch (Exception e) {
 			log.error("Failed to batch delete: <" + request + ">: " + e.getClass().getSimpleName() + ": ", e);
-			controller.setFailed(e.getClass().getSimpleName() + ":" + e.getMessage());
-			done.run(null);
+			responseObserver.onError(e);
 		}
 	}
-	
+
 }

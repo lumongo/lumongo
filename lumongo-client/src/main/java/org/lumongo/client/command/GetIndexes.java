@@ -1,11 +1,9 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.GetIndexesResult;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.GetIndexesRequest;
 import org.lumongo.cluster.message.Lumongo.GetIndexesResponse;
 
@@ -21,12 +19,10 @@ public class GetIndexes extends SimpleCommand<GetIndexesRequest, GetIndexesResul
 	}
 
 	@Override
-	public GetIndexesResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+	public GetIndexesResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		GetIndexesResponse getIndexesResponse = service.getIndexes(controller, getRequest());
+		GetIndexesResponse getIndexesResponse = service.getIndexes(getRequest());
 
 		return new GetIndexesResult(getIndexesResponse);
 	}

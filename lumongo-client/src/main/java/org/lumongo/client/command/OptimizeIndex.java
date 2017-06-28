@@ -1,11 +1,9 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.OptimizeIndexResult;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.OptimizeRequest;
 import org.lumongo.cluster.message.Lumongo.OptimizeResponse;
 
@@ -28,12 +26,10 @@ public class OptimizeIndex extends SimpleCommand<OptimizeRequest, OptimizeIndexR
 	}
 
 	@Override
-	public OptimizeIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+	public OptimizeIndexResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		OptimizeResponse optimizeResponse = service.optimize(controller, getRequest());
+		OptimizeResponse optimizeResponse = service.optimize(getRequest());
 
 		return new OptimizeIndexResult(optimizeResponse);
 	}

@@ -1,16 +1,9 @@
 package org.lumongo.client.pool;
 
-import com.google.protobuf.RpcController;
-import com.googlecode.protobuf.pro.duplex.CleanShutdownHandler;
-import com.googlecode.protobuf.pro.duplex.PeerInfo;
-import com.googlecode.protobuf.pro.duplex.RpcClient;
-import com.googlecode.protobuf.pro.duplex.client.DuplexTcpClientPipelineFactory;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import org.lumongo.client.LumongoRestClient;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 
 import java.io.IOException;
@@ -18,12 +11,12 @@ import java.util.concurrent.TimeUnit;
 
 public class LumongoConnection {
 
-	private static CleanShutdownHandler shutdownHandler = new CleanShutdownHandler();
-
 	private LMMember member;
-	private ExternalService.BlockingInterface service;
-	private RpcClient rpcClient;
-	private Bootstrap bootstrap;
+
+	private ManagedChannel channel;
+
+	private ExternalServiceGrpc.ExternalServiceBlockingStub blockingStub;
+	private ExternalServiceGrpc.ExternalServiceStub asyncStub;
 
 	public LumongoConnection(LMMember member) throws IOException {
 		this.member = member;
@@ -31,31 +24,14 @@ public class LumongoConnection {
 
 	public void open(boolean compressedConnection) throws IOException {
 
-		PeerInfo server = new PeerInfo(member.getServerAddress(), member.getExternalPort());
-		//PeerInfo client = new PeerInfo(myHostName + "-" + UUID.randomUUID().toString(), 1234);
+		ManagedChannelBuilder<?> managedChannelBuilder = ManagedChannelBuilder.forAddress(member.getServerAddress(), member.getExternalPort())
+				.usePlaintext(true);
+		channel = managedChannelBuilder.build();
 
-		System.err.println("INFO: Connecting to <" + server + ">");
+		blockingStub = ExternalServiceGrpc.newBlockingStub(channel);
+		asyncStub = ExternalServiceGrpc.newStub(channel);
 
-		DuplexTcpClientPipelineFactory clientFactory = new DuplexTcpClientPipelineFactory();
-		clientFactory.setCompression(compressedConnection);
-		clientFactory.setRpcLogger(null);
-
-		this.bootstrap = new Bootstrap();
-		bootstrap.group(new NioEventLoopGroup());
-		bootstrap.handler(clientFactory);
-		bootstrap.channel(NioSocketChannel.class);
-
-		//TODO check this options
-		bootstrap.option(ChannelOption.TCP_NODELAY, true);
-		bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
-		bootstrap.option(ChannelOption.SO_SNDBUF, 1048576);
-		bootstrap.option(ChannelOption.SO_RCVBUF, 1048576);
-
-		shutdownHandler.addResource(bootstrap.group());
-
-		rpcClient = clientFactory.peerWith(server, bootstrap);
-
-		service = ExternalService.newBlockingStub(rpcClient);
+		System.err.println("INFO: Connecting to <" + member.getServerAddress() + ">");
 
 	}
 
@@ -63,42 +39,28 @@ public class LumongoConnection {
 		return new LumongoRestClient(member.getServerAddress(), member.getRestPort());
 	}
 
-	public RpcController getController() {
-		return rpcClient.newRpcController();
-	}
-
-	public ExternalService.BlockingInterface getService() {
-		return service;
+	public ExternalServiceGrpc.ExternalServiceBlockingStub getService() {
+		return blockingStub;
 	}
 
 	/**
 	 * closes the connection to the server if open, calling a method (index, query, ...) will open a new connection
 	 */
 	public void close() {
-		try {
 
-			if (rpcClient != null) {
-				System.err.println("INFO: Closing connection to " + rpcClient.getPeerInfo());
-				rpcClient.close();
-			}
-		}
-		catch (Exception e) {
-			System.err.println("ERROR: Exception: " + e);
-			e.printStackTrace();
-		}
-		rpcClient = null;
 		try {
-			if (bootstrap != null) {
-				bootstrap.group().shutdownGracefully(0, 15, TimeUnit.SECONDS);
-				shutdownHandler.removeResource(bootstrap.group());
+			if (channel != null) {
+				channel.shutdown().awaitTermination(15, TimeUnit.SECONDS);
 			}
 		}
 		catch (Exception e) {
 			System.err.println("ERROR: Exception: " + e);
 			e.printStackTrace();
 		}
-		bootstrap = null;
-		service = null;
+		channel = null;
+		blockingStub = null;
+		asyncStub = null;
+
 	}
 
 }

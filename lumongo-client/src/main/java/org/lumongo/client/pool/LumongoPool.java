@@ -1,5 +1,7 @@
 package org.lumongo.client.pool;
 
+import io.grpc.Metadata;
+import io.grpc.StatusRuntimeException;
 import org.apache.commons.pool.KeyedPoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericKeyedObjectPool;
 import org.lumongo.client.command.GetMembers;
@@ -10,6 +12,7 @@ import org.lumongo.client.result.GetMembersResult;
 import org.lumongo.client.result.Result;
 import org.lumongo.cluster.message.Lumongo.IndexMapping;
 import org.lumongo.cluster.message.Lumongo.LMMember;
+import org.lumongo.util.cache.MetaKeys;
 
 import java.util.List;
 
@@ -151,12 +154,25 @@ public class LumongoPool {
 
 				lumongoConnection = connectionPool.borrowObject(selectedMember);
 
-				R r = command.executeTimed(lumongoConnection);
+				R r;
+				try {
+					r = command.executeTimed(lumongoConnection);
+				}
+				catch (StatusRuntimeException e) {
+					Metadata trailers = e.getTrailers();
+					if (trailers.containsKey(MetaKeys.ERROR_KEY)) {
+						throw new Exception(trailers.get(MetaKeys.ERROR_KEY));
+					}
+					else {
+						throw e;
+					}
+				}
 
 				connectionPool.returnObject(selectedMember, lumongoConnection);
 				return r;
 			}
 			catch (Exception e) {
+
 				if (selectedMember != null && lumongoConnection != null) {
 					try {
 						connectionPool.invalidateObject(selectedMember, lumongoConnection);

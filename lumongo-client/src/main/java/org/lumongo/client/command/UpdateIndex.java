@@ -1,12 +1,10 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.UpdateIndexResult;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.IndexSettingsRequest;
 import org.lumongo.cluster.message.Lumongo.IndexSettingsResponse;
 
@@ -32,12 +30,10 @@ public class UpdateIndex extends SimpleCommand<IndexSettingsRequest, UpdateIndex
 	}
 
 	@Override
-	public UpdateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+	public UpdateIndexResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		IndexSettingsResponse indexSettingsResponse = service.changeIndex(controller, getRequest());
+		IndexSettingsResponse indexSettingsResponse = service.changeIndex(getRequest());
 
 		return new UpdateIndexResult(indexSettingsResponse);
 	}

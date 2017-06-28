@@ -1,11 +1,9 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.GetFieldsResult;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesRequest;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 
@@ -28,12 +26,10 @@ public class GetFields extends SimpleCommand<GetFieldNamesRequest, GetFieldsResu
 	}
 
 	@Override
-	public GetFieldsResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+	public GetFieldsResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		GetFieldNamesResponse getFieldNamesResponse = service.getFieldNames(controller, getRequest());
+		GetFieldNamesResponse getFieldNamesResponse = service.getFieldNames(getRequest());
 
 		return new GetFieldsResult(getFieldNamesResponse);
 	}

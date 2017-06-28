@@ -1,11 +1,9 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.GetNumberOfDocsResult;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsRequest;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
 
@@ -23,12 +21,10 @@ public class GetNumberOfDocs extends SimpleCommand<GetNumberOfDocsRequest, GetNu
 	}
 
 	@Override
-	public GetNumberOfDocsResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+	public GetNumberOfDocsResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		GetNumberOfDocsResponse getNumberOfDocsResponse = service.getNumberOfDocs(controller, getRequest());
+		GetNumberOfDocsResponse getNumberOfDocsResponse = service.getNumberOfDocs(getRequest());
 
 		return new GetNumberOfDocsResult(getNumberOfDocsResponse);
 	}

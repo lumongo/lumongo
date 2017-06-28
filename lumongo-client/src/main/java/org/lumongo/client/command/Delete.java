@@ -1,14 +1,12 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.RoutableCommand;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.DeleteResult;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.DeleteResponse;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
 
 public abstract class Delete extends SimpleCommand<DeleteRequest, DeleteResult> implements RoutableCommand {
 	private String indexName;
@@ -85,12 +83,10 @@ public abstract class Delete extends SimpleCommand<DeleteRequest, DeleteResult> 
 	}
 
 	@Override
-	public DeleteResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+	public DeleteResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		DeleteResponse deleteResponse = service.delete(controller, getRequest());
+		DeleteResponse deleteResponse = service.delete(getRequest());
 
 		return new DeleteResult(deleteResponse);
 	}

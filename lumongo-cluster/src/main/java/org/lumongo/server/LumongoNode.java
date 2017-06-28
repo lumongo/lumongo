@@ -7,8 +7,8 @@ import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
 import org.lumongo.server.config.Nodes;
-import org.lumongo.server.connection.ExternalServiceHandler;
-import org.lumongo.server.connection.InternalServiceHandler;
+import org.lumongo.server.connection.ExternalServiceServer;
+import org.lumongo.server.connection.InternalServiceServer;
 import org.lumongo.server.hazelcast.HazelcastManager;
 import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.server.rest.RestServiceManager;
@@ -30,8 +30,8 @@ public class LumongoNode {
 		}
 	}
 
-	private final ExternalServiceHandler externalServiceHandler;
-	private final InternalServiceHandler internalServiceHandler;
+	private final ExternalServiceServer externalServiceServer;
+	private final InternalServiceServer internalServiceServer;
 	private final LumongoIndexManager indexManager;
 	private final HazelcastManager hazelcastManager;
 
@@ -54,8 +54,8 @@ public class LumongoNode {
 
 		this.indexManager = new LumongoIndexManager(mongo, mongoConfig, clusterConfig);
 
-		this.externalServiceHandler = new ExternalServiceHandler(clusterConfig, localNodeConfig, indexManager);
-		this.internalServiceHandler = new InternalServiceHandler(clusterConfig, localNodeConfig, indexManager);
+		this.externalServiceServer = new ExternalServiceServer(localNodeConfig, indexManager);
+		this.internalServiceServer = new InternalServiceServer(localNodeConfig, indexManager);
 
 		if (localNodeConfig.hasRestPort()) {
 			this.restServiceManager = new RestServiceManager(localNodeConfig, indexManager);
@@ -72,8 +72,8 @@ public class LumongoNode {
 
 	public void start() throws MongoException, IOException {
 
-		internalServiceHandler.start();
-		externalServiceHandler.start();
+		internalServiceServer.start();
+		externalServiceServer.start();
 		if (restServiceManager != null) {
 			restServiceManager.start();
 		}
@@ -90,8 +90,8 @@ public class LumongoNode {
 
 	public void shutdown() {
 
-		externalServiceHandler.shutdown();
-		internalServiceHandler.shutdown();
+		externalServiceServer.shutdown();
+		internalServiceServer.shutdown();
 		if (restServiceManager != null) {
 			restServiceManager.shutdown();
 		}

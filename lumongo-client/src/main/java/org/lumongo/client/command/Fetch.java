@@ -1,12 +1,10 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.RoutableCommand;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.FetchResult;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.FetchRequest;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.FetchType;
@@ -130,13 +128,11 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements R
 	}
 
 	@Override
-	public FetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+	public FetchResult execute(LumongoConnection lumongoConnection) {
 
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		FetchResponse fetchResponse = service.fetch(controller, getRequest());
+		FetchResponse fetchResponse = service.fetch(getRequest());
 
 		return new FetchResult(fetchResponse);
 
