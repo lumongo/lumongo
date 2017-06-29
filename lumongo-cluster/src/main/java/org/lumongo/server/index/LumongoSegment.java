@@ -410,7 +410,7 @@ public class LumongoSegment {
 	}
 
 	private PerFieldSimilarityWrapper getSimilarity(final QueryWithFilters queryWithFilters) {
-		return new PerFieldSimilarityWrapper() {
+		return new PerFieldSimilarityWrapper(new BM25Similarity()) {
 			@Override
 			public Similarity get(String name) {
 

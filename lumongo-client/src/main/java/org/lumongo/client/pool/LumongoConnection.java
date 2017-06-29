@@ -29,7 +29,14 @@ public class LumongoConnection {
 		channel = managedChannelBuilder.build();
 
 		blockingStub = ExternalServiceGrpc.newBlockingStub(channel);
+		if (compressedConnection) {
+			blockingStub = blockingStub.withCompression("gzip");
+		}
+
 		asyncStub = ExternalServiceGrpc.newStub(channel);
+		if (compressedConnection) {
+			asyncStub = asyncStub.withCompression("gzip");
+		}
 
 		System.err.println("INFO: Connecting to <" + member.getServerAddress() + ">");
 

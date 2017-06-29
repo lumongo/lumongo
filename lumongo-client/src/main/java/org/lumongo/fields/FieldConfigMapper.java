@@ -19,6 +19,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -83,8 +84,6 @@ public class FieldConfigMapper<T> {
 			FieldConfig.Builder fieldConfigBuilder = FieldConfig.newBuilder();
 			fieldConfigBuilder.setStoredFieldName(fieldName);
 
-
-
 			if (fieldType.equals(String.class)) {
 				fieldConfigBuilder.setFieldType(FieldType.STRING);
 			}
@@ -102,6 +101,9 @@ public class FieldConfigMapper<T> {
 			}
 			else if (fieldType.equals(boolean.class) || fieldType.equals(Boolean.class)) {
 				fieldConfigBuilder.setFieldType(FieldType.BOOL);
+			}
+			else if (fieldType.equals(Date.class)) {
+				fieldConfigBuilder.setFieldType(FieldType.DATE);
 			}
 
 
