@@ -240,7 +240,7 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 			citation = joiner.join(document.getAuthors()) + ". ";
 		}
 		if (document.getTitle() != null) {
-			citation = citation + title + ". ";
+			citation = citation + document.getTitle() + ". ";
 		}
 		if (document.getJournalIso() != null) {
 			citation = citation + document.getJournalIso() + ". ";
