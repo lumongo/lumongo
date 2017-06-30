@@ -19,16 +19,16 @@ import org.lumongo.client.result.GetMembersResult;
 import org.lumongo.client.result.GetNumberOfDocsResult;
 import org.lumongo.client.result.GetTermsResult;
 import org.lumongo.client.result.QueryResult;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Filter;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.QueryHandling;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Similarity;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Tokenizer;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
-import org.lumongo.cluster.message.Lumongo.FieldConfig.FieldType;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.Lumongo.LMMember;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 import org.lumongo.cluster.message.Lumongo.Term;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.Filter;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.QueryHandling;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.Similarity;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.Tokenizer;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig.FieldType;
 import org.lumongo.doc.AssociatedBuilder;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.FieldConfigBuilder;
@@ -145,7 +145,6 @@ public class ApiTest {
 		indexConfig.addAnalyzerSetting("myAnalyzer", Tokenizer.WHITESPACE, Arrays.asList(Filter.ASCII_FOLDING, Filter.LOWERCASE), Similarity.BM25,
 				QueryHandling.NORMAL);
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("abstract", FieldType.STRING).indexAs("myAnalyzer"));
-
 
 		UpdateIndex updateIndex = new UpdateIndex(MY_INDEX_NAME, indexConfig);
 		lumongoWorkPool.updateIndex(updateIndex);

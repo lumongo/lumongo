@@ -400,7 +400,7 @@ public class LumongoIndexManager {
 
 	}
 
-	public IndexSettingsResponse updateIndex(String indexName, IndexSettings request) throws InvalidIndexConfig, MongoException, IOException {
+	public IndexSettingsResponse updateIndex(String indexName, org.lumongo.cluster.message.LumongoIndex.IndexSettings request) throws InvalidIndexConfig, MongoException, IOException {
 		globalLock.readLock().lock();
 		try {
 			log.info("Updating index settings for <" + indexName + ">:\n" + JsonFormat.printer().print(request));

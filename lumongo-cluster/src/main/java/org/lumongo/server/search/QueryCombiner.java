@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.util.FixedBitSet;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
 import org.lumongo.server.index.LumongoIndex;
 import org.lumongo.server.index.analysis.TermFreq;
 

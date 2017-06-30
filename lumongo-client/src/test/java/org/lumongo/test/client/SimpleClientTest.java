@@ -11,6 +11,8 @@ import org.lumongo.DefaultAnalyzers;
 import org.lumongo.client.command.CreateOrUpdateIndex;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.LumongoIndex;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
 import org.lumongo.fields.Mapper;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -40,13 +42,13 @@ public class SimpleClientTest {
 
 		Assert.assertEquals("address", ic.getDefaultSearchField());
 
-		Lumongo.FieldConfig field1 = ic.getFieldConfig("firstName");
+		FieldConfig field1 = ic.getFieldConfig("firstName");
 		Assert.assertEquals(DefaultAnalyzers.LC_KEYWORD, field1.getIndexAsList().get(0).getAnalyzerName());
 		Assert.assertEquals("firstNameExact", field1.getIndexAsList().get(0).getIndexFieldName());
 		Assert.assertEquals(DefaultAnalyzers.STANDARD, field1.getIndexAsList().get(1).getAnalyzerName());
 		Assert.assertEquals("firstName", field1.getIndexAsList().get(1).getIndexFieldName());
 
-		Lumongo.FieldConfig field2 = ic.getFieldConfig("address");
+		FieldConfig field2 = ic.getFieldConfig("address");
 		Assert.assertEquals(DefaultAnalyzers.STANDARD, field2.getIndexAsList().get(0).getAnalyzerName());
 		Assert.assertEquals("address", field2.getIndexAsList().get(0).getIndexFieldName());
 

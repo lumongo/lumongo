@@ -17,6 +17,7 @@ import org.lumongo.cluster.message.Lumongo.Query.Operator;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
+import org.lumongo.cluster.message.LumongoIndex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -176,7 +177,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return this;
 	}
 
-	public Query addFieldSimilarity(String field, Lumongo.AnalyzerSettings.Similarity similarity) {
+	public Query addFieldSimilarity(String field, LumongoIndex.AnalyzerSettings.Similarity similarity) {
 
 		Lumongo.FieldSimilarity fieldSimilarity = Lumongo.FieldSimilarity.newBuilder().setField(field).setSimilarity(similarity).build();
 

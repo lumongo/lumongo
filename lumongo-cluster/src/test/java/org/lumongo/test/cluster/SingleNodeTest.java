@@ -19,8 +19,9 @@ import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.FacetCount;
-import org.lumongo.cluster.message.Lumongo.FieldConfig.FieldType;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
+import org.lumongo.cluster.message.LumongoIndex.FacetAs;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig.FieldType;
 import org.lumongo.doc.AssociatedBuilder;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.FieldConfigBuilder;
@@ -62,7 +63,7 @@ public class SingleNodeTest extends ServerTestBase {
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("uid", FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("an", FieldType.NUMERIC_INT).index().sort());
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("country", FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD).facet());
-		indexConfig.addFieldConfig(FieldConfigBuilder.create("date", FieldType.DATE).index().facetAs(Lumongo.FacetAs.DateHandling.DATE_YYYY_MM_DD));
+		indexConfig.addFieldConfig(FieldConfigBuilder.create("date", FieldType.DATE).index().facetAs(FacetAs.DateHandling.DATE_YYYY_MM_DD));
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("keyword", FieldType.STRING).indexAs(DefaultAnalyzers.LC_KEYWORD).facet());
 		indexConfig.addFieldConfig(FieldConfigBuilder.create("flag", FieldType.BOOL).index());
 

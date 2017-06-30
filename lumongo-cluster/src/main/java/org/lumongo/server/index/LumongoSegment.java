@@ -53,9 +53,16 @@ import org.apache.lucene.util.AttributeSource;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.lumongo.LumongoConstants;
-import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.*;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
+import org.lumongo.cluster.message.LumongoIndex;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings;
+import org.lumongo.cluster.message.LumongoIndex.FacetAs;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
+import org.lumongo.cluster.message.LumongoIndex.IndexAs;
+import org.lumongo.cluster.message.LumongoIndex.IndexSettings;
+import org.lumongo.cluster.message.LumongoIndex.SortAs;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
 import org.lumongo.server.highlighter.LumongoHighlighter;
@@ -964,7 +971,7 @@ public class LumongoSegment {
 	}
 
 	private void handleProjectForStoredField(Document luceneDocument, FieldConfig fc, Object o) throws Exception {
-		for (ProjectAs projectAs : fc.getProjectAsList()) {
+		for (LumongoIndex.ProjectAs projectAs : fc.getProjectAsList()) {
 			if (projectAs.hasSuperbit()) {
 				if (o instanceof List) {
 					List<Number> values = (List<Number>) o;

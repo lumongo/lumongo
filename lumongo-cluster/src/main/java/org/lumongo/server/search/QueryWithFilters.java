@@ -2,7 +2,7 @@ package org.lumongo.server.search;
 
 import org.apache.lucene.search.Query;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings;
 
 import java.util.ArrayList;
 import java.util.Collections;

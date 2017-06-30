@@ -37,7 +37,7 @@ import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
 import org.lumongo.cluster.message.Lumongo.FetchType;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
 import org.lumongo.cluster.message.Lumongo.GetNumberOfDocsResponse;
@@ -46,7 +46,7 @@ import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponseInternal;
 import org.lumongo.cluster.message.Lumongo.HighlightRequest;
 import org.lumongo.cluster.message.Lumongo.IndexSegmentResponse;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
+import org.lumongo.cluster.message.LumongoIndex.IndexSettings;
 import org.lumongo.cluster.message.Lumongo.LastIndexResult;
 import org.lumongo.cluster.message.Lumongo.LastResult;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
@@ -104,6 +104,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.*;
 
 public class LumongoIndex implements IndexSegmentInterface {
 
@@ -930,7 +932,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				booleanQueryBuilder.add(new BooleanClause(new TermQuery(new org.apache.lucene.index.Term(fieldName, signature[i] ? "1" : "0")),
 						BooleanClause.Occur.SHOULD));
 				queryWithFilters.addSimilarityOverride(
-						Lumongo.FieldSimilarity.newBuilder().setField(fieldName).setSimilarity(Lumongo.AnalyzerSettings.Similarity.CONSTANT).build());
+						Lumongo.FieldSimilarity.newBuilder().setField(fieldName).setSimilarity(Similarity.CONSTANT).build());
 			}
 
 			BooleanQuery query = booleanQueryBuilder.build();

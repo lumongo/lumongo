@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Similarity;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.Similarity;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FieldSimilarity;

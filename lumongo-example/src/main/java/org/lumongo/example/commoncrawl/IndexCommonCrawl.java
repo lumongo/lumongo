@@ -19,7 +19,7 @@ import org.lumongo.client.command.Store;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.config.LumongoPoolConfig;
 import org.lumongo.client.pool.LumongoWorkPool;
-import org.lumongo.cluster.message.Lumongo.FieldConfig.FieldType;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig.FieldType;
 import org.lumongo.doc.ResultDocBuilder;
 import org.lumongo.fields.FieldConfigBuilder;
 import org.lumongo.util.LogUtil;

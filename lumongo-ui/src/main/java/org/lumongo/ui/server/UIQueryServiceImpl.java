@@ -14,6 +14,7 @@ import org.lumongo.client.pool.LumongoWorkPool;
 import org.lumongo.client.result.GetIndexesResult;
 import org.lumongo.client.result.QueryResult;
 import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
 import org.lumongo.ui.client.services.UIQueryService;
 import org.lumongo.ui.shared.IndexInfo;
 import org.lumongo.ui.shared.InstanceInfo;
@@ -30,6 +31,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.TreeMap;
+
+import static org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings;
+import static org.lumongo.cluster.message.LumongoIndex.FacetAs;
+import static org.lumongo.cluster.message.LumongoIndex.IndexAs;
 
 /**
  * Created by Payam Meyer on 3/9/17.
@@ -109,17 +114,16 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 			indexInfo.setSize(20L);
 			indexInfo.setTotalDocs((int) lumongoWorkPool.getNumberOfDocs(indexName).getNumberOfDocs());
 
-			TreeMap<String, Lumongo.FieldConfig> fieldConfigMap = lumongoWorkPool.getIndexConfig(new GetIndexConfig(indexName)).getIndexConfig()
-					.getFieldConfigMap();
+			TreeMap<String, FieldConfig> fieldConfigMap = lumongoWorkPool.getIndexConfig(new GetIndexConfig(indexName)).getIndexConfig().getFieldConfigMap();
 			for (String fieldName : fieldConfigMap.keySet()) {
 				indexInfo.getFlList().add(fieldName);
-				Lumongo.FieldConfig fieldConfig = fieldConfigMap.get(fieldName);
+				FieldConfig fieldConfig = fieldConfigMap.get(fieldName);
 
-				for (Lumongo.IndexAs indexAs : fieldConfig.getIndexAsList()) {
+				for (IndexAs indexAs : fieldConfig.getIndexAsList()) {
 					indexInfo.getQfList().add(indexAs.getIndexFieldName());
 				}
 
-				for (Lumongo.FacetAs facetAs : fieldConfig.getFacetAsList()) {
+				for (FacetAs facetAs : fieldConfig.getFacetAsList()) {
 					indexInfo.getFacetList().add(facetAs.getFacetName());
 				}
 
@@ -185,16 +189,16 @@ public class UIQueryServiceImpl extends RemoteServiceServlet implements UIQueryS
 					String simType = uiQueryObject.getSimilarities().get(field);
 
 					if (simType.equalsIgnoreCase("bm25")) {
-						query.addFieldSimilarity(field, Lumongo.AnalyzerSettings.Similarity.BM25);
+						query.addFieldSimilarity(field, AnalyzerSettings.Similarity.BM25);
 					}
 					else if (simType.equalsIgnoreCase("constant")) {
-						query.addFieldSimilarity(field, Lumongo.AnalyzerSettings.Similarity.CONSTANT);
+						query.addFieldSimilarity(field, AnalyzerSettings.Similarity.CONSTANT);
 					}
 					else if (simType.equalsIgnoreCase("tf")) {
-						query.addFieldSimilarity(field, Lumongo.AnalyzerSettings.Similarity.TF);
+						query.addFieldSimilarity(field, AnalyzerSettings.Similarity.TF);
 					}
 					else if (simType.equalsIgnoreCase("tfidf")) {
-						query.addFieldSimilarity(field, Lumongo.AnalyzerSettings.Similarity.TFIDF);
+						query.addFieldSimilarity(field, AnalyzerSettings.Similarity.TFIDF);
 					}
 
 				}

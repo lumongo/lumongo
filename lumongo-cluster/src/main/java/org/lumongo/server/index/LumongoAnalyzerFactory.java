@@ -22,9 +22,9 @@ import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.apache.lucene.analysis.standard.StandardFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.lumongo.analyzer.BooleanAnalyzer;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.IndexAs;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
+import org.lumongo.cluster.message.LumongoIndex.IndexAs;
 import org.lumongo.filter.BritishUSFilter;
 import org.lumongo.server.config.IndexConfig;
 

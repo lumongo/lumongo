@@ -17,6 +17,8 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
+import org.lumongo.cluster.message.LumongoIndex;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
 
@@ -60,7 +62,7 @@ public class LumongoQueryParser extends QueryParser {
 	@Override
 	protected Query getRangeQuery(String field, String start, String end, boolean startInclusive, boolean endInclusive) throws ParseException {
 
-		Lumongo.FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(field);
+		FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(field);
 		if (IndexConfigUtil.isNumericOrDateFieldType(fieldType)) {
 			return getNumericOrDateRange(field, start, end, startInclusive, endInclusive);
 		}
@@ -71,7 +73,7 @@ public class LumongoQueryParser extends QueryParser {
 
 	private Query getNumericOrDateRange(final String fieldName, final String start, final String end, final boolean startInclusive,
 			final boolean endInclusive) {
-		Lumongo.FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(fieldName);
+		FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(fieldName);
 		if (IndexConfigUtil.isNumericIntFieldType(fieldType)) {
 			int min = start == null ? Integer.MIN_VALUE : Integer.parseInt(start);
 			int max = end == null ? Integer.MAX_VALUE : Integer.parseInt(end);
@@ -141,7 +143,7 @@ public class LumongoQueryParser extends QueryParser {
 		String field = term.field();
 		String text = term.text();
 
-		Lumongo.FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(field);
+		FieldConfig.FieldType fieldType = indexConfig.getFieldTypeForIndexField(field);
 		if (IndexConfigUtil.isNumericOrDateFieldType(fieldType)) {
 			if (IndexConfigUtil.isDateFieldType(fieldType)) {
 				return getNumericOrDateRange(field, text, text, true, true);
