@@ -9,6 +9,7 @@ import org.lumongo.cluster.message.Lumongo.FetchRequest;
 import org.lumongo.cluster.message.Lumongo.FetchResponse;
 import org.lumongo.cluster.message.Lumongo.FetchType;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -88,6 +89,11 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements R
 		return this;
 	}
 
+	public Fetch setDocumentMaskedFields(Collection<String> documentMaskedFields) {
+		this.documentMaskedFields = new LinkedHashSet<>(documentMaskedFields);
+		return this;
+	}
+
 	public Set<String> getDocumentFields() {
 		return documentFields;
 	}
@@ -97,6 +103,11 @@ public class Fetch extends SimpleCommand<FetchRequest, FetchResult> implements R
 			this.documentFields = new LinkedHashSet<>();
 		}
 		documentFields.add(documentField);
+		return this;
+	}
+
+	public Fetch setDocumentFields(Collection<String> documentFields) {
+		this.documentFields = new LinkedHashSet<>(documentFields);
 		return this;
 	}
 

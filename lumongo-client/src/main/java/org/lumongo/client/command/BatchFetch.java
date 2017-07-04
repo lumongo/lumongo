@@ -33,11 +33,19 @@ public class BatchFetch extends SimpleCommand<BatchFetchRequest, BatchFetchResul
 	}
 
 	public BatchFetch addFetchDocumentsFromUniqueIds(Collection<String> uniqueIds, String indexName) {
+		return addFetchDocumentsFromUniqueIds(uniqueIds, indexName, null);
+	}
+
+	public BatchFetch addFetchDocumentsFromUniqueIds(Collection<String> uniqueIds, String indexName, Collection<String> documentFields) {
 
 		for (String uniqueId : uniqueIds) {
 			Fetch f = new Fetch(uniqueId, indexName);
 			f.setResultFetchType(FetchType.FULL);
 			f.setAssociatedFetchType(FetchType.NONE);
+			if (documentFields != null) {
+				f.setDocumentFields(documentFields);
+			}
+
 			fetchList.add(f);
 		}
 		return this;
