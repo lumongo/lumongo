@@ -8,13 +8,13 @@ import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.Similarity;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FieldSimilarity;
 import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.Similarity;
 import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.util.ResultHelper;
 
@@ -309,7 +309,10 @@ public class QueryResource {
 							try {
 								QueryResponse qr = indexManager.query(qrBuilder.build());
 
-								buildHeaderForCSV(fields, new StringBuilder(), output);
+								String header = buildHeaderForCSV(fields);
+								output.write(header.getBytes());
+								output.flush();
+
 
 								int count = 0;
 
@@ -360,16 +363,13 @@ public class QueryResource {
 
 	}
 
-	private void buildHeaderForCSV(@QueryParam(LumongoConstants.FIELDS) List<String> fields, StringBuilder headerBuilder, OutputStream outputStream)
+	private String buildHeaderForCSV(@QueryParam(LumongoConstants.FIELDS) List<String> fields)
 			throws Exception {
 
+		StringBuilder headerBuilder = new StringBuilder();
 		fields.stream().filter(field -> !field.startsWith("-")).forEach(field -> headerBuilder.append(field).append(","));
-		String headerOutput = headerBuilder.toString().replaceFirst(",$", "\n");
-
-		if (outputStream != null) {
-			outputStream.write(headerOutput.getBytes());
-			outputStream.flush();
-		}
+		String headerOutput = headerBuilder.toString();
+		return headerOutput.substring(0, headerOutput.length() - 1) + "\n";
 
 	}
 
@@ -550,7 +550,8 @@ public class QueryResource {
 		StringBuilder responseBuilder = new StringBuilder();
 
 		// headersBuilder
-		buildHeaderForCSV(fields, responseBuilder, null);
+		String header = buildHeaderForCSV(fields);
+		responseBuilder.append(header);
 
 		// records
 		qr.getResultsList().stream().filter(Lumongo.ScoredResult::hasResultDocument).forEach(sr -> {
