@@ -39,8 +39,8 @@ public class LumongoNode {
 
 	public LumongoNode(MongoConfig mongoConfig, String localServer, int instance) throws Exception {
 
-		log.info("Using mongo <" + mongoConfig.getMongoHost() + ":" + mongoConfig.getMongoPort() + ">");
-		MongoClient mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
+		log.info("Using mongo <" + mongoConfig.getServerAddresses() + ">");
+		MongoClient mongo = new MongoClient(mongoConfig.getServerAddresses());
 
 		ClusterHelper clusterHelper = new ClusterHelper(mongo, mongoConfig.getDatabaseName());
 

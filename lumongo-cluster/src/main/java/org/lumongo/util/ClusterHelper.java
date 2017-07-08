@@ -36,7 +36,7 @@ public class ClusterHelper {
 	}
 
 	public ClusterHelper(MongoConfig mongoConfig) {
-		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
+		this.mongo = new MongoClient(mongoConfig.getServerAddresses());
 		this.database = mongoConfig.getDatabaseName();
 	}
 

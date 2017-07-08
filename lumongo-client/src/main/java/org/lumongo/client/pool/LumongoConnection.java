@@ -50,6 +50,10 @@ public class LumongoConnection {
 		return blockingStub;
 	}
 
+	public ExternalServiceGrpc.ExternalServiceStub getAsyncService() {
+		return asyncStub;
+	}
+
 	/**
 	 * closes the connection to the server if open, calling a method (index, query, ...) will open a new connection
 	 */
