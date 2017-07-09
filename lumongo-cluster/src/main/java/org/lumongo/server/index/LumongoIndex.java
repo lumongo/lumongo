@@ -67,6 +67,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -630,7 +631,9 @@ public class LumongoIndex implements IndexSegmentInterface {
 				int maxSegmentsForMember = Integer.MIN_VALUE;
 				Member minMember = null;
 				Member maxMember = null;
-				for (Member m : currentMembers) {
+				List<Member> shuffledMembers = new ArrayList<>(currentMembers);
+				Collections.shuffle(shuffledMembers);
+				for (Member m : shuffledMembers) {
 					int segmentsForMemberCount = 0;
 					Set<Integer> segmentsForMember = memberToSegmentMap.get(m);
 					if (segmentsForMember != null) {
