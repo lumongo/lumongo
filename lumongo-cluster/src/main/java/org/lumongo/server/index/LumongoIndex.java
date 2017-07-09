@@ -650,19 +650,18 @@ public class LumongoIndex implements IndexSegmentInterface {
 				}
 
 				if ((maxSegmentsForMember - minSegmentsForMember) > 1) {
-					int valueToMove = memberToSegmentMap.get(maxMember).iterator().next();
-
-					log.info("Moving segment <" + valueToMove + "> from <" + maxMember + "> to <" + minMember + "> of Index <" + indexName + ">");
-					memberToSegmentMap.get(maxMember).remove(valueToMove);
-
-					if (!memberToSegmentMap.containsKey(minMember)) {
-						memberToSegmentMap.put(minMember, new HashSet<>());
-					}
-
-					memberToSegmentMap.get(minMember).add(valueToMove);
+					moveSegment(maxMember, minMember);
 				}
 				else {
+					if ((maxSegmentsForMember - minSegmentsForMember == 1)) {
+						boolean move = Math.random() >= 0.5;
+						if (move) {
+							moveSegment(maxMember, minMember);
+						}
+					}
+
 					balanced = true;
+
 				}
 
 			}
@@ -672,6 +671,19 @@ public class LumongoIndex implements IndexSegmentInterface {
 			indexLock.writeLock().unlock();
 		}
 
+	}
+
+	private void moveSegment(Member fromMember, Member toMember) {
+		int valueToMove = memberToSegmentMap.get(fromMember).iterator().next();
+
+		log.info("Moving segment <" + valueToMove + "> from <" + fromMember + "> to <" + toMember + "> of Index <" + indexName + ">");
+		memberToSegmentMap.get(fromMember).remove(valueToMove);
+
+		if (!memberToSegmentMap.containsKey(toMember)) {
+			memberToSegmentMap.put(toMember, new HashSet<>());
+		}
+
+		memberToSegmentMap.get(toMember).add(valueToMove);
 	}
 
 	private void mapSanityCheck(Set<Member> currentMembers) {
