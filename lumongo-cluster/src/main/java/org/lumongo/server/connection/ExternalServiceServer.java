@@ -1,7 +1,7 @@
 package org.lumongo.server.connection;
 
 import io.grpc.Server;
-import io.grpc.ServerBuilder;
+import io.grpc.netty.NettyServerBuilder;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.index.LumongoIndexManager;
 
@@ -21,7 +21,7 @@ public class ExternalServiceServer {
 		int externalServicePort = localNodeConfig.getExternalServicePort();
 
 		ExternalServiceHandler externalServiceHandler = new ExternalServiceHandler(indexManager);
-		server = ServerBuilder.forPort(externalServicePort).addService(externalServiceHandler).build();
+		server = NettyServerBuilder.forPort(externalServicePort).addService(externalServiceHandler).maxMessageSize(128 * 1024 * 1024).build();
 	}
 
 	public void start() throws IOException {

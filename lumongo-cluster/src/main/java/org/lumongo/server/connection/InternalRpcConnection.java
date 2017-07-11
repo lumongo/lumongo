@@ -20,7 +20,8 @@ public class InternalRpcConnection {
 		this.memberAddress = memberAddress;
 		this.internalServicePort = internalServicePort;
 
-		ManagedChannelBuilder<?> managedChannelBuilder = ManagedChannelBuilder.forAddress(memberAddress, internalServicePort).usePlaintext(true);
+		ManagedChannelBuilder<?> managedChannelBuilder = ManagedChannelBuilder.forAddress(memberAddress, internalServicePort)
+				.maxInboundMessageSize(128 * 1024 * 1024).usePlaintext(true);
 		channel = managedChannelBuilder.build();
 
 		blockingStub = InternalServiceGrpc.newBlockingStub(channel);

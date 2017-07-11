@@ -1,7 +1,7 @@
 package org.lumongo.server.connection;
 
 import io.grpc.Server;
-import io.grpc.ServerBuilder;
+import io.grpc.netty.NettyServerBuilder;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.index.LumongoIndexManager;
 
@@ -18,10 +18,10 @@ public class InternalServiceServer {
 
 	public InternalServiceServer(LocalNodeConfig localNodeConfig, LumongoIndexManager indexManager) throws UnknownHostException {
 
-		int externalServicePort = localNodeConfig.getInternalServicePort();
+		int internalServicePort = localNodeConfig.getInternalServicePort();
 
 		InternalServiceHandler internalServiceHandler = new InternalServiceHandler(indexManager);
-		server = ServerBuilder.forPort(externalServicePort).addService(internalServiceHandler).build();
+		server = NettyServerBuilder.forPort(internalServicePort).addService(internalServiceHandler).maxMessageSize(128 * 1024 * 1024).build();
 	}
 
 	public void start() throws IOException {
