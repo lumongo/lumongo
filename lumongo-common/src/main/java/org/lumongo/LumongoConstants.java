@@ -83,4 +83,5 @@ public class LumongoConstants {
 	public static final String DONT_CACHE = "dontCache";
 	public static final String BATCH = "batch";
 	public static final String BATCH_SIZE = "batchSize";
+	public static final String CURSOR = "cursor";
 }

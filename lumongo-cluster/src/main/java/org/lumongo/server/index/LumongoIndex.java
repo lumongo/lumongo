@@ -884,7 +884,9 @@ public class LumongoIndex implements IndexSegmentInterface {
 				if (deleteRequest.getDeleteDocument()) {
 					LumongoSegment s = findSegmentFromUniqueId(deleteRequest.getUniqueId());
 					s.deleteDocument(uniqueId);
-					documentStorage.deleteSourceDocument(uniqueId);
+					if (indexConfig.getIndexSettings().getStoreDocumentInMongo()) {
+						documentStorage.deleteSourceDocument(uniqueId);
+					}
 				}
 
 				if (deleteRequest.getDeleteAllAssociated()) {
