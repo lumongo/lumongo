@@ -314,7 +314,7 @@ public class QueryResource {
 				return Response.status(LumongoConstants.SUCCESS).type(MediaType.APPLICATION_JSON + ";charset=utf-8").entity(response).build();
 			}
 			else {
-				if (fields != null && !fields.isEmpty()) {
+				if (fields != null && !fields.isEmpty() || (!facet.isEmpty() && rows == 0)) {
 					if (batch) {
 						qrBuilder.setAmount(batchSize);
 
@@ -358,14 +358,35 @@ public class QueryResource {
 								.header("content-disposition", "attachment; filename = " + "lumongoDownload_" + now.format(formatter) + ".csv").build();
 					}
 					else {
+
 						QueryResponse qr = indexManager.query(qrBuilder.build());
-						String response = getCSVResponse(fields, qr);
-						return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(response).build();
+						if (rows == 0 && !facet.isEmpty()) {
+							StringBuilder response = new StringBuilder();
+							response.append("facetName,facetKey,facetValue\n");
+
+							for (Lumongo.FacetGroup facetGroup : qr.getFacetGroupList()) {
+								for (Lumongo.FacetCount facetCount : facetGroup.getFacetCountList()) {
+									response.append(facetGroup.getCountRequest().getFacetField().getLabel());
+									response.append(",");
+									response.append(facetCount.getFacet());
+									response.append(",");
+									response.append(Long.valueOf(facetCount.getCount()));
+									response.append("\n");
+								}
+
+							}
+							return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(response.toString()).build();
+						}
+						else {
+							String response = getCSVDocumentResponse(fields, qr);
+							return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(response).build();
+						}
 					}
 				}
 				else {
 					return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8")
-							.entity("Please specify fields to be exported i.e. fl=title&fl=abstract").build();
+							.entity("Please specify fields to be exported i.e. fl=title&fl=abstract or the facets to be exported i.e. facet=issn&facet=pubYear&rows=0")
+							.build();
 				}
 			}
 		}
@@ -565,7 +586,7 @@ public class QueryResource {
 		return responseBuilder.toString();
 	}
 
-	private String getCSVResponse(List<String> fields, QueryResponse qr) throws Exception {
+	private String getCSVDocumentResponse(List<String> fields, QueryResponse qr) throws Exception {
 		StringBuilder responseBuilder = new StringBuilder();
 
 		// headersBuilder
