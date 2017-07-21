@@ -615,7 +615,6 @@ public class QueryResource {
 			if (obj != null) {
 				if (obj instanceof List) {
 					List value = (List) obj;
-					StringBuilder output = new StringBuilder();
 
 					if (!value.isEmpty()) {
 						responseBuilder.append("\"");
@@ -641,7 +640,7 @@ public class QueryResource {
 
 							}
 							else {
-								output.append(o.toString());
+								responseBuilder.append(o.toString());
 							}
 						}
 						responseBuilder.append("\"");
