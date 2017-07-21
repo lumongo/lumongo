@@ -326,7 +326,6 @@ public class QueryResource {
 								output.write(header.getBytes());
 								output.flush();
 
-
 								int count = 0;
 
 								while (qr.getResultsList().size() > 0) {
@@ -397,8 +396,7 @@ public class QueryResource {
 
 	}
 
-	private String buildHeaderForCSV(@QueryParam(LumongoConstants.FIELDS) List<String> fields)
-			throws Exception {
+	private String buildHeaderForCSV(@QueryParam(LumongoConstants.FIELDS) List<String> fields) throws Exception {
 
 		StringBuilder headerBuilder = new StringBuilder();
 		fields.stream().filter(field -> !field.startsWith("-")).forEach(field -> headerBuilder.append(field).append(","));
@@ -617,20 +615,38 @@ public class QueryResource {
 			if (obj != null) {
 				if (obj instanceof List) {
 					List value = (List) obj;
-					String output = "\"";
-					for (Object o : value) {
-						if (o instanceof String) {
-							String item = (String) o;
-							if (item.contains(",") || value.contains("\"") || value.contains("\n")) {
-								output += item.replace("\"", "\"\"") + ";";
+					StringBuilder output = new StringBuilder();
+
+					if (!value.isEmpty()) {
+						responseBuilder.append("\"");
+
+						boolean first = true;
+						for (Object o : value) {
+							if (o instanceof String) {
+
+								String item = (String) o;
+
+								if (first) {
+									first = false;
+								}
+								else {
+									responseBuilder.append(";");
+								}
+
+								if (item.contains("\"")) {
+									item = item.replace("\"", "\"\"");
+								}
+
+								responseBuilder.append((item));
+
 							}
 							else {
-								output += item + ";";
+								output.append(o.toString());
 							}
 						}
+						responseBuilder.append("\"");
 					}
-					output += "\"";
-					responseBuilder.append(output);
+
 				}
 				else if (obj instanceof Date) {
 					Date value = (Date) obj;
