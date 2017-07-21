@@ -639,6 +639,9 @@ public class QueryResource {
 								responseBuilder.append((item));
 
 							}
+							else if (o instanceof Document) {
+								responseBuilder.append(JSONSerializers.getLegacy().serialize(o));
+							}
 							else {
 								responseBuilder.append(o.toString());
 							}
@@ -658,6 +661,9 @@ public class QueryResource {
 				else if (obj instanceof Boolean) {
 					Boolean value = (Boolean) obj;
 					responseBuilder.append(value);
+				}
+				else if (obj instanceof Document) {
+					responseBuilder.append(JSONSerializers.getLegacy().serialize(obj));
 				}
 				else {
 					String value = (String) obj;
