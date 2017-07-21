@@ -665,7 +665,9 @@ public class QueryResource {
 					responseBuilder.append(value);
 				}
 				else if (obj instanceof Document) {
+					responseBuilder.append("\"");
 					responseBuilder.append(JSONSerializers.getLegacy().serialize(obj).replace("\"", "\"\""));
+					responseBuilder.append("\"");
 				}
 				else {
 					String value = (String) obj;
