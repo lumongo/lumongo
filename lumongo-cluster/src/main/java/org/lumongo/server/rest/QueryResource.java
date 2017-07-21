@@ -621,26 +621,28 @@ public class QueryResource {
 
 						boolean first = true;
 						for (Object o : value) {
+
+							if (first) {
+								first = false;
+							}
+							else {
+								responseBuilder.append(";");
+							}
+
 							if (o instanceof String) {
 
 								String item = (String) o;
-
-								if (first) {
-									first = false;
-								}
-								else {
-									responseBuilder.append(";");
-								}
 
 								if (item.contains("\"")) {
 									item = item.replace("\"", "\"\"");
 								}
 
-								responseBuilder.append((item));
+								responseBuilder.append(item);
 
 							}
 							else if (o instanceof Document) {
-								responseBuilder.append(JSONSerializers.getLegacy().serialize(o));
+
+								responseBuilder.append(JSONSerializers.getLegacy().serialize(o).replace("\"", "\"\""));
 							}
 							else {
 								responseBuilder.append(o.toString());
@@ -663,7 +665,7 @@ public class QueryResource {
 					responseBuilder.append(value);
 				}
 				else if (obj instanceof Document) {
-					responseBuilder.append(JSONSerializers.getLegacy().serialize(obj));
+					responseBuilder.append(JSONSerializers.getLegacy().serialize(obj).replace("\"", "\"\""));
 				}
 				else {
 					String value = (String) obj;
