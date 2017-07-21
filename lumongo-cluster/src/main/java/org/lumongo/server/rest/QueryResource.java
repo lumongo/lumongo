@@ -613,7 +613,7 @@ public class QueryResource {
 			responseBuilder = new StringBuilder();
 		}
 		for (String field : fields) {
-			Object obj = document.get(field);
+			Object obj = ResultHelper.getValueFromMongoDocument(document, field);
 			if (obj != null) {
 				if (obj instanceof List) {
 					List value = (List) obj;
