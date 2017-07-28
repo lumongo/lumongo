@@ -1,6 +1,6 @@
 package org.lumongo.fields.annotations;
 
-import org.lumongo.cluster.message.Lumongo.SortAs.StringHandling;
+import org.lumongo.cluster.message.LumongoIndex.SortAs.StringHandling;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

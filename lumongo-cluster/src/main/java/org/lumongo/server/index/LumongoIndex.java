@@ -35,6 +35,8 @@ import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
+import org.lumongo.cluster.message.LumongoIndex.IndexSettings;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
@@ -65,6 +67,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -81,6 +84,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.Similarity;
 
 public class LumongoIndex implements IndexSegmentInterface {
 
@@ -130,9 +135,9 @@ public class LumongoIndex implements IndexSegmentInterface {
 		this.indexName = indexConfig.getIndexName();
 		this.numberOfSegments = indexConfig.getNumberOfSegments();
 
-		this.mongo = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
+		this.mongo = new MongoClient(mongoConfig.getServerAddresses());
 
-		MongoClient storageMongoClient = new MongoClient(mongoConfig.getMongoHost(), mongoConfig.getMongoPort());
+		MongoClient storageMongoClient = new MongoClient(mongoConfig.getServerAddresses());
 
 		String rawStorageDb = mongoConfig.getDatabaseName() + "_" + indexName + STORAGE_DB_SUFFIX;
 
@@ -626,7 +631,9 @@ public class LumongoIndex implements IndexSegmentInterface {
 				int maxSegmentsForMember = Integer.MIN_VALUE;
 				Member minMember = null;
 				Member maxMember = null;
-				for (Member m : currentMembers) {
+				List<Member> shuffledMembers = new ArrayList<>(currentMembers);
+				Collections.shuffle(shuffledMembers);
+				for (Member m : shuffledMembers) {
 					int segmentsForMemberCount = 0;
 					Set<Integer> segmentsForMember = memberToSegmentMap.get(m);
 					if (segmentsForMember != null) {
@@ -643,19 +650,18 @@ public class LumongoIndex implements IndexSegmentInterface {
 				}
 
 				if ((maxSegmentsForMember - minSegmentsForMember) > 1) {
-					int valueToMove = memberToSegmentMap.get(maxMember).iterator().next();
-
-					log.info("Moving segment <" + valueToMove + "> from <" + maxMember + "> to <" + minMember + "> of Index <" + indexName + ">");
-					memberToSegmentMap.get(maxMember).remove(valueToMove);
-
-					if (!memberToSegmentMap.containsKey(minMember)) {
-						memberToSegmentMap.put(minMember, new HashSet<>());
-					}
-
-					memberToSegmentMap.get(minMember).add(valueToMove);
+					moveSegment(maxMember, minMember);
 				}
 				else {
+					if ((maxSegmentsForMember - minSegmentsForMember == 1)) {
+						boolean move = Math.random() >= 0.5;
+						if (move) {
+							moveSegment(maxMember, minMember);
+						}
+					}
+
 					balanced = true;
+
 				}
 
 			}
@@ -665,6 +671,19 @@ public class LumongoIndex implements IndexSegmentInterface {
 			indexLock.writeLock().unlock();
 		}
 
+	}
+
+	private void moveSegment(Member fromMember, Member toMember) {
+		int valueToMove = memberToSegmentMap.get(fromMember).iterator().next();
+
+		log.info("Moving segment <" + valueToMove + "> from <" + fromMember + "> to <" + toMember + "> of Index <" + indexName + ">");
+		memberToSegmentMap.get(fromMember).remove(valueToMove);
+
+		if (!memberToSegmentMap.containsKey(toMember)) {
+			memberToSegmentMap.put(toMember, new HashSet<>());
+		}
+
+		memberToSegmentMap.get(toMember).add(valueToMove);
 	}
 
 	private void mapSanityCheck(Set<Member> currentMembers) {
@@ -908,8 +927,7 @@ public class LumongoIndex implements IndexSegmentInterface {
 				String fieldName = LumongoConstants.SUPERBIT_PREFIX + "." + cosineSimRequest.getField() + "." + i;
 				booleanQueryBuilder.add(new BooleanClause(new TermQuery(new org.apache.lucene.index.Term(fieldName, signature[i] ? "1" : "0")),
 						BooleanClause.Occur.SHOULD));
-				queryWithFilters.addSimilarityOverride(
-						Lumongo.FieldSimilarity.newBuilder().setField(fieldName).setSimilarity(Lumongo.AnalyzerSettings.Similarity.CONSTANT).build());
+				queryWithFilters.addSimilarityOverride(Lumongo.FieldSimilarity.newBuilder().setField(fieldName).setSimilarity(Similarity.CONSTANT).build());
 			}
 
 			BooleanQuery query = booleanQueryBuilder.build();

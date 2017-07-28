@@ -63,7 +63,8 @@ public class ClusterAdmin {
 			}
 
 			if (Command.createCluster.equals(command)) {
-				System.out.println("Creating cluster in database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost() + ">");
+				System.out.println(
+						"Creating cluster in database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getServerAddresses() + ">");
 				if (clusterConfig == null) {
 					throw new IllegalArgumentException(AdminConstants.CLUSTER_CONFIG + " is required for " + command.toString());
 				}
@@ -71,15 +72,16 @@ public class ClusterAdmin {
 				System.out.println("Created cluster");
 			}
 			else if (Command.updateCluster.equals(command)) {
-				System.out.println("Updating cluster in database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost() + ">");
+				System.out.println(
+						"Updating cluster in database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getServerAddresses() + ">");
 				if (clusterConfig == null) {
 					throw new IllegalArgumentException(AdminConstants.CLUSTER_CONFIG + " is required for " + command.toString());
 				}
 				clusterHelper.saveClusterConfig(clusterConfig);
 			}
 			else if (Command.removeCluster.equals(command)) {
-				System.out
-						.println("Removing cluster from database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getMongoHost() + ">");
+				System.out.println(
+						"Removing cluster from database <" + mongoConfig.getDatabaseName() + "> on mongo server <" + mongoConfig.getServerAddresses() + ">");
 				clusterHelper.removeClusterConfig();
 			}
 			else if (Command.showCluster.equals(command)) {

@@ -1,11 +1,9 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.GetMembersResult;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.GetMembersRequest;
 import org.lumongo.cluster.message.Lumongo.GetMembersResponse;
 
@@ -26,12 +24,10 @@ public class GetMembers extends SimpleCommand<GetMembersRequest, GetMembersResul
 	}
 
 	@Override
-	public GetMembersResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+	public GetMembersResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		GetMembersResponse getMembersResponse = service.getMembers(controller, getRequest());
+		GetMembersResponse getMembersResponse = service.getMembers(getRequest());
 
 		return new GetMembersResult(getMembersResponse);
 	}

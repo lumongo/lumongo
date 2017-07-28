@@ -1,0 +1,487 @@
+syntax = "proto2";
+
+import "lumongo_index.proto";
+
+option java_package = "org.lumongo.cluster.message";
+
+service ExternalService {
+    rpc Query (QueryRequest) returns (QueryResponse);
+    rpc Store (StoreRequest) returns (StoreResponse);
+    rpc Delete (DeleteRequest) returns (DeleteResponse);
+    rpc BatchDelete (BatchDeleteRequest) returns (BatchDeleteResponse);
+    rpc Fetch (FetchRequest) returns (FetchResponse);
+    rpc BatchFetch (BatchFetchRequest) returns (BatchFetchResponse);
+    rpc CreateIndex (IndexCreateRequest) returns (IndexCreateResponse);
+    rpc ChangeIndex (IndexSettingsRequest) returns (IndexSettingsResponse);
+    rpc DeleteIndex (IndexDeleteRequest) returns (IndexDeleteResponse);
+    rpc GetIndexes (GetIndexesRequest) returns (GetIndexesResponse);
+    rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
+    rpc Clear (ClearRequest) returns (ClearResponse);
+    rpc Optimize (OptimizeRequest) returns (OptimizeResponse);
+    rpc GetFieldNames (GetFieldNamesRequest) returns (GetFieldNamesResponse);
+    rpc GetTerms (GetTermsRequest) returns (GetTermsResponse);
+    rpc GetMembers (GetMembersRequest) returns (GetMembersResponse);
+    rpc GetIndexConfig (GetIndexConfigRequest) returns (GetIndexConfigResponse);
+}
+
+service InternalService {
+    rpc Query (QueryRequest) returns (InternalQueryResponse);
+    rpc Store (StoreRequest) returns (StoreResponse);
+    rpc Fetch (FetchRequest) returns (FetchResponse);
+    rpc Delete (DeleteRequest) returns (DeleteResponse);
+    rpc GetNumberOfDocs (GetNumberOfDocsRequest) returns (GetNumberOfDocsResponse);
+    rpc Clear (ClearRequest) returns (ClearResponse);
+    rpc Optimize (OptimizeRequest) returns (OptimizeResponse);
+    rpc GetFieldNames (GetFieldNamesRequest) returns (GetFieldNamesResponse);
+    rpc GetTerms (GetTermsRequest) returns (GetTermsResponseInternal);
+}
+
+message GetMembersRequest {
+}
+
+message LMMember {
+    required string serverAddress = 1;
+    required uint32 externalPort = 2;
+    optional uint32 internalPort = 3;
+    optional uint32 hazelcastPort = 4;
+    optional uint32 restPort = 5;
+}
+
+message GetMembersResponse {
+    repeated LMMember member = 1;
+    repeated IndexMapping indexMapping = 2;
+}
+
+message IndexMapping {
+    required string indexName = 1;
+    required uint32 numberOfSegments = 2;
+    repeated SegmentMapping segmentMapping = 3;
+}
+
+message SegmentMapping {
+    required uint32 segmentNumber = 1;
+    required LMMember member = 2;
+}
+
+message FuzzyTerm {
+    required string term = 1;
+    required uint32 editDistance = 2;
+    optional uint32 prefixLength = 3 [default = 0];
+    optional bool transpositions = 4 [default = true];
+}
+
+message GetTermsRequest {
+    required string indexName = 1;
+    required string fieldName = 2;
+    optional uint32 amount = 3 [default = 0];
+
+    optional string startTerm = 4;
+    optional string endTerm = 5;
+    optional uint32 minDocFreq = 6 [default = 1];
+    optional uint32 minTermFreq = 7 [default = 1];
+    optional string termFilter = 8;
+    optional string termMatch = 9;
+
+    repeated string includeTerm = 10;
+
+    optional FuzzyTerm fuzzyTerm = 11;
+}
+
+message GetTermsResponse {
+    repeated Term term = 1;
+    optional Term lastTerm = 2;
+}
+
+message GetTermsResponseInternal {
+    repeated GetTermsResponse getTermsResponse = 1;
+}
+
+message Term {
+    required string value = 1;
+    optional uint64 docFreq = 2;
+    optional uint64 termFreq = 3;
+    optional double score = 4;
+}
+
+message GetFieldNamesRequest {
+    required string indexName = 1;
+}
+
+message GetFieldNamesResponse {
+    repeated string fieldName = 1;
+}
+
+message ClearRequest {
+    required string indexName = 1;
+}
+
+message ClearResponse {
+}
+
+message OptimizeRequest {
+    required string indexName = 1;
+}
+
+message OptimizeResponse {
+}
+
+message GetIndexesRequest {
+}
+
+message GetIndexesResponse {
+    repeated string indexName = 1;
+}
+
+message GetNumberOfDocsRequest {
+    required string indexName = 1;
+}
+
+message GetNumberOfDocsResponse {
+    required uint64 numberOfDocs = 1;
+    repeated SegmentCountResponse segmentCountResponse = 2;
+}
+
+message SegmentCountResponse {
+    required uint32 segmentNumber = 1;
+    required uint32 numberOfDocs = 2;
+}
+
+message IndexCreateRequest {
+    required string indexName = 1;
+    required uint32 numberOfSegments = 2;
+    required IndexSettings indexSettings = 3;
+}
+
+message IndexCreateResponse {
+}
+
+message IndexSettingsRequest {
+    required string indexName = 1;
+    required IndexSettings indexSettings = 4;
+}
+
+
+
+
+message IndexSettingsResponse {
+}
+
+message IndexDeleteRequest {
+    required string indexName = 1;
+}
+
+message IndexDeleteResponse {
+}
+
+message StoreRequest {
+    required string uniqueId = 1;
+    required string indexName = 2;
+    optional ResultDocument resultDocument = 3;
+    repeated AssociatedDocument associatedDocument = 4;
+    optional bool clearExistingAssociated = 5 [default = false];
+}
+
+message StoreResponse {
+}
+
+message LMDoc {
+    repeated LMField indexedField = 1;
+    repeated LMFacet facet = 2;
+    optional int64 timestamp = 3;
+}
+
+message LMFacet {
+    required string label = 1;
+    optional string path = 2;
+}
+
+message LMField {
+    required string fieldName = 1;
+    repeated string fieldValue = 2;
+    repeated int32 intValue = 3;
+    repeated int64 longValue = 4;
+    repeated float floatValue = 5;
+    repeated double doubleValue = 6;
+}
+
+message ResultDocument {
+    required string uniqueId = 1;
+    required string indexName = 2;
+    optional bytes document = 3;
+    repeated Metadata metadata = 4;
+    optional int64 timestamp = 5;
+}
+
+message AssociatedDocument {
+    required string filename = 1;
+    required string documentUniqueId = 2;
+    required string indexName = 3;
+    optional bytes document = 4;
+    optional bool compressed = 5 [default = false];
+    repeated Metadata metadata = 6;
+    optional int64 timestamp = 7;
+}
+
+message Metadata {
+    required string key = 1;
+    required string value = 2;
+}
+
+message ScoredResult {
+    optional string uniqueId = 1;
+    optional float score = 2; //
+    optional uint32 docId = 3; //
+    optional string indexName = 4;
+    optional uint32 segment = 5; //
+    optional uint32 resultIndex = 6;
+    optional SortValues sortValues = 7; //
+    optional int64 timestamp = 8;
+    optional ResultDocument resultDocument = 9;
+    repeated HighlightResult highlightResult = 10;
+    repeated AnalysisResult analysisResult = 11;
+}
+
+message HighlightResult {
+    required string field = 1;
+    repeated string fragments = 2;
+}
+
+message AnalysisResult {
+    required AnalysisRequest analysisRequest = 1;
+    repeated string token = 2;
+    repeated Term terms = 3;
+}
+
+message SortValues {
+    repeated SortValue sortValue = 1;
+}
+
+message SortValue {
+    required bool exists = 1;
+    optional string stringValue = 7;
+    optional int32 integerValue = 8;
+    optional int64 longValue = 9;
+    optional float floatValue = 10;
+    optional double doubleValue = 11;
+    optional int64 dateValue = 12;
+}
+
+message SortRequest {
+    repeated FieldSort fieldSort = 1;
+}
+
+message FieldSort {
+    enum Direction {
+        ASCENDING = 1;
+        DESCENDING = 2;
+    };
+
+    required string sortField = 1;
+    optional Direction direction = 2 [default = ASCENDING];
+}
+
+message FacetGroup {
+    required CountRequest countRequest = 1;
+    repeated FacetCount facetCount = 2;
+    optional bool possibleMissing = 3 [default = false];
+    optional uint64 maxValuePossibleMissing = 4 [default = 0];
+}
+
+message FacetCount {
+    required string facet = 1;
+    required uint64 count = 2;
+    optional uint64 maxError = 3;
+}
+
+message FacetRequest {
+    repeated CountRequest countRequest = 1;
+    repeated LMFacet drillDown = 2;
+}
+
+message CountRequest {
+    required LMFacet facetField = 1;
+    optional uint32 maxFacets = 2 [default = 10];
+    optional uint32 segmentFacets = 3;
+    optional bool computeError = 4 [default = true];
+    optional bool computePossibleMissed = 5 [default = true];
+}
+
+message SegmentResponse {
+    required uint32 segmentNumber = 1;
+    required string indexName = 2;
+    required uint32 totalHits = 3;
+    repeated ScoredResult scoredResult = 4;
+    optional ScoredResult next = 5;
+    repeated FacetGroup facetGroup = 6;
+    repeated AnalysisResult analysisResult = 7;
+}
+
+message LastIndexResult {
+    required string indexName = 1;
+    repeated ScoredResult lastForSegment = 2;
+}
+
+message LastResult {
+    repeated LastIndexResult lastIndexResult = 1;
+}
+
+message InternalQueryResponse {
+    repeated IndexSegmentResponse indexSegmentResponse = 1;
+}
+
+message IndexSegmentResponse {
+    required string indexName = 1;
+    repeated SegmentResponse segmentReponse = 2;
+}
+
+message QueryRequest {
+    repeated string index = 1;
+    optional Query query = 2;
+    required uint32 amount = 3;
+    repeated Query filterQuery = 4;
+    optional FacetRequest facetRequest = 5;
+    optional SortRequest sortRequest = 6;
+    optional uint32 start = 7;
+    optional LastResult lastResult = 8;
+    optional FetchType resultFetchType = 9 [default = NONE];
+    repeated string documentFields = 10;
+    repeated string documentMaskedFields = 11;
+    optional bool fetchFull = 12 [default = false];
+    repeated FieldSimilarity fieldSimilarity = 13;
+    repeated HighlightRequest highlightRequest = 14;
+    repeated AnalysisRequest analysisRequest = 15;
+    optional bool debug = 16 [default = false];
+    repeated CosineSimRequest cosineSimRequest = 17;
+    optional bool dontCache = 18 [default = false];
+}
+
+message CosineSimRequest {
+    required string field = 1;
+    required double similarity = 2;
+    repeated double vector = 3;
+}
+
+
+message HighlightRequest {
+    required string field = 1;
+    optional string preTag = 2 [default = "<em>"];
+    optional string postTag = 3 [default = "</em>"];
+    optional uint32 numberOfFragments = 4 [default = 1];
+    optional uint32 fragmentLength = 5 [default = 100];
+}
+
+message AnalysisRequest {
+    enum TermSort {
+        ABC = 1;
+        TFIDF = 2;
+        TF = 3;
+    }
+
+    enum SummaryType {
+        ALL_TERMS_TOP_N = 1;
+        TOP_TERMS_TOP_N = 2;
+    }
+
+    required string field = 1;
+    optional bool tokens = 2 [default = false];
+    optional bool docTerms = 3 [default = false];
+    optional bool summaryTerms = 4 [default = false];
+    optional uint32 topN = 5 [default = 10];
+    optional TermSort termSort = 6 [default = TFIDF];
+    optional uint32 minWordLen = 7 [default = 0];
+    optional uint32 maxWordLen = 8 [default = 0];
+    optional float minSegFreqPerc = 9;
+    optional float maxSegFreqPerc = 10;
+    optional uint32 minSegFreq = 11;
+    optional uint32 maxSegFreq = 12;
+    optional string analyzerOverride = 13;
+    optional SummaryType summaryType = 14 [default = ALL_TERMS_TOP_N];
+}
+
+message FieldSimilarity {
+    required string field = 1;
+    required AnalyzerSettings.Similarity similarity = 2;
+}
+
+message Query {
+    enum Operator {
+        AND = 1;
+        OR = 2;
+    }
+
+    optional string q = 1;
+    optional Operator defaultOp = 2 [default = OR];
+    repeated string qf = 3;
+    optional uint32 mm = 4 [default = 0];
+    optional bool dismax = 5 [default = false];
+    optional float dismaxTie = 6 [default = 0];
+
+}
+
+message QueryResponse {
+    required uint64 totalHits = 1;
+    repeated ScoredResult results = 2;
+    required LastResult lastResult = 3;
+    repeated FacetGroup facetGroup = 4;
+    repeated AnalysisResult analysisResult = 5;
+}
+
+message DeleteRequest {
+    required string indexName = 1;
+    required string uniqueId = 2;
+    optional string filename = 3;
+    optional bool deleteDocument = 4 [default = true];
+    optional bool deleteAllAssociated = 5 [default = true];
+}
+
+message DeleteResponse {
+}
+
+message BatchDeleteRequest {
+    repeated DeleteRequest request = 1;
+}
+
+message BatchDeleteResponse {
+}
+
+
+message BatchFetchRequest {
+    repeated FetchRequest fetchRequest = 1;
+}
+
+message BatchFetchResponse {
+    repeated FetchResponse fetchResponse = 1;
+}
+
+enum FetchType {
+    FULL = 1;
+    META = 2;
+    NONE = 3;
+}
+
+message FetchRequest {
+    required string uniqueId = 1;
+    required string indexName = 2;
+    optional string filename = 3;
+    optional FetchType resultFetchType = 4 [default = FULL];
+    optional FetchType associatedFetchType = 5 [default = META];
+    repeated string documentFields = 6;
+    repeated string documentMaskedFields = 7;
+    optional int64 timestamp = 8;
+}
+
+message FetchResponse {
+    optional ResultDocument resultDocument = 1;
+    repeated AssociatedDocument associatedDocument = 2;
+}
+
+message GetIndexConfigRequest {
+    required string indexName = 1;
+}
+
+message GetIndexConfigResponse {
+    required IndexSettings indexSettings = 1;
+}
+
+
+

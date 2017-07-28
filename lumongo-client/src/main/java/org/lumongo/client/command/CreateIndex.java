@@ -1,12 +1,10 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.CreateIndexResult;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.IndexCreateRequest;
 import org.lumongo.cluster.message.Lumongo.IndexCreateResponse;
 
@@ -19,25 +17,25 @@ import org.lumongo.cluster.message.Lumongo.IndexCreateResponse;
  *
  */
 public class CreateIndex extends SimpleCommand<IndexCreateRequest, CreateIndexResult> {
-	
+
 	private String indexName;
 	private Integer numberOfSegments;
 	private IndexConfig indexConfig;
-	
+
 	public CreateIndex(String indexName, Integer numberOfSegments, IndexConfig indexConfig) {
 		this.indexName = indexName;
 		this.numberOfSegments = numberOfSegments;
 		this.indexConfig = indexConfig;
 	}
-	
+
 	@Override
 	public IndexCreateRequest getRequest() {
 		IndexCreateRequest.Builder indexCreateRequestBuilder = IndexCreateRequest.newBuilder();
-		
+
 		if (indexName != null) {
 			indexCreateRequestBuilder.setIndexName(indexName);
 		}
-		
+
 		if (numberOfSegments != null) {
 			indexCreateRequestBuilder.setNumberOfSegments(numberOfSegments);
 		}
@@ -45,19 +43,16 @@ public class CreateIndex extends SimpleCommand<IndexCreateRequest, CreateIndexRe
 		if (indexConfig != null) {
 			indexCreateRequestBuilder.setIndexSettings(indexConfig.getIndexSettings());
 		}
-		
+
 		return indexCreateRequestBuilder.build();
 	}
-	
+
 	@Override
-	public CreateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
-		
-		RpcController controller = lumongoConnection.getController();
-		
-		IndexCreateResponse indexCreateResponse = service.createIndex(controller, getRequest());
-		
+	public CreateIndexResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
+		IndexCreateResponse indexCreateResponse = service.createIndex(getRequest());
+
 		return new CreateIndexResult(indexCreateResponse);
 	}
-	
+
 }

@@ -34,7 +34,7 @@ public class StatsResource {
 
 			Document mongoDocument = new Document();
 
-			mongoDocument.put("blockSize", indexManager.getClusterConfig().getIndexBlockSize());
+			mongoDocument.put("indexBlockSize", indexManager.getClusterConfig().getIndexBlockSize());
 			mongoDocument.put("maxIndexBlockCount", indexManager.getClusterConfig().getMaxIndexBlocks());
 			mongoDocument.put("currentIndexBlockCount", MongoFile.getCacheSize());
 

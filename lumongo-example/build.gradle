@@ -6,14 +6,14 @@ description 'Lumongo Examples'
 
 task generateJaxbMedline(type: project.ext.generateJaxbType) {
 	jaxbPackage = 'org.lumongo.example.medline.schema'
-	schema = file('src/main/schemas/nlmmedlinecitationset_130101.dtd')
+	schema = file('src/main/schemas/pubmed_170101.dtd')
 	dtd = true
 	outputDir = file("generated-sources/")
 }
 
 task generateJaxbWikipedia(type: project.ext.generateJaxbType) {
 	jaxbPackage = 'org.lumongo.example.wikipedia.schema'
-	schema = file('src/main/schemas/mediawiki-export-0.8.xsd')
+	schema = file('src/main/schemas/mediawiki-export-0.10.xsd')
 	dtd = false	
 	outputDir = file("generated-sources/")
 }

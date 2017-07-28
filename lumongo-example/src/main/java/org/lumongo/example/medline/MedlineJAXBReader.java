@@ -7,6 +7,7 @@ import org.lumongo.example.medline.schema.*;
 import org.lumongo.xml.StaxJAXBReader;
 
 import javax.xml.bind.JAXBException;
+import java.lang.Object;
 import java.text.DateFormatSymbols;
 import java.util.Arrays;
 import java.util.Date;
@@ -128,11 +129,11 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 		document.setJournalIso(journal.getISOAbbreviation());
 
 		JournalIssue journalIssue = journal.getJournalIssue();
-		
-		String title = medlineCitation.getArticle().getArticleTitle();
+
+		ArticleTitle title = medlineCitation.getArticle().getArticleTitle();
 
 		if (title != null) {
-			document.setTitle(title);
+			document.setTitle(title.getvalue());
 		}
 
 
@@ -239,7 +240,7 @@ public abstract class MedlineJAXBReader extends StaxJAXBReader<MedlineCitation> 
 			citation = joiner.join(document.getAuthors()) + ". ";
 		}
 		if (document.getTitle() != null) {
-			citation = citation + title + ". ";
+			citation = citation + document.getTitle() + ". ";
 		}
 		if (document.getJournalIso() != null) {
 			citation = citation + document.getJournalIso() + ". ";

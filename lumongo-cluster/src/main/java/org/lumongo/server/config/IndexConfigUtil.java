@@ -2,16 +2,19 @@ package org.lumongo.server.config;
 
 import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings;
-import org.lumongo.cluster.message.Lumongo.FacetAs;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.IndexAs;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
-import org.lumongo.cluster.message.Lumongo.SortAs;
+import org.lumongo.cluster.message.LumongoIndex;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings;
+import org.lumongo.cluster.message.LumongoIndex.FacetAs;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
+import org.lumongo.cluster.message.LumongoIndex.IndexAs;
+import org.lumongo.cluster.message.LumongoIndex.IndexSettings;
+import org.lumongo.cluster.message.LumongoIndex.SortAs;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.lumongo.cluster.message.LumongoIndex.*;
 
 /**
  * Created by mdavis on 4/24/16.
@@ -168,12 +171,13 @@ public class IndexConfigUtil {
 				if (projectAsList != null) {
 					for (Document projectAsObj : projectAsList) {
 
-						Lumongo.ProjectAs.Builder builder = Lumongo.ProjectAs.newBuilder();
+
+						ProjectAs.Builder builder = ProjectAs.newBuilder();
 						builder.setField(projectAsObj.getString(FIELD));
 
 						Document superBitObj = (Document) projectAsObj.get(SUPER_BIT);
 						if (superBitObj != null) {
-							Lumongo.Superbit.Builder sbBuilder = Lumongo.Superbit.newBuilder();
+							Superbit.Builder sbBuilder = Superbit.newBuilder();
 							Integer inputDim = superBitObj.getInteger(INPUT_DIM);
 							if (inputDim != null) {
 								sbBuilder.setInputDim(inputDim);
@@ -313,13 +317,13 @@ public class IndexConfigUtil {
 
 			{
 				List<Document> projectAsObjlist = new ArrayList<>();
-				for (Lumongo.ProjectAs projectAs : fc.getProjectAsList()) {
+				for (ProjectAs projectAs : fc.getProjectAsList()) {
 					Document projectAsObj = new Document();
 					projectAsObj.put(FIELD, projectAs.getField());
 					if (projectAs.hasSuperbit()) {
 						Document sbObj = new Document();
 
-						Lumongo.Superbit superbit = projectAs.getSuperbit();
+						Superbit superbit = projectAs.getSuperbit();
 						sbObj.put(INPUT_DIM, superbit.getInputDim());
 						sbObj.put(BATCHES, superbit.getBatches());
 						sbObj.put(SEED, superbit.getSeed());

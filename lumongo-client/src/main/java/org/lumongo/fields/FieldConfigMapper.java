@@ -1,8 +1,9 @@
 package org.lumongo.fields;
 
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.FieldConfig.FieldType;
+import org.lumongo.cluster.message.LumongoIndex;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig.FieldType;
 import org.lumongo.fields.annotations.AsField;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Embedded;
@@ -19,8 +20,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+
+import static org.lumongo.cluster.message.LumongoIndex.*;
+import static org.lumongo.cluster.message.LumongoIndex.IndexAs;
 
 public class FieldConfigMapper<T> {
 
@@ -63,11 +68,11 @@ public class FieldConfigMapper<T> {
 
 		if (f.isAnnotationPresent(Embedded.class)) {
 			if (f.isAnnotationPresent(IndexedFields.class) || f.isAnnotationPresent(Indexed.class) || f.isAnnotationPresent(Faceted.class) || f
-							.isAnnotationPresent(UniqueId.class) || f.isAnnotationPresent(DefaultSearch.class)) {
-				throw new RuntimeException("Cannot use Indexed, Faceted, UniqueId, DefaultSearch on embedded field <" + f.getName() + "> for class <" + clazz
-								.getSimpleName() + ">");
+					.isAnnotationPresent(UniqueId.class) || f.isAnnotationPresent(DefaultSearch.class)) {
+				throw new RuntimeException(
+						"Cannot use Indexed, Faceted, UniqueId, DefaultSearch on embedded field <" + f.getName() + "> for class <" + clazz.getSimpleName()
+								+ ">");
 			}
-
 
 			FieldConfigMapper fieldConfigMapper = new FieldConfigMapper<>(fieldType, fieldName);
 
@@ -82,8 +87,6 @@ public class FieldConfigMapper<T> {
 		else {
 			FieldConfig.Builder fieldConfigBuilder = FieldConfig.newBuilder();
 			fieldConfigBuilder.setStoredFieldName(fieldName);
-
-
 
 			if (fieldType.equals(String.class)) {
 				fieldConfigBuilder.setFieldType(FieldType.STRING);
@@ -103,7 +106,9 @@ public class FieldConfigMapper<T> {
 			else if (fieldType.equals(boolean.class) || fieldType.equals(Boolean.class)) {
 				fieldConfigBuilder.setFieldType(FieldType.BOOL);
 			}
-
+			else if (fieldType.equals(Date.class)) {
+				fieldConfigBuilder.setFieldType(FieldType.DATE);
+			}
 
 			if (f.isAnnotationPresent(IndexedFields.class)) {
 				IndexedFields in = f.getAnnotation(IndexedFields.class);
@@ -152,7 +157,7 @@ public class FieldConfigMapper<T> {
 			indexedFieldName = in.fieldName();
 		}
 
-		Lumongo.IndexAs.Builder builder = Lumongo.IndexAs.newBuilder().setIndexFieldName(indexedFieldName);
+		IndexAs.Builder builder = IndexAs.newBuilder().setIndexFieldName(indexedFieldName);
 		if (!analyzerName.isEmpty()) {
 			builder.setAnalyzerName(analyzerName);
 		}
@@ -165,9 +170,9 @@ public class FieldConfigMapper<T> {
 			facetName = faceted.name();
 		}
 
-		Lumongo.FacetAs.DateHandling dateHandling = faceted.dateHandling();
+		FacetAs.DateHandling dateHandling = faceted.dateHandling();
 
-		Lumongo.FacetAs.Builder builder = Lumongo.FacetAs.newBuilder().setFacetName(facetName);
+		FacetAs.Builder builder = FacetAs.newBuilder().setFacetName(facetName);
 		builder.setDateHandling(dateHandling);
 		fieldConfigBuilder.addFacetAs(builder);
 	}
@@ -177,12 +182,10 @@ public class FieldConfigMapper<T> {
 		if (!sorted.fieldName().isEmpty()) {
 			sortFieldName = sorted.fieldName();
 		}
-		Lumongo.SortAs.Builder builder = Lumongo.SortAs.newBuilder().setSortFieldName(sortFieldName);
+		SortAs.Builder builder = SortAs.newBuilder().setSortFieldName(sortFieldName);
 		builder.setStringHandling(sorted.stringHandling());
 		fieldConfigBuilder.addSortAs(builder);
 	}
-
-
 
 	public List<FieldConfig> getFieldConfigs() {
 		List<FieldConfig> configs = new ArrayList<>();

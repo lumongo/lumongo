@@ -9,13 +9,13 @@ import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.client.command.CursorHelper;
 import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Similarity;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FieldSimilarity;
 import org.lumongo.cluster.message.Lumongo.LMFacet;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.Similarity;
 import org.lumongo.server.index.LumongoIndexManager;
 import org.lumongo.util.ResultHelper;
 
@@ -314,7 +314,7 @@ public class QueryResource {
 				return Response.status(LumongoConstants.SUCCESS).type(MediaType.APPLICATION_JSON + ";charset=utf-8").entity(response).build();
 			}
 			else {
-				if (fields != null && !fields.isEmpty()) {
+				if (fields != null && !fields.isEmpty() || (!facet.isEmpty() && rows == 0)) {
 					if (batch) {
 						qrBuilder.setAmount(batchSize);
 
@@ -322,7 +322,9 @@ public class QueryResource {
 							try {
 								QueryResponse qr = indexManager.query(qrBuilder.build());
 
-								buildHeaderForCSV(fields, new StringBuilder(), output);
+								String header = buildHeaderForCSV(fields);
+								output.write(header.getBytes());
+								output.flush();
 
 								int count = 0;
 
@@ -355,14 +357,35 @@ public class QueryResource {
 								.header("content-disposition", "attachment; filename = " + "lumongoDownload_" + now.format(formatter) + ".csv").build();
 					}
 					else {
+
 						QueryResponse qr = indexManager.query(qrBuilder.build());
-						String response = getCSVResponse(fields, qr);
-						return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(response).build();
+						if (rows == 0 && !facet.isEmpty()) {
+							StringBuilder response = new StringBuilder();
+							response.append("facetName,facetKey,facetValue\n");
+
+							for (Lumongo.FacetGroup facetGroup : qr.getFacetGroupList()) {
+								for (Lumongo.FacetCount facetCount : facetGroup.getFacetCountList()) {
+									response.append(facetGroup.getCountRequest().getFacetField().getLabel());
+									response.append(",");
+									response.append(facetCount.getFacet());
+									response.append(",");
+									response.append(Long.valueOf(facetCount.getCount()));
+									response.append("\n");
+								}
+
+							}
+							return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(response.toString()).build();
+						}
+						else {
+							String response = getCSVDocumentResponse(fields, qr);
+							return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8").entity(response).build();
+						}
 					}
 				}
 				else {
 					return Response.status(LumongoConstants.SUCCESS).type(MediaType.TEXT_PLAIN + ";charset=utf-8")
-							.entity("Please specify fields to be exported i.e. fl=title&fl=abstract").build();
+							.entity("Please specify fields to be exported i.e. fl=title&fl=abstract or the facets to be exported i.e. facet=issn&facet=pubYear&rows=0")
+							.build();
 				}
 			}
 		}
@@ -373,16 +396,12 @@ public class QueryResource {
 
 	}
 
-	private void buildHeaderForCSV(@QueryParam(LumongoConstants.FIELDS) List<String> fields, StringBuilder headerBuilder, OutputStream outputStream)
-			throws Exception {
+	private String buildHeaderForCSV(@QueryParam(LumongoConstants.FIELDS) List<String> fields) throws Exception {
 
+		StringBuilder headerBuilder = new StringBuilder();
 		fields.stream().filter(field -> !field.startsWith("-")).forEach(field -> headerBuilder.append(field).append(","));
-		String headerOutput = headerBuilder.toString().replaceFirst(",$", "\n");
-
-		if (outputStream != null) {
-			outputStream.write(headerOutput.getBytes());
-			outputStream.flush();
-		}
+		String headerOutput = headerBuilder.toString();
+		return headerOutput.substring(0, headerOutput.length() - 1) + "\n";
 
 	}
 
@@ -565,11 +584,12 @@ public class QueryResource {
 		return responseBuilder.toString();
 	}
 
-	private String getCSVResponse(List<String> fields, QueryResponse qr) throws Exception {
+	private String getCSVDocumentResponse(List<String> fields, QueryResponse qr) throws Exception {
 		StringBuilder responseBuilder = new StringBuilder();
 
 		// headersBuilder
-		buildHeaderForCSV(fields, responseBuilder, null);
+		String header = buildHeaderForCSV(fields);
+		responseBuilder.append(header);
 
 		// records
 		qr.getResultsList().stream().filter(Lumongo.ScoredResult::hasResultDocument).forEach(sr -> {
@@ -591,24 +611,46 @@ public class QueryResource {
 			responseBuilder = new StringBuilder();
 		}
 		for (String field : fields) {
-			Object obj = document.get(field);
+			Object obj = ResultHelper.getValueFromMongoDocument(document, field);
 			if (obj != null) {
 				if (obj instanceof List) {
 					List value = (List) obj;
-					String output = "\"";
-					for (Object o : value) {
-						if (o instanceof String) {
-							String item = (String) o;
-							if (item.contains(",") || value.contains("\"") || value.contains("\n")) {
-								output += item.replace("\"", "\"\"") + ";";
+
+					if (!value.isEmpty()) {
+						responseBuilder.append("\"");
+
+						boolean first = true;
+						for (Object o : value) {
+
+							if (first) {
+								first = false;
 							}
 							else {
-								output += item + ";";
+								responseBuilder.append(";");
+							}
+
+							if (o instanceof String) {
+
+								String item = (String) o;
+
+								if (item.contains("\"")) {
+									item = item.replace("\"", "\"\"");
+								}
+
+								responseBuilder.append(item);
+
+							}
+							else if (o instanceof Document) {
+
+								responseBuilder.append(JSONSerializers.getLegacy().serialize(o).replace("\"", "\"\""));
+							}
+							else {
+								responseBuilder.append(o.toString());
 							}
 						}
+						responseBuilder.append("\"");
 					}
-					output += "\"";
-					responseBuilder.append(output);
+
 				}
 				else if (obj instanceof Date) {
 					Date value = (Date) obj;
@@ -621,6 +663,11 @@ public class QueryResource {
 				else if (obj instanceof Boolean) {
 					Boolean value = (Boolean) obj;
 					responseBuilder.append(value);
+				}
+				else if (obj instanceof Document) {
+					responseBuilder.append("\"");
+					responseBuilder.append(JSONSerializers.getLegacy().serialize(obj).replace("\"", "\"\""));
+					responseBuilder.append("\"");
 				}
 				else {
 					String value = (String) obj;

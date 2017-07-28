@@ -1,14 +1,12 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.QueryResult;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.AnalysisRequest;
 import org.lumongo.cluster.message.Lumongo.CountRequest;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.FacetRequest;
 import org.lumongo.cluster.message.Lumongo.FieldSort;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
@@ -19,6 +17,7 @@ import org.lumongo.cluster.message.Lumongo.Query.Operator;
 import org.lumongo.cluster.message.Lumongo.QueryRequest;
 import org.lumongo.cluster.message.Lumongo.QueryResponse;
 import org.lumongo.cluster.message.Lumongo.SortRequest;
+import org.lumongo.cluster.message.LumongoIndex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -178,7 +177,7 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 		return this;
 	}
 
-	public Query addFieldSimilarity(String field, Lumongo.AnalyzerSettings.Similarity similarity) {
+	public Query addFieldSimilarity(String field, LumongoIndex.AnalyzerSettings.Similarity similarity) {
 
 		Lumongo.FieldSimilarity fieldSimilarity = Lumongo.FieldSimilarity.newBuilder().setField(field).setSimilarity(similarity).build();
 
@@ -540,13 +539,11 @@ public class Query extends SimpleCommand<QueryRequest, QueryResult> {
 	}
 
 	@Override
-	public QueryResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+	public QueryResult execute(LumongoConnection lumongoConnection) {
 
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		QueryResponse queryResponse = service.query(controller, getRequest());
+		QueryResponse queryResponse = service.query(getRequest());
 
 		return new QueryResult(queryResponse);
 

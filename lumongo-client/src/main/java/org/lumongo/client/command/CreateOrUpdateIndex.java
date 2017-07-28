@@ -1,6 +1,5 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.Command;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.pool.LumongoConnection;
@@ -50,7 +49,7 @@ public class CreateOrUpdateIndex extends Command<CreateOrUpdateIndexResult> {
 	}
 
 	@Override
-	public CreateOrUpdateIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
+	public CreateOrUpdateIndexResult execute(LumongoConnection lumongoConnection) {
 		CreateOrUpdateIndexResult result = new CreateOrUpdateIndexResult();
 
 		GetIndexes gt = new GetIndexes();

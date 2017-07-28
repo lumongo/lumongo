@@ -1,11 +1,9 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.DeleteIndexResult;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.IndexDeleteRequest;
 import org.lumongo.cluster.message.Lumongo.IndexDeleteResponse;
 
@@ -28,12 +26,10 @@ public class DeleteIndex extends SimpleCommand<IndexDeleteRequest, DeleteIndexRe
 	}
 
 	@Override
-	public DeleteIndexResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+	public DeleteIndexResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		IndexDeleteResponse indexDeleteResponse = service.deleteIndex(controller, getRequest());
+		IndexDeleteResponse indexDeleteResponse = service.deleteIndex(getRequest());
 
 		return new DeleteIndexResult(indexDeleteResponse);
 	}

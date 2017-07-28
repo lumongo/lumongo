@@ -1,7 +1,7 @@
 package org.lumongo.example.medline;
 
 import org.lumongo.DefaultAnalyzers;
-import org.lumongo.cluster.message.Lumongo.SortAs;
+import org.lumongo.cluster.message.LumongoIndex.SortAs;
 import org.lumongo.fields.annotations.DefaultSearch;
 import org.lumongo.fields.annotations.Faceted;
 import org.lumongo.fields.annotations.Indexed;

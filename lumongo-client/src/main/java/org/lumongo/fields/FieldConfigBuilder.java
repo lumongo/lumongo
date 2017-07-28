@@ -1,11 +1,11 @@
 package org.lumongo.fields;
 
-import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.FacetAs;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.IndexAs;
-import org.lumongo.cluster.message.Lumongo.ProjectAs;
-import org.lumongo.cluster.message.Lumongo.SortAs;
+import org.lumongo.cluster.message.LumongoIndex.FacetAs;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
+import org.lumongo.cluster.message.LumongoIndex.IndexAs;
+import org.lumongo.cluster.message.LumongoIndex.ProjectAs;
+import org.lumongo.cluster.message.LumongoIndex.SortAs;
+import org.lumongo.cluster.message.LumongoIndex.Superbit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,24 +101,24 @@ public class FieldConfigBuilder {
 	}
 
 	public FieldConfigBuilder projectAsSuperBit(String field, int inputDim) {
-		Lumongo.Superbit superbit = Lumongo.Superbit.newBuilder().setInputDim(inputDim).build();
+		Superbit superbit = Superbit.newBuilder().setInputDim(inputDim).build();
 		ProjectAs projectAs = ProjectAs.newBuilder().setField(field).setSuperbit(superbit).build();
 		return projectAs(projectAs);
 	}
 
 	public FieldConfigBuilder projectAsSuperBit(String field, int inputDim, int batches) {
-		Lumongo.Superbit superbit = Lumongo.Superbit.newBuilder().setInputDim(inputDim).setBatches(batches).build();
+		Superbit superbit = Superbit.newBuilder().setInputDim(inputDim).setBatches(batches).build();
 		ProjectAs projectAs = ProjectAs.newBuilder().setField(field).setSuperbit(superbit).build();
 		return projectAs(projectAs);
 	}
 
 	public FieldConfigBuilder projectAsSuperBit(String field, int inputDim, int batches, int seed) {
-		Lumongo.Superbit superbit = Lumongo.Superbit.newBuilder().setInputDim(inputDim).setBatches(batches).setSeed(seed).build();
+		Superbit superbit = Superbit.newBuilder().setInputDim(inputDim).setBatches(batches).setSeed(seed).build();
 		ProjectAs projectAs = ProjectAs.newBuilder().setField(field).setSuperbit(superbit).build();
 		return projectAs(projectAs);
 	}
 
-	public FieldConfigBuilder projectAsSuperBit(String field, Lumongo.Superbit superbit) {
+	public FieldConfigBuilder projectAsSuperBit(String field, Superbit superbit) {
 		ProjectAs projectAs = ProjectAs.newBuilder().setField(field).setSuperbit(superbit).build();
 		return projectAs(projectAs);
 	}

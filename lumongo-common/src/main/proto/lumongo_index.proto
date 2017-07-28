@@ -1,0 +1,126 @@
+syntax = "proto2";
+
+option java_package = "org.lumongo.cluster.message";
+
+message IndexSettings {
+    optional string defaultSearchField = 1 [default = ""];
+    repeated AnalyzerSettings analyzerSettings = 2;
+    repeated FieldConfig fieldConfig = 3;
+    optional bool storeDocumentInIndex = 4 [default = true];
+    optional bool storeDocumentInMongo = 5 [default = false];
+    optional bool applyUncommittedDeletes = 6 [default = true];
+    optional double requestFactor = 7 [default = 2.0];
+    optional uint32 minSegmentRequest = 8 [default = 2];
+    optional uint32 idleTimeWithoutCommit = 9 [default = 30];
+    optional uint32 segmentCommitInterval = 10 [default = 3200];
+    optional double segmentTolerance = 11 [default = 0.05];
+    optional uint32 segmentQueryCacheSize = 12 [default = 512];
+    optional uint32 segmentQueryCacheMaxAmount = 13 [default = 256];
+    optional bool storeIndexOnDisk = 14 [default = false];
+
+}
+
+message FieldConfig {
+
+    enum FieldType {
+        STRING = 1;
+        NUMERIC_INT = 2;
+        NUMERIC_LONG = 3;
+        NUMERIC_FLOAT = 4;
+        NUMERIC_DOUBLE = 5;
+        DATE = 6;
+        BOOL = 7;
+    }
+
+    required FieldType fieldType = 1;
+    required string storedFieldName = 2;
+    repeated IndexAs indexAs = 3;
+    repeated FacetAs facetAs = 4;
+    repeated SortAs sortAs = 5;
+    repeated ProjectAs projectAs = 6;
+}
+
+message AnalyzerSettings {
+
+    enum QueryHandling {
+        NORMAL = 1;
+        MINHASH_QUERY = 2;
+    }
+
+    enum Tokenizer {
+        KEYWORD = 1;
+        WHITESPACE = 2;
+        STANDARD = 3;
+    }
+
+    enum Filter {
+        LOWERCASE = 1;
+        UPPERCASE = 2;
+        STOPWORDS = 3;
+        ASCII_FOLDING = 4;
+        KSTEM = 5;
+        ENGLISH_MIN_STEM = 6;
+        SNOWBALL_STEM = 7;
+        ENGLISH_POSSESSIVE = 8;
+        MINHASH = 9;
+        TWO_TWO_SHINGLE = 10;
+        THREE_THREE_SHINGLE = 11;
+        FOUR_FOUR_SHINGLE = 12;
+        FIVE_FIVE_SHINGLE = 13;
+        BRITISH_US = 14;
+        CONCAT_ALL = 15;
+    }
+
+
+    enum Similarity {
+        TFIDF = 1;
+        BM25 = 2;
+        CONSTANT = 3;
+        TF = 4;
+    }
+
+    required string name = 1;
+    optional Tokenizer tokenizer = 2 [default = STANDARD];
+    repeated Filter filter = 3;
+    optional Similarity similarity = 4 [default = BM25];
+    optional QueryHandling queryHandling = 5 [default = NORMAL];
+}
+
+
+message IndexAs {
+    required string indexFieldName = 1;
+    optional string analyzerName = 2;
+}
+
+message ProjectAs {
+    required string field = 1;
+    optional Superbit superbit = 2;
+}
+
+message Superbit {
+    required uint32 inputDim = 1;
+    optional uint32 batches = 2 [default = 1];
+    optional uint32 seed = 3 [default = 1357];
+}
+
+message FacetAs {
+    enum DateHandling {
+        DATE_YYYY_MM_DD = 1;
+        DATE_YYYYMMDD = 2;
+    }
+    required string facetName = 1;
+    optional DateHandling dateHandling = 2 [default = DATE_YYYY_MM_DD];
+}
+
+message SortAs {
+    enum StringHandling {
+        STANDARD = 1;
+        LOWERCASE = 2;
+        FOLDING = 3;
+        LOWERCASE_FOLDING = 4;
+    }
+
+    required string sortFieldName = 1;
+    optional StringHandling stringHandling = 2 [default = STANDARD];
+
+}

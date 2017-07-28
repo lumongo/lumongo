@@ -1,9 +1,9 @@
 package org.lumongo.client.config;
 
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings.Similarity;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings.Similarity;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
+import org.lumongo.cluster.message.LumongoIndex.IndexSettings;
 import org.lumongo.fields.FieldConfigBuilder;
 
 import java.util.TreeMap;

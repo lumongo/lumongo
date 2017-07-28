@@ -130,8 +130,7 @@ public class ServerTestBase {
 		HashMap<String, String> settings = new HashMap<>();
 		
 		settings.put(MongoConfig.DATABASE_NAME, TestHelper.TEST_DATABASE_NAME);
-		settings.put(MongoConfig.MONGO_HOST, TestHelper.getMongoServer());
-		settings.put(MongoConfig.MONGO_PORT, String.valueOf(TestHelper.getMongoPort()));
+		settings.put(MongoConfig.MONGO_HOSTS, TestHelper.getMongoServer());
 		
 		MongoConfig mongoConfig = new MongoConfig(new FakePropertiesReader("test", settings));
 		return mongoConfig;

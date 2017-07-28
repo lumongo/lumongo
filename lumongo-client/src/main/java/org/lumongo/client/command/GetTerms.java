@@ -1,11 +1,9 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.GetTermsResult;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
 import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
 
@@ -153,13 +151,12 @@ public class GetTerms extends SimpleCommand<GetTermsRequest, GetTermsResult> {
 	}
 	
 	@Override
-	public GetTermsResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
+	public GetTermsResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 		
-		RpcController controller = lumongoConnection.getController();
-		
+
 		long start = System.currentTimeMillis();
-		GetTermsResponse getTermsResponse = service.getTerms(controller, getRequest());
+		GetTermsResponse getTermsResponse = service.getTerms(getRequest());
 		long end = System.currentTimeMillis();
 		long durationInMs = end - start;
 		return new GetTermsResult(getTermsResponse, durationInMs);

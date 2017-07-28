@@ -236,7 +236,7 @@ class CompileGwt extends org.gradle.api.internal.ConventionTask implements GWTCo
 task compileGwt(type: CompileGwt, dependsOn: org.gradle.api.plugins.JavaPlugin.COMPILE_JAVA_TASK_NAME) {
     classpath = project.files(sourceSets.main.resources.srcDirs,
             sourceSets.main.java.srcDirs,
-            sourceSets.main.output.classesDir,
+            sourceSets.main.output.classesDirs,
             project.configurations.getByName(GWTConstants.GWT_CONFIGURATION_NAME),
             project.configurations.getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME))
     warOutputDir = gwtWarDir
@@ -265,19 +265,21 @@ war {
 
 
 
-task setProjectArtifacts << {
-    def allProjects = [] as LinkedHashSet
-    GwtBase.collectDependedUponProjects(project, allProjects, "runtime")
+task setProjectArtifacts {
+    doLast {
+	    def allProjects = [] as LinkedHashSet
+	    GwtBase.collectDependedUponProjects(project, allProjects, "runtime")
 
-    def allProjectArtifacts = [] as LinkedHashSet
+	    def allProjectArtifacts = [] as LinkedHashSet
 
-    allProjects.each { project ->
-        project.configurations.findAll().each {
-            allProjectArtifacts.addAll(it.allArtifacts.getFiles().getFiles())
-        }
-    };
+	    allProjects.each { project ->
+		project.configurations.findAll().each {
+		    allProjectArtifacts.addAll(it.allArtifacts.getFiles().getFiles())
+		}
+	    };
 
-    project.ext.projectArtifacts = allProjectArtifacts
+	    project.ext.projectArtifacts = allProjectArtifacts
+    }
 }
 
 

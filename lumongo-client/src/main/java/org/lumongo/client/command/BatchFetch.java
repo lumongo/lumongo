@@ -1,14 +1,12 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.pool.LumongoConnection;
 import org.lumongo.client.result.BatchFetchResult;
 import org.lumongo.client.result.QueryResult;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo.BatchFetchRequest;
 import org.lumongo.cluster.message.Lumongo.BatchFetchResponse;
-import org.lumongo.cluster.message.Lumongo.ExternalService;
 import org.lumongo.cluster.message.Lumongo.FetchType;
 import org.lumongo.cluster.message.Lumongo.ScoredResult;
 
@@ -71,11 +69,10 @@ public class BatchFetch extends SimpleCommand<BatchFetchRequest, BatchFetchResul
 	}
 
 	@Override
-	public BatchFetchResult execute(LumongoConnection lumongoConnection) throws ServiceException {
-		ExternalService.BlockingInterface service = lumongoConnection.getService();
-		RpcController controller = lumongoConnection.getController();
+	public BatchFetchResult execute(LumongoConnection lumongoConnection) {
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		BatchFetchResponse batchFetchResponse = service.batchFetch(controller, getRequest());
+		BatchFetchResponse batchFetchResponse = service.batchFetch(getRequest());
 
 		return new BatchFetchResult(batchFetchResponse);
 	}

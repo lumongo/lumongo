@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import static org.lumongo.cluster.message.LumongoIndex.FieldConfig;
+
 public class Mapper<T> {
 
 	private final Class<T> clazz;
@@ -141,7 +143,7 @@ public class Mapper<T> {
 		indexConfig.setStoreDocumentInMongo(settings.storeDocumentInMongo());
 		indexConfig.setStoreIndexOnDisk(settings.storeIndexOnDisk());
 
-		for (Lumongo.FieldConfig fieldConfig : fieldConfigMapper.getFieldConfigs()) {
+		for (FieldConfig fieldConfig : fieldConfigMapper.getFieldConfigs()) {
 			indexConfig.addFieldConfig(fieldConfig);
 		}
 

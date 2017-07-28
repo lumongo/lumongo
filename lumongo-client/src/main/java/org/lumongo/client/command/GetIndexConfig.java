@@ -1,9 +1,9 @@
 package org.lumongo.client.command;
 
-import com.google.protobuf.RpcController;
 import org.lumongo.client.command.base.SimpleCommand;
 import org.lumongo.client.config.IndexConfig;
 import org.lumongo.client.pool.LumongoConnection;
+import org.lumongo.cluster.message.ExternalServiceGrpc;
 import org.lumongo.cluster.message.Lumongo;
 
 /**
@@ -24,13 +24,11 @@ public class GetIndexConfig extends SimpleCommand<Lumongo.GetIndexConfigRequest,
 	}
 
 	@Override
-	public GetIndexConfigResult execute(LumongoConnection lumongoConnection) throws Exception {
+	public GetIndexConfigResult execute(LumongoConnection lumongoConnection) {
 
-		Lumongo.ExternalService.BlockingInterface service = lumongoConnection.getService();
+		ExternalServiceGrpc.ExternalServiceBlockingStub service = lumongoConnection.getService();
 
-		RpcController controller = lumongoConnection.getController();
-
-		Lumongo.GetIndexConfigResponse getIndexConfigResponse = service.getIndexConfig(controller, getRequest());
+		Lumongo.GetIndexConfigResponse getIndexConfigResponse = service.getIndexConfig(getRequest());
 
 		IndexConfig indexConfig = new IndexConfig();
 		indexConfig.configure(getIndexConfigResponse.getIndexSettings());

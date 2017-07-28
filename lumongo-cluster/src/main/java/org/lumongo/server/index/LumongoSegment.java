@@ -36,26 +36,8 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.index.TermsEnum.SeekStatus;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.BoostAttribute;
-import org.apache.lucene.search.FieldDoc;
-import org.apache.lucene.search.FuzzyTermsEnum;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MaxNonCompetitiveBoostAttribute;
-import org.apache.lucene.search.MultiCollector;
+import org.apache.lucene.search.*;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.Sort;
-import org.apache.lucene.search.SortField;
-import org.apache.lucene.search.SortedNumericSelector;
-import org.apache.lucene.search.SortedNumericSortField;
-import org.apache.lucene.search.SortedSetSelector;
-import org.apache.lucene.search.SortedSetSortField;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TopDocsCollector;
-import org.apache.lucene.search.TopFieldCollector;
-import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.search.highlight.Fragmenter;
 import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
@@ -71,37 +53,16 @@ import org.apache.lucene.util.AttributeSource;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.lumongo.LumongoConstants;
-import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.Lumongo.AnalysisRequest;
-import org.lumongo.cluster.message.Lumongo.AnalysisResult;
-import org.lumongo.cluster.message.Lumongo.AnalyzerSettings;
-import org.lumongo.cluster.message.Lumongo.CountRequest;
-import org.lumongo.cluster.message.Lumongo.FacetAs;
-import org.lumongo.cluster.message.Lumongo.FacetCount;
-import org.lumongo.cluster.message.Lumongo.FacetGroup;
-import org.lumongo.cluster.message.Lumongo.FacetRequest;
-import org.lumongo.cluster.message.Lumongo.FetchType;
-import org.lumongo.cluster.message.Lumongo.FieldConfig;
-import org.lumongo.cluster.message.Lumongo.FieldSort;
+import org.lumongo.cluster.message.*;
+import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
-import org.lumongo.cluster.message.Lumongo.FuzzyTerm;
-import org.lumongo.cluster.message.Lumongo.GetFieldNamesResponse;
-import org.lumongo.cluster.message.Lumongo.GetTermsRequest;
-import org.lumongo.cluster.message.Lumongo.GetTermsResponse;
-import org.lumongo.cluster.message.Lumongo.HighlightRequest;
-import org.lumongo.cluster.message.Lumongo.HighlightResult;
-import org.lumongo.cluster.message.Lumongo.IndexAs;
-import org.lumongo.cluster.message.Lumongo.IndexSettings;
-import org.lumongo.cluster.message.Lumongo.Metadata;
-import org.lumongo.cluster.message.Lumongo.ProjectAs;
-import org.lumongo.cluster.message.Lumongo.ResultDocument;
-import org.lumongo.cluster.message.Lumongo.ScoredResult;
-import org.lumongo.cluster.message.Lumongo.SegmentCountResponse;
-import org.lumongo.cluster.message.Lumongo.SegmentResponse;
-import org.lumongo.cluster.message.Lumongo.SortAs;
-import org.lumongo.cluster.message.Lumongo.SortRequest;
-import org.lumongo.cluster.message.Lumongo.SortValue;
-import org.lumongo.cluster.message.Lumongo.SortValues;
+import org.lumongo.cluster.message.LumongoIndex;
+import org.lumongo.cluster.message.LumongoIndex.AnalyzerSettings;
+import org.lumongo.cluster.message.LumongoIndex.FacetAs;
+import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
+import org.lumongo.cluster.message.LumongoIndex.IndexAs;
+import org.lumongo.cluster.message.LumongoIndex.IndexSettings;
+import org.lumongo.cluster.message.LumongoIndex.SortAs;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
 import org.lumongo.server.highlighter.LumongoHighlighter;
@@ -456,7 +417,7 @@ public class LumongoSegment {
 	}
 
 	private PerFieldSimilarityWrapper getSimilarity(final QueryWithFilters queryWithFilters) {
-		return new PerFieldSimilarityWrapper() {
+		return new PerFieldSimilarityWrapper(new BM25Similarity()) {
 			@Override
 			public Similarity get(String name) {
 
@@ -1010,7 +971,7 @@ public class LumongoSegment {
 	}
 
 	private void handleProjectForStoredField(Document luceneDocument, FieldConfig fc, Object o) throws Exception {
-		for (ProjectAs projectAs : fc.getProjectAsList()) {
+		for (LumongoIndex.ProjectAs projectAs : fc.getProjectAsList()) {
 			if (projectAs.hasSuperbit()) {
 				if (o instanceof List) {
 					List<Number> values = (List<Number>) o;
