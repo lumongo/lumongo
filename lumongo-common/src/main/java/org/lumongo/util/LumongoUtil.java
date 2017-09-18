@@ -7,10 +7,10 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.codecs.EncoderContext;
 import org.bson.io.BasicOutputBuffer;
-import org.lumongo.cluster.message.Lumongo;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class LumongoUtil {
@@ -18,7 +18,14 @@ public class LumongoUtil {
 	public static void handleLists(Object o, Consumer<? super Object> action) {
 		if (o instanceof Collection) {
 			Collection<?> c = (Collection<?>) o;
-			c.stream().filter((obj) -> obj != null).forEach(action);
+			c.stream().filter(Objects::nonNull).forEach(obj -> {
+				if (obj instanceof Collection) {
+					handleLists(obj, action);
+				}
+				else {
+					action.accept(obj);
+				}
+			});
 		}
 		else if (o instanceof Object[]) {
 			Object[] arr = (Object[]) o;
@@ -41,8 +48,6 @@ public class LumongoUtil {
 		new DocumentCodec().encode(writer, mongoDocument, EncoderContext.builder().isEncodingCollectibleDocument(true).build());
 		return outputBuffer.toByteArray();
 	}
-
-
 
 	public static Document byteArrayToMongoDocument(byte[] byteArray) {
 		BsonBinaryReader bsonReader = new BsonBinaryReader(ByteBuffer.wrap(byteArray));
