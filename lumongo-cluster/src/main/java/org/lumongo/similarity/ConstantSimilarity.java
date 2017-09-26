@@ -1,9 +1,7 @@
 package org.lumongo.similarity;
 
-import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.search.similarities.TFIDFSimilarity;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.SmallFloat;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,16 +23,6 @@ import org.apache.lucene.util.SmallFloat;
 public class ConstantSimilarity extends TFIDFSimilarity {
 
 	@Override
-	public float coord(int overlap, int maxOverlap) {
-		return 1f;
-	}
-
-	@Override
-	public float queryNorm(float sumOfSquaredWeights) {
-		return 1f;
-	}
-
-	@Override
 	public float tf(float freq) {
 		return 1f;
 	}
@@ -45,18 +33,8 @@ public class ConstantSimilarity extends TFIDFSimilarity {
 	}
 
 	@Override
-	public float lengthNorm(FieldInvertState state) {
+	public float lengthNorm(int length) {
 		return 1f;
-	}
-
-	@Override
-	public float decodeNormValue(long norm) {
-		return 1f;
-	}
-
-	@Override
-	public long encodeNormValue(float f) {
-		return SmallFloat.floatToByte315(f);
 	}
 
 	@Override
