@@ -17,3 +17,5 @@ archives
 */.classpath
 */.project
 */.iml
+*/out
+
