@@ -213,7 +213,6 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 		else {
 			//mdavis - don't use super method because of min match
 			BooleanQuery.Builder query = new BooleanQuery.Builder();
-			query.setDisableCoord(true);
 			for (Query sub : queries) {
 				query.add(sub, BooleanClause.Occur.SHOULD);
 			}

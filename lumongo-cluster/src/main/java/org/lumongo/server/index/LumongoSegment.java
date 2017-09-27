@@ -28,7 +28,6 @@ import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
-import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LeafReaderContext;
@@ -53,7 +52,7 @@ import org.apache.lucene.util.AttributeSource;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.NumericUtils;
 import org.lumongo.LumongoConstants;
-import org.lumongo.cluster.message.*;
+import org.lumongo.cluster.message.Lumongo;
 import org.lumongo.cluster.message.Lumongo.*;
 import org.lumongo.cluster.message.Lumongo.FieldSort.Direction;
 import org.lumongo.cluster.message.LumongoIndex;
@@ -417,7 +416,7 @@ public class LumongoSegment {
 	}
 
 	private PerFieldSimilarityWrapper getSimilarity(final QueryWithFilters queryWithFilters) {
-		return new PerFieldSimilarityWrapper(new BM25Similarity()) {
+		return new PerFieldSimilarityWrapper() {
 			@Override
 			public Similarity get(String name) {
 
@@ -1244,22 +1243,20 @@ public class LumongoSegment {
 			}
 
 			for (LeafReaderContext subReaderContext : directoryReader.leaves()) {
-				Fields fields = subReaderContext.reader().fields();
-				if (fields != null) {
+				Terms terms = subReaderContext.reader().terms(fieldName);
 
-					Terms terms = fields.terms(fieldName);
-					if (terms != null) {
+				if (terms != null) {
 
-						TermsEnum termsEnum = terms.iterator();
-						for (BytesRef termBytes : termBytesList) {
-							if (termsEnum.seekExact(termBytes)) {
-								BytesRef text = termsEnum.term();
-								handleTerm(termsMap, termsEnum, text, null, null);
-							}
-
+					TermsEnum termsEnum = terms.iterator();
+					for (BytesRef termBytes : termBytesList) {
+						if (termsEnum.seekExact(termBytes)) {
+							BytesRef text = termsEnum.term();
+							handleTerm(termsMap, termsEnum, text, null, null);
 						}
+
 					}
 				}
+
 			}
 		}
 		else {
@@ -1296,52 +1293,49 @@ public class LumongoSegment {
 			}
 
 			for (LeafReaderContext subReaderContext : directoryReader.leaves()) {
-				Fields fields = subReaderContext.reader().fields();
-				if (fields != null) {
+				Terms terms = subReaderContext.reader().terms(fieldName);
 
-					Terms terms = fields.terms(fieldName);
-					if (terms != null) {
+				if (terms != null) {
 
-						if (request.hasFuzzyTerm()) {
-							FuzzyTerm fuzzyTerm = request.getFuzzyTerm();
-							FuzzyTermsEnum termsEnum = new FuzzyTermsEnum(terms, atts, new Term(fieldName, fuzzyTerm.getTerm()), fuzzyTerm.getEditDistance(),
-									fuzzyTerm.getPrefixLength(), fuzzyTerm.getTranspositions());
+					if (request.hasFuzzyTerm()) {
+						FuzzyTerm fuzzyTerm = request.getFuzzyTerm();
+						FuzzyTermsEnum termsEnum = new FuzzyTermsEnum(terms, atts, new Term(fieldName, fuzzyTerm.getTerm()), fuzzyTerm.getEditDistance(),
+								fuzzyTerm.getPrefixLength(), fuzzyTerm.getTranspositions());
+						BytesRef text = termsEnum.term();
+
+						handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+
+						while ((text = termsEnum.next()) != null) {
+							handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+						}
+
+					}
+					else {
+						TermsEnum termsEnum = terms.iterator();
+						SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
+
+						if (!seekStatus.equals(SeekStatus.END)) {
 							BytesRef text = termsEnum.term();
 
-							handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
-
-							while ((text = termsEnum.next()) != null) {
+							if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
 								handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
-							}
 
-						}
-						else {
-							TermsEnum termsEnum = terms.iterator();
-							SeekStatus seekStatus = termsEnum.seekCeil(startTermBytes);
+								while ((text = termsEnum.next()) != null) {
 
-							if (!seekStatus.equals(SeekStatus.END)) {
-								BytesRef text = termsEnum.term();
-
-								if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
-									handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
-
-									while ((text = termsEnum.next()) != null) {
-
-										if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
-											handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
-										}
-										else {
-											break;
-										}
+									if (endTermBytes == null || (text.compareTo(endTermBytes) < 0)) {
+										handleTerm(termsMap, termsEnum, text, termFilter, termMatch);
+									}
+									else {
+										break;
 									}
 								}
 							}
 						}
-
 					}
-				}
 
+				}
 			}
+
 		}
 
 		for (Lumongo.Term.Builder termBuilder : termsMap.values()) {
