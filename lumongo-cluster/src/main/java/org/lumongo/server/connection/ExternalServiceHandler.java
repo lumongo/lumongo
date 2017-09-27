@@ -48,6 +48,10 @@ public class ExternalServiceHandler extends ExternalServiceGrpc.ExternalServiceI
 		}
 		catch (Exception e) {
 			log.error("Failed to store: <" + request.getUniqueId() + "> in index <" + request.getIndexName() + ">: " + e.getClass().getSimpleName() + ": ", e);
+			Metadata m = new Metadata();
+			m.put(MetaKeys.ERROR_KEY, e.getMessage());
+			responseObserver.onError(new StatusRuntimeException(Status.UNKNOWN, m));
+
 			if (request.hasResultDocument()) {
 				try {
 					if (request.getResultDocument().hasDocument()) {
@@ -60,7 +64,6 @@ public class ExternalServiceHandler extends ExternalServiceGrpc.ExternalServiceI
 				}
 			}
 
-			responseObserver.onError(e);
 		}
 	}
 
