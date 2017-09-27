@@ -400,7 +400,8 @@ public class LumongoIndexManager {
 
 	}
 
-	public IndexSettingsResponse updateIndex(String indexName, org.lumongo.cluster.message.LumongoIndex.IndexSettings request) throws InvalidIndexConfig, MongoException, IOException {
+	public IndexSettingsResponse updateIndex(String indexName, org.lumongo.cluster.message.LumongoIndex.IndexSettings request)
+			throws InvalidIndexConfig, MongoException, IOException {
 		globalLock.readLock().lock();
 		try {
 			log.info("Updating index settings for <" + indexName + ">:\n" + JsonFormat.printer().print(request));
@@ -650,14 +651,11 @@ public class LumongoIndexManager {
 					queryWithFilters.addSimilarityOverride(fieldSimilarity);
 				}
 
-
-
 				if (queryRequest.hasFacetRequest()) {
 					FacetRequest facetRequest = queryRequest.getFacetRequest();
 
 					List<LMFacet> drillDownList = facetRequest.getDrillDownList();
 					if (!drillDownList.isEmpty()) {
-
 
 						Map<String, Set<String>> dimToValues = new HashMap<>();
 						for (LMFacet drillDown : drillDownList) {
@@ -686,6 +684,10 @@ public class LumongoIndexManager {
 
 				for (Lumongo.Query filterQuery : queryRequest.getFilterQueryList()) {
 					queryWithFilters.addFilterQuery(i.getQuery(filterQuery));
+				}
+
+				for (Lumongo.Query filterQuery : queryRequest.getScoredQueryList()) {
+					queryWithFilters.addScoredFilterQuery(i.getQuery(filterQuery));
 				}
 
 				for (CosineSimRequest cosineSimRequest : queryRequest.getCosineSimRequestList()) {
@@ -1150,7 +1152,6 @@ public class LumongoIndexManager {
 			globalLock.readLock().unlock();
 		}
 	}
-
 
 	//rest
 	public InputStream getAssociatedDocumentStream(String indexName, String uniqueId, String fileName) throws IOException {
