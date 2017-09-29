@@ -9,6 +9,7 @@ import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.KeywordTokenizer;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.core.UpperCaseFilter;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
 import org.apache.lucene.analysis.en.EnglishMinimalStemFilter;
 import org.apache.lucene.analysis.en.EnglishPossessiveFilter;
@@ -174,6 +175,18 @@ public class LumongoAnalyzerFactory {
 			}
 			else if (FieldConfig.FieldType.BOOL.equals(fieldType)) {
 				a = new BooleanAnalyzer();
+			}
+			else if (FieldConfig.FieldType.NUMERIC_INT.equals(fieldType)) {
+				a = new WhitespaceAnalyzer();
+			}
+			else if (FieldConfig.FieldType.NUMERIC_LONG.equals(fieldType)) {
+				a = new WhitespaceAnalyzer();
+			}
+			else if (FieldConfig.FieldType.NUMERIC_FLOAT.equals(fieldType)) {
+				a = new WhitespaceAnalyzer();
+			}
+			else if (FieldConfig.FieldType.NUMERIC_DOUBLE.equals(fieldType)) {
+				a = new WhitespaceAnalyzer();
 			}
 			else {
 				a = new KeywordAnalyzer();
