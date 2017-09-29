@@ -16,8 +16,6 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.lumongo.LumongoConstants;
-import org.lumongo.cluster.message.Lumongo;
-import org.lumongo.cluster.message.LumongoIndex;
 import org.lumongo.cluster.message.LumongoIndex.FieldConfig;
 import org.lumongo.server.config.IndexConfig;
 import org.lumongo.server.config.IndexConfigUtil;
@@ -37,8 +35,6 @@ public class LumongoQueryParser extends QueryParser {
 		super(indexConfig.getIndexSettings().getDefaultSearchField(), analyzer);
 		this.indexConfig = indexConfig;
 		setAllowLeadingWildcard(true);
-		//TODO consider turning this on
-		//setSplitOnWhitespace(false);
 	}
 
 	private static Long getDateAsLong(String dateString) {

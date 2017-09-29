@@ -23,8 +23,8 @@ import java.util.Map;
  */
 public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 
-	protected Collection<String> fields;
-	protected Map<String,Float> boosts;
+	protected List<String> fields;
+	protected Map<String, Float> boosts;
 	private float dismaxTie = 0;
 	private boolean dismax = false;
 
@@ -47,7 +47,7 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 
 	public void setDefaultFields(Collection<String> fields, Map<String, Float> boosts) {
 		this.field = null;
-		this.fields = fields;
+		this.fields = new ArrayList<>(fields);
 		this.boosts = boosts;
 	}
 
@@ -61,7 +61,7 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 	protected Query getFieldQuery(String field, String queryText, int slop) throws ParseException {
 		if (field == null) {
 			List<Query> clauses = new ArrayList<>();
-			for (String f: fields) {
+			for (String f : fields) {
 				Query q = super.getFieldQuery(f, queryText, true);
 				if (q != null) {
 					//If the user passes a map of boosts
@@ -72,7 +72,7 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 							q = new BoostQuery(q, boost);
 						}
 					}
-					q = applySlop(q,slop);
+					q = applySlop(q, slop);
 					clauses.add(q);
 				}
 			}
@@ -81,7 +81,7 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 			return getMultiFieldQuery(clauses);
 		}
 		Query q = super.getFieldQuery(field, queryText, true);
-		q = applySlop(q,slop);
+		q = applySlop(q, slop);
 		return q;
 	}
 
@@ -96,8 +96,9 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 				builder.add(terms[i], positions[i]);
 			}
 			q = builder.build();
-		} else if (q instanceof MultiPhraseQuery) {
-			MultiPhraseQuery mpq = (MultiPhraseQuery)q;
+		}
+		else if (q instanceof MultiPhraseQuery) {
+			MultiPhraseQuery mpq = (MultiPhraseQuery) q;
 
 			if (slop != mpq.getSlop()) {
 				q = new MultiPhraseQuery.Builder(mpq).setSlop(slop).build();
@@ -106,23 +107,61 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 		return q;
 	}
 
-
 	@Override
 	protected Query getFieldQuery(String field, String queryText, boolean quoted) throws ParseException {
 		if (field == null) {
 			List<Query> clauses = new ArrayList<>();
-			for (String f : fields) {
-				Query q = super.getFieldQuery(f, queryText, quoted);
+			Query[] fieldQueries = new Query[fields.size()];
+			int maxTerms = 0;
+			for (int i = 0; i < fields.size(); i++) {
+				Query q = super.getFieldQuery(fields.get(i), queryText, quoted);
 				if (q != null) {
-					//If the user passes a map of boosts
-					if (boosts != null) {
-						//Get the boost from the map and apply them
-						Float boost = boosts.get(f);
-						if (boost != null) {
-							q = new BoostQuery(q, boost);
+					if (q instanceof BooleanQuery) {
+						maxTerms = Math.max(maxTerms, ((BooleanQuery) q).clauses().size());
+					}
+					else {
+						maxTerms = Math.max(1, maxTerms);
+					}
+					fieldQueries[i] = q;
+				}
+			}
+			for (int termNum = 0; termNum < maxTerms; termNum++) {
+				List<Query> termClauses = new ArrayList<>();
+				for (int i = 0; i < fields.size(); i++) {
+					if (fieldQueries[i] != null) {
+						Query q = null;
+						if (fieldQueries[i] instanceof BooleanQuery) {
+							List<BooleanClause> nestedClauses = ((BooleanQuery) fieldQueries[i]).clauses();
+							if (termNum < nestedClauses.size()) {
+								q = nestedClauses.get(termNum).getQuery();
+							}
+						}
+						else if (termNum == 0) { // e.g. TermQuery-s
+							q = fieldQueries[i];
+						}
+						if (q != null) {
+							if (boosts != null) {
+								//Get the boost from the map and apply them
+								Float boost = boosts.get(fields.get(i));
+								if (boost != null) {
+									q = new BoostQuery(q, boost);
+								}
+							}
+							termClauses.add(q);
 						}
 					}
-					clauses.add(q);
+				}
+				if (maxTerms > 1) {
+					if (termClauses.size() > 0) {
+						BooleanQuery.Builder builder = newBooleanQuery();
+						for (Query termClause : termClauses) {
+							builder.add(termClause, BooleanClause.Occur.SHOULD);
+						}
+						clauses.add(builder.build());
+					}
+				}
+				else {
+					clauses.addAll(termClauses);
 				}
 			}
 			if (clauses.size() == 0)  // happens for stopwords
@@ -133,13 +172,11 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 		return q;
 	}
 
-
 	@Override
-	protected Query getFuzzyQuery(String field, String termStr, float minSimilarity) throws ParseException
-	{
+	protected Query getFuzzyQuery(String field, String termStr, float minSimilarity) throws ParseException {
 		if (field == null) {
 			List<Query> clauses = new ArrayList<>();
-			for (String f: fields) {
+			for (String f : fields) {
 				clauses.add(getFuzzyQuery(f, termStr, minSimilarity));
 			}
 			return getMultiFieldQuery(clauses);
@@ -148,11 +185,10 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 	}
 
 	@Override
-	protected Query getPrefixQuery(String field, String termStr) throws ParseException
-	{
+	protected Query getPrefixQuery(String field, String termStr) throws ParseException {
 		if (field == null) {
 			List<Query> clauses = new ArrayList<>();
-			for (String f: fields) {
+			for (String f : fields) {
 				clauses.add(getPrefixQuery(f, termStr));
 			}
 			return getMultiFieldQuery(clauses);
@@ -164,14 +200,13 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 	protected Query getWildcardQuery(String field, String termStr) throws ParseException {
 		if (field == null) {
 			List<Query> clauses = new ArrayList<>();
-			for (String f: fields) {
+			for (String f : fields) {
 				clauses.add(getWildcardQuery(f, termStr));
 			}
 			return getMultiFieldQuery(clauses);
 		}
 		return super.getWildcardQuery(field, termStr);
 	}
-
 
 	@Override
 	protected Query getRangeQuery(String field, String part1, String part2, boolean startInclusive, boolean endInclusive) throws ParseException {
@@ -185,11 +220,8 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 		return super.getRangeQuery(field, part1, part2, startInclusive, endInclusive);
 	}
 
-
-
 	@Override
-	protected Query getRegexpQuery(String field, String termStr)
-			throws ParseException {
+	protected Query getRegexpQuery(String field, String termStr) throws ParseException {
 		if (field == null) {
 			List<Query> clauses = new ArrayList<>();
 			for (String f : fields) {
