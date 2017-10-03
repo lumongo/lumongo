@@ -13,6 +13,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.lumongo.LumongoConstants;
@@ -161,6 +162,7 @@ public class LumongoQueryParser extends QueryParser {
 					return getNumericOrDateRange(field, text, text, true, true);
 				}
 			}
+			return new MatchNoDocsQuery(field + " expects numeric");
 		}
 
 		return super.newTermQuery(term);
