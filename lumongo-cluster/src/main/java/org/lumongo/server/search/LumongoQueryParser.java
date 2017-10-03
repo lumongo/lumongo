@@ -35,6 +35,7 @@ public class LumongoQueryParser extends QueryParser {
 		super(indexConfig.getIndexSettings().getDefaultSearchField(), analyzer);
 		this.indexConfig = indexConfig;
 		setAllowLeadingWildcard(true);
+		//setSplitOnWhitespace(true);
 	}
 
 	private static Long getDateAsLong(String dateString) {
@@ -160,7 +161,6 @@ public class LumongoQueryParser extends QueryParser {
 					return getNumericOrDateRange(field, text, text, true, true);
 				}
 			}
-			return null;
 		}
 
 		return super.newTermQuery(term);
