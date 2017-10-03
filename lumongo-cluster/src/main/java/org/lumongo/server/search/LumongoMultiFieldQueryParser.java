@@ -153,7 +153,8 @@ public class LumongoMultiFieldQueryParser extends LumongoQueryParser {
 				}
 				if (maxTerms > 1) {
 					if (termClauses.size() > 0) {
-						BooleanQuery.Builder builder = newBooleanQuery();
+						//mdavis - don't use super method because of min match
+						BooleanQuery.Builder builder = new BooleanQuery.Builder();
 						for (Query termClause : termClauses) {
 							builder.add(termClause, BooleanClause.Occur.SHOULD);
 						}
