@@ -1,7 +1,6 @@
 package org.lumongo.similarity;
 
-import org.apache.lucene.search.similarities.TFIDFSimilarity;
-import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.search.similarities.BooleanSimilarity;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,30 +19,8 @@ import org.apache.lucene.util.BytesRef;
  * limitations under the License.
  */
 
-public class ConstantSimilarity extends TFIDFSimilarity {
+public class ConstantSimilarity extends BooleanSimilarity {
 
-	@Override
-	public float tf(float freq) {
-		return 1f;
-	}
 
-	@Override
-	public float idf(long docFreq, long docCount) {
-		return 1f;
-	}
 
-	@Override
-	public float lengthNorm(int length) {
-		return 1f;
-	}
-
-	@Override
-	public float sloppyFreq(int distance) {
-		return 1f;
-	}
-
-	@Override
-	public float scorePayload(int doc, int start, int end, BytesRef payload) {
-		return 1f;
-	}
 }
