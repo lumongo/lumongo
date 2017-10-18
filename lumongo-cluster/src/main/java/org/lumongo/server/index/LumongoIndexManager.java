@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -1000,7 +1001,7 @@ public class LumongoIndexManager {
 
 			};
 
-			Set<String> fieldNames = new HashSet<>();
+			Set<String> fieldNames = new TreeSet<>();
 			List<GetFieldNamesResponse> responses = federator.send(request);
 			for (GetFieldNamesResponse response : responses) {
 				fieldNames.addAll(response.getFieldNameList());
