@@ -25,7 +25,7 @@ public class LumongoConnection {
 	public void open(boolean compressedConnection) throws IOException {
 
 		ManagedChannelBuilder<?> managedChannelBuilder = ManagedChannelBuilder.forAddress(member.getServerAddress(), member.getExternalPort())
-				.maxInboundMessageSize(128 * 1024 * 1024).usePlaintext(true);
+				.maxInboundMessageSize(256 * 1024 * 1024).usePlaintext(true);
 		channel = managedChannelBuilder.build();
 
 		blockingStub = ExternalServiceGrpc.newBlockingStub(channel);
