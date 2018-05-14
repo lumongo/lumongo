@@ -1,8 +1,11 @@
 # LuMongo
-=============
+
+## LuMongo is no longer being actively developed.  Our efforts are now focused on http://zulia.io/
+
 ## Distributed Realtime Search With Lucene
 
 [![Join the chat at https://gitter.im/lumongo/lumongo](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/lumongo/lumongo?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 
 
 LuMongo is a real-time distributed search and storage system based on Lucene. LuMongo is designed from the ground up to scale both vertically and horizontally across servers. LuMongo
